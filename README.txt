@@ -16,8 +16,8 @@ See the file COPYING.txt for details.
 
 JMdictDB comes with ABSOLUTELY NO WARRANTY.
 
-The most recent version of this code may be downloaded at
-http://www.edrdg.org/~smg/.
+The most recent version of this code may be downloaded at:
+  http://gitlab.com/yamagoya/jmdictdb/
 
 This package contains the following directories:
   ./                   Package directory.
@@ -42,21 +42,16 @@ is written for Python 3; Python 2 is no longer supported
 code repository, see INSTALLATION/Requirements below).  The
 web pages use Python/CGI.
 
-The Python 2 to Python 3 conversion was only done recently
-(2012-05 through 2012-11 approximately) thus there are likely
-a number of conversion related errors remaining in less
-frequently used parts of the code.
-
-Development uses Mercurial (http://selenic.com/mercurial)
-as a version control system.  The development repository is
-available for download, and the project's revision history
-can be browsed at http://www.edrdg.org/~smg/.
-
 The JMdictDB system is currently running on Jim Breen's
 wwwjdic web sites
  (http://www.edrdg.org/cgi-bin/wwwjdic/wwwjdic?1C and mirrors)
 where it is used to accept additions and corrections to the
 wwwjdic/JMdict data from wwwjdict users.
+
+The public development repository is maintained at Gitlab:
+  https://gitlab.com/yamagoya/jmdictdb/
+Gitlab Issues may be used to submit bug reports, feature 
+requests, etc.
 
 =============
 DOCUMENTATION
@@ -159,7 +154,7 @@ numbers are the versions currently in use in the author's
 development environment -- the software may work fine with
 earlier or later versions, but this has not been verified.
 
-  Postgresql [9.6]
+  Postgresql [10.3]
   Python [3.6] (known not to work before 3.3).
   Additional Python packages:
     psycopg2-2.7.3 Python-Postgresql connector.
@@ -245,6 +240,17 @@ reject entries, a user must be logged in as an editor.
 The CGI scripts use a separate database named "jmsess" for
 storing editor user info and active sessions.  This database
 need only be setup once.
+
+Getting the code
+----------------
+It will be easiest to get code updates if you clone the 
+development respository:
+
+  git clone https://gitlab.com/yamagoya/jmdictdb.git
+
+This will produce a "jmdictdb" directory in the current 
+directory.  You can also download a zip or gzip archive 
+of a particular version from Gitlab.
 
 Procedure
 ---------
@@ -574,7 +580,7 @@ Updates occur periodically to the code and to the database.
 Program code updates including website scripts are generally done by:
 
   $ cd [...]/jmdictdb
-  $ hg pull & hg update
+  $ git pull
   $ make web
 
 Database updates are generally done by:
