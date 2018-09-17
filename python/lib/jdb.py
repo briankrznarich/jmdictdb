@@ -358,14 +358,14 @@ def entr_data (dbh, crit, args=None, ord=None, tables=None):
             if tbl not in t: t[tbl] = []
             try:
                 L('lib.jdb.entr_data.db.sql').debug("sql: "+sql)
-                L('lib.jdb.entr_data.db.sql').debug("args: %r"%args)
+                L('lib.jdb.entr_data.db.sql').debug("args: %r"%(args,))
                 t[tbl].extend (dbread (dbh, sql, args, cls=cls))
                 L('lib.jdb.entr_data.db.time').debug("table %s read time: %s"%(tbl,time()-time_last))
                 time_last = time()
             except (psycopg2.ProgrammingError) as e:
                 L('lib.jdb.entr_data').error(str(e))
                 L('lib.jdb.entr_data.db.sql').error("  sql: "+sql)
-                L('lib.jdb.entr_data.db.sql').error("  args: %r"%args)
+                L('lib.jdb.entr_data.db.sql').error("  args: %r"%(args,))
                 dbh.connection.rollback()
         L('lib.jdb.entr_data.db.time').debug("total time: %s"%(time()-time_start))
         return t
