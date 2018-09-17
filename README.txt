@@ -48,9 +48,9 @@ wwwjdic web sites
 where it is used to accept additions and corrections to the
 wwwjdic/JMdict data from wwwjdict users.
 
-The public development repository is maintained at Gitlab:
+The public development repository is maintained at GitLab:
   https://gitlab.com/yamagoya/jmdictdb/
-Gitlab Issues may be used to submit bug reports, feature 
+GitLab Issues may be used to submit bug reports, feature
 requests, etc.
 
 =============
@@ -243,14 +243,14 @@ need only be setup once.
 
 Getting the code
 ----------------
-It will be easiest to get code updates if you clone the 
+It will be easiest to get code updates if you clone the
 development respository:
 
   git clone https://gitlab.com/yamagoya/jmdictdb.git
 
-This will produce a "jmdictdb" directory in the current 
-directory.  You can also download a zip or gzip archive 
-of a particular version from Gitlab.
+This will produce a "jmdictdb" directory in the current
+directory.  You can also download a zip or gzip archive
+of a particular version from GitLab.
 
 Procedure
 ---------
@@ -261,8 +261,14 @@ A Makefile is provided that automates the loading and
 updating of JMdictDB database.  It is presumed that
 there is a functioning Postgresql instance, and that
 you have access to the database "postgres" account or
-some account with enough privledges to create and drop
+some account with enough privileges to create and drop
 databases.
+
+JMdictDB can be served by the web server directly from
+the development directories -- this is useful during
+development.  The cgi and library files can also be
+installed to a production location with the makefile
+target : 'make web'.
 
 The Makefile is usable on both *nix and Windows systems
 but the latter requires a working Gnu 'make' program.
@@ -289,13 +295,18 @@ usual during loading.
    and "jmdictdbv".
 
 2. Copy the file python/lib/config.ini.sample to config.ini
-   in the same directory.  Review it and make any changes
-   neccessary.  Uncomment and change the "pw" and "sel_pw"
-   passwords in the "db_*" sections to the values chosen in
-   step (1) above if you wish to supply passwords via this
-   file (note warnings above.)  Otherwise create a .pgpass
-   file in the web server user's home directory.  The .pgpass
-   file should have two lines in it:
+   in either the production lib/ directory (defined by macro
+   LIB_DIR in the Makefile) or development python/lib/
+   directory (same directory as the config.ini.sample file),
+   depending on whether you plan on  having your web server
+   serve the application from the production location or the
+   development directories.
+   Edit it and make any changes necessary.  Uncomment and
+   change the "pw" and "sel_pw" passwords in the "db_*" sections
+   to the values chosen in step (1) above if you wish to supply
+   passwords via this file (note warnings above.)  Otherwise
+   create a .pgpass file in the web server user's home directory.
+   The .pgpass file should have two lines in it:
 
         localhost:*:*:jmdictdb:xxxxxx
         localhost:*:*:jmdictdbv:xxxxxx
@@ -444,12 +455,12 @@ usual during loading.
         Moash FTP site, and unpack it.
 
    data/jmdict.pgi:
-        Make target jmdict.xml if neccessary, then parse
+        Make target jmdict.xml if necessary, then parse
         the jmdict.xml file, generating a rebasable
         jmdict.pgi file and jmdict.log.
 
    loadjm:
-        Make target jmdict.pgi if neccessary, then load
+        Make target jmdict.pgi if necessary, then load
         the .pgi file into preexisting database "jmnew"
         and do all the post-load tasks like creating
         indexes, resolving xref's etc. After this, the
@@ -465,6 +476,12 @@ usual during loading.
         Renames the "jmnew" database produced above to
         "jmdict", making it accessible to all the tools
         and cgi scripts.
+
+   web:
+        Copies the cgi and necessary library files to the
+        the "production" location from where they can be
+        served by a web server.  The default location is
+        ~/public_html/.  See Step #10 below.
 
    There are similar sets of data/* and load* targets for
    loading JMnedict, the Examples file and Kanjidic2 (though
@@ -498,22 +515,24 @@ usual during loading.
    pages.  There must be no active users in any of these
    databases or the "make activate" command will fail.
 
-10. If you plan on using the cgi files with a web server,
-   double check the settings in the Makefile (see step #1)
-   and then run:
+10. To use the cgi files with a web server, you can configure
+   the web server to access the files directly from the development
+   directories, or you can run:
 
         make web
 
-   to install the web CGI files.
-   Note that it is also possible to configure your web server
-   to serve the cgi files directly from the development directory
-   making this step unnecessary.
+   to install them to another location.  Check and adjust the
+   settings in Makefile first.  The default location is
+   ~/public_html/cgi-bin/ for the cgi files and ~/public_html/lib/
+   for the supporting library files.
 
-11. Create a config.ini file in the cgi directory where the
-   lib files were copied based the python/lib/config.ini.sample
-   file and adjusted for your installation.  It should be readable
-   by the web server process and not readable by world (it will
-   contain database passwords.)
+11. Create a config.ini file (use the python/lib/config.sample file
+   as a guide).  The config.ini file should go in the same directory
+   as the library files: in python/lib/ if you are serving the files
+   directly from the development directories, or in $(WEBROOT)/lib/
+   if you are installing the web files using 'make web' (or both).
+   The config.ini file should be readable by the web server process
+   and not readable by world (it will contain database passwords.)
 
    Create a log file as described in the OPERATION section below.
    It should be writable by the the web server process.
