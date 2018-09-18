@@ -385,6 +385,9 @@
         <a class="displink" href="entr.py?svc={{svc}}&amp;sid={{sid}}&amp;disp=xml&amp;e={{e.id}}">jmdictdb xml</a>
         </div>
 
+      {#- Disable this temporarily.  It really should be presented only
+          if there actually are xrefs with the noted characteristics, and
+          should appear closer to them, not at the bottom of the entry.
       <br><div class="notes">
         Notes:
         <ul>
@@ -392,7 +395,7 @@
           to or from an unapproved entry.</li>
         <li>Sense #1 marked with an asterisk (*) indicates sense was not
           specified in source and sense #1 was chosen by default.</li>
-        </ul>
+        </ul>   #}
       </div>
       {% endif %}
 
