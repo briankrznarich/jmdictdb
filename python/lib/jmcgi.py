@@ -1,6 +1,6 @@
 #######################################################################
 #  This file is part of JMdictDB.
-#  Copyright (c) 2008-2015,2018 Stuart McGraw
+#  Copyright (c) 2008-2019 Stuart McGraw
 #
 #  JMdictDB is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published
@@ -781,7 +781,8 @@ class SearchItems (jdb.Obj):
     def __setattr__ (self, name, val):
         if name not in ('idtyp','idnum','src','txts','pos','misc',
                         'fld','dial','freq','kinf','rinf','grp','stat','unap',
-                        'nfval','nfcmp','gaval','gacmp','ts','smtr', 'mt'):
+                        'nfval','nfcmp','gaval','gacmp','snote', 'ts','smtr',
+                        'cmts', 'refs', 'mt',):
             raise AttributeError ("'%s' object has no attribute '%s'"
                                    % (self.__class__.__name__, name))
         self.__dict__[name] = val
@@ -851,11 +852,18 @@ def so2conds (o):
                 Note that an entry matches if there is either a
                 matching kanj freq or a matching rdng freq.  There
                 is no provision to specify just one or the other.
+          snote -- 2-tuple of pattern to match with sens.notes, and
+                bool indicating a regex (vs substring) match is desired.
           ts -- History min and max time limits as a 2-tuple.  Each
                 time value is either None or number of seconds from
                 the epoch as returned by time.localtime() et.al.
           smtr -- 2-tuple of name to match with hist.name, and bool
-                indicating a wildcard match is desired.
+                indicating a wildcard (vs exact) match is desired.
+          cmts -- 2-tuple of pattern to match with hist.notes (labeled
+                "commments" in gui), and bool indicating a regex (vs
+                substring) match is desired.
+          refs -- 2-tuple of pattern to match with hist.refs, and bool
+                indicating a regex (vs substring) match is desired.
           mt -- History record match type as an int:
                   0: match any hist record
                   1: match only first hist record
@@ -928,8 +936,11 @@ def so2conds (o):
                                  getattr (o, 'nfcmp', None),
                                  getattr (o, 'gaval', None),
                                  getattr (o, 'gacmp', None)))
+        conds.extend (_snotecond (getattr (o, 'snote', None)))
         conds.extend (_histcond (getattr (o, 'ts',    None),
                                  getattr (o, 'smtr',  None),
+                                 getattr (o, 'cmts',  None),
+                                 getattr (o, 'refs',  None),
                                  getattr (o, 'mt',    None)))
         return conds
 
@@ -960,7 +971,14 @@ def _boolcond (o, attr, tbl, col, true_state):
         cond = tbl, (inv + col), []
         return [cond]
 
-def _histcond (ts, smtr, mt):
+def _snotecond (snote):
+        pat, ptype = snote
+        if not pat: return []
+        if ptype: cond = 'sens', "sens.notes ~* %s", [pat]
+        else: cond = 'sens', "sens.notes ILIKE %s", [like_substr (pat)]
+        return [cond]
+
+def _histcond (ts, smtr, cmts, refs, mt):
         conds = []
         if ts and (ts[0] or ts[1]):
               # ts[0] and[1] are 9-tuples of ints that correspond
@@ -972,6 +990,14 @@ def _histcond (ts, smtr, mt):
             name, wc = smtr
             if not wc: conds.append (('hist', "lower(name)=lower(%s)", [name]))
             else: conds.append (('hist', "name ILIKE %s", [wc2like (name)]))
+        if cmts and cmts[0]:
+            pat, wc = cmts
+            if wc: conds.append (('hist', "hist.notes ~* %s", [pat]))
+            else: conds.append (('hist', "hist.notes ILIKE %s", [like_substr (pat)]))
+        if refs and refs[0]:
+            pat, wc = refs
+            if wc: conds.append (('hist', "refs ~* %s", [pat]))
+            else: conds.append (('hist', "refs ILIKE %s", [like_substr (pat)]))
         if mt:
             if int(mt) ==  1: conds.append (('hist', "hist=1", []))
             if int(mt) == -1: conds.append (('hist', "hist=(SELECT COUNT(*) FROM hist WHERE hist.entr=e.id)", []))
@@ -1100,6 +1126,15 @@ def wc2like (s):
         s1 = s1.replace ('\x01', '*')
         s1 = s1.replace ('\x02', '?')
         return s1
+
+def like_substr (s):
+        # Given string 's', return a new string 't' that can be used as
+        # a pattern with the postgresql ILIKE operator for matching 's'
+        # as a substring.  This is done by escaping any special characters
+        # in 's' ("?", "_", "%") and pre- and post-fixing the string with
+        # '%' characters.
+        t = '%' + re.sub (r'([?_%])', r'\\\1', s) + '%'
+        return t
 
 def parse_cfg_logfilters (s):
         result = []

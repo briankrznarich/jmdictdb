@@ -32,6 +32,7 @@ def main( args, opts ):
         cfg_web = d2o (cfg['web'])
         cfg_srch = d2o (cfg['search'])
         fv = form.getfirst; fl = form.getlist
+        fvi = lambda x: int (form.getfirst (x) or 0)  # Get int form value, default=0.
         force_srchres = fv('srchres')  # Force display of srchres page even if only one result.
         sqlp = (fv ('sql') or '')
         soj = (fv ('soj') or '')
@@ -60,9 +61,14 @@ def main( args, opts ):
               # the comments in jmcgi._freqcond() but code left here for
               # reference.
             so.gaval = fv('gaval'); so.gacmp = fv('gacmp')
+              # Sense notes criteria.
+            so.snote = (fv('snote') or ''), fvi('snotem')
+              # Next 5 items are History criteria...
               #FIXME? use selection boxes for dates?  Or a JS calendar control?
             so.ts = dateparse (fv('ts0'), 0, errs), dateparse (fv('ts1'), 1, errs)
-            so.smtr = (fv('smtr') or ''), fv('smtrm')
+            so.smtr = (fv('smtr') or ''), fvi('smtrm')
+            so.cmts = (fv('cmts') or ''), fvi('cmtsm')
+            so.refs = (fv('refs') or ''), fvi('refsm')
             so.mt = fv('mt')
               # Pack up all the search criteria in a json string that will
               # be given to the srchres form, which will in turn give it back

@@ -351,6 +351,25 @@
 
               <tr><td colspan="2"><hr width="100%"/></td></tr>
               <tr>
+                <td colspan="2"><span class="descriptor">Sense note:</span></td>
+                </tr>
+              <tr>
+                <td colspan="2">
+                  <table>
+                    <tr>
+                      <td>Text: </td>
+                      <td><input name="snote" size="16"></td>
+                      <td colspan="3">
+                        <input type=radio name="snotem" value="0" checked>Contains
+                        <input type=radio name="snotem" value="1">Regex match
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+              <tr><td colspan="2"><hr width="100%"/></td></tr>
+              <tr>
                 <td colspan="2"><span class="descriptor">History:</span></td>
                 </tr>
               <tr>
@@ -365,17 +384,33 @@
                         </td>
                       </tr>
                     <tr>
-                      <td>From: </td>
+                      <td>From date: </td>
                       <td><input name="ts0" size="16"></td>
-                      <td>&nbsp;&nbsp;To: </td>
+                      <td>&nbsp;&nbsp;To date: </td>
                       <td><input name="ts1" size="16"></td>
+                      </tr>
+                    <tr>
+                      <td>Refs text: </td>
+                      <td><input name="refs" size="16"></td>
+                      <td colspan="3">
+                        <input type=radio name="refsm" value="0" checked>Contains
+                        <input type=radio name="refsm" value="1">Regex match
+                        </td>
+                      </tr>
+                    <tr>
+                      <td>Comments text: </td>
+                      <td><input name="cmts" size="16"></td>
+                      <td colspan="3">
+                        <input type=radio name="cmtsm" value="0" checked>Contains
+                        <input type=radio name="cmtsm" value="1">Regex match
+                        </td>
                       </tr>
                     <tr>
                       <td colspan="4">
                         Which history record?
                         <input type=radio name="mt" value="0" checked>Any
-                        <input type=radio name="mt" value="1">First
-                        <input type=radio name="mt" value="-1">Last
+                        <input type=radio name="mt" value="1">Oldest
+                        <input type=radio name="mt" value="-1">Newest
                         </td>
                       </tr>
                     </table>
@@ -383,10 +418,12 @@
                 </tr>
               <tr>
                 <td colspan="2"><span class="notes">
-                  <b>From</b> and <b>To</b> format is YYYY/MM/DD hh:mm.
-                  "hh:mm" is optional and if not given, 00:00 will be used for <b>From</b>,
-                  23:59 for <b>To</b>.
-                  All dates and times are UTC.</span>
+                  * <b>From date</b> and <b>To date</b> format is YYYY/MM/DD hh:mm.
+                  The time part is optional and if not given, 00:00 will be used for <b>From date</b>,
+                  23:59 for <b>To date</b>.  Dates and times are UTC.<br>
+                  * When multiple History search criteria are given, all much match within a single
+                  history record.
+                  </span>
                   </td>
                 </tr>
 
