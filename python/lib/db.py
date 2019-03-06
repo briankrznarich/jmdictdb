@@ -4,6 +4,7 @@ from psycopg2.extras import DictCursorBase
 from psycopg2 import Error, Warning, InterfaceError, DatabaseError, \
     DataError, OperationalError,IntegrityError, InternalError, \
     ProgrammingError, NotSupportedError
+from psycopg2.extensions import QueryCanceledError
 
 dbapi = psycopg2
 
