@@ -21,8 +21,8 @@
 import sys, cgi, copy, time
 sys.path.extend (['../lib','../../python/lib','../python/lib'])
 import logger; from logger import L; logger.enable()
-import jdb, jmcgi, serialize, jelparse
-
+import jdb, jmcgi, serialize, jelparse, db   # db is imported only for
+                                             #  access to dbapi exceptions.
 def main( args, opts ):
         jdb.reset_encoding (sys.stdout, 'utf-8')
         errs = []; so = None; stats = {}
@@ -105,29 +105,21 @@ def main( args, opts ):
 
         if errs: jmcgi.err_page (errs)
 
+        if not hasattr (cfg_srch, 'SEARCH_TIMEOUT'): srch_timeout = 3000
+        else: srch_timeout = cfg_srch.SEARCH_TIMEOUT
         orderby = "ORDER BY __wrap__.kanj,__wrap__.rdng,__wrap__.seq,__wrap__.id"
         page = "OFFSET %s LIMIT %s" % (pgoffset, entrs_per_page)
         sql2 = "SELECT __wrap__.* FROM esum __wrap__ " \
                  "JOIN (%s) AS __user__ ON __user__.id=__wrap__.id %s %s" \
                   % (sql, orderby, page)
         stats['sql']=sql; stats['args']=sql_args; stats['orderby']=orderby
-        if cfg_srch.MAX_QUERY_COST > 0:
-            try:
-                cost = jdb.get_query_cost (cur, sql2, sql_args);
-            except Exception as e:
-                jmcgi.err_page (errs=[str(e)], cssclass="errormsg",
-                    prolog="Database error (%s)" % e.__class__.__name__)
-            stats['cost']=cost;
-            if cost > cfg_srch.MAX_QUERY_COST:
-                jmcgi.err_page (
-                       ["The search request you made will likely take too "
-                        "long to execute.  Please use your browser's \"back\" "
-                        "button to return to the search page and add more "
-                        "criteria to restrict your search more narrowly. "
-                        "(The estimated cost was %.1f, max allowed is %d.)"
-                        % (cost, cfg_srch.MAX_QUERY_COST)])
         t0 = time.time()
-        try: rs = jdb.dbread (cur, sql2, sql_args)
+        try: rs = jdb.dbread (cur, sql2, sql_args, timeout=srch_timeout)
+        except db.QueryCanceledError as e:
+            msg = "The database query took too long to execute.  Please "\
+                "make your search more specific."
+            jmcgi.err_page (errs=[msg], cssclass="errormsg",
+                prolog="Database error (%s)" % e.__class__.__name__)
         except Exception as e:          #FIXME, what exception value(s)?
             jmcgi.err_page (errs=[str(e)], cssclass="errormsg",
                 prolog="Database error (%s)" % e.__class__.__name__)
@@ -143,7 +135,7 @@ def main( args, opts ):
               # for performace reasons, even though the number of entries
               # may change before the user gets to the last page.
                 sql3 = "SELECT COUNT(*) AS cnt FROM (%s) AS i " % sql
-                cntrec = jdb.dbread (cur, sql3, sql_args)
+                cntrec = jdb.dbread (cur, sql3, sql_args, timeout=srch_timeout)
                 pgtotal = cntrec[0][0]  # Total number of entries.
             else: pgtotal = reccnt
         if reccnt == 1 and pgtotal == 1 and not force_srchres:

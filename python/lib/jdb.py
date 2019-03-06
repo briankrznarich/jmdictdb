@@ -30,11 +30,12 @@ Debug = {}
 
 class AuthError (Exception): pass
 
-def dbread (cur, sql, args=None, cols=None, cls=None):
+def dbread (cur, sql, args=None, cols=None, cls=None, timeout=None):
         # Execute a result returning sql statement(s) and return the
         # result set as a list of 'cls' object, one object per row.
         #
         # cur -- Open DBAPI cursor object.
+        # sql -- (str) SQL statement to execute.
         # args -- (optional) A list of args corresponding to parameter
         #       markers in the sql statement.  May be omitted, None, or
         #       an empty sequence if 'sql' contains no pmarks.
@@ -44,6 +45,11 @@ def dbread (cur, sql, args=None, cols=None, cls=None):
         # cls -- (optional) A class that will be used for row objects.
         #       Must be a class, not a factory function.  If not given,
         #       DbRow will be used.
+        # timeout -- (optional) Timeout value (int) in milliseconds or None.
+        #       If not None, runs the 'sql' statement after starting a
+        #       transaction and setting Postgresql's 'statement_timeout'
+        #       value to 'timeout'.  The 'set' is done with the "local"
+        #       option so previous value is restored before returning.
 
           # If there are no args, set args (which might be [], or ())
           # to None to avoid bug in psycopg2 (at least version 2.0.7)
@@ -55,6 +61,15 @@ def dbread (cur, sql, args=None, cols=None, cls=None):
           # See: http://www.nabble.com/DB-API-corner-case-(psycopg2)-td18774677.html
         if not args: args = None
           # Execute the sql in a try statement to catch any errors.
+        if timeout:
+              # Note that this has to be executed separately from the
+              # the sql statement subject to timeout since the timeout
+              # is applied to the statement(s) that follow the "set
+              # statement_timeout statement.  The "local" option
+              # restricts the timeout to statement withing the containing
+              # transaction, hence the "begin" statement.
+            sqlsett = "BEGIN; SET LOCAL statement_timeout=%s" % timeout
+            cur.execute (sqlsett);
         try: cur.execute (sql, args)
         except dbapi.Error as e:
               # If the execute failed, append the sql and args to the
@@ -69,7 +84,7 @@ def dbread (cur, sql, args=None, cols=None, cls=None):
               # Catch any errors from this operation to prevent them from
               # being raised, rather than the original error.
             try: cur.execute ("ROLLBACK")
-            except dbi.Error: pass
+            except dbapi.Error: pass
             raise       # Re-raise the original error.
           # If not given column name by the caller, get them from the cursor.
         if not cols: cols = [x[0] for x in cur.description]
@@ -81,6 +96,7 @@ def dbread (cur, sql, args=None, cols=None, cls=None):
               # FIXME: is there a cleaner way?...
             if cls: x.__class__ = cls
             v.append (x)
+        cur.connection.commit()
         return v
 
 def dbinsert (dbh, table, cols, row, wantid=False):
@@ -137,31 +153,6 @@ def dbexecsp (cursor, sql, args, savepoint_name="sp"):
             raise e
         else:
             cursor.execute ("RELEASE %s" % savepoint_name)
-
-def get_query_cost (cur, sql, sql_args=None):
-        # Return Postgresql's idea of the cost of executing the the
-        # given sql statement with the given args.  The cost is a
-        # float number and in units of estimated disk page fetches.
-        # NOTE: This function is Postgresql specific.
-        # Ref: See the Postgresql Docs, Section VI (SQL Commands), "EXPLAIN".
-
-          # Wrap the explain execution in a BEGIN/ROLLBACK in case it
-          # is (or contains) a statement like "delete" with side effects.
-          # Execute within a try/finally to ensure rollback is done, even
-          # if an exception is raised.
-        cur.execute ("BEGIN")
-        try:
-            if sql_args == []: sql_args = None
-            cur.execute ("EXPLAIN " + sql, sql_args)
-            rs = cur.fetchall()
-        finally:
-            cur.execute ("ROLLBACK")
-        if len(rs) < 1:
-            raise ValueError ("No results received from postgresql EXPLAIN")
-        firstline = rs[0][0]
-        mo = re.search (r'cost=(\d+(\.\d+)?)\.\.(\d+(\.\d+)?)', firstline)
-        if not mo: raise ValueError ("Unexpected result from postgresql EXPLAIN: %s" % firstline)
-        return float (mo.group(3))
 
 def entrFind (cur, sql, args=None):
         if args is None: args = []

@@ -140,10 +140,12 @@ ENABLE_SQL_SEARCH = editors
   # can be used, but users of the srchsql page will get
   # an error if they try to use it.
 
-MAX_QUERY_COST = 2000000
-  # Do not run any search query in web/cgi/srchres.py that has a
-  # cost (as reported by Postgresql's EXPLAIN command) greater
-  # than this number.
+SEARCH_TIMEOUT = 3000
+  # Maximumum time (in millseconds) to allow a search query to
+  # run in the database.  If exceeded, the query will timeout
+  # and and error page shown to the user.  This helps prevent 
+  # denial of service problems that could result from pathological
+  # searches submitted by users.
 
 #======================================================================
 
