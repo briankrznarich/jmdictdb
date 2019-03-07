@@ -20,7 +20,7 @@
 import sys, re, cgi, urllib.request, urllib.parse, urllib.error, os, os.path
 import random, time, http.cookies, datetime, time, copy
 import jdb, fmt
-import jinja; from markupsafe import Markup
+import jinja; from markupsafe import Markup, escape as Escape
 import logger; from logger import L
 
 def initcgi (cfgfilename):
@@ -548,7 +548,20 @@ def htmlprep (entries):
         add_editable_flag (entries)
         add_unreslvd_flag (entries)
         add_pos_flag (entries)
+        linkify_hists (entries)
         rev_hists (entries)
+
+def linkify_hists (entries):
+        """\
+        For every Hist object in each Entr object in the list 'entries',
+        replace the .notes (aka comments) and .refs text strings with
+        values that have had all substrings that look like urls replaced
+        with actual html links."""
+
+        for e in entries:
+            for h in e._hist:
+                h.notes = linkify (h.notes)
+                h.refs = linkify (h.refs)
 
 def add_p_flag (entrs):
         # Add a supplemantary attribute to each entr object in
@@ -1134,6 +1147,60 @@ def like_substr (s):
         # in 's' ("?", "_", "%") and pre- and post-fixing the string with
         # '%' characters.
         t = '%' + re.sub (r'([?_%])', r'\\\1', s) + '%'
+        return t
+
+def linkify (s, newpage=True):
+        """Convert all text substrings in 's' that look like http,
+        https or ftp url's into html <a href=...> links.  Since the
+        return value will be further processed by the Jinja2 template
+        engine which normally html-escapes text prior to output, we
+        manually html-escape the non-url parts of 's' here and return
+        the results as a markupsafe string that Jinja2 will not escape
+        again.  For markupsafe doc see:
+          https://markupsafe.palletsprojects.com/.
+        If 'newpage' is True, the generated links will open the link
+        in a new browser page/tab rather than the same page."""
+
+        if not s: return s
+          # The following regex used to identify urls and is based on:
+          #    https://www.regextester.com/96504
+          # modified to require a url scheme prefix (e.g. "http://") 
+        urlpat = r'''(?:https?|ftp):\/\/(?:(?:[^\s()<>]+|\((?:[^\s()<>]+|(?:\([^\s()<>]+\)))?\))+(?:\((?:[^\s()<>]+|(?:\(?:[^\s()<>]+\)))?\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))?'''
+          # Markup is the markupsafe.Markup() function, Escape is the
+          # markupsafe.escape() function.  The former returns a str
+          # subtype that will not be subject to the html-escaping that
+          # jinja2 does on normal strings.  That latter returns a
+          # different str subtype that is html-escaped and will not
+          # be escaped again by jinja2.
+        t = Markup('');  prev_end = 0;  end = len(s)
+          # Iterate through the urls in 's'.  Each 'mo' is a "re"
+          # module match object for one url.
+        for mo in re.finditer (urlpat, s):
+            start, end = mo.start(), mo.end()
+              # The url text in 's' is at s[start:end].  'prev_end' is
+              # the ending index of the url found before this one.
+              # If there is any non-url text in front of the url,
+              # escape it and append it to the results, 't'.
+            if start > prev_end: t += Escape (s[prev_end:start])
+              # Convert the url text into an html link.
+            url = mo.group(0)
+            targ = ' target="_blank"' if newpage else ''
+              #FIXME? we url-decode the displayed link text since the encoded
+              # form with many %xx values is often unreadable.  But this may be
+              # confusing since it may lead one to look in the database for
+              # for the decoded value when it is actually the encoded value
+              # that is stored.
+            link = '<a href="%s"%s>%s</a>' \
+                   % (url, targ, urllib.parse.unquote(url))
+              # Wrap the link with Markup() so that it won't be escaped
+              # by jinja2 later.
+            t += Markup (link)
+              # Update 'prev_end' for next iteration.
+            prev_end = end
+          # Look for any non-url text after the last url, escape it,
+          # and append to results, 't'.
+        if prev_end < len(s):
+            t +=  Escape (s[prev_end:len(s)])
         return t
 
 def parse_cfg_logfilters (s):
