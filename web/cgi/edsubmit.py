@@ -363,8 +363,8 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
               # but will never return a None, so no need to check return val.
             L('cgi.edsubmit.submission').debug("adding hist for '%s', merge=%s"
                                                % (h.name, merge_rev))
-            entr = jdb.add_hist (entr, pentr, userid,
-                                 h.name, h.email, h.notes, h.refs, merge_rev)
+            entr = jdb.add_hist (entr, pentr, userid, h.name, h.email,
+                                 clean(h.notes), clean(h.refs), merge_rev)
         if not errs:
               # Occasionally, often from copy-pasting, a unicode BOM
               # character finds its way into one of an entry's text
@@ -654,6 +654,14 @@ def logseq (cur, seq, src):
 def url (entrid):
         return '<a href="entr.py?svc=%s&sid=%s&e=%s">%s</a>' \
                  % (Svc, Sid, entrid, entrid)
+
+def clean (s):
+        # Clean up unexpected/unwanted characters in text str 's'.
+        # Currently this consists only of deleting '\r' characters 
+        # that can occur in data pasted into form fields like the
+        # history comments or refs fields. 
+        if not s: return s
+        return s.replace ('\r', '')
 
 def err_page (errs):
         L('cgi.edsubmit.err_page').debug("going to error page. Errors:\n%s"
