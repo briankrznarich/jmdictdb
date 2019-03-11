@@ -118,9 +118,18 @@ def sens (sens, kanjs, rdngs, nsens):
         stagr = fmt.restrtxts (getattr(sens,'_stagr',[]), rdngs, '_stagr')
         _lsrc = [lsrc(x) for x in getattr(sens,'_lsrc',[])]
 
+        a = KW.STAT['A'].id    # get id num for entry "active" status (usu. 2).
         _xref =  ['[' + xref (x)  + ']' for x in getattr (sens, '_xref', [])
                                           if getattr (x, 'SEQ', None) is not False
-                                             and getattr (x, '_xsens', None)!=[]]
+                                               #FIXME? should "None" be "[]"?
+                                             and getattr (x, '_xsens', None)!=[]
+                                               # Exclude xrefs to deleted/rejected entries
+                                               # (i.e. not "active" status).  If no TARG
+                                               # attrib (jdb,augment_xrefs() not previously
+                                               # called on entry) we have no way to tell so
+                                               # format anyway and hope for the best.)
+                                             and a == getattr (getattr (x, 'TARG', None), 'stat', a)]
+
         _xrslv = ['[' + xrslv (x) + ']' for x in getattr (sens, '_xrslv', [])]
 
         kwds  = iif (pos,  '[' + ','.join (pos)  + ']', '')
