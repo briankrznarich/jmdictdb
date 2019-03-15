@@ -122,7 +122,6 @@ CGI_FILES = conj.py \
 WEB_CGI	= $(addprefix $(CGI_DIR)/,$(CGI_FILES))
 
 LIB_FILES = jdb.py \
-	cgitbx.py \
         db.py \
 	edict2.xsl \
 	edparse.py \
