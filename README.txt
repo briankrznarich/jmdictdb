@@ -642,10 +642,10 @@ To change a password:
 ======================================================================
 Notes:
 [*1]
-http://www.csse.monash.edu.au/~jwb/japanese.html
+http://nihongo.monash.edu/Japanese.html
 
 [*2]
-http://www.csse.monash.edu.au/~jwb/edict_doc.html
+http://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project
 
 [*3]
 On Windows the Postgresql password file is typically in
