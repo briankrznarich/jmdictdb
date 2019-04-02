@@ -105,8 +105,7 @@ def main( args, opts ):
 
         if errs: jmcgi.err_page (errs)
 
-        if not hasattr (cfg_srch, 'SEARCH_TIMEOUT'): srch_timeout = 3000
-        else: srch_timeout = cfg_srch.SEARCH_TIMEOUT
+        srch_timeout = cfg_srch.SEARCH_TIMEOUT
         orderby = "ORDER BY __wrap__.kanj,__wrap__.rdng,__wrap__.seq,__wrap__.id"
         page = "OFFSET %s LIMIT %s" % (pgoffset, entrs_per_page)
         sql2 = "SELECT __wrap__.* FROM esum __wrap__ " \

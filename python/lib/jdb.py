@@ -18,7 +18,7 @@
 #  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 #######################################################################
 
-import sys, os, os.path, random, re, datetime, operator, configparser
+import sys, os, os.path, random, re, datetime, operator
 from time import time
 from collections import defaultdict
 import fmtxml
@@ -2554,30 +2554,6 @@ def pmarks (sqlargs):
         "'sqlargs'.  "
 
         return ','.join (('%s',) * len (sqlargs))
-
-def cfgOpen (cfgname):
-        # Open and parse a config file returning the resulting
-        # config.Config() object.  If 'cfgname' contains a path
-        # separator character (either a back- or forward-slash)
-        # it is treated as a filename.  Otherwise it is a path-
-        # less filename that is searched for in sys.path.
-        # To explicitly open a file in the current directory
-        # without searching sys.path, prefix the filename with
-        # "./".
-
-        if '\\' in cfgname or '/' in cfgname:
-            fname = cfgname
-        else:
-            dir = find_in_syspath (cfgname)
-            if not dir:
-                raise IOError (2, 'File not found on sys.path', cfgname)
-            fname = os.path.join (dir, cfgname)
-        cfg = configparser.ConfigParser (interpolation=None)
-          # Disable ConfigParser's normal lowercasing of option names.
-        cfg.optionxform = lambda option: option
-        with open (fname) as cfgfile:
-            cfg.read_file (cfgfile)
-        return cfg
 
 def getSvc (cfg, svcname, readonly=False, session=False):
         # Get the authentication values from config.Config

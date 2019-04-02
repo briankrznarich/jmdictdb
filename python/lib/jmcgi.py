@@ -19,7 +19,7 @@
 
 import sys, re, cgi, urllib.request, urllib.parse, urllib.error, os, os.path
 import random, time, http.cookies, datetime, time, copy
-import jdb, fmt
+import jdb, config, fmt
 import jinja; from markupsafe import Markup, escape as Escape
 import logger; from logger import L
 
@@ -44,11 +44,11 @@ def initcgi (cfgfilename):
           # it is looked for in a directory on sys.path.  If it does have
           # a separator in it it is treated as a normal relative or
           # absolute path.
-        cfg = jdb.cfgOpen (cfgfilename)
-        logfname = cfg.get ('logging', 'LOG_FILENAME', fallback='jmdictdb.log')
-        loglevel = cfg.get ('logging', 'LOG_LEVEL', fallback='warning')
+        cfg = config.cfgOpen (cfgfilename)
+        logfname = cfg.get ('logging', 'LOG_FILENAME')
+        loglevel = cfg.get ('logging', 'LOG_LEVEL')
         filters = parse_cfg_logfilters (
-                   cfg.get ('logging', 'LOG_FILTERS', fallback=''))
+                   cfg.get ('logging', 'LOG_FILTERS'))
         logger.log_config (level=loglevel, filename=logfname, filters=filters)
         return cfg
 
