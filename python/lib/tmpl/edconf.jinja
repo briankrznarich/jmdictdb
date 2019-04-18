@@ -9,9 +9,11 @@
     Please check the entry below carefully.  If it is what you wish
     to submit, click the Submit button.  Otherwise, use your brower's
     <b>Back</b> button to return to the Edit page and make corrections.
-    If you have having a problem entering the information you want,
-    please send email to
-    <a href="mailto:{{cfg.web.CONTACT_EMAIL}}">{{cfg.web.CONTACT_EMAIL}}</a>.
+    {%- if cfg|d and cfg.web.CONTACT_EMAIL|d %}
+      If you have having a problem entering the information you want,
+      please send email to
+      <a href="mailto:{{cfg.web.CONTACT_EMAIL}}">{{cfg.web.CONTACT_EMAIL}}</a>.
+      {% endif %}
     <p class="caution">Your entry has not yet been submitted.</p>
   {% endblock %}
 
