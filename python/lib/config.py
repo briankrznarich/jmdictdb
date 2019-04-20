@@ -59,47 +59,50 @@ DEFAULTS = {
         'user': 'jmdictdb',
         #'pw': 'xxxxxx',
         'session_db': 'db_session', },
-    'db_jmtest': {
-        #'host': 'localhost',
-        'dbname': 'jmtest',
-        #'sel_user': 'jmdictdbv',
-        #'sel_pw': 'xxxxxx',
-        #'user': 'jmdictdb',
-        #'pw': 'xxxxxx',
-        'session_db': 'db_session', },
-    'db_jmnew': {
-        #'host': 'localhost',
-        'dbname': 'jmnew',
-        #'sel_user': 'jmdictdbv',
-        #'sel_pw': 'xxxxxx',
-        #'user': 'jmdictdb',
-        #'pw': 'xxxxxx',
-        'session_db': 'db_session', },
         }
 
-def cfgOpen (cfgname):
-        # Open and parse a config file returning the resulting
-        # config.Config() object.  If 'cfgname' contains a path
-        # separator character (either a back- or forward-slash)
-        # it is treated as a filename.  Otherwise it is a path-
-        # less filename that is searched for in sys.path.
-        # To explicitly open a file in the current directory
-        # without searching sys.path, prefix the filename with
-        # "./".
+def cfgRead (cfgname, pvtname):
+        # Open and parse a config file and optional pvt config
+        # file returning the results as a config.Config() object.
+        # If 'cfgname' contains a path separator character (either
+        # a back- or forward-slash) it is treated as a filename.
+        # Otherwise a file of that name will be searched for in
+        # sys.path.  To explicitly open a file in the current
+        # directory without searching sys.path, prefix the filename
+        # with "./"
+        # Execpt that the first file is mandatory and the second
+        # optional, there is no content restriction on either: any
+        # recognised section can go in either file.  It is only by
+        # convention that we expect the 'pvtname' file to be used
+        # for the "db_*" sections.
 
-        if '\\' in cfgname or '/' in cfgname:
-            fname = cfgname
-        else:
-            d = jdb.find_in_syspath (cfgname)
-            if not d:
-                raise IOError (2, 'File not found on sys.path', cfgname)
-            fname = os.path.join (d, cfgname)
+          # findfile() will raise IOError if unable to find file.
+        cfg_files = [findfile (cfgname)]
+        try: pvtfn = findfile (pvtname)
+        except IOError: pass
+        else: cfg_files.append (pvtfn)
         cfg = configparser.ConfigParser (interpolation=None)
           # Disable ConfigParser's normal lowercasing of option names.
         cfg.optionxform = lambda option: option
           # Set default values.
         cfg.read_dict (DEFAULTS)
-          # Override the defaults with values from the config file.
-        with open (fname) as cfgfile:
-            cfg.read_file (cfgfile)
+        read_files = cfg.read (cfg_files)
+          # Make sure we were able to read 'cfgname'.
+        if cfg_files[0] not in read_files:
+            raise IOError ("Unable to read config file: %s" % cfgfiles[0])
+          #FIXME: would be nice to generate a log warning or info message
+          # if the 'pvtname' file was not read but we can't do that here
+          # because logging is not initialized yet (we need to read the
+          # config files to get the logging settings before initializing
+          # the logging facility.)
         return cfg
+
+def findfile (name):
+        if '\\' in name or '/' in name:
+            fname = name
+        else:
+            d = jdb.find_in_syspath (name)
+            if not d:
+                raise IOError (2, 'File not found on sys.path', name)
+            fname = os.path.join (d, name)
+        return fname

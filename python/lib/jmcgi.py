@@ -23,7 +23,7 @@ import jdb, config, fmt
 import jinja; from markupsafe import Markup, escape as Escape
 import logger; from logger import L
 
-def initcgi (cfgfilename):
+def initcgi (cfgfilename, authfilename=None):
         """
         Does three things:
         1. Fixes any url command line argument so that it is usable by
@@ -32,7 +32,11 @@ def initcgi (cfgfilename):
           script run interactively for debugging.  In the future it may
           also accept an option giving the location of a configuration
           file.
-        2. Reads the configuration file (location currently hardwired.)
+        2. Reads the configuration file and optional auth file.  (The
+          database authorization details can be set in either the main
+          configuration file or in a separate file for only those details
+          allowing permissions on the former to be broader than on the
+          latter.)
         3. Initializes the Python logging system so log messages will have
           a consistent format. JMdictDB developers should not call the
           logger.L function() until after this function is called.
@@ -44,7 +48,7 @@ def initcgi (cfgfilename):
           # it is looked for in a directory on sys.path.  If it does have
           # a separator in it it is treated as a normal relative or
           # absolute path.
-        cfg = config.cfgOpen (cfgfilename)
+        cfg = config.cfgRead (cfgfilename, authfilename)
         logfname = cfg.get ('logging', 'LOG_FILENAME')
         loglevel = cfg.get ('logging', 'LOG_LEVEL')
         filters = parse_cfg_logfilters (
@@ -84,7 +88,16 @@ def parseform (readonly=False):
         cfg (Config inst.) -- Config object from reading config.ini.
         """
 
-        cfg = initcgi ("config.ini")  # Read config, initialize logging.
+          # Read config files and initialize logging.
+          # "config.ini" must exist and be on sys.path.
+          # "config-pvt.ini" also must be on sys.path but is optional.
+          # It is intended for database auth details which must have
+          # restricted access, allowing broader permissions on the main
+          # config.ini file.  If config-pvt.ini does not exist the db
+          # auth info should be provided in the main config.ini file.
+          #FIXME: ini file names shouldn't be hardwired, maybe an
+          #  environment variable or something?
+        cfg = initcgi ("config.ini", "config-pvt.ini")
         L('lib.jmcgi.parseform').debug("called in %s" % sys.modules['__main__'].__file__)
         errs=[]; sess=None; sid=''; cur=None; svc=None
         def_svc = cfg['web'].get ('DEFAULT_SVC', 'jmdict')
