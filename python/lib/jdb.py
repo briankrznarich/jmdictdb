@@ -1302,6 +1302,9 @@ def resolv_xref (dbh, typ, rtxt, ktxt, slist=None, enum=None, corpid=None,
             if rtxt and     jstr_keb (rtxt): ktxt, rtxt = rtxt, ktxt
 
           # Build a string for use in error messages.
+          #FIXME: ktst and rtxt should be quoted if jel would require
+          # quotes to avoid a confusing message when ktxt or rtxt has
+          # middot character since middot also used to join them.
         krtxt = (ktxt or '') + ('\u30fb' if ktxt and rtxt else '') + (rtxt or '')
 
           # Build a SQL statement that will find all entries

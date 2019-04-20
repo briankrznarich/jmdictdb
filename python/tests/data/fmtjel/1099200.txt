@@ -1,4 +1,5 @@
 ﻿
-バッティングセンター；バッティング・センター；バッテイングセンター；バッテイング・センター
-[1][n]
-  batting center; batting centre; batting cage
+バッティングセンター；バッテイングセンター；バッティング・センター；バッテイング・センター
+[1][n][fld=baseb]
+  [lsrc=eng/w:"batting center"]
+  batting practice facility; batting practice center; batting cage

@@ -116,7 +116,7 @@ class RTpure (unittest.TestCase):
     def test0100070(_): check(_,'0100070')  # IS-163.
     def test0100080(_): check(_,'0100080')  # IS-163.
     def test0200010(_): cherr(_,'0200010', jelparse.ParseError,"Syntax Error")
-    def test0200020(_): cherr(_,'0200020', jelparse.ParseError,"Syntax Error")
+    def test0200020(_): cherr(_,'0200020', jelparse.ParseError,"Unknown keyword: 'z'")
 
 class Restr (unittest.TestCase):
     def setUp (_):
@@ -157,14 +157,17 @@ class Xref (unittest.TestCase):
     def test0310060(_): check2(_,'0310060')
     def test0310070(_): check2(_,'0310070')
     def test0310080(_): check2(_,'0310080')
+      # Following test fails, xref senses in sorted order rather than
+      # order given.
     #def test0310090(_): check2(_,'0310090')
     def test0310100(_): check2(_,'0310100')
     def test0310210(_): check2(_,'0310210')
     def test0310310(_): check2(_,'0310310')
     def test0310320(_): check2(_,'0310320')
-    def test0310330(_): check2(_,'0310330')
-
-# 0310090 fails, xref senses in sorted order rather than order given.
+      # Following test disabled for now as there are no longer (as of
+      # 2019-04-20) any entries with both dotted reading# and dotted
+      # kanji that I can find.
+    #def test0310330(_): check2(_,'0310330')
 
 class Ginf (unittest.TestCase):
     def setUp (_):

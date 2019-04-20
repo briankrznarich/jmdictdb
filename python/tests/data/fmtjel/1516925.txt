@@ -8,10 +8,10 @@
 [3][n,n-suf]
   method of; manner of; way of
 [4][n-suf]
-  care of ..
+  care of ...
 [5][n-suf]
   [note="also がた"]
-  person in charge of ..
+  person in charge of ...
 [6][n-suf]
   [note="also がた"]
   side (e.g. "on my mother's side")

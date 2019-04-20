@@ -10,3 +10,6 @@
 [4][n]
   [restr=町; ちょう]
   0.99 hectares
+[5][n]
+  [restr=街]
+  downtown; main street

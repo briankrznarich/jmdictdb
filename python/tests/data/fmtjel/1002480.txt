@@ -1,5 +1,5 @@
 お転婆；御転婆
 おてんば
-[1][adj-na,n]
+[1][adj-na,n][uk]
   [lsrc=dut:ontembaar]
   tomboy

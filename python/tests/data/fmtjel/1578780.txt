@@ -15,3 +15,6 @@
 [5][n][col]
   [restr=もみじ]
   venison
+[6][n]
+  layered colors in garments, resembling autumn colors
+  [see=2833860・紅葉襲[1]]

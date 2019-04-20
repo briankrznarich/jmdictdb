@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import sys, re, unittest, pdb
 if '../lib' not in sys.path: sys.path.append ('../lib')
@@ -107,7 +107,7 @@ class Test_Attrs (unittest.TestCase):
     def test000140(_): attrchk (_, Fld(),     ['entr','sens','ord','kw'])
     def test000150(_): attrchk (_, Dial(),    ['entr','sens','ord','kw'])
     def test000160(_): attrchk (_, Lsrc(),    ['entr','sens','ord','lang','txt','part','wasei'])
-    def test000170(_): attrchk (_, Xref(),    ['entr','sens','xref','typ','xentr','xsens','rdng','kanj','notes'])
+    def test000170(_): attrchk (_, Xref(),    ['entr','sens','xref','typ','xentr','xsens','rdng','kanj','notes','nosens','lowpri'])
     def test000180(_): attrchk (_, Hist(),    ['entr','hist','stat','unap','dt','userid','name','email','diff','refs','notes'])
     def test000190(_): attrchk (_, Grp(),     ['entr','kw','ord','notes'])
     def test000200(_): attrchk (_, Cinf(),    ['entr','kw','value','mctype'])
