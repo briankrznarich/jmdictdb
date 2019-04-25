@@ -225,7 +225,7 @@ def get_entr_cands (dbconn, xref_src, targ_src, start=None, stop=None,
         whr = " AND ".join([c for c in [c1,c2,c3,c4,c5] if c])
         if whr: whr = "WHERE " + whr
         args = tuple (args1 + args2)
-        sql = "SELECT * FROM rslv v %s"\
+        sql = "SELECT * FROM vrslv v %s"\
               " ORDER BY entr,sens,typ,ord,targ" % whr
         L().debug("sql: %s" % sql)
         L().debug("args: %r" % (args,))
@@ -367,7 +367,7 @@ def unrefcount (rows):
           # Count and return the number of unique unresolved xrefs in
           # a set of candidate rows.  Since a single unresolved xref
           # may have multiple candidates the number may be smaller than
-          # the length of 'rows'.  The view "rslv" which is the source
+          # the length of 'rows'.  The view "vrslv" which is the source
           # of 'rows' guarantees there will be at least on row for each
           # unresolved xref.
         count = set()
@@ -568,99 +568,3 @@ def parse_cmdline (cmdln_args):
         return args
 
 if __name__ == '__main__': main (sys.argv)
-
-
-##  For reference this is the SQL for the "rslv" (and supporting "rkv")
-##  queries used in the get_candidates() function above.
-##
-##  ----------------------------------------------------------------------------
-##  -- Support view for "rslv" below.  Return reading and kanji information
-##  -- information for entries taking into account restr restrictions.
-##CREATE OR REPLACE VIEW rkv AS (
-##    SELECT e.id,e.src,e.stat,e.unap,
-##           r.rdng,r.txt AS rtxt,rk.kanj,rk.txt AS ktxt,
-##           (SELECT COUNT(*) FROM sens s WHERE s.entr=e.id) AS nsens
-##    FROM entr e
-##    JOIN rdng r ON r.entr=e.id
-##    LEFT JOIN
-##        (SELECT r.entr,r.rdng,k.kanj,k.txt
-##        FROM rdng r
-##        LEFT JOIN kanj k ON k.entr=r.entr
-##        LEFT JOIN restr j ON j.entr=r.entr AND j.rdng=r.rdng AND j.kanj=k.kanj
-##        WHERE j.rdng IS NULL) AS rk ON rk.entr=r.entr AND rk.rdng=r.rdng);
-##
-##  ----------------------------------------------------------------------------
-##  -- This view is used by xresolv.py for finding entries that could
-##  -- possibly be the intended targets of unresolved xrefs in table
-##  -- "xresolv".
-##  -- It joins the rows in xresolve to entries based on a common reading
-##  -- text, kanji text, or both.  Because the joins vary depending on the
-##  -- join column there are three separate SELECTs, one for each case,
-##  -- UNIONed together.
-##  -- There may be multiple (or no) entries that have kanji or a reading
-##  -- matching an xresolv row so a particular xresolv row may result in
-##  -- 0 or multiple rows returned.  This view provides data in additional
-##  -- columns that is intended to allow for a reasonable guess at which
-##  -- entry is the intended target (or that no reasonable guess is justified)
-##  -- in the case of multiple matches.
-##
-##CREATE OR REPLACE VIEW rslv AS (
-##    -- Query for xresolv with both 'rtxt' and 'ktxt'
-##    SELECT v.seq, v.src, v.stat, v.unap, v.entr, v.sens, v.typ, v.ord,
-##           v.rtxt, v.ktxt, v.tsens, v.notes, v.prio,
-##           c.src AS tsrc, c.stat AS tstat, c.unap AS tunap,
-##           count(*) AS nentr, min(c.id) AS targ,
-##           c.rdng, c.kanj, FALSE AS nokanji,
-##           max(c.nsens) AS nsens
-##    FROM (SELECT z.*,seq,src,stat,unap
-##          FROM xresolv z JOIN entr e ON e.id=z.entr
-##          WHERE ktxt IS NOT NULL AND rtxt IS NOT NULL)
-##          AS v
-##    LEFT JOIN rkv c ON v.rtxt=c.rtxt AND v.ktxt=c.ktxt
-##    GROUP BY v.seq,v.src,v.stat,v.unap,v.entr,v.sens,v.typ,v.ord,v.rtxt,v.ktxt,
-##             v.tsens,v.notes,v.prio, c.src,c.stat,c.unap,c.rdng,c.kanj
-##    UNION
-##
-##    -- Query for xresolv with only rtxt
-##    SELECT v.seq, v.src, v.stat, v.unap, v.entr, v.sens, v.typ, v.ord,
-##           v.rtxt, v.ktxt, v.tsens, v.notes, v.prio,
-##           c.src AS tsrc, c.stat AS tstat, c.unap AS tunap,
-##           count(*) AS nentr, min(c.id) AS targ,
-##           c.rdng, NULL AS kanj, nokanji, max(c.nsens) AS nsens
-##    FROM
-##       (SELECT z.*,seq,src,stat,unap
-##        FROM xresolv z JOIN entr e ON e.id=z.entr
-##        WHERE ktxt IS NULL AND rtxt IS NOT NULL )
-##        AS v
-##    LEFT JOIN
-##       (SELECT e.id,e.src,e.stat,e.unap,r.txt as rtxt,r.rdng,
-##                 -- The "not exists..." clause below is true if there
-##                 -- are no kanj table rows for the entry.
-##               (NOT EXISTS (SELECT 1 FROM kanj k WHERE k.entr=e.id))
-##                 -- This cause is true if this reading is tagged <nokanji>.
-##                 OR j.rdng IS NOT NULL AS nokanji,
-##               (SELECT count(*) FROM sens s WHERE s.entr=e.id) AS nsens
-##        FROM entr e JOIN rdng r ON r.entr=e.id
-##        LEFT JOIN re_nokanji j ON j.id=e.id AND j.rdng=r.rdng)
-##        AS c ON (v.rtxt=c.rtxt)
-##    GROUP BY v.seq,v.src,v.stat,v.unap,v.entr,v.sens,v.typ,v.ord,v.rtxt,v.ktxt,
-##             v.tsens,v.notes,v.prio, c.src,c.stat,c.unap,c.rdng,c.nokanji
-##    UNION
-##
-##    -- Query for xresolv with only ktxt
-##    SELECT v.seq, v.src, v.stat, v.unap, v.entr, v.sens, v.typ, v.ord,
-##           v.rtxt, v.ktxt, v.tsens, v.notes, v.prio,
-##           c.src AS tsrc, c.stat AS tstat, c.unap AS tunap,
-##           count(*) AS nentr, min(c.id) AS targ,
-##           NULL AS rdng, c.kanj, NULL AS nokanji, max(c.nsens) AS nsens
-##    FROM
-##       (SELECT z.*,seq,src,stat,unap FROM xresolv z JOIN entr e ON e.id=z.entr
-##        WHERE rtxt IS NULL AND ktxt IS NOT NULL )
-##        AS v
-##    LEFT JOIN
-##       (SELECT e.id,e.src,e.stat,e.unap,k.txt as ktxt,k.kanj,
-##               (SELECT count(*) FROM sens s WHERE s.entr=e.id) AS nsens
-##        FROM entr e JOIN kanj k ON k.entr=e.id)
-##        AS c ON (v.ktxt=c.ktxt)
-##    GROUP BY v.seq,v.src,v.stat,v.unap,v.entr,v.sens,v.typ,v.ord,v.rtxt,v.ktxt,
-##             v.tsens,v.notes,v.prio, c.src,c.stat,c.unap,c.kanj);
