@@ -52,30 +52,23 @@ from jelparse import lookup_tag, ParseError
 from iso639maps import iso639_1_to_2
 
 def entr (text, simple=False):
-        fmap = collections.defaultdict (lambda:([list(),list()]))
-        #krtxt, x, stxt = text.partition ('/')
+         #krtxt, x, stxt = text.partition ('/')
         try: krtxt, stxt = re.split ('[ \t\u3000]*/[ \t\u3000]*', text, 1)
         except ValueError as e:
             raise ParseError ('Missing KR-S separator, "/"')
-        kanjs, rdngs = parse_jppart (krtxt, fmap)
+        kanjs, rdngs = parse_jppart (krtxt)
         entr = Entr (_kanj=kanjs, _rdng=rdngs)
-        sens = parse_spart (stxt.lstrip(), entr, fmap)
-        errs = jdb.make_freq_objs (fmap, entr)
-        for err in errs:
-            errtyp, r, k, kw, val = err
-            raise ParseError ("%s freq tag(s) %s%s in %s%s%s"
-                  % (errtyp, KW.FREQ[kw].kw, val, k or '',
-                    '\u30FB' if k and r else '', r or ''))
+        sens = parse_spart (stxt.lstrip(), entr)
         return entr
 
-def parse_jppart (krtxt, fmap):
+def parse_jppart (krtxt):
         # 'krtxt', the jp part of an Edict2 line, may look like either
         # "K [R]" or just "R".  (It may also have trailing whitespace.)
         # FIXME? We split K and R on whitespace making the brackets
         # around R optional.  Could also reasonably split on the "["
         # making the whitespace between K and [R] optional (and also
         # permitting whitespace within K and R).  Note that we cannot
-        # easilty use jstr_reb(), et.al. tests here because the reading
+        # easily use jstr_reb(), et.al. tests here because the reading
         # text can contain non-reb text like "[", ";", "(", etc.
         # To write an edict2 line that is has kanji but no reading,
         # use "[]" for the reading.
@@ -84,21 +77,21 @@ def parse_jppart (krtxt, fmap):
         parts = re.split('[ \t\u3000]+', krtxt, 1)
         if len (parts) == 1: ktxt, rtxt = '', parts[0]
         else: ktxt, rtxt = parts
-        if ktxt: kanjs = parse_krpart (ktxt.strip(), fmap)
+        if ktxt: kanjs = parse_krpart (ktxt.strip())
         else: kanjs = []
-        if rtxt: rdngs = parse_krpart (rtxt.strip('[] '), fmap, kanjs)
+        if rtxt: rdngs = parse_krpart (rtxt.strip('[] '), kanjs)
         else: rdngs = []
         return kanjs, rdngs
 
-def parse_krpart (krtext, fmap, kanjs=None):
+def parse_krpart (krtext, kanjs=None):
         # Parse the edict2 text section 'krtext', interpreting it as a
         # kanji section if 'kanjs' is None or as a reading segment if
         # 'kanjs is not None.
-        # 'fmap' is a dict in which we accumulate freq tags
-        # for later processing.  If we are parsing a reading section,
-        # the caller needs to supply 'kanjs', a list of Kanj objects
-        # resulting from the earlier parse of the kanji section.  These
-        # are needed to resolve any "restr" items in the readings.
+        #
+        # If we are parsing a reading section, the caller needs to supply
+        # 'kanjs', a list of Kanj objects resulting from the earlier parse
+        # of the kanji section.  These are needed to resolve any "restr"
+        # items in the readings.
         #
         # Whether parsing a kanji section or a reading section, the section
         # is expected to consist of number of kanji or reading words
@@ -153,11 +146,11 @@ def parse_krpart (krtext, fmap, kanjs=None):
 
           # Parse each kanji or reading item idividually.
         for kr in krlist:
-            krobj = parse_kritem (kr, fmap, kanjs)
+            krobj = parse_kritem (kr, kanjs)
             if krobj: krobjs.append (krobj)
         return krobjs
 
-def parse_kritem (text, fmap, kanjs=None):
+def parse_kritem (text, kanjs=None):
         # 'text' is a single kanji or reading item.
         a = text.split ('(')
         krtxt = a.pop (0)
@@ -167,14 +160,14 @@ def parse_kritem (text, fmap, kanjs=None):
             tags.remove ('P')
             if 'P' in tags: pass #raise ParseError ('Duplicate "P" tag ignored')
         if kanjs is None:
-            krobj = parse_kitem (krtxt, tags, fmap)
+            krobj = parse_kitem (krtxt, tags)
         else:
-            krobj = parse_ritem (krtxt, tags, fmap, kanjs)
+            krobj = parse_ritem (krtxt, tags, kanjs)
         if ptag:
-            add_spec1 (fmap, krobj, 'k' if kanjs is None else 'r')
+            add_spec1 (krobj)
         return krobj
 
-def parse_ritem (rtxt, tags, fmap, kanjs):
+def parse_ritem (rtxt, tags, kanjs):
           # FIXME: Following check disabled because the jdb.jstr__reb()
           #  test as cutrrently written is too strict and rejects some
           #  texts that should be allowed (see IS-26).  More immediately
@@ -193,13 +186,15 @@ def parse_ritem (rtxt, tags, fmap, kanjs):
             if t:
                 tagtyp, tagval = t[0]
                 if   tagtyp == 'RINF': rdng._inf.append (Rinf(kw=tagval))
-                elif tagtyp == 'FREQ': fmap[t[1:]][0].append (rdng)
+                elif tagtyp == 'FREQ':
+                      #FIXME: should check for dupl. tags.
+                    rdng._freq.append (Freq (kw=t[1], value=t[2]))
             else:
                 raise ParseError ('Unknown tag "%s" on reading "%s"' % (tag, rtxt))
 
         return rdng
 
-def parse_kitem (ktxt, tags, fmap):
+def parse_kitem (ktxt, tags):
         if not jdb.jstr_keb (ktxt):
             raise ParseError ('Kanji field not kanji: "%s".' % ktxt)
         kanj = Kanj (txt=ktxt)
@@ -209,7 +204,9 @@ def parse_kitem (ktxt, tags, fmap):
             if t:
                 tagtyp, tagval = t[0]
                 if   tagtyp == 'KINF': kanj._inf.append (Kinf(kw=tagval))
-                elif tagtyp == 'FREQ': fmap[t[1:]][1].append (kanj)
+                elif tagtyp == 'FREQ':
+                      #FIXME: should check for dupl. tags.
+                    kanj._freq.append (Freq (kw=t[1], value=t[2]))
             else:
                 raise ParseError ('Unknown tag "%s" on kanji "%s"' % (tag, ktxt))
         return kanj
@@ -221,14 +218,12 @@ def parse_restrs (rdng, tag, kanjs):
         for err in  errs:
             raise ParseError ('Reading restriction "%s" doesn\'t match any kanji' % err)
 
-def add_spec1 (fmap, krobj, typ):
-        freq = (jdb.KW.FREQ['spec'].id, 1)
-        if   typ == 'r': listidx = 0
-        elif typ == 'k': listidx = 1
-        else: raise ValueError (typ)
-        fmap[freq][listidx].append (krobj)
+def add_spec1 (krobj):
+        kw, value = (jdb.KW.FREQ['spec'].id, 1)
+        if (kw, value) not in [(x.kw,x.value) for x in krobj._freq]:
+            krobj._freq.append (jdb.Freq (kw=kw, value=value))
 
-def parse_spart (txt, entr, fmap):
+def parse_spart (txt, entr):
         kanjs = getattr (entr, '_kanj', [])
         rdngs = getattr (entr, '_rdng', [])
         gtxts = txt.split('/')
@@ -241,10 +236,9 @@ def parse_spart (txt, entr, fmap):
             gtxt = gtxt.strip()
             if gtxt == '': continue
             elif gtxt == '(P)':
-                fklist, frlist = fmap[(jdb.KW.FREQ['spec'].id,1)]
-                  # If a "spec1" has already been applied to any kanji or
-                  # reading, this sense (P) tag is redundent and can be ignored.
-                if fklist or frlist: continue
+                  # If we already have a freq tag that makes this entry a
+                  # P, this sense (P) tag is redundent and can be ignored.
+                if jdb.is_p (entr): continue
                 if len(kanjs) > 1  or len(rdngs) > 1:
                       # If there is more than 1 kanji or reading, then at least
                       # one of them should have a "spec1" tag applied as a result
@@ -254,8 +248,8 @@ def parse_spart (txt, entr, fmap):
                   # not required so we assign the corresponding "spec1" tag on
                   # them here.  (Also assign if multiple kanji/readings since
                   # warning has been given.)
-                if kanjs: add_spec1 (fmap, kanjs[0], "k")
-                if rdngs: add_spec1 (fmap, rdngs[0], "r")
+                if kanjs: add_spec1 (kanjs[0])
+                if rdngs: add_spec1 (rdngs[0])
                 continue
             mo = re.match (r'^EntL([0-9]+)', gtxt)
             if mo:

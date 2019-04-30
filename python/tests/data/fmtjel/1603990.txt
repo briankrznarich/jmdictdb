@@ -1,15 +1,16 @@
 ﻿町[ichi1,news1,nf02]；街
 まち[ichi1,news1,nf02]；ちょう[町]
 [1][n]
+  [note="esp. 町"]
   town; block; neighbourhood; neighborhood
 [2][n]
-  street; road
-[3][n]
-  [restr=町; ちょう]
-  109.09 m
-[4][n]
-  [restr=町; ちょう]
-  0.99 hectares
-[5][n]
   [restr=街]
   downtown; main street
+[3][n]
+  street; road
+[4][n]
+  [restr=町; ちょう]
+  109.09 m
+[5][n]
+  [restr=町; ちょう]
+  0.99 hectares

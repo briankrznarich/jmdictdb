@@ -264,15 +264,8 @@ class Jmparser (object):
 
         corpname = elem.findtext('ent_corp')
         if corpname is not None: entr.src = corp_dict[corpname].id
-        fmap = defaultdict (lambda:([],[]))
-        self.do_kanjs (elem.findall('k_ele'), entr, fmap)
-        self.do_rdngs (elem.findall('r_ele'), entr, fmap)
-        if fmap:
-            freq_errs = jdb.make_freq_objs (fmap, entr)
-            for x in freq_errs:
-                typ, r, k, kw, val = x
-                kwstr = XKW.FREQ[kw].kw + str (val)
-                self.freq_warn (typ, r, k, kwstr)
+        self.do_kanjs (elem.findall('k_ele'), entr)
+        self.do_rdngs (elem.findall('r_ele'), entr)
         self.do_senss (elem.findall('sense'), entr, xlit, xlang)
         self.do_senss (elem.findall('trans'), entr, xlit, xlang)
         self.do_info  (elem.findall("info"), entr)
@@ -289,45 +282,51 @@ class Jmparser (object):
         if x: entr.notes = x
         self.do_hist (elem.findall("audit"), entr)
 
-    def do_kanjs (self, elems, entr, fmap):
+    def do_kanjs (self, elems, entr):
         if elems is None: return
-        kanjs = []; dupchk = {}
+        kanjs = []; dupchk_keb = {}
         for ord, elem in enumerate (elems):
             txt = elem.find('keb').text
-            if not jdb.unique (txt, dupchk):
-                self.warn ("Duplicate keb text: '%s'" % txt); continue
+            if not jdb.unique (txt, dupchk_keb):
+                self.warn ("Duplicate keb text: '%s'" % txt)
+                continue
             if not (jdb.jstr_keb (txt)):
                 self.warn ("keb text '%s' not kanji." % txt)
             kanj = jdb.Kanj (kanj=ord+1, txt=txt)
             self.do_kws (elem.findall('ke_inf'), kanj, '_inf', 'KINF')
+            dupchk_freq = {}
             for x in elem.findall ('ke_pri'):
-                freqtuple = self.parse_freq (x.text, "ke_pri")
-                if not freqtuple: continue
-                klist = fmap[freqtuple][1]
-                if not jdb.isin (kanj, klist): klist.append (kanj)
-                else: self.freq_warn ("Duplicate", None, kanj, x.text)
+                fkw, fval = self.parse_freq (x.text, "ke_pri")
+                if not fkw: continue
+                if not jdb.unique ((fkw, fval), dupchk_freq):
+                    self.freq_warn ("Duplicate", None, kanj, x.text)
+                    continue
+                kanj._freq.append (jdb.Freq(kw=fkw, value=fval))
             kanjs.append (kanj)
         if kanjs: entr._kanj = kanjs
 
-    def do_rdngs (self, elems, entr, fmap):
+    def do_rdngs (self, elems, entr):
         if elems is None: return
         rdngs = getattr (entr, '_rdng', [])
         kanjs = getattr (entr, '_kanj', [])
-        rdngs = []; dupchk = {}
+        rdngs = []; dupchk_reb = {}
         for ord, elem in enumerate (elems):
             txt = elem.find('reb').text
-            if not jdb.unique (txt, dupchk):
-                self.warn ("Duplicate reb text: '%s'" % txt); continue
+            if not jdb.unique (txt, dupchk_reb):
+                self.warn ("Duplicate reb text: '%s'" % txt)
+                continue
             if not jdb.jstr_reb (txt):
                 self.warn ("reb text '%s' not kana." % txt)
             rdng = jdb.Rdng (rdng=ord+1, txt=txt)
             self.do_kws (elem.findall('re_inf'), rdng, '_inf', 'RINF')
+            dupchk_freq = {}
             for x in elem.findall ('re_pri'):
-                freqtuple = self.parse_freq (x.text, "re_pri")
-                if not freqtuple: continue
-                rlist = fmap[freqtuple][0]
-                if not jdb.isin (rdng, rlist): rlist.append (rdng)
-                else: self.freq_warn ("Duplicate", rdng, None, x.text)
+                fkw, fval = self.parse_freq (x.text, "re_pri")
+                if not fkw: continue
+                if not jdb.unique ((fkw, fval), dupchk_freq):
+                    self.freq_warn ("Duplicate", rdng, None, x.text)
+                    continue
+                rdng._freq.append (jdb.Freq(kw=fkw, value=fval))
             nokanji = elem.find ('re_nokanji')
             self.do_restr (elem.findall('re_restr'), rdng, kanjs, 'restr', nokanji)
             self.do_audio (elem.findall("audio"), rdng, jdb.Rdngsnd)
@@ -634,12 +633,12 @@ class Jmparser (object):
         mo = re.match (r'^([a-z]+)(\d+)$', fstr)
         if not mo:
             self.warn ("Invalid %s, '%s'" % (ptype, fstr))
-            return None
+            return None, None
         kwstr, val = mo.group (1,2)
         try: kw = XKW.FREQ[kwstr].id
         except KeyError:
             self.warn ("Unrecognised %s, '%s'" % (ptype, fstr))
-            return None
+            return None, None
         val = int (val)
         #FIXME -- check for invalid values in 'val'.
         return kw, val

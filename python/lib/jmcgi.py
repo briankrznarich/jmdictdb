@@ -1046,10 +1046,10 @@ def _freqcond (freq, nfval, nfcmp, gaval, gacmp):
         # gaval -- String containing a gA number.
         # gacmp -- Same as nfcmp.
 
-        # Freq items consist of a domain (such as "ichi" or "nf")
+        # Freq items consist of a scale (such as "ichi" or "nf")
         # and a value (such as "1" or "35").
         # Process the checkboxes by creating a hash indexed by
-        # by domain and with each value a list of freq values.
+        # by scale and with each value a list of freq values.
 
         KW = jdb.KW
         x = {};  inv = ''
@@ -1061,27 +1061,27 @@ def _freqcond (freq, nfval, nfcmp, gaval, gacmp):
             freq.remove ('P')
             freq = list (set (freq + ['ichi1','gai1','news1','spec1']))
         for f in freq:
-              # Split into text (domain) and numeric (value) parts.
+              # Split into text (scale) and numeric (value) parts.
             match = re.search (r'^([A-Za-z_-]+)(\d*)$', f)
-            domain, value = match.group(1,2)
-            if domain == 'nf': have_nf = True
-            elif domain == 'gA': have_gA = True
+            scale, value = match.group(1,2)
+            if scale == 'nf': have_nf = True
+            elif scale == 'gA': have_gA = True
             else:
-                  # Append this value to the domain list.
-                x.setdefault (domain, []).append (value)
+                  # Append this value to the scale list.
+                x.setdefault (scale, []).append (value)
 
-        # Now process each domain and it's list of values...
+        # Now process each scale and it's list of values...
 
         whr = []
         for k,v in list(x.items()):
-              # Convert the domain string to a kwfreq table id number.
+              # Convert the scale string to a kwfreq table id number.
             kwid = KW.FREQ[k].id
 
               # The following assumes that the range of values are
               # limited to 1 and 2.
 
               # As an optimization, if there are 2 values, they must be 1 and 2,
-              # so no need to check value in query, just see if the domain exists.
+              # so no need to check value in query, just see if the scale exists.
               # FIXME: The above is false, e.g., there could be two "1" values.
               # FIXME: The above assumes only 1 and 2 are allowed.  Currently
               #   true but may change in future.

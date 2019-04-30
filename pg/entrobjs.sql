@@ -1,4 +1,4 @@
--- This file defines the tables that contain corpra entry data.
+-- This file defines the tables that contain corpora entry data.
 -- It is included by both the main mktables.sql script that is 
 -- run when a new JMdictDB database is created and by imptabs.sql
 -- which creates a copy of the tables in a separate schema for
@@ -71,7 +71,8 @@ CREATE TABLE gloss (
       PRIMARY KEY (entr,sens,gloss),
     lang SMALLINT NOT NULL DEFAULT 1
       REFERENCES kwlang(id),
-    ginf SMALLINT NOT NULL DEFAULT 1,
+    ginf SMALLINT NOT NULL DEFAULT 1
+      REFERENCES kwginf(id),
     txt VARCHAR(2048) NOT NULL);
 CREATE INDEX ON gloss(txt); 
 CREATE UNIQUE INDEX ON gloss(entr,sens,lang,txt);
@@ -140,16 +141,27 @@ CREATE TABLE fld (
 CREATE TABLE freq (
     entr INT NOT NULL,
     rdng SMALLINT NULL,
-      FOREIGN KEY (entr,rdng) REFERENCES rdng(entr,rdng) ON DELETE CASCADE ON UPDATE CASCADE,
+      FOREIGN KEY (entr,rdng) REFERENCES rdng(entr,rdng)
+        ON DELETE CASCADE ON UPDATE CASCADE,
     kanj SMALLINT NULL,
-      FOREIGN KEY (entr,kanj) REFERENCES kanj(entr,kanj) ON DELETE CASCADE ON UPDATE CASCADE,
+      FOREIGN KEY (entr,kanj) REFERENCES kanj(entr,kanj)
+        ON DELETE CASCADE ON UPDATE CASCADE,
     kw SMALLINT NOT NULL
       REFERENCES kwfreq(id),
     value INT,
-      UNIQUE (entr,rdng,kanj,kw),
-      CHECK (rdng NOTNULL OR kanj NOTNULL)) 
-    WITH OIDS;
-CREATE UNIQUE INDEX ON freq(entr,(coalesce(rdng,999)),(coalesce(kanj,999)),kw); 
+        -- Make sure either rdng or kanj is present but not both.
+      CHECK (rdng NOTNULL != (kanj NOTNULL)),
+      -- Note that in an index NULLs are always considered not equal so that
+      -- a single UNIQUE index on all 5 columns will still allow insertion
+      -- of duplicate rows since either 'rdng' or 'kanj' will be NULL and
+      -- thus always be considered different than any present rows.
+      -- Also we want to allow multiple freq values with the same domain on
+      -- the same rdng/kanj: eg both nf11 and nf21 on the same kanji.  Such
+      -- values occur in JMdict entries as a result kanji-reading pairs where
+      -- the pair may have a different value than just the reading or kanji
+      -- by itself.
+    UNIQUE (entr,kanj,kw,value),
+    UNIQUE (entr,rdng,kw,value));
 
 CREATE TABLE kinf (
     entr INT NOT NULL,

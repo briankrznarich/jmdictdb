@@ -39,10 +39,6 @@ class ParseError (ValueError):
 entr    : preentr
                 { p.lexer.begin('INITIAL')
                 e = p[1]
-                  # The Freq objects on the readings are inependent of
-                  # those on the kanjis.  The following function merges
-                  # common values.
-                merge_freqs (e)
                   # Set the foreign key ids since they will be used
                   # needed by mk_restrs() below.
                 jdb.setkeys (e, None)
@@ -675,14 +671,7 @@ def bld_rdng (r, taglist=[]):
                     typ, t = v[0][0], v[0][1:]
             if typ == 'RINF': append (r, '_inf', jdb.Rinf(kw=t[0]))
             elif typ == 'FREQ':
-                  # _freq objects are referenced by both the reading and
-                  # kanji _freq lists.  Since we don't have access to
-                  # the kanj here, temporarily save the freq (kw, value)
-                  # tuple in attribute "._FREQ".  When the full entry is
-                  # processed, the info in here will be removed, merged
-                  # with parallel info from the kanj objects, and proper
-                  # ._freq objects created.
-                append (r, '_FREQ', (t[0], t[1]))
+                append (r, '_freq', Freq (kw=t[0], value=t[1]))
             elif typ == 'RESTR':
                 # We can't generate real restr records here because the real
                 # records are the disallowed kanji.  We have the allowed
@@ -729,14 +718,7 @@ def bld_kanj (k, taglist=[]):
                 typ, t = v[0][0], v[0][1:]
             if typ == "KINF": append (k, "_inf", jdb.Kinf(kw=t[0]))
             elif typ == "FREQ":
-                  # _freq objects are referenced by both the reading and
-                  # kanji _freq lists.  Since we don't have access to
-                  # the rdng here, temporarily save the freq (kw, value)
-                  # tuple in attribute "._FREQ".  When the full entry is
-                  # processed, the info in here will be removed, merged
-                  # with parallel info from the rdng objects, and proper
-                  # ._freq objects created.
-                append (k, "_FREQ", (t[0], t[1]))
+                append (k, "_freq", jdb.Freq (kw=t[0], value=t[1]))
             else:
                 errs.append ("Cannot use '%s' tag in kanji section" % typ);
         return "\n".join (errs)
@@ -864,53 +846,6 @@ def find_xref (cur, typ, rtxt, ktxt, slist, seq, corp,
             xunrs = jdb.Xrslv (typ=typ, ktxt=ktxt, rtxt=rtxt,tsens=None)
             xunrs.msg = msg
         return xrfs, xunrs
-
-def merge_freqs (entr):
-        # This function is used by code that contructs Entr objects
-        # by parsing a textual entry description.  Generally such code
-        # will parse freq (a.k.a. prio) tags for readings and kanji
-        # individually.  Before the entry is used, these independent
-        # tags must be combined so that a rdng/kanj pairs with the
-        # same freq tag point to a single Freq object.  This function
-        # does that merging.
-        # It expects the entry's Rdng and Kanj objects to have a temp
-        # attribute named "_FREQ" that contains a list of 2-tuples.
-        # Each 2-tuple contains the freq table kw id number, and the
-        # freq value.  After  merge_freqs() runs, all those .FREQ
-        # attributes will have been deleted, and .freq attributes
-        # created with equivalent, properly linked Freq objects.
-
-        fmap = defaultdict (lambda:([list(),list()]))
-
-          # Collect the info in .FREQ attributes from all the readings.
-        for r in getattr (entr, '_rdng', []):
-            for kw_val in getattr (r, '_FREQ', []):
-                  # 'kw_val' is a 2-tuple denoting the freq as a freq table
-                  # keyword id and freq value pair.
-                rlist = fmap[(kw_val)][0]
-                  # Add 'r' to rlist if it is not there already.
-                  # Use first() as a "in" operator that uses "is" rather
-                  #  than "==" as compare function.
-                if not jdb.isin (r, rlist): rlist.append (r)
-            if hasattr (r, '_FREQ'): del r._FREQ
-
-          # Collect the info in .FREQ attributes from all the kanji.
-          # This works on kanj's the same as above section works on
-          # rdng's and comments above apply here too.
-        for k in getattr (entr, '_kanj', []):
-            for kw_val in getattr (k, '_FREQ', []):
-                klist = fmap[(kw_val)][1]
-                if not jdb.isin (k, klist): klist.append (k)
-            if hasattr (k, '_FREQ'): del k._FREQ
-
-          # 'fmap' now has one entry for every unique freq (kw,value) tuple
-          # which is a pair of sets.  The first set consists of all Rdng
-          # objects that (kw,value) freq spec applies to.  The second is
-          # the set of all kanji it applies to.  We take all combinations
-          # of readings with kanji, and create a Freq object for each.
-
-        errs = jdb.make_freq_objs (fmap, entr)
-        return errs
 
 def append (sens, key, item):
     # Append $item to the list, @{$sens->{$key}}, creating

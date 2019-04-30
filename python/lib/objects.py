@@ -203,7 +203,7 @@ class Freq (DbRow):
                           ('entr','rdng','kanj','kw','value'))
 
 class Restr (DbRow):
-    def __init__ (s, entr=None, rdng=None, kanj=None, sens=None):
+    def __init__ (s, entr=None, rdng=None, kanj=None):
         DbRow.__init__(s, ( entr,  rdng,  kanj),
                           ('entr','rdng','kanj'))
 
@@ -244,7 +244,7 @@ class Lsrc (DbRow):
 
 class Xref (DbRow):
     def __init__ (s, entr=None, sens=None, xref=None, typ=None, xentr=None, xsens=None,
-                  rdng=None, kanj=None, notes=None, nosens=None, lowpri=None):
+                  rdng=None, kanj=None, notes=None, nosens=False, lowpri=False):
         DbRow.__init__(s, ( entr,  sens,  xref,  typ,  xentr,  xsens,  rdng,  kanj,  notes,  nosens,  lowpri),
                           ('entr','sens','xref','typ','xentr','xsens','rdng','kanj','notes','nosens','lowpri'))
 

@@ -23,10 +23,12 @@ Updates with a "s" after the leading three digits are updates
 to the session database (which is independent of the main jmdict 
 database.)
 
+A new, random six-character hash can be generated with:
+  python -c 'import random;print("%06.6x"%random.randint(0,16777215))'
 
 Old format:
 -----------
 Up through 2017 (001.sql through 023.sql) updates were applied using 
 the program tools/patchdb.py.  This tool is no longer used but may 
-still be recovered from the source code repository revision:
-  hg-20180408-d8e3d85d26d2
+still be recovered from the git source code repository revision:
+  b2ec2a79 (2018-04-08): "edconf.jinja: another typo, cosmetic only"
