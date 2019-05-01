@@ -18,26 +18,16 @@
 #  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #######################################################################
 
-import sys, os, datetime
+import sys
 sys.path.extend (['../lib','../../python/lib','../python/lib'])
 import logger; from logger import L; logger.enable()
-
-import jdb, jmcgi, fmtxml, serialize
-
-class BranchesError (ValueError): pass
-class NonLeafError (ValueError): pass
-class IsApprovedError (ValueError): pass
+import jdb, jmcgi, serialize, submit
 
 def main( args, opts ):
-        global Svc, Sid
         jdb.reset_encoding (sys.stdout, 'utf-8')
         errs = []; dbh = svc = None
         try: form, svc, dbg, dbh, sid, sess, parms, cfg = jmcgi.parseform()
         except ValueError as e: jmcgi.err_page ([str (e)])
-          # Svc and Sid are used in function url() and are global in
-          # in order to avoid having to pass them through several layers
-          # of function calls.
-        Svc, Sid = svc, sid
 
         L('cgi.edsubmit').debug("started: userid=%s, sid=%s"
                                 % (sess and sess.userid, sess and sess.id))
@@ -60,21 +50,23 @@ def main( args, opts ):
         L('cgi.edsubmit.main').debug("starting transaction")
         dbh.connection.rollback()
         dbh.execute ("START TRANSACTION ISOLATION LEVEL SERIALIZABLE");
-          # FIXME: we unserialize the entr's xref's as they were resolved
+          #FIXME: we unserialize the entr's xref's as they were resolved
           #  by the edconf.py page.  Should we check them again here?
           #  If target entry was deleted in meantime, attempt to add
           #  our entr to db will fail with obscure foreign key error.
           #  Alternatively an edited version of target may have been
           #  created which wont have our xref pointing to it as it should.
         for entr in entrs:
-              # FIXME: submission() can raise a psycopg2
+              #FIXME: temporary hack...
+            submit.Svc, submit.Sid = svc, sid
+              #FIXME: submission() can raise a psycopg2
               # TransactionRollbackError if there is a serialization
               # error resulting from a concurrent update.  Detecting
               # such a condition is why run with serializable isolation
               # level.  We need to trap it and present some sensible
               # error message.
-            e = submission (dbh, entr, disp, errs, jmcgi.is_editor (sess),
-                            sess.userid if sess else None)
+            e = submit.submission (dbh, entr, disp, errs, jmcgi.is_editor (sess),
+                                   sess.userid if sess else None)
               # The value returned by submission() is a 3-tuple consisting
               # of (id, seq, src) for the added entry.
             if e: added.append (e)
