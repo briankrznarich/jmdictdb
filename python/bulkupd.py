@@ -26,7 +26,7 @@ import sys, re, logging, pdb
 # tal.py we may have to configure in every app that uses tal.py.  Or possibly now
 # in python3 the default config would be ok?
 _format = '%(asctime)s %(levelname).1s %(name)s(%(process)s):%(funcName)s: %(message)s'
-logging.basicConfig (level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S', format=_format)
+logging.basicConfig (level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S', format=_format)
 
 import os, inspect
 _ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
@@ -34,9 +34,7 @@ _ = os.path.join (os.path.dirname (_), 'python', 'lib')
 if _ not in sys.path: sys.path.insert(0, _)
 import psycopg2
 import jdb
-
-sys.path.append ('../web/cgi')
-from edsubmit import submission
+from submit import submission
 
 L = logging.getLogger ('bulkupd.py')
 
