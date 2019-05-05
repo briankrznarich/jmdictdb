@@ -279,7 +279,7 @@ data/jmdict.xml:
 	mv $(JMDICTFILE) data/jmdict.xml
 
 data/jmdict.pgi: data/jmdict.xml
-	cd python && $(PYTHON) jmparse.py $(LANGOPT) -y -l ../data/jmdict.log -o ../data/jmdict.pgi ../data/jmdict.xml
+	cd python && $(PYTHON) jmparse.py $(LANGOPT) -l ../data/jmdict.log -o ../data/jmdict.pgi ../data/jmdict.xml
 
 loadjm: data/jmdict.pgi
 	rm -f data/jmdict_xresolv.log

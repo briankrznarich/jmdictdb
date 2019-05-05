@@ -111,7 +111,6 @@ class Jmparser (object):
                         #   entry.  See also parameters seqnum_init
                         #   and seqnum_incr below.
         elimit=None,    # (int) Maximum number of entries to process.
-        xlit=False,     # (bool) Extract "lit" info from glosses.
         xlang=None,     # (list) List of lang id's to limit extracted
                         #   glosses to.
         corp_dict=None, # (dict) A mapping that contains corpus (aka
@@ -177,7 +176,7 @@ class Jmparser (object):
                 self.warn (" (line %d): Sequence less than preceeding sequence" % lineno)
             if not startseq or seq >= startseq:
                 startseq = None
-                try: entr = self.do_entr (elem, seq, xlit, xlang, corp_dict, grpdefs)
+                try: entr = self.do_entr (elem, seq, xlang, corp_dict, grpdefs)
                 except ParseError as e:
                     self.warn (" (line %d): %s" % (lineno, e))
                 else: yield "entry", entr
@@ -209,7 +208,7 @@ class Jmparser (object):
         if descr: o.descr = descr
         return o
 
-    def do_entr (self, elem, seq, xlit=False, xlang=None, corp_dict=None, grpdefs=None):
+    def do_entr (self, elem, seq, xlang=None, corp_dict=None, grpdefs=None):
         """
     Create an entr object from a parsed ElementTree entry
     element, 'elem'.  'lineno' is the source file line number
@@ -266,8 +265,8 @@ class Jmparser (object):
         if corpname is not None: entr.src = corp_dict[corpname].id
         self.do_kanjs (elem.findall('k_ele'), entr)
         self.do_rdngs (elem.findall('r_ele'), entr)
-        self.do_senss (elem.findall('sense'), entr, xlit, xlang)
-        self.do_senss (elem.findall('trans'), entr, xlit, xlang)
+        self.do_senss (elem.findall('sense'), entr, xlang)
+        self.do_senss (elem.findall('trans'), entr, xlang)
         self.do_info  (elem.findall("info"), entr)
         self.do_audio (elem.findall("audio"), entr, jdb.Entrsnd)
         self.do_groups(elem.findall("group"), entr, grpdefs)
@@ -333,7 +332,7 @@ class Jmparser (object):
             rdngs.append (rdng)
         if rdngs: entr._rdng = rdngs
 
-    def do_senss (self, elems, entr, xlit=False, xlang=None):
+    def do_senss (self, elems, entr, xlang=None):
         XKW = self.XKW
         rdngs = getattr (entr, '_rdng', [])
         kanjs = getattr (entr, '_kanj', [])
@@ -354,7 +353,7 @@ class Jmparser (object):
             self.do_kws   (elem.findall('field'),     sens, '_fld',  'FLD')
             self.do_kws   (elem.findall('dial'),      sens, '_dial', 'DIAL')
             self.do_lsrc  (elem.findall('lsource'),   sens,)
-            self.do_gloss (elem.findall('gloss'),     sens, xlit, xlang)
+            self.do_gloss (elem.findall('gloss'),     sens, xlang)
             self.do_gloss (elem.findall('trans_det'), sens,)
             self.do_restr (elem.findall('stagr'),     sens, rdngs, 'stagr')
             self.do_restr (elem.findall('stagk'),     sens, kanjs, 'stagk')
@@ -366,32 +365,39 @@ class Jmparser (object):
             senss.append (sens)
         if senss: entr._sens = senss
 
-    def do_gloss (self, elems, sens, xlit=False, xlang=None):
+    def do_gloss (self, elems, sens, xlang=None):
         XKW = self.XKW
-        glosses=[]; lits=[]; lsrc=[]; dupchk={}
+        glosses=[]; dupchk={}
         for elem in elems:
-            lng = elem.get ('{http://www.w3.org/XML/1998/namespace}lang')
-            try: lang = XKW.LANG[lng].id if lng else XKW.LANG['eng'].id
-            except KeyError:
-                self.warn ("Invalid gloss lang attribute: '%s'" % lng)
-                continue
+            lang = XKW.LANG['eng'].id    # Default value
+            ginf = XKW.GINF['equ'].id    # Default value
+            for attr in elem.keys():
+                v = elem.get (attr)
+                if attr == '{http://www.w3.org/XML/1998/namespace}lang':
+                    try: lang = XKW.LANG[v].id
+                    except KeyError:
+                        self.warn ("Invalid gloss lang attribute: '%s'" % v)
+                        continue
+                elif attr == "g_type":
+                    try: ginf = XKW.GINF[v].id
+                    except KeyError:
+                        self.warn ("Invalid gloss g_type attribute: '%s'" % v)
+                        continue
+                else:
+                    self.warn ("Unknown gloss attribute: %s" % attr)
             txt = elem.text
             if not jdb.jstr_gloss (txt):
                 self.warn ("gloss text '%s' not latin characters." % txt)
-            lit = []
-            if xlit and ('lit:' in txt):
-                 txt, lit = extract_lit (txt)
             if not jdb.unique ((lang,txt), dupchk):
-                self.warn ("Duplicate lang/text in gloss '%s'/'%s'" % (lng, txt))
+                self.warn ("Duplicate lang/text in gloss '%s'/'%s'"
+                           % (XKW.LANG[lang].kw, txt))
                 continue
             # (entr,sens,gloss,lang,txt)
             if txt and (not xlang or lang in xlang):
-                glosses.append (jdb.Gloss (lang=lang, ginf=XKW.GINF['equ'].id, txt=txt))
-            if lit:
-                lits.extend ([jdb.Gloss (lang=lang, ginf=XKW.GINF['lit'].id, txt=x) for x in lit])
-        if glosses or lits:
+                glosses.append (jdb.Gloss (lang=lang, ginf=ginf, txt=txt))
+        if glosses:
             if not hasattr (sens, '_gloss'): sens._gloss = []
-            sens._gloss.extend (glosses + lits)
+            sens._gloss.extend (glosses)
 
     def do_lsrc (self, elems, sens):
         lsrc = [];
@@ -655,29 +661,6 @@ class Jmparser (object):
                file=self.logfile or sys.stderr)
 
 
-def extract_lit (txt):
-        """
-        Extract literal gloss text from a gloss text string, 'txt'.
-        """
-        t = re.sub (r'^lit:\s*', '', txt)
-        if len(t) != len(txt): return '', [t]
-          # The following regex will match substrings like "(lit: xxxx)".
-          # The "xxxx" part may have parenthesised text but not nested.
-          # Thus, "lit: foo (on you) dude" will be correctly parsed, but
-          # "lit: (foo (on you)) dude" won't.
-        regex = r'\((lit):\s*((([^()]+)|(\([^)]+\)))+)\)'
-        start = 0; gloss=[]; lit=[]
-        for mo in re.finditer(regex, txt):
-            gtyp, special = mo.group(1,2)
-            brk, end = mo.span(0)
-            if brk - start > 0:   gloss.append (txt[start:brk].strip())
-            lit.append (special.strip())
-            start = end
-        t = txt[start:len(txt)].strip()
-        if t: gloss.append (t)
-        gloss = ' '.join(gloss)
-        return gloss, lit
-
 def crossprod (*args):
         """
         Return the cross product of an arbitrary number of lists.
@@ -889,7 +872,7 @@ def main (args, opts):
         jmparser = Jmparser (kW)
         if len(args) >= 1:
             inpf = JmdictFile( open( args[0], encoding='utf-8' ))
-            for tag,entr in jmparser.parse_xmlfile (inpf, xlit=1):
+            for tag,entr in jmparser.parse_xmlfile (inpf):
                 import fmt
                 print (fmt.entr (entr))
         else:

@@ -47,7 +47,7 @@ def main (args, opts):
         eid = 0
         jmparser = jmxml.Jmparser (KW, logfile=logfile)
         for typ, entr in jmparser.parse_xmlfile (inpf, opts.begin, opts.count,
-                                                 opts.extract, xlang, toptag=True,
+                                                 xlang, toptag=True,
                                                  seqnum_init=opts.sequence[0],
                                                  seqnum_incr=opts.sequence[1]):
             if typ == 'entry':
@@ -214,11 +214,6 @@ Arguments:
             help="Include only gloss tag with language code LANG.  "
                 "If not given default is to include all glosses regardless "
                 "of language.")
-
-        p.add_option ("-y", "--extract", default=False,
-            dest="extract", action="store_true",
-            help='Extract "(lit: ...)" text from glosses into separate '
-                '"lit" glosess.')
 
         p.add_option ("-q", "--sequence", default='1,1',
             dest="sequence", 
