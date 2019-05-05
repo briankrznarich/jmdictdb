@@ -360,7 +360,13 @@ def mkxref (v):
             return None
         xref = jdb.Obj (entr=v.entr, sens=v.sens, xref=v.ord, typ=v.typ,
                         xentr=v.targ, xsens=v.tsens, rdng=v.rdng, kanj=v.kanj,
-                        notes=v.notes, nosens=nosens, lowpri=not v.prio)
+                        notes=v.notes, nosens=nosens,
+                          # v.prio will be None for jmdict, et.al. words and
+                          # should result in lowprio=False.  For Tatoeba
+                          # sentences v.prio will be True (for exemplar
+                          # sentences) or False (other sentences) and lowpri
+                          # should have opposite truth value.
+                        lowpri=not (v.prio is None or v.prio))
         return xref
 
 def unrefcount (rows):
