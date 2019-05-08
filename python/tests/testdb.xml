@@ -1,0 +1,2328 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Rev 1.09 
+	Added the g_type attribute
+-->
+<!-- Rev 1.08 
+	Delete <info> and <example> elements
+-->
+<!-- Rev 1.07 
+	Revised POS tags for the adjectives
+-->
+<!-- Rev 1.06 
+	Dropped the "*" from the end of the entry element.
+	Dropped the g_lang attribute in favour of xml:lang
+	Dropped the <lang> element and replaced it with <lsource> at the
+	sense level.
+	Moved <dial> from the entry level to the sense level.
+	Changed "info*" to "info?".
+-->
+<!-- Rev 1.05 
+	Changed the <gram> element name to <pos>
+	Added the g_gend attribute
+	moved the s_inf element
+-->
+<!-- Rev 1.04 
+	Changes:
+     Rename the project  "JMdict" and add the g_lang attribute to the 
+	<gloss> entity - 08 May 1999 
+     Moved the <gram>, <field> and <misc> elements down to be in the
+     <sense> region, as suggested by Chris Czeyka. I have also tidied up
+     some of the "*" as he suggested.  - 27 May 2000
+	 Added the re_nokanji element - Sep 2003.
+     -->
+<!DOCTYPE JMdict [
+<!ELEMENT JMdict (entry*)>
+<!--                                                                   -->
+<!ELEMENT entry (ent_seq, k_ele*, r_ele+, sense+)>
+	<!-- Entries consist of kanji elements, reading elements, 
+	general information and sense elements. Each entry must have at 
+	least one reading element and one sense element. Others are optional.
+	-->
+<!ELEMENT ent_seq (#PCDATA)>
+	<!-- A unique numeric sequence number for each entry
+	-->
+<!ELEMENT k_ele (keb, ke_inf*, ke_pri*)>
+	<!-- The kanji element, or in its absence, the reading element, is 
+	the defining component of each entry.
+	The overwhelming majority of entries will have a single kanji
+	element associated with a word in Japanese. Where there are 
+	multiple kanji elements within an entry, they will be orthographical
+	variants of the same word, either using variations in okurigana, or
+	alternative and equivalent kanji. Common "mis-spellings" may be 
+	included, provided they are associated with appropriate information
+	fields. Synonyms are not included; they may be indicated in the
+	cross-reference field associated with the sense element.
+	-->
+<!ELEMENT keb (#PCDATA)>
+	<!-- This element will contain a word or short phrase in Japanese 
+	which is written using at least one non-kana character (usually kanji,
+	but can be other characters). The valid characters are
+	kanji, kana, related characters such as chouon and kurikaeshi, and
+	in exceptional cases, letters from other alphabets.
+	-->
+<!ELEMENT ke_inf (#PCDATA)>
+	<!-- This is a coded information field related specifically to the 
+	orthography of the keb, and will typically indicate some unusual
+	aspect, such as okurigana irregularity.
+	-->
+<!ELEMENT ke_pri (#PCDATA)>
+	<!-- This and the equivalent re_pri field are provided to record
+	information about the relative priority of the entry,  and consist
+	of codes indicating the word appears in various references which
+	can be taken as an indication of the frequency with which the word
+	is used. This field is intended for use either by applications which 
+	want to concentrate on entries of  a particular priority, or to 
+	generate subset files. 
+	The current values in this field are:
+	- news1/2: appears in the "wordfreq" file compiled by Alexandre Girardi
+	from the Mainichi Shimbun. (See the Monash ftp archive for a copy.)
+	Words in the first 12,000 in that file are marked "news1" and words 
+	in the second 12,000 are marked "news2".
+	- ichi1/2: appears in the "Ichimango goi bunruishuu", Senmon Kyouiku 
+	Publishing, Tokyo, 1998.  (The entries marked "ichi2" were
+	demoted from ichi1 because they were observed to have low
+	frequencies in the WWW and newspapers.)
+	- spec1 and spec2: a small number of words use this marker when they 
+	are detected as being common, but are not included in other lists.
+	- gai1/2: common loanwords, based on the wordfreq file.
+	- nfxx: this is an indicator of frequency-of-use ranking in the
+	wordfreq file. "xx" is the number of the set of 500 words in which
+	the entry can be found, with "01" assigned to the first 500, "02"
+	to the second, and so on. (The entries with news1, ichi1, spec1, spec2
+	and gai1 values are marked with a "(P)" in the EDICT and EDICT2
+	files.)
+
+	The reason both the kanji and reading elements are tagged is because 
+	on occasions a priority is only associated with a particular
+	kanji/reading pair.
+	-->
+<!--                                                                   -->
+<!ELEMENT r_ele (reb, re_nokanji?, re_restr*, re_inf*, re_pri*)>
+	<!-- The reading element typically contains the valid readings
+	of the word(s) in the kanji element using modern kanadzukai. 
+	Where there are multiple reading elements, they will typically be
+	alternative readings of the kanji element. In the absence of a 
+	kanji element, i.e. in the case of a word or phrase written
+	entirely in kana, these elements will define the entry.
+	-->
+<!ELEMENT reb (#PCDATA)>
+	<!-- this element content is restricted to kana and related
+	characters such as chouon and kurikaeshi. Kana usage will be
+	consistent between the keb and reb elements; e.g. if the keb
+	contains katakana, so too will the reb.
+	-->
+<!ELEMENT re_nokanji (#PCDATA)>
+	<!-- This element, which will usually have a null value, indicates
+	that the reb, while associated with the keb, cannot be regarded
+	as a true reading of the kanji. It is typically used for words
+	such as foreign place names, gairaigo which can be in kanji or
+	katakana, etc.
+	-->
+<!ELEMENT re_restr (#PCDATA)>
+	<!-- This element is used to indicate when the reading only applies
+	to a subset of the keb elements in the entry. In its absence, all
+	readings apply to all kanji elements. The contents of this element 
+	must exactly match those of one of the keb elements.
+	-->
+<!ELEMENT re_inf (#PCDATA)>
+	<!-- General coded information pertaining to the specific reading.
+	Typically it will be used to indicate some unusual aspect of 
+	the reading. -->
+<!ELEMENT re_pri (#PCDATA)>
+	<!-- See the comment on ke_pri above. -->
+<!--                                                                   -->
+<!ELEMENT sense (stagk*, stagr*, pos*, xref*, ant*, field*, misc*, s_inf*, lsource*, dial*, gloss*)>
+	<!-- The sense element will record the translational equivalent
+	of the Japanese word, plus other related information. Where there
+	are several distinctly different meanings of the word, multiple
+	sense elements will be employed.
+	-->
+<!ELEMENT stagk (#PCDATA)>
+<!ELEMENT stagr (#PCDATA)>
+	<!-- These elements, if present, indicate that the sense is restricted
+	to the lexeme represented by the keb and/or reb. -->
+<!ELEMENT xref (#PCDATA)*>
+	<!-- This element is used to indicate a cross-reference to another
+	entry with a similar or related meaning or sense. The content of
+	this element is typically a keb or reb element in another entry. In some
+	cases a keb will be followed by a reb and/or a sense number to provide
+	a precise target for the cross-reference. Where this happens, a JIS
+	"centre-dot" (0x2126) is placed between the components of the 
+	cross-reference. The target keb or reb must not contain a centre-dot.
+	-->
+<!ELEMENT ant (#PCDATA)*>
+	<!-- This element is used to indicate another entry which is an
+	antonym of the current entry/sense. The content of this element
+	must exactly match that of a keb or reb element in another entry.
+	-->
+<!ELEMENT pos (#PCDATA)>
+	<!-- Part-of-speech information about the entry/sense. Should use 
+	appropriate entity codes. In general where there are multiple senses
+	in an entry, the part-of-speech of an earlier sense will apply to
+	later senses unless there is a new part-of-speech indicated.
+	-->
+<!ELEMENT field (#PCDATA)>
+	<!-- Information about the field of application of the entry/sense. 
+	When absent, general application is implied. Entity coding for 
+	specific fields of application. -->
+<!ELEMENT misc (#PCDATA)>
+	<!-- This element is used for other relevant information about 
+	the entry/sense. As with part-of-speech, information will usually
+	apply to several senses.
+	-->
+<!ELEMENT lsource (#PCDATA)>
+	<!-- This element records the information about the source
+	language(s) of a loan-word/gairaigo. If the source language is other 
+	than English, the language is indicated by the xml:lang attribute.
+	The element value (if any) is the source word or phrase.
+	-->
+<!ATTLIST lsource xml:lang CDATA "eng">
+	<!-- The xml:lang attribute defines the language(s) from which
+	a loanword is drawn.  It will be coded using the three-letter language 
+	code from the ISO 639-2 standard. When absent, the value "eng" (i.e. 
+	English) is the default value. The bibliographic (B) codes are used. -->
+<!ATTLIST lsource ls_type CDATA #IMPLIED>
+	<!-- The ls_type attribute indicates whether the lsource element
+	fully or partially describes the source word or phrase of the
+	loanword. If absent, it will have the implied value of "full".
+	Otherwise it will contain "part".  -->
+<!ATTLIST lsource ls_wasei CDATA #IMPLIED>
+	<!-- The ls_wasei attribute indicates that the Japanese word
+	has been constructed from words in the source language, and
+	not from an actual phrase in that language. Most commonly used to
+	indicate "waseieigo". -->
+<!ELEMENT dial (#PCDATA)>
+	<!-- For words specifically associated with regional dialects in
+	Japanese, the entity code for that dialect, e.g. ksb for Kansaiben.
+	-->
+<!ELEMENT gloss (#PCDATA | pri)*>
+	<!-- Within each sense will be one or more "glosses", i.e. 
+	target-language words or phrases which are equivalents to the 
+	Japanese word. This element would normally be present, however it 
+	may be omitted in entries which are purely for a cross-reference.
+	-->
+<!ATTLIST gloss xml:lang CDATA "eng">
+	<!-- The xml:lang attribute defines the target language of the
+	gloss. It will be coded using the three-letter language code from
+	the ISO 639 standard. When absent, the value "eng" (i.e. English)
+	is the default value. -->
+<!ATTLIST gloss g_gend CDATA #IMPLIED>
+	<!-- The g_gend attribute defines the gender of the gloss (typically
+	a noun in the target language. When absent, the gender is either
+	not relevant or has yet to be provided.
+	-->
+<!ATTLIST gloss g_type CDATA #IMPLIED>
+	<!-- The g_type attribute specifies that the gloss is of a particular
+	type, e.g. "lit" (literal), "fig" (figurative), "expl" (explanation).
+	-->
+<!ELEMENT pri (#PCDATA)>
+	<!-- These elements highlight particular target-language words which 
+	are strongly associated with the Japanese word. The purpose is to 
+	establish a set of target-language words which can effectively be 
+	used as head-words in a reverse target-language/Japanese relationship.
+	-->
+<!ELEMENT s_inf (#PCDATA)>
+	<!-- The sense-information elements provided for additional
+	information to be recorded about a sense. Typical usage would
+	be to indicate such things as level of currency of a sense, the
+	regional variations, etc.
+	-->
+<!-- The following entity codes are used for common elements within the
+various information fields.
+-->
+<!ENTITY MA "martial arts term">
+<!ENTITY X "rude or X-rated term (not displayed in educational software)">
+<!ENTITY abbr "abbreviation">
+<!ENTITY adj-i "adjective (keiyoushi)">
+<!ENTITY adj-ix "adjective (keiyoushi) - yoi/ii class">
+<!ENTITY adj-na "adjectival nouns or quasi-adjectives (keiyodoshi)">
+<!ENTITY adj-no "nouns which may take the genitive case particle `no'">
+<!ENTITY adj-pn "pre-noun adjectival (rentaishi)">
+<!ENTITY adj-t "`taru' adjective">
+<!ENTITY adj-f "noun or verb acting prenominally">
+<!ENTITY adv "adverb (fukushi)">
+<!ENTITY adv-to "adverb taking the `to' particle">
+<!ENTITY arch "archaism">
+<!ENTITY ateji "ateji (phonetic) reading">
+<!ENTITY aux "auxiliary">
+<!ENTITY aux-v "auxiliary verb">
+<!ENTITY aux-adj "auxiliary adjective">
+<!ENTITY Buddh "Buddhist term">
+<!ENTITY chem "chemistry term">
+<!ENTITY chn "children's language">
+<!ENTITY col "colloquialism">
+<!ENTITY comp "computer terminology">
+<!ENTITY conj "conjunction">
+<!ENTITY cop-da "copula">
+<!ENTITY ctr "counter">
+<!ENTITY derog "derogatory">
+<!ENTITY eK "exclusively kanji">
+<!ENTITY ek "exclusively kana">
+<!ENTITY exp "expressions (phrases, clauses, etc.)">
+<!ENTITY fam "familiar language">
+<!ENTITY fem "female term or language">
+<!ENTITY food "food term">
+<!ENTITY geom "geometry term">
+<!ENTITY gikun "gikun (meaning as reading) or jukujikun (special kanji reading)">
+<!ENTITY hon "honorific or respectful (sonkeigo) language">
+<!ENTITY hum "humble (kenjougo) language">
+<!ENTITY iK "word containing irregular kanji usage">
+<!ENTITY id "idiomatic expression">
+<!ENTITY ik "word containing irregular kana usage">
+<!ENTITY int "interjection (kandoushi)">
+<!ENTITY io "irregular okurigana usage">
+<!ENTITY iv "irregular verb">
+<!ENTITY ling "linguistics terminology">
+<!ENTITY m-sl "manga slang">
+<!ENTITY male "male term or language">
+<!ENTITY male-sl "male slang">
+<!ENTITY math "mathematics">
+<!ENTITY mil "military">
+<!ENTITY n "noun (common) (futsuumeishi)">
+<!ENTITY n-adv "adverbial noun (fukushitekimeishi)">
+<!ENTITY n-suf "noun, used as a suffix">
+<!ENTITY n-pref "noun, used as a prefix">
+<!ENTITY n-t "noun (temporal) (jisoumeishi)">
+<!ENTITY num "numeric">
+<!ENTITY oK "word containing out-dated kanji">
+<!ENTITY obs "obsolete term">
+<!ENTITY obsc "obscure term">
+<!ENTITY ok "out-dated or obsolete kana usage">
+<!ENTITY oik "old or irregular kana form">
+<!ENTITY on-mim "onomatopoeic or mimetic word">
+<!ENTITY pn "pronoun">
+<!ENTITY poet "poetical term">
+<!ENTITY pol "polite (teineigo) language">
+<!ENTITY pref "prefix">
+<!ENTITY proverb "proverb">
+<!ENTITY prt "particle">
+<!ENTITY physics "physics terminology">
+<!ENTITY quote "quotation">
+<!ENTITY rare "rare">
+<!ENTITY sens "sensitive">
+<!ENTITY sl "slang">
+<!ENTITY suf "suffix">
+<!ENTITY uK "word usually written using kanji alone">
+<!ENTITY uk "word usually written using kana alone">
+<!ENTITY unc "unclassified">
+<!ENTITY yoji "yojijukugo">
+<!ENTITY v1 "Ichidan verb">
+<!ENTITY v1-s "Ichidan verb - kureru special class">
+<!ENTITY v2a-s "Nidan verb with 'u' ending (archaic)">
+<!ENTITY v4h "Yodan verb with `hu/fu' ending (archaic)">
+<!ENTITY v4r "Yodan verb with `ru' ending (archaic)">
+<!ENTITY v5aru "Godan verb - -aru special class">
+<!ENTITY v5b "Godan verb with `bu' ending">
+<!ENTITY v5g "Godan verb with `gu' ending">
+<!ENTITY v5k "Godan verb with `ku' ending">
+<!ENTITY v5k-s "Godan verb - Iku/Yuku special class">
+<!ENTITY v5m "Godan verb with `mu' ending">
+<!ENTITY v5n "Godan verb with `nu' ending">
+<!ENTITY v5r "Godan verb with `ru' ending">
+<!ENTITY v5r-i "Godan verb with `ru' ending (irregular verb)">
+<!ENTITY v5s "Godan verb with `su' ending">
+<!ENTITY v5t "Godan verb with `tsu' ending">
+<!ENTITY v5u "Godan verb with `u' ending">
+<!ENTITY v5u-s "Godan verb with `u' ending (special class)">
+<!ENTITY v5uru "Godan verb - Uru old class verb (old form of Eru)">
+<!ENTITY vz "Ichidan verb - zuru verb (alternative form of -jiru verbs)">
+<!ENTITY vi "intransitive verb">
+<!ENTITY vk "Kuru verb - special class">
+<!ENTITY vn "irregular nu verb">
+<!ENTITY vr "irregular ru verb, plain form ends with -ri">
+<!ENTITY vs "noun or participle which takes the aux. verb suru">
+<!ENTITY vs-c "su verb - precursor to the modern suru">
+<!ENTITY vs-s "suru verb - special class">
+<!ENTITY vs-i "suru verb - included">
+<!ENTITY kyb "Kyoto-ben">
+<!ENTITY osb "Osaka-ben">
+<!ENTITY ksb "Kansai-ben">
+<!ENTITY ktb "Kantou-ben">
+<!ENTITY tsb "Tosa-ben">
+<!ENTITY thb "Touhoku-ben">
+<!ENTITY tsug "Tsugaru-ben">
+<!ENTITY kyu "Kyuushuu-ben">
+<!ENTITY rkb "Ryuukyuu-ben">
+<!ENTITY nab "Nagano-ben">
+<!ENTITY hob "Hokkaido-ben">
+<!ENTITY vt "transitive verb">
+<!ENTITY vulg "vulgar expression or word">
+<!ENTITY adj-kari "`kari' adjective (archaic)">
+<!ENTITY adj-ku "`ku' adjective (archaic)">
+<!ENTITY adj-shiku "`shiku' adjective (archaic)">
+<!ENTITY adj-nari "archaic/formal form of na-adjective">
+<!ENTITY n-pr "proper noun">
+<!ENTITY v-unspec "verb unspecified">
+<!ENTITY v4k "Yodan verb with `ku' ending (archaic)">
+<!ENTITY v4g "Yodan verb with `gu' ending (archaic)">
+<!ENTITY v4s "Yodan verb with `su' ending (archaic)">
+<!ENTITY v4t "Yodan verb with `tsu' ending (archaic)">
+<!ENTITY v4n "Yodan verb with `nu' ending (archaic)">
+<!ENTITY v4b "Yodan verb with `bu' ending (archaic)">
+<!ENTITY v4m "Yodan verb with `mu' ending (archaic)">
+<!ENTITY v2k-k "Nidan verb (upper class) with `ku' ending (archaic)">
+<!ENTITY v2g-k "Nidan verb (upper class) with `gu' ending (archaic)">
+<!ENTITY v2t-k "Nidan verb (upper class) with `tsu' ending (archaic)">
+<!ENTITY v2d-k "Nidan verb (upper class) with `dzu' ending (archaic)">
+<!ENTITY v2h-k "Nidan verb (upper class) with `hu/fu' ending (archaic)">
+<!ENTITY v2b-k "Nidan verb (upper class) with `bu' ending (archaic)">
+<!ENTITY v2m-k "Nidan verb (upper class) with `mu' ending (archaic)">
+<!ENTITY v2y-k "Nidan verb (upper class) with `yu' ending (archaic)">
+<!ENTITY v2r-k "Nidan verb (upper class) with `ru' ending (archaic)">
+<!ENTITY v2k-s "Nidan verb (lower class) with `ku' ending (archaic)">
+<!ENTITY v2g-s "Nidan verb (lower class) with `gu' ending (archaic)">
+<!ENTITY v2s-s "Nidan verb (lower class) with `su' ending (archaic)">
+<!ENTITY v2z-s "Nidan verb (lower class) with `zu' ending (archaic)">
+<!ENTITY v2t-s "Nidan verb (lower class) with `tsu' ending (archaic)">
+<!ENTITY v2d-s "Nidan verb (lower class) with `dzu' ending (archaic)">
+<!ENTITY v2n-s "Nidan verb (lower class) with `nu' ending (archaic)">
+<!ENTITY v2h-s "Nidan verb (lower class) with `hu/fu' ending (archaic)">
+<!ENTITY v2b-s "Nidan verb (lower class) with `bu' ending (archaic)">
+<!ENTITY v2m-s "Nidan verb (lower class) with `mu' ending (archaic)">
+<!ENTITY v2y-s "Nidan verb (lower class) with `yu' ending (archaic)">
+<!ENTITY v2r-s "Nidan verb (lower class) with `ru' ending (archaic)">
+<!ENTITY v2w-s "Nidan verb (lower class) with `u' ending and `we' conjugation (archaic)">
+<!ENTITY archit "architecture term">
+<!ENTITY astron "astronomy, etc. term">
+<!ENTITY baseb "baseball term">
+<!ENTITY biol "biology term">
+<!ENTITY bot "botany term">
+<!ENTITY bus "business term">
+<!ENTITY econ "economics term">
+<!ENTITY engr "engineering term">
+<!ENTITY finc "finance term">
+<!ENTITY geol "geology, etc. term">
+<!ENTITY law "law, etc. term">
+<!ENTITY mahj "mahjong term">
+<!ENTITY med "medicine, etc. term">
+<!ENTITY music "music term">
+<!ENTITY Shinto "Shinto term">
+<!ENTITY shogi "shogi term">
+<!ENTITY sports "sports term">
+<!ENTITY sumo "sumo term">
+<!ENTITY zool "zoology term">
+<!ENTITY joc "jocular, humorous term">
+<!ENTITY anat "anatomical term">
+]>
+<!-- JMdict created: 2019-05-07 -->
+<JMdict>
+<entry>
+<ent_seq>1000090</ent_seq>
+<k_ele>
+<keb>○</keb>
+</k_ele>
+<k_ele>
+<keb>〇</keb>
+</k_ele>
+<r_ele>
+<reb>まる</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<xref>丸・まる・1</xref>
+<gloss>circle (sometimes used for zero)</gloss>
+</sense>
+<sense>
+<xref>二重丸・にじゅうまる</xref>
+<gloss>'correct' (when marking)</gloss>
+</sense>
+<sense>
+<xref>〇〇・まるまる・1</xref>
+<gloss>symbol used as a placeholder (either because a number of other words could be used in that position, or because of censorship)</gloss>
+</sense>
+<sense>
+<xref>句点</xref>
+<gloss>period</gloss>
+<gloss>full stop</gloss>
+</sense>
+<sense>
+<xref>半濁点</xref>
+<gloss>maru mark</gloss>
+<gloss>semivoiced sound</gloss>
+<gloss>p-sound</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1000290</ent_seq>
+<r_ele>
+<reb>あさひ</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<gloss>Jouetsu line express Shinkansen</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1000420</ent_seq>
+<k_ele>
+<keb>彼の</keb>
+<ke_pri>spec1</ke_pri>
+</k_ele>
+<r_ele>
+<reb>あの</reb>
+<re_pri>spec1</re_pri>
+</r_ele>
+<r_ele>
+<reb>かの</reb>
+</r_ele>
+<sense>
+<pos>&adj-pn;</pos>
+<xref>何の・どの</xref>
+<xref>此の</xref>
+<xref>其の・1</xref>
+<xref>彼・あれ・1</xref>
+<misc>&uk;</misc>
+<gloss>that (someone or something distant from both speaker and listener, or situation unfamiliar to both speaker and listener)</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1000480</ent_seq>
+<k_ele>
+<keb>阿呆陀羅</keb>
+</k_ele>
+<r_ele>
+<reb>あほんだら</reb>
+</r_ele>
+<r_ele>
+<reb>あほだら</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<misc>&uk;</misc>
+<dial>&ksb;</dial>
+<gloss>fool</gloss>
+<gloss>oaf</gloss>
+<gloss>airhead</gloss>
+</sense>
+<sense>
+<stagr>あほだら</stagr>
+<xref>あほだら経</xref>
+<misc>&abbr;</misc>
+<gloss g_type="expl">type of fast-paced humorous singing mimicking the chanting of a Buddhist sutra, usually with lyrics satirizing current events</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1000490</ent_seq>
+<k_ele>
+<keb>甘子</keb>
+</k_ele>
+<k_ele>
+<keb>天魚</keb>
+</k_ele>
+<k_ele>
+<keb>雨子</keb>
+</k_ele>
+<r_ele>
+<reb>あまご</reb>
+</r_ele>
+<r_ele>
+<reb>アマゴ</reb>
+<re_nokanji/>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<xref>皐月鱒</xref>
+<misc>&uk;</misc>
+<gloss>land-locked variety of red-spotted masu trout (Oncorhynchus masou ishikawae)</gloss>
+<gloss>amago</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1000520</ent_seq>
+<r_ele>
+<reb>あら</reb>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<sense>
+<pos>&int;</pos>
+<misc>&fem;</misc>
+<gloss>oh</gloss>
+<gloss>ah</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1000580</ent_seq>
+<k_ele>
+<keb>彼</keb>
+<ke_pri>ichi1</ke_pri>
+</k_ele>
+<r_ele>
+<reb>あれ</reb>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<r_ele>
+<reb>あ</reb>
+<re_inf>&ok;</re_inf>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<xref>何れ・1</xref>
+<xref>此れ・1</xref>
+<xref>其れ・1</xref>
+<misc>&uk;</misc>
+<gloss>that (indicating something distant from both speaker and listener (in space, time or psychologically), or something understood without naming it directly)</gloss>
+</sense>
+<sense>
+<s_inf>used to refer to one's equals or inferiors</s_inf>
+<gloss>that person</gloss>
+</sense>
+<sense>
+<misc>&arch;</misc>
+<gloss>over there</gloss>
+</sense>
+<sense>
+<stagr>あれ</stagr>
+<misc>&col;</misc>
+<gloss>down there (i.e. one's genitals)</gloss>
+</sense>
+<sense>
+<stagr>あれ</stagr>
+<misc>&col;</misc>
+<gloss>period</gloss>
+<gloss>menses</gloss>
+</sense>
+<sense>
+<pos>&int;</pos>
+<misc>&uk;</misc>
+<s_inf>expression of surprise, suspicion, etc.</s_inf>
+<gloss>hey</gloss>
+<gloss>huh?</gloss>
+<gloss>eh?</gloss>
+</sense>
+<sense>
+<pos>&n;</pos>
+<misc>&uk;</misc>
+<gloss>that (something mentioned before which is distant psychologically or in terms of time)</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1000730</ent_seq>
+<k_ele>
+<keb>行けない</keb>
+<ke_pri>ichi1</ke_pri>
+</k_ele>
+<r_ele>
+<reb>いけない</reb>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<sense>
+<pos>&exp;</pos>
+<misc>&uk;</misc>
+<gloss>wrong</gloss>
+<gloss>not good</gloss>
+<gloss>of no use</gloss>
+</sense>
+<sense>
+<misc>&uk;</misc>
+<gloss>hopeless</gloss>
+<gloss>past hope</gloss>
+</sense>
+<sense>
+<misc>&uk;</misc>
+<gloss>must not do</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1000920</ent_seq>
+<r_ele>
+<reb>いらっしゃい</reb>
+<re_pri>spec1</re_pri>
+</r_ele>
+<r_ele>
+<reb>いらしゃい</reb>
+<re_inf>&ik;</re_inf>
+</r_ele>
+<sense>
+<pos>&int;</pos>
+<xref>いらっしゃる・1</xref>
+<misc>&hon;</misc>
+<s_inf>used as a polite imperative</s_inf>
+<gloss>come</gloss>
+<gloss>go</gloss>
+<gloss>stay</gloss>
+</sense>
+<sense>
+<xref>いらっしゃいませ</xref>
+<gloss>welcome</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1000930</ent_seq>
+<r_ele>
+<reb>いらっしゃいませ</reb>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<r_ele>
+<reb>いらしゃいませ</reb>
+<re_inf>&ik;</re_inf>
+</r_ele>
+<r_ele>
+<reb>いっらしゃいませ</reb>
+<re_inf>&ik;</re_inf>
+</r_ele>
+<sense>
+<pos>&exp;</pos>
+<gloss>welcome (in shops, etc.)</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1000940</ent_seq>
+<r_ele>
+<reb>いらっしゃる</reb>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<sense>
+<pos>&v5aru;</pos>
+<pos>&vi;</pos>
+<misc>&hon;</misc>
+<s_inf>sometimes erroneously written 居らっしゃる</s_inf>
+<gloss>to come</gloss>
+<gloss>to go</gloss>
+<gloss>to be (somewhere)</gloss>
+</sense>
+<sense>
+<pos>&v5aru;</pos>
+<pos>&aux-v;</pos>
+<misc>&hon;</misc>
+<s_inf>after a -te form, or the particle "de"</s_inf>
+<gloss>to be (doing)</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1002320</ent_seq>
+<k_ele>
+<keb>お祖父さん</keb>
+<ke_pri>ichi1</ke_pri>
+</k_ele>
+<k_ele>
+<keb>お爺さん</keb>
+</k_ele>
+<k_ele>
+<keb>御爺さん</keb>
+</k_ele>
+<k_ele>
+<keb>御祖父さん</keb>
+</k_ele>
+<r_ele>
+<reb>おじいさん</reb>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<xref>祖父さん</xref>
+<misc>&uk;</misc>
+<s_inf>usu. お祖父さん</s_inf>
+<gloss>grandfather</gloss>
+</sense>
+<sense>
+<misc>&uk;</misc>
+<s_inf>usu. お爺さん</s_inf>
+<gloss>male senior-citizen</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1002480</ent_seq>
+<k_ele>
+<keb>お転婆</keb>
+</k_ele>
+<k_ele>
+<keb>御転婆</keb>
+</k_ele>
+<r_ele>
+<reb>おてんば</reb>
+</r_ele>
+<sense>
+<pos>&adj-na;</pos>
+<pos>&n;</pos>
+<misc>&uk;</misc>
+<lsource xml:lang="dut">ontembaar</lsource>
+<gloss>tomboy</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1004020</ent_seq>
+<r_ele>
+<reb>ぐうぐう</reb>
+</r_ele>
+<sense>
+<pos>&adv;</pos>
+<pos>&adv-to;</pos>
+<misc>&on-mim;</misc>
+<gloss>fast (asleep)</gloss>
+<gloss>snoring or grumbling sound</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1005250</ent_seq>
+<r_ele>
+<reb>さばさば</reb>
+</r_ele>
+<sense>
+<pos>&adv;</pos>
+<pos>&adv-to;</pos>
+<pos>&vs;</pos>
+<misc>&on-mim;</misc>
+<gloss>relieved</gloss>
+<gloss>refreshed</gloss>
+</sense>
+<sense>
+<misc>&on-mim;</misc>
+<gloss>easy-going</gloss>
+<gloss>laid-back</gloss>
+<gloss>frank</gloss>
+<gloss>candid</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1005930</ent_seq>
+<k_ele>
+<keb>じゃが芋</keb>
+<ke_pri>spec1</ke_pri>
+</k_ele>
+<k_ele>
+<keb>ジャガ芋</keb>
+<ke_pri>ichi1</ke_pri>
+</k_ele>
+<r_ele>
+<reb>じゃがいも</reb>
+<re_restr>じゃが芋</re_restr>
+<re_pri>spec1</re_pri>
+</r_ele>
+<r_ele>
+<reb>ジャガいも</reb>
+<re_restr>ジャガ芋</re_restr>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<r_ele>
+<reb>ジャガイモ</reb>
+<re_nokanji/>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<xref>ジャガタラ芋</xref>
+<misc>&uk;</misc>
+<gloss>potato (Solanum tuberosum)</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1006830</ent_seq>
+<k_ele>
+<keb>其の</keb>
+<ke_pri>spec1</ke_pri>
+</k_ele>
+<r_ele>
+<reb>その</reb>
+<re_pri>spec1</re_pri>
+</r_ele>
+<sense>
+<pos>&adj-pn;</pos>
+<xref>何の・どの</xref>
+<xref>此の</xref>
+<xref>其れ・1</xref>
+<xref>彼の</xref>
+<misc>&uk;</misc>
+<gloss>that (something or someone distant from the speaker, close to the listener; actions of the listener, or ideas expressed or understood by the listener)</gloss>
+<gloss>the</gloss>
+</sense>
+<sense>
+<pos>&int;</pos>
+<gloss>um...</gloss>
+<gloss>er...</gloss>
+<gloss>uh...</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1011770</ent_seq>
+<k_ele>
+<keb>惚け</keb>
+<ke_pri>ichi1</ke_pri>
+</k_ele>
+<k_ele>
+<keb>呆け</keb>
+<ke_pri>ichi1</ke_pri>
+</k_ele>
+<r_ele>
+<reb>ぼけ</reb>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<r_ele>
+<reb>ボケ</reb>
+<re_nokanji/>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<pos>&suf;</pos>
+<misc>&uk;</misc>
+<gloss>idiot</gloss>
+<gloss>fool</gloss>
+<gloss>touched in the head (from)</gloss>
+<gloss>out of it (from)</gloss>
+<gloss>space case</gloss>
+</sense>
+<sense>
+<xref>漫才</xref>
+<xref>突っ込み・つっこみ・2</xref>
+<misc>&uk;</misc>
+<gloss>funny man (of a comedy duo)</gloss>
+<gloss>(in comedy) silly or stupid line</gloss>
+</sense>
+<sense>
+<gloss>Alzheimer's (impol)</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1013970</ent_seq>
+<r_ele>
+<reb>アイス</reb>
+<re_pri>gai1</re_pri>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<lsource xml:lang="eng">ice</lsource>
+<lsource xml:lang="ger">Eis</lsource>
+<gloss>ice</gloss>
+</sense>
+<sense>
+<xref>アイスクリーム</xref>
+<misc>&abbr;</misc>
+<gloss>ice cream</gloss>
+<gloss>icecream</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1013980</ent_seq>
+<r_ele>
+<reb>アイスクリーム</reb>
+<re_pri>gai1</re_pri>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<gloss>ice cream</gloss>
+<gloss>icecream</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1017940</ent_seq>
+<r_ele>
+<reb>アフターケア</reb>
+</r_ele>
+<r_ele>
+<reb>アフター・ケア</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<field>&med;</field>
+<gloss>aftercare</gloss>
+<gloss>care for patients after discharge from hospital</gloss>
+</sense>
+<sense>
+<xref>アフターサービス</xref>
+<lsource ls_wasei="y">after care</lsource>
+<gloss>after-sales service</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1017950</ent_seq>
+<r_ele>
+<reb>アフターサービス</reb>
+</r_ele>
+<r_ele>
+<reb>アフター・サービス</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<xref>アフターケア・2</xref>
+<lsource ls_wasei="y">after service</lsource>
+<gloss>after-sales service</gloss>
+<gloss>warranty service</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1019420</ent_seq>
+<r_ele>
+<reb>アルバイト</reb>
+<re_pri>gai1</re_pri>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<pos>&vs;</pos>
+<lsource xml:lang="ger">Arbeit</lsource>
+<gloss>part-time job</gloss>
+<gloss>side job</gloss>
+</sense>
+<sense>
+<pos>&n;</pos>
+<gloss>part-time worker</gloss>
+</sense>
+<sense>
+<xref>曹長石</xref>
+<gloss>albite</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1028520</ent_seq>
+<k_ele>
+<keb>ＳＦ</keb>
+</k_ele>
+<r_ele>
+<reb>エスエフ</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<gloss>science fiction</gloss>
+<gloss>sci-fi</gloss>
+<gloss>SF</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1055420</ent_seq>
+<r_ele>
+<reb>サイエンスフィクション</reb>
+</r_ele>
+<r_ele>
+<reb>サイエンス・フィクション</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<xref>ＳＦ</xref>
+<gloss>science fiction</gloss>
+<gloss>sci-fi</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1075210</ent_seq>
+<r_ele>
+<reb>ゼロゼロセブン</reb>
+</r_ele>
+<r_ele>
+<reb>ゼロ・ゼロ・セブン</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<gloss>007 (James Bond's code in the books and films)</gloss>
+<gloss>double-oh-seven</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1077760</ent_seq>
+<k_ele>
+<keb>窒扶斯</keb>
+<ke_inf>&ateji;</ke_inf>
+</k_ele>
+<r_ele>
+<reb>ちふす</reb>
+</r_ele>
+<r_ele>
+<reb>ちぶす</reb>
+</r_ele>
+<r_ele>
+<reb>チフス</reb>
+<re_nokanji/>
+<re_pri>gai1</re_pri>
+</r_ele>
+<r_ele>
+<reb>チブス</reb>
+<re_nokanji/>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<misc>&uk;</misc>
+<lsource xml:lang="ger">Typhus</lsource>
+<lsource xml:lang="dut"/>
+<gloss>typhoid fever</gloss>
+<gloss>typhus</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1079110</ent_seq>
+<r_ele>
+<reb>ティッシュペーパー</reb>
+<re_pri>gai1</re_pri>
+</r_ele>
+<r_ele>
+<reb>ティッシュ・ペーパー</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<xref>塵紙</xref>
+<gloss>tissue paper</gloss>
+<gloss>tissue</gloss>
+<gloss>facial tissue</gloss>
+<gloss>facial tissues</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1087930</ent_seq>
+<r_ele>
+<reb>ドアマン</reb>
+</r_ele>
+<r_ele>
+<reb>ドア・マン</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<gloss>doorman</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1097870</ent_seq>
+<r_ele>
+<reb>バイト</reb>
+<re_pri>gai1</re_pri>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<pos>&vs;</pos>
+<xref>アルバイト・1</xref>
+<misc>&abbr;</misc>
+<lsource xml:lang="ger">Arbeit</lsource>
+<gloss>work (esp. part time or casual)</gloss>
+</sense>
+<sense>
+<pos>&n;</pos>
+<field>&comp;</field>
+<field>&math;</field>
+<gloss>byte</gloss>
+<gloss>octet</gloss>
+</sense>
+<sense>
+<gloss>bite</gloss>
+</sense>
+<sense>
+<gloss>cutting tool</gloss>
+<gloss>bit</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1098650</ent_seq>
+<r_ele>
+<reb>バタードチャイルド</reb>
+</r_ele>
+<r_ele>
+<reb>バタード・チャイルド</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<xref>被虐待児症候群</xref>
+<gloss>battered child (syndrome)</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1099200</ent_seq>
+<r_ele>
+<reb>バッティングセンター</reb>
+</r_ele>
+<r_ele>
+<reb>バッテイングセンター</reb>
+</r_ele>
+<r_ele>
+<reb>バッティング・センター</reb>
+</r_ele>
+<r_ele>
+<reb>バッテイング・センター</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<field>&baseb;</field>
+<lsource ls_wasei="y">batting center</lsource>
+<gloss>batting practice facility</gloss>
+<gloss>batting practice center</gloss>
+<gloss>batting cage</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1106120</ent_seq>
+<r_ele>
+<reb>ピロシキ</reb>
+</r_ele>
+<r_ele>
+<reb>ビロシキ</reb>
+<re_inf>&ik;</re_inf>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<lsource xml:lang="rus">pirozhki</lsource>
+<gloss>piroshki (Russian pierogi; meat and eggs, etc. baked in bread)</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1140360</ent_seq>
+<r_ele>
+<reb>ランプ</reb>
+<re_pri>gai1</re_pri>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<xref>洋灯・ランプ</xref>
+<lsource xml:lang="eng"/>
+<lsource xml:lang="dut"/>
+<gloss>lamp</gloss>
+<gloss>light</gloss>
+</sense>
+<sense>
+<gloss>ramp</gloss>
+</sense>
+<sense>
+<field>&food;</field>
+<gloss>rump</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1198180</ent_seq>
+<k_ele>
+<keb>会う</keb>
+<ke_pri>ichi1</ke_pri>
+<ke_pri>news2</ke_pri>
+<ke_pri>nf26</ke_pri>
+</k_ele>
+<k_ele>
+<keb>逢う</keb>
+<ke_pri>ichi1</ke_pri>
+</k_ele>
+<k_ele>
+<keb>遭う</keb>
+<ke_pri>ichi1</ke_pri>
+<ke_pri>news2</ke_pri>
+<ke_pri>nf34</ke_pri>
+</k_ele>
+<k_ele>
+<keb>遇う</keb>
+</k_ele>
+<r_ele>
+<reb>あう</reb>
+<re_pri>ichi1</re_pri>
+<re_pri>news2</re_pri>
+<re_pri>nf26</re_pri>
+</r_ele>
+<sense>
+<pos>&v5u;</pos>
+<pos>&vi;</pos>
+<s_inf>逢う is often used for close friends, etc. and may be associated with drama or pathos; 遭う may have an undesirable nuance</s_inf>
+<gloss>to meet</gloss>
+<gloss>to encounter</gloss>
+<gloss>to see</gloss>
+</sense>
+<sense>
+<misc>&uk;</misc>
+<s_inf>esp. 遭う when in kanji</s_inf>
+<gloss>to have an accident</gloss>
+<gloss>to have a bad experience</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1208850</ent_seq>
+<k_ele>
+<keb>鰹</keb>
+<ke_pri>news2</ke_pri>
+<ke_pri>nf41</ke_pri>
+</k_ele>
+<k_ele>
+<keb>松魚</keb>
+</k_ele>
+<k_ele>
+<keb>堅魚</keb>
+</k_ele>
+<r_ele>
+<reb>かつお</reb>
+<re_pri>news2</re_pri>
+<re_pri>nf41</re_pri>
+</r_ele>
+<r_ele>
+<reb>しょうぎょ</reb>
+<re_restr>松魚</re_restr>
+</r_ele>
+<r_ele>
+<reb>カツオ</reb>
+<re_nokanji/>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<misc>&uk;</misc>
+<gloss>skipjack tuna (Katsuwonus pelamis)</gloss>
+<gloss>oceanic bonito</gloss>
+<gloss>victorfish</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1214540</ent_seq>
+<k_ele>
+<keb>缶</keb>
+<ke_inf>&ateji;</ke_inf>
+<ke_pri>ichi1</ke_pri>
+<ke_pri>news1</ke_pri>
+<ke_pri>nf06</ke_pri>
+</k_ele>
+<k_ele>
+<keb>罐</keb>
+<ke_inf>&ateji;</ke_inf>
+<ke_inf>&oK;</ke_inf>
+</k_ele>
+<k_ele>
+<keb>鑵</keb>
+<ke_inf>&ateji;</ke_inf>
+<ke_inf>&oK;</ke_inf>
+</k_ele>
+<r_ele>
+<reb>かん</reb>
+<re_pri>ichi1</re_pri>
+<re_pri>news1</re_pri>
+<re_pri>nf06</re_pri>
+</r_ele>
+<r_ele>
+<reb>カン</reb>
+<re_nokanji/>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<lsource xml:lang="dut">kan</lsource>
+<lsource xml:lang="eng">can</lsource>
+<gloss>can</gloss>
+<gloss>tin</gloss>
+</sense>
+<sense>
+<xref>缶詰・1</xref>
+<misc>&abbr;</misc>
+<gloss>canned food</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1214560</ent_seq>
+<k_ele>
+<keb>缶詰</keb>
+<ke_pri>ichi1</ke_pri>
+<ke_pri>news1</ke_pri>
+<ke_pri>nf14</ke_pri>
+</k_ele>
+<k_ele>
+<keb>缶詰め</keb>
+<ke_pri>ichi1</ke_pri>
+</k_ele>
+<k_ele>
+<keb>罐詰め</keb>
+<ke_inf>&oK;</ke_inf>
+</k_ele>
+<k_ele>
+<keb>罐詰</keb>
+<ke_inf>&oK;</ke_inf>
+</k_ele>
+<r_ele>
+<reb>かんづめ</reb>
+<re_pri>ichi1</re_pri>
+<re_pri>news1</re_pri>
+<re_pri>nf14</re_pri>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<pos>&adj-no;</pos>
+<gloss>canned food</gloss>
+<gloss>tinned food</gloss>
+</sense>
+<sense>
+<pos>&n;</pos>
+<s_inf>usu. 缶詰にする</s_inf>
+<gloss>confining someone (e.g. so they can concentrate on work)</gloss>
+</sense>
+<sense>
+<s_inf>usu. 缶詰になる</s_inf>
+<gloss>being stuck in a confined space</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1316860</ent_seq>
+<k_ele>
+<keb>治具</keb>
+<ke_inf>&ateji;</ke_inf>
+</k_ele>
+<k_ele>
+<keb>冶具</keb>
+<ke_inf>&ateji;</ke_inf>
+<ke_inf>&iK;</ke_inf>
+</k_ele>
+<r_ele>
+<reb>じぐ</reb>
+</r_ele>
+<r_ele>
+<reb>ジグ</reb>
+<re_nokanji/>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<misc>&uk;</misc>
+<gloss>jig (tool)</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1324440</ent_seq>
+<k_ele>
+<keb>若布</keb>
+<ke_pri>ichi1</ke_pri>
+</k_ele>
+<k_ele>
+<keb>和布</keb>
+<ke_pri>ichi1</ke_pri>
+</k_ele>
+<k_ele>
+<keb>稚海藻</keb>
+</k_ele>
+<k_ele>
+<keb>裙蔕菜</keb>
+</k_ele>
+<r_ele>
+<reb>わかめ</reb>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<r_ele>
+<reb>ワカメ</reb>
+<re_nokanji/>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<misc>&uk;</misc>
+<gloss>wakame (species of edible brown seaweed, Undaria pinnatifida)</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1329750</ent_seq>
+<k_ele>
+<keb>受験地獄</keb>
+</k_ele>
+<r_ele>
+<reb>じゅけんじごく</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<gloss>examination hell</gloss>
+<gloss>ordeal of entrance examinations</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1348750</ent_seq>
+<k_ele>
+<keb>小文字</keb>
+<ke_pri>ichi1</ke_pri>
+<ke_pri>news2</ke_pri>
+<ke_pri>nf45</ke_pri>
+</k_ele>
+<r_ele>
+<reb>こもじ</reb>
+<re_pri>ichi1</re_pri>
+<re_pri>news2</re_pri>
+<re_pri>nf45</re_pri>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<xref>大文字・1</xref>
+<gloss>lowercase letter</gloss>
+</sense>
+<sense>
+<gloss>small letter</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1379360</ent_seq>
+<k_ele>
+<keb>生中継</keb>
+<ke_pri>news1</ke_pri>
+<ke_pri>nf19</ke_pri>
+</k_ele>
+<r_ele>
+<reb>なまちゅうけい</reb>
+<re_pri>news1</re_pri>
+<re_pri>nf19</re_pri>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<pos>&vs;</pos>
+<gloss>live broadcast (radio, TV)</gloss>
+<gloss>live coverage</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1398850</ent_seq>
+<k_ele>
+<keb>双対</keb>
+</k_ele>
+<r_ele>
+<reb>そうつい</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<field>&math;</field>
+<gloss>duality</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1401950</ent_seq>
+<k_ele>
+<keb>草冠</keb>
+</k_ele>
+<k_ele>
+<keb>艸</keb>
+</k_ele>
+<r_ele>
+<reb>くさかんむり</reb>
+<re_restr>草冠</re_restr>
+</r_ele>
+<r_ele>
+<reb>そうこう</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<s_inf>e.g. top of 艾</s_inf>
+<gloss>kanji "grass radical" (radical 140)</gloss>
+</sense>
+<sense>
+<gloss>grass crown</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1414950</ent_seq>
+<k_ele>
+<keb>大文字</keb>
+<ke_pri>ichi1</ke_pri>
+<ke_pri>news2</ke_pri>
+<ke_pri>nf35</ke_pri>
+</k_ele>
+<r_ele>
+<reb>おおもじ</reb>
+<re_pri>ichi1</re_pri>
+<re_pri>news2</re_pri>
+<re_pri>nf35</re_pri>
+</r_ele>
+<r_ele>
+<reb>だいもんじ</reb>
+</r_ele>
+<sense>
+<stagr>おおもじ</stagr>
+<pos>&n;</pos>
+<xref>小文字・1</xref>
+<gloss>uppercase letter</gloss>
+<gloss>capital letter</gloss>
+</sense>
+<sense>
+<gloss>large character</gloss>
+<gloss>large writing</gloss>
+</sense>
+<sense>
+<stagr>だいもんじ</stagr>
+<gloss>the (kanji) character "dai" meaning "big"</gloss>
+</sense>
+<sense>
+<stagr>だいもんじ</stagr>
+<gloss>huge character "dai" formed by fires lit on the side of a mountain in Kyoto on August 16 each year</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1416050</ent_seq>
+<k_ele>
+<keb>叩き</keb>
+<ke_pri>spec1</ke_pri>
+</k_ele>
+<k_ele>
+<keb>敲き</keb>
+</k_ele>
+<k_ele>
+<keb>三和土</keb>
+</k_ele>
+<r_ele>
+<reb>たたき</reb>
+<re_pri>spec1</re_pri>
+</r_ele>
+<r_ele>
+<reb>タタキ</reb>
+<re_nokanji/>
+<re_pri>spec1</re_pri>
+</r_ele>
+<sense>
+<stagk>叩き</stagk>
+<stagk>敲き</stagk>
+<stagr>タタキ</stagr>
+<pos>&n;</pos>
+<gloss>mince (minced meat or fish)</gloss>
+</sense>
+<sense>
+<stagk>叩き</stagk>
+<stagk>敲き</stagk>
+<xref>鰹</xref>
+<gloss>seared skipjack tuna</gloss>
+</sense>
+<sense>
+<stagk>叩き</stagk>
+<stagk>敲き</stagk>
+<misc>&sl;</misc>
+<gloss>robbery</gloss>
+<gloss>extortion</gloss>
+</sense>
+<sense>
+<s_inf>usu. 三和土 (gikun)</s_inf>
+<gloss>hard-packed dirt (clay, gravel, etc.) floor</gloss>
+<gloss>concrete floor</gloss>
+</sense>
+<sense>
+<stagk>叩き</stagk>
+<stagr>タタキ</stagr>
+<gloss>whipping</gloss>
+<gloss>lashing</gloss>
+<gloss>bashing</gloss>
+<gloss>beating</gloss>
+<gloss>flaming</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1456930</ent_seq>
+<k_ele>
+<keb>突っ込み</keb>
+<ke_pri>news2</ke_pri>
+<ke_pri>nf30</ke_pri>
+</k_ele>
+<k_ele>
+<keb>突っこみ</keb>
+</k_ele>
+<k_ele>
+<keb>突込み</keb>
+</k_ele>
+<r_ele>
+<reb>つっこみ</reb>
+<re_pri>news2</re_pri>
+<re_pri>nf30</re_pri>
+</r_ele>
+<r_ele>
+<reb>ツッコミ</reb>
+<re_nokanji/>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<gloss>penetration</gloss>
+<gloss>digging into something</gloss>
+</sense>
+<sense>
+<xref>惚け・ぼけ・2</xref>
+<misc>&uk;</misc>
+<gloss>(in comedy) straight man</gloss>
+<gloss>retort</gloss>
+<gloss>quip</gloss>
+</sense>
+<sense>
+<misc>&id;</misc>
+<gloss>sex</gloss>
+<gloss>intercourse</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1516925</ent_seq>
+<k_ele>
+<keb>方</keb>
+<ke_pri>ichi1</ke_pri>
+</k_ele>
+<r_ele>
+<reb>かた</reb>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<s_inf>also ほう</s_inf>
+<gloss>direction</gloss>
+<gloss>way</gloss>
+</sense>
+<sense>
+<misc>&hon;</misc>
+<gloss>person</gloss>
+<gloss>lady</gloss>
+<gloss>gentleman</gloss>
+</sense>
+<sense>
+<pos>&n;</pos>
+<pos>&n-suf;</pos>
+<gloss>method of</gloss>
+<gloss>manner of</gloss>
+<gloss>way of</gloss>
+</sense>
+<sense>
+<pos>&n-suf;</pos>
+<gloss>care of ...</gloss>
+</sense>
+<sense>
+<s_inf>also がた</s_inf>
+<gloss>person in charge of ...</gloss>
+</sense>
+<sense>
+<s_inf>also がた</s_inf>
+<gloss>side (e.g. "on my mother's side")</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1517910</ent_seq>
+<k_ele>
+<keb>褒め殺し</keb>
+</k_ele>
+<k_ele>
+<keb>ほめ殺し</keb>
+</k_ele>
+<k_ele>
+<keb>誉め殺し</keb>
+</k_ele>
+<r_ele>
+<reb>ほめごろし</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<gloss>backhanded compliment</gloss>
+<gloss>making fun of someone via excessive praise</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1528300</ent_seq>
+<k_ele>
+<keb>密着</keb>
+<ke_pri>news1</ke_pri>
+<ke_pri>nf17</ke_pri>
+</k_ele>
+<r_ele>
+<reb>みっちゃく</reb>
+<re_pri>news1</re_pri>
+<re_pri>nf17</re_pri>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<pos>&vs;</pos>
+<gloss>close adhesion</gloss>
+<gloss>sticking firmly to</gloss>
+<gloss>being glued to</gloss>
+</sense>
+<sense>
+<gloss>relating closely to</gloss>
+<gloss>having relevance to</gloss>
+</sense>
+<sense>
+<gloss>contact printing</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1542640</ent_seq>
+<k_ele>
+<keb>夕べ</keb>
+<ke_pri>news1</ke_pri>
+<ke_pri>nf18</ke_pri>
+</k_ele>
+<k_ele>
+<keb>昨夜</keb>
+<ke_pri>ichi1</ke_pri>
+<ke_pri>news1</ke_pri>
+<ke_pri>nf21</ke_pri>
+</k_ele>
+<r_ele>
+<reb>ゆうべ</reb>
+<re_pri>news1</re_pri>
+<re_pri>nf18</re_pri>
+</r_ele>
+<r_ele>
+<reb>さくや</reb>
+<re_restr>昨夜</re_restr>
+<re_pri>ichi1</re_pri>
+<re_pri>news1</re_pri>
+<re_pri>nf21</re_pri>
+</r_ele>
+<r_ele>
+<reb>ゆんべ</reb>
+<re_restr>昨夜</re_restr>
+</r_ele>
+<sense>
+<stagk>夕べ</stagk>
+<pos>&n-adv;</pos>
+<pos>&n-t;</pos>
+<gloss>evening</gloss>
+</sense>
+<sense>
+<s_inf>usu. 昨夜</s_inf>
+<gloss>last night</gloss>
+<gloss>yesterday evening</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1578780</ent_seq>
+<k_ele>
+<keb>紅葉</keb>
+<ke_pri>ichi1</ke_pri>
+<ke_pri>news1</ke_pri>
+<ke_pri>nf16</ke_pri>
+</k_ele>
+<k_ele>
+<keb>黄葉</keb>
+</k_ele>
+<r_ele>
+<reb>こうよう</reb>
+<re_pri>ichi1</re_pri>
+<re_pri>news1</re_pri>
+<re_pri>nf16</re_pri>
+</r_ele>
+<r_ele>
+<reb>もみじ</reb>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<pos>&vs;</pos>
+<gloss>autumn colours</gloss>
+<gloss>fall colors</gloss>
+<gloss>leaves changing color (colour)</gloss>
+</sense>
+<sense>
+<stagk>紅葉</stagk>
+<stagr>こうよう</stagr>
+<gloss>leaves turning red</gloss>
+<gloss>red leaves</gloss>
+</sense>
+<sense>
+<stagk>黄葉</stagk>
+<stagr>こうよう</stagr>
+<gloss>leaves turning yellow</gloss>
+<gloss>yellow leaves</gloss>
+</sense>
+<sense>
+<stagr>もみじ</stagr>
+<pos>&n;</pos>
+<xref>以呂波紅葉</xref>
+<gloss>(Japanese) maple (Acer japonicum)</gloss>
+</sense>
+<sense>
+<stagr>もみじ</stagr>
+<misc>&col;</misc>
+<gloss>venison</gloss>
+</sense>
+<sense>
+<xref>紅葉襲</xref>
+<gloss>layered colors in garments, resembling autumn colors</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1582580</ent_seq>
+<k_ele>
+<keb>南瓜</keb>
+<ke_pri>ichi1</ke_pri>
+</k_ele>
+<r_ele>
+<reb>かぼちゃ</reb>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<r_ele>
+<reb>ぼうぶら</reb>
+</r_ele>
+<r_ele>
+<reb>なんか</reb>
+<re_inf>&ok;</re_inf>
+</r_ele>
+<r_ele>
+<reb>カボチャ</reb>
+<re_nokanji/>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<misc>&uk;</misc>
+<s_inf>ぼうぶら is primarily Kansai dialect</s_inf>
+<lsource xml:lang="por">Cambodia abóbora</lsource>
+<gloss>pumpkin (Cucurbita sp.)</gloss>
+<gloss>squash</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1582920</ent_seq>
+<k_ele>
+<keb>此の</keb>
+<ke_pri>ichi1</ke_pri>
+</k_ele>
+<k_ele>
+<keb>斯の</keb>
+</k_ele>
+<r_ele>
+<reb>この</reb>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<sense>
+<pos>&adj-pn;</pos>
+<xref>何の・どの</xref>
+<xref>此れ・1</xref>
+<xref>其の・1</xref>
+<xref>彼の</xref>
+<misc>&uk;</misc>
+<gloss>this (something or someone close to the speaker (including the speaker), or ideas expressed by the speaker)</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1593470</ent_seq>
+<k_ele>
+<keb>衣替え</keb>
+<ke_pri>news1</ke_pri>
+<ke_pri>nf14</ke_pri>
+</k_ele>
+<k_ele>
+<keb>更衣</keb>
+</k_ele>
+<k_ele>
+<keb>衣更え</keb>
+</k_ele>
+<r_ele>
+<reb>ころもがえ</reb>
+<re_pri>news1</re_pri>
+<re_pri>nf14</re_pri>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<pos>&vs;</pos>
+<xref>更衣・こうい・1</xref>
+<s_inf>reading is gikun for 更衣</s_inf>
+<gloss>seasonal change of clothing</gloss>
+<gloss>changing (one's) dress for the season</gloss>
+</sense>
+<sense>
+<gloss>renovation</gloss>
+<gloss>facelift</gloss>
+<gloss>changing appearance</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1593475</ent_seq>
+<k_ele>
+<keb>更衣</keb>
+</k_ele>
+<r_ele>
+<reb>こうい</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<pos>&vs;</pos>
+<gloss>changing one's clothes</gloss>
+</sense>
+<sense>
+<pos>&n;</pos>
+<misc>&arch;</misc>
+<gloss>lady court attendant</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1603990</ent_seq>
+<k_ele>
+<keb>町</keb>
+<ke_pri>ichi1</ke_pri>
+<ke_pri>news1</ke_pri>
+<ke_pri>nf02</ke_pri>
+</k_ele>
+<k_ele>
+<keb>街</keb>
+</k_ele>
+<r_ele>
+<reb>まち</reb>
+<re_pri>ichi1</re_pri>
+<re_pri>news1</re_pri>
+<re_pri>nf02</re_pri>
+</r_ele>
+<r_ele>
+<reb>ちょう</reb>
+<re_restr>町</re_restr>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<s_inf>esp. 町</s_inf>
+<gloss>town</gloss>
+<gloss>block</gloss>
+<gloss>neighbourhood</gloss>
+<gloss>neighborhood</gloss>
+</sense>
+<sense>
+<stagk>街</stagk>
+<gloss>downtown</gloss>
+<gloss>main street</gloss>
+</sense>
+<sense>
+<gloss>street</gloss>
+<gloss>road</gloss>
+</sense>
+<sense>
+<stagk>町</stagk>
+<stagr>ちょう</stagr>
+<gloss>109.09 m</gloss>
+</sense>
+<sense>
+<stagk>町</stagk>
+<stagr>ちょう</stagr>
+<gloss>0.99 hectares</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1604310</ent_seq>
+<k_ele>
+<keb>漫才</keb>
+<ke_pri>news1</ke_pri>
+<ke_pri>nf18</ke_pri>
+</k_ele>
+<k_ele>
+<keb>万才</keb>
+<ke_inf>&oK;</ke_inf>
+</k_ele>
+<r_ele>
+<reb>まんざい</reb>
+<re_pri>news1</re_pri>
+<re_pri>nf18</re_pri>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<xref>万歳・まんざい</xref>
+<gloss>manzai</gloss>
+<gloss>comic dialogue</gloss>
+<gloss g_type="expl">two-person comedy act (usu. presented as a fast-paced dialogue, occ. presented as a skit)</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1612710</ent_seq>
+<k_ele>
+<keb>ちり紙</keb>
+<ke_pri>ichi1</ke_pri>
+</k_ele>
+<k_ele>
+<keb>塵紙</keb>
+</k_ele>
+<r_ele>
+<reb>ちりがみ</reb>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<r_ele>
+<reb>ちりし</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<gloss>tissue paper</gloss>
+<gloss>toilet paper</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1629230</ent_seq>
+<r_ele>
+<reb>メリヤスシャツ</reb>
+</r_ele>
+<r_ele>
+<reb>メリヤス・シャツ</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<lsource xml:lang="spa" ls_type="part">medias</lsource>
+<lsource xml:lang="por" ls_type="part">meias</lsource>
+<lsource xml:lang="eng" ls_type="part">shirt</lsource>
+<gloss>undershirt</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1778610</ent_seq>
+<k_ele>
+<keb>あほだら経</keb>
+</k_ele>
+<k_ele>
+<keb>阿呆陀羅経</keb>
+</k_ele>
+<r_ele>
+<reb>あほだらきょう</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<xref>あほだら・1</xref>
+<s_inf>pun on あほだら and 陀羅尼経</s_inf>
+<gloss>mock Buddhist sutra</gloss>
+<gloss g_type="expl">type of fast-paced humorous singing mimicking the chanting of a Buddhist sutra, usually with lyrics satirizing current events</gloss>
+<gloss>ahodarakyō</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1920240</ent_seq>
+<k_ele>
+<keb>何の</keb>
+<ke_pri>news1</ke_pri>
+<ke_pri>nf05</ke_pri>
+</k_ele>
+<r_ele>
+<reb>どの</reb>
+<re_pri>news1</re_pri>
+<re_pri>nf05</re_pri>
+</r_ele>
+<sense>
+<pos>&adj-pn;</pos>
+<xref>此の</xref>
+<xref>其の・1</xref>
+<xref>彼の</xref>
+<misc>&uk;</misc>
+<gloss>which</gloss>
+<gloss>what (way)</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1920245</ent_seq>
+<k_ele>
+<keb>何の</keb>
+</k_ele>
+<r_ele>
+<reb>なんの</reb>
+</r_ele>
+<sense>
+<pos>&adj-f;</pos>
+<gloss>what kind</gloss>
+<gloss>what sort</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>2013840</ent_seq>
+<k_ele>
+<keb>馬鹿な真似</keb>
+</k_ele>
+<r_ele>
+<reb>ばかなまね</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<gloss>tomfoolery</gloss>
+<gloss>monkey business</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>2038530</ent_seq>
+<k_ele>
+<keb>原子力安全保安院</keb>
+</k_ele>
+<k_ele>
+<keb>原子力安全・保安院</keb>
+</k_ele>
+<r_ele>
+<reb>げんしりょくあんぜんほあんいん</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<gloss>Nuclear and Industrial Safety Agency</gloss>
+<gloss>NISA</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>2107800</ent_seq>
+<r_ele>
+<reb>ソーシャルネットワーキングサービス</reb>
+</r_ele>
+<r_ele>
+<reb>ソーシャル・ネットワーキング・サービス</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<gloss>social networking service</gloss>
+<gloss>SNS</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>2148610</ent_seq>
+<k_ele>
+<keb>以呂波紅葉</keb>
+</k_ele>
+<r_ele>
+<reb>いろはもみじ</reb>
+</r_ele>
+<r_ele>
+<reb>イロハモミジ</reb>
+<re_nokanji/>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<misc>&uk;</misc>
+<gloss>Japanese maple (Acer palmatum)</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>2159530</ent_seq>
+<k_ele>
+<keb>ＨＤＤＶＤ</keb>
+</k_ele>
+<k_ele>
+<keb>ＨＤ・ＤＶＤ</keb>
+</k_ele>
+<r_ele>
+<reb>エッチディーディーブイディー</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<gloss>high-definition digital versatile disc (HD DVD, high-definition DVD)</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>2194060</ent_seq>
+<k_ele>
+<keb>ジャガタラ芋</keb>
+</k_ele>
+<k_ele>
+<keb>ジャガタラ薯</keb>
+</k_ele>
+<r_ele>
+<reb>ジャガタラいも</reb>
+</r_ele>
+<r_ele>
+<reb>ジャガタライモ</reb>
+<re_nokanji/>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<xref>ジャガ芋</xref>
+<misc>&uk;</misc>
+<gloss>potato (Solanum tuberosum)</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>2195100</ent_seq>
+<k_ele>
+<keb>洋灯</keb>
+</k_ele>
+<k_ele>
+<keb>洋燈</keb>
+</k_ele>
+<r_ele>
+<reb>ようとう</reb>
+</r_ele>
+<r_ele>
+<reb>ランプ</reb>
+<re_inf>&gikun;</re_inf>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<gloss>lamp</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>2209290</ent_seq>
+<k_ele>
+<keb>被虐待児症候群</keb>
+</k_ele>
+<r_ele>
+<reb>ひぎゃくたいじしょうこうぐん</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<gloss>battered child syndrome</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>2231000</ent_seq>
+<k_ele>
+<keb>爺さん</keb>
+<ke_pri>ichi1</ke_pri>
+</k_ele>
+<k_ele>
+<keb>祖父さん</keb>
+</k_ele>
+<r_ele>
+<reb>じいさん</reb>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<xref>お祖父さん・1</xref>
+<misc>&uk;</misc>
+<s_inf>usu. 祖父さん</s_inf>
+<gloss>grandfather (may be used after name as honorific)</gloss>
+</sense>
+<sense>
+<xref>爺ちゃん・2</xref>
+<misc>&uk;</misc>
+<s_inf>usu. 爺さん</s_inf>
+<gloss>male senior-citizen (may be used after name as honorific)</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>2234570</ent_seq>
+<k_ele>
+<keb>密着取材</keb>
+</k_ele>
+<r_ele>
+<reb>みっちゃくしゅざい</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<pos>&vs;</pos>
+<gloss>close coverage (of an event, celebrity, etc.)</gloss>
+<gloss>close reporting</gloss>
+<gloss>total coverage</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>2404900</ent_seq>
+<k_ele>
+<keb>爺ちゃん</keb>
+</k_ele>
+<k_ele>
+<keb>祖父ちゃん</keb>
+</k_ele>
+<r_ele>
+<reb>じいちゃん</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<xref>祖父さん・1</xref>
+<misc>&fam;</misc>
+<misc>&uk;</misc>
+<s_inf>usu. 祖父ちゃん</s_inf>
+<gloss>grandfather (may be used after name as honorific)</gloss>
+</sense>
+<sense>
+<xref>爺さん・2</xref>
+<misc>&uk;</misc>
+<s_inf>usu. 爺ちゃん</s_inf>
+<gloss>male senior-citizen (may be used after name as honorific)</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>2518550</ent_seq>
+<k_ele>
+<keb>アジア太平洋戦争</keb>
+</k_ele>
+<k_ele>
+<keb>アジア・太平洋戦争</keb>
+</k_ele>
+<r_ele>
+<reb>アジアたいへいようせんそう</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<xref>十五年戦争</xref>
+<xref>太平洋戦争</xref>
+<gloss>Asia-Pacific War (starting with the Manchurian Incident in 1931 and ending with the Japanese surrender in 1945)</gloss>
+<gloss>Pacific War</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>2636250</ent_seq>
+<k_ele>
+<keb>皐月鱒</keb>
+</k_ele>
+<r_ele>
+<reb>さつきます</reb>
+</r_ele>
+<r_ele>
+<reb>サツキマス</reb>
+<re_nokanji/>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<xref>甘子</xref>
+<misc>&uk;</misc>
+<gloss>sea-run variety of red-spotted masu trout (subspecies of cherry salmon, Oncorhynchus masou ishikawae)</gloss>
+<gloss>red-spotted masu salmon</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>2833860</ent_seq>
+<k_ele>
+<keb>紅葉襲</keb>
+</k_ele>
+<r_ele>
+<reb>もみじがさね</reb>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<xref>紅葉・6</xref>
+<gloss>layered colors in garments, resembling autumn colors</gloss>
+</sense>
+</entry>
+</JMdict>

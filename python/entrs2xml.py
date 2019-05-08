@@ -26,7 +26,7 @@ _ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
 _ = os.path.join (os.path.dirname(_), 'python', 'lib')
 if _ not in sys.path: sys.path.insert(0, _)
 
-import time
+import time, re
 import jdb, fmt, fmtxml
 
 def main (args, opts):
@@ -66,9 +66,17 @@ def main (args, opts):
 
         if opts.seqfile:
             if opts.seqfile == '-': f = sys.stdin
-            else: f = open (opts.seqfile)
-                  #FIXME: we should read these incrementally.
-            entrlist = [int(x) for x in f.read().split()]  # seq# separated by sp or nl.
+            else:
+                f = open (opts.seqfile)
+                entrlist = []
+                for lnnum, ln in enumerate (f):
+                    lnnum += 1
+                    ln = re.sub (r'\s*#.*', '', ln)
+                    if not ln: continue
+                    try: entrlist.extend ([int(x) for x in ln.split()])
+                    except ValueError as e:
+                        print ("Bad value in %s at line %s:\n  %s"
+                               % (opts.seqfile, lnnum, str(e)), file=sys.stderr)
             if f != sys.stdin: f.close()
 
           # Turn the "--corpus" option value into a string that can be
@@ -272,9 +280,12 @@ Arguments:
                 "all entries in the file will be processed.")
 
         p.add_option ("--seqfile", default=None,
-            help="Name of a file that contains a list of sequence numbers "
-                "to be extracted.  This and the -b or -c options are mutually "
-                "exclusive.")
+            help="Name of a file that contains a sequence numbers "
+                "to be extracted.  A line may contain multiple sequence "
+                "numbers separated by spaces.  A # character indicates a "
+                "comment and it and any text to the end of line will be "
+                "ignored, as will blank lines.  "
+                "--seqfile and the -b or -c options are mutually exclusive.")
 
         p.add_option ("-s", "--corpus", default=None,
             help="""Restrict extracted entries to those belonging to the
