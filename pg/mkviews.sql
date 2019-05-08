@@ -18,6 +18,9 @@
 --  Copyright (c) 2006-2019 Stuart McGraw
 ---------------------------------------------------------------------------
 
+-- Create the views needed by JMdictDB.
+-- This script is normally executed by schema.sql.
+
 \set ON_ERROR_STOP
 BEGIN;
 

@@ -29,13 +29,6 @@ JMDICTFILE = JMdict_e
 # Language specified using ISO-639-2 3-letter abbreviation.
 #LANGOPT = -g eng
 
-# Locale to use when initializing a new database.  This should
-# be a Japanese locale; if not, sorted Japanese text results will
-# not be ordered correctly.  You may need to change it if the 
-# given locale is not available on your system.  In particular
-# Microsoft Windows users will want to change this to "japanese".
-DBLOCALE = ja_JP.utf8
-
 # Name of database to load new data into.  The new data is loaded
 # into this database first, without changing the in-service
 # production database, for any testing needed.  When the database
@@ -49,9 +42,6 @@ DBACT = jmdict
 # Name of previous production database (saved when newly
 # created database is moved to production status...
 DBOLD = jmold
-
-# Name of database used for running code tests.
-DBTEST = jmtest
 
 # Postgresql user that will be used to create the jmdictdb
 # tables and other objects.  Users defined in the
@@ -228,16 +218,12 @@ init:
 
 newdb:
 	psql $(PG_HOST) -U $(PG_SUPER) -d postgres -c 'drop database if exists $(DB)'
-	psql $(PG_HOST) -U $(PG_SUPER) -d postgres -c "create database $(DB) owner $(USER) template template0 encoding 'utf8' lc_collate '$(DBLOCALE)' lc_ctype '$(DBLOCALE)'"
+	psql $(PG_HOST) -U $(PG_SUPER) -d postgres -c "create database $(DB) owner $(USER) template template0 encoding 'utf8'"
 
 #------ Create a new jmnew database with empty jmdictdb objects --------
 
 jmnew: newdb
-	cd pg && psql $(PG_HOST) -U $(USER) -d $(DB) -f mktables.sql
-	cd pg && psql $(PG_HOST) -U $(USER) -d $(DB) -f loadkw.sql
-	cd pg && psql $(PG_HOST) -U $(USER) -d $(DB) -f loadconj.sql
-	cd pg && psql $(PG_HOST) -U $(USER) -d $(DB) -f mkviews.sql
-	cd pg && psql $(PG_HOST) -U $(USER) -d $(DB) -f imptabs.sql
+	cd pg && psql $(PG_HOST) -U $(USER) -d $(DB) -f schema.sql
 
 #------ Move installation database to active ----------------------------
 
@@ -246,13 +232,6 @@ activate:
 	psql $(PG_HOST) -U $(PG_SUPER) -d postgres -c 'drop database if exists $(DBOLD)'
 	-psql $(PG_HOST) -U $(PG_SUPER) -d postgres -c 'alter database $(DBACT) rename to $(DBOLD)'
 	psql $(PG_HOST) -U $(PG_SUPER) -d postgres -c 'alter database $(DB) rename to $(DBACT)'
-
-#------ Move installation database to test ------------------------------
-
-activate_test:
-	psql $(PG_HOST) -U $(PG_SUPER) -d $(DB) -c 'SELECT 1' >/dev/null # Check existance.
-	psql $(PG_HOST) -U $(PG_SUPER) -d postgres -c 'drop database if exists $(DBTEST)'
-	psql $(PG_HOST) -U $(PG_SUPER) -d postgres -c 'alter database $(DB) rename to $(DBTEST)'
 
 #------ Restore foreign key and index definitions -----------------------
 
@@ -389,11 +368,4 @@ clean:
 	find -name '*.tmp' -type f -print0 | xargs -0 /bin/rm -f
 	find -name '\#*' -type f -print0 | xargs -0 /bin/rm -f
 	find -name '\.*' -type f -print0 | xargs -0 /bin/rm -f
-
-dist: 
-	# This should be run in a freshly checked out
-	# directory to avoid including spurious files.
-	rm jmdict.tgz
-	touch jmdict.tgz
-	tar -cz -f jmdict.tgz --exclude data --exclude 'CVS' --exclude './jmdict.tgz' .
 

@@ -344,11 +344,6 @@ usual during loading.
    some options for the Postgresql database server
    connections, including authentication settings.
 
-   If you are running on Microsoft Windows you will
-   need to change the value of DBLOCALE from "ja_JP.utf8"
-   to "japanese" or specify DBLOCALE when you run "make"
-   in step 8 below.
-
 5. Set (or modify) the enviroment variable PYTHONPATH
    so that it contains an absolute path to the python/lib
    directory.  For example, if you installed the jmdictdb
@@ -394,10 +389,6 @@ usual during loading.
    machine, run:
 
         make loadall
-
-   Similarly but on a Windows machine:
-
-        make DBLOCALE=japanese loadall
 
    "make loadall" will create a database named "jmnew", download
    the needed XML files, then parse and load the JMdict, JMnedict,

@@ -19,6 +19,7 @@
 ---------------------------------------------------------------------------
 
 -- JMdict schema for Postgresql
+-- This script is normally executed by schema.sql.
 
 \unset ON_ERROR_STOP 
 CREATE LANGUAGE 'plpgsql';

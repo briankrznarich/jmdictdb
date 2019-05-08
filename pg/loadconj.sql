@@ -1,3 +1,6 @@
+-- Load the tables that contain conjugation data.
+-- This script is normally executed by schema.sql.
+
 \set ON_ERROR_STOP 1
 
 \copy conj FROM data/conj.csv DELIMITER E'\t' CSV HEADER

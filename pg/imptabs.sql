@@ -1,3 +1,7 @@
+-- Create the schema used for loading corpus data initially
+-- prior to its migration to the main "public" schema.
+-- This script is normally executed by schema.sql.
+
 \set ON_ERROR_STOP 
 
 DROP SCHEMA IF EXISTS imp CASCADE;

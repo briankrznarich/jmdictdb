@@ -1,3 +1,6 @@
+-- Load all the kw* tables from CSV data.
+-- This script is normally executed by schema.sql.
+
 \set ON_ERROR_STOP 1
 \copy kwdial from '../pg/data/kwdial.csv' CSV delimiter E'\t'
 \copy kwfreq from '../pg/data/kwfreq.csv' CSV delimiter E'\t'
