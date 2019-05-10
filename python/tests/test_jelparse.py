@@ -4,31 +4,44 @@
 # To make any changes to the jelparse code, edit jelparse.y.  Then
 # run 'make' in the lib dir to regenerate jelparse.py from jelparse.y.
 #---------------------------------------------------------------------
-#----- WARNING -------------------------------------------------------
+#----- CAUTION -------------------------------------------------------
 # These tests rely on the correct functioning of the fmtjel.py module.
 # The tests in class Roundtrip use data from database 'jmdict' which
 #  may change from time to time.
 #---------------------------------------------------------------------
+#----- CAUTION -------------------------------------------------------
+# The "jmtest" database used herein is shared between all tests,
+# test classes and tests in other modules.  It is not reloaded,
+# even between different invocations of the test runner program.
+# Tests should be very careful to not to make any changes that
+# could affect other tests.
+# To force reloading a clean copy of the test database, delete it
+# (eg, with 'dropdb'); it will be recreated freshly the next time
+# the test program is run.
+#---------------------------------------------------------------------
 
-
-import sys, unittest, pdb
+import sys, os, unittest, signal, pdb
 if '../lib' not in sys.path: sys.path.append ('../lib')
-import jdb, jellex, jelparse, fmtjel, unittest_extensions
+import jdb, jellex, jelparse, fmtjel
+import unittest_extensions, jmdb
 
 __unittest = 1
 Cur = None
 
-def main():
-        globalSetup()
-        unittest.main()
+def main(): unittest.main()
 
 def globalSetup ():
         global Cur, KW, Lexer, Parser
-        if Cur: return False
-        try: import dbauth; kwargs = dbauth.auth
-        except ImportError: kwargs = {'database':'jmdict'}
-        kwargs['autocommit'] = True
-        Cur = jdb.dbOpen (None, **kwargs)
+        if Cur: return True
+        from jmdb import DBmanager
+        try: Cur = DBmanager.use ("jmtest01", "jmtest01.sql")
+        except Exception:
+            print ("Unable to load test database, exiting...", file=sys.stderr)
+              # Can't use sys.exit() here because unittest catches it,
+              # reports it, then continues.  Would prefer to just skip
+              # entire test class rather than exiting but not sure how/if
+              # that can be done.
+            os._exit(1)
         KW = jdb.KW
         Lexer, tokens = jellex.create_lexer ()
         Parser = jelparse.create_parser (Lexer, tokens)
@@ -37,7 +50,7 @@ def globalSetup ():
 class Roundtrip (unittest.TestCase):
 
     # [After update to Ply-3.x from Ply-2.5, the following
-    # method of debugging no loger works...]
+    # method of debugging no longer works...]
     # To debug any failing tests, run:
     #   ../lib/jelparse.py -d258 -qnnnnnnn
     # where 'nnnnnnn' is the entry seq number used in the
@@ -199,6 +212,36 @@ class Lsrc (unittest.TestCase):
     def test0330070(_): check2(_,'0330070')
     def test0330080(_): check2(_,'0330080')
 
+class Lookuptag (unittest.TestCase):
+      # WARNING -- these tests depend on the keyword values
+      # which are subject to change with changes in Jim Breen's
+      # JMdict file DTD.
+    def setUp (self):
+        try: lexer
+        except NameError: globalSetup()
+    def test001(self): self.assertEqual ([['DIAL',2]], jelparse.lookup_tag('ksb',['DIAL']))
+    def test002(self): self.assertEqual ([['DIAL',2]], jelparse.lookup_tag('ksb'))
+    def test003(self): self.assertEqual ([], jelparse.lookup_tag('ksb',['POS']))
+    def test004(self): self.assertEqual ([['POS',17]], jelparse.lookup_tag('n',['POS']))
+    def test005(self): self.assertEqual ([['COPOS', 17],['POS',17]], jelparse.lookup_tag('n'))
+    def test006(self): self.assertEqual ([], jelparse.lookup_tag('n',['RINF']))
+    def test007(self): self.assertEqual ([['FREQ',5,12]], jelparse.lookup_tag('nf12',['FREQ']))
+    def test008(self): self.assertEqual ([['FREQ',5,12]], jelparse.lookup_tag('nf12'))
+    def test009(self): self.assertEqual ([], jelparse.lookup_tag('nf12',['POS']))
+    def test010(self): self.assertEqual ([['LANG', 1]], jelparse.lookup_tag('eng'))
+    def test011(self): self.assertEqual ([['LANG',1]], jelparse.lookup_tag('eng',['LANG']))
+    def test012(self): self.assertEqual ([['LANG',346]], jelparse.lookup_tag('pol',['LANG']))
+    def test013(self): self.assertEqual ([['MISC',19]], jelparse.lookup_tag('pol',['MISC']))
+    def test014(self): self.assertEqual ([['LANG', 346], ['MISC', 19]], jelparse.lookup_tag('pol'))
+    def test015(self): self.assertEqual ([['POS',44]], jelparse.lookup_tag('vi'))
+    def test016(self): self.assertEqual ([], jelparse.lookup_tag('nf',['RINF']))
+    def test018(self): self.assertEqual ([['KINF',4],['RINF',3]], jelparse.lookup_tag('ik'))
+    def test019(self): self.assertEqual ([['COPOS', 28],['POS',28],], jelparse.lookup_tag('v1'))
+
+    def test101(self): self.assertEqual (None, jelparse.lookup_tag ('n',['POSS']))
+      # Is the following desired behavior? Or should value for 'n' in 'POS' be returned?
+    def test102(self): self.assertEqual (None, jelparse.lookup_tag ('n',['POS','POSS']))
+
 def cherr (self, seq, exception, msg):
         global Cur, Lexer, Parser
         intxt = unittest_extensions.readfile_utf8 ("data/jelparse/%s.txt" % seq)
@@ -244,7 +287,7 @@ def check2 (_, test, exp=None):
 
 def roundtrip (cur, intxt):
           # Since hg-180523-6b1a12 we use '\f' to separate the kanji, reading
-          # and senses sections in JEL text used as input to jelparse() 
+          # and senses sections in JEL text used as input to jelparse()
           # rather than '\n' which was previously used.  To avoid changing
           # all the test data that still uses '\n', we call secsepfix() to
           # replace the first two '\n's in the test data with '\f's to make
@@ -258,7 +301,7 @@ def roundtrip (cur, intxt):
         for s in entr._sens: jdb.add_xsens_lists (getattr (s, '_xref', []))
         for s in entr._sens: jdb.mark_seq_xrefs (cur, getattr (s, '_xref', []))
           # fmtjel.entr() returns JEL text using '\n', not '\f' as the
-          # section separator character. 
+          # section separator character.
         outtxt = fmtjel.entr (entr, nohdr=True)
         return outtxt
 
@@ -273,37 +316,5 @@ def loadData (filename, secsep, last=[None,None]):
 
 def secsepfix (s):
         return s.replace('\n', '\f', 2)
-
-class Lookuptag (unittest.TestCase):
-
-    # WARNING -- these tests depend on the keyword values
-    # which are subject to change with changes in Jim Breen's
-    # JMdict file DTD.
-
-    def setUp (self):
-        try: lexer
-        except NameError: globalSetup()
-    def test001(self): self.assertEqual ([['DIAL',2]], jelparse.lookup_tag('ksb',['DIAL']))
-    def test002(self): self.assertEqual ([['DIAL',2]], jelparse.lookup_tag('ksb'))
-    def test003(self): self.assertEqual ([], jelparse.lookup_tag('ksb',['POS']))
-    def test004(self): self.assertEqual ([['POS',17]], jelparse.lookup_tag('n',['POS']))
-    def test005(self): self.assertEqual ([['COPOS', 17],['POS',17]], jelparse.lookup_tag('n'))
-    def test006(self): self.assertEqual ([], jelparse.lookup_tag('n',['RINF']))
-    def test007(self): self.assertEqual ([['FREQ',5,12]], jelparse.lookup_tag('nf12',['FREQ']))
-    def test008(self): self.assertEqual ([['FREQ',5,12]], jelparse.lookup_tag('nf12'))
-    def test009(self): self.assertEqual ([], jelparse.lookup_tag('nf12',['POS']))
-    def test010(self): self.assertEqual ([['LANG', 1]], jelparse.lookup_tag('eng'))
-    def test011(self): self.assertEqual ([['LANG',1]], jelparse.lookup_tag('eng',['LANG']))
-    def test012(self): self.assertEqual ([['LANG',346]], jelparse.lookup_tag('pol',['LANG']))
-    def test013(self): self.assertEqual ([['MISC',19]], jelparse.lookup_tag('pol',['MISC']))
-    def test014(self): self.assertEqual ([['LANG', 346], ['MISC', 19]], jelparse.lookup_tag('pol'))
-    def test015(self): self.assertEqual ([['POS',44]], jelparse.lookup_tag('vi'))
-    def test016(self): self.assertEqual ([], jelparse.lookup_tag('nf',['RINF']))
-    def test018(self): self.assertEqual ([['KINF',4],['RINF',3]], jelparse.lookup_tag('ik'))
-    def test019(self): self.assertEqual ([['COPOS', 28],['POS',28],], jelparse.lookup_tag('v1'))
-
-    def test101(self): self.assertEqual (None, jelparse.lookup_tag ('n',['POSS']))
-      # Is the following desired behavior? Or should value for 'n' in 'POS' be returned?
-    def test102(self): self.assertEqual (None, jelparse.lookup_tag ('n',['POS','POSS']))
 
 if __name__ == '__main__': main()
