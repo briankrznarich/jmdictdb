@@ -1,23 +1,17 @@
-﻿# -*- coding: utf-8 -*-
-
 import sys, re, unittest, pdb
-try: import json
-except ImportError: import simplejson as json
+import json
 if '../lib' not in sys.path: sys.path.append ('../lib')
 import jdb, fmtxml
 from objects import *
 import serialize
+from jmdb import DBmanager
 
 Cursor = None
-def globalSetup ():
-        global Cursor
-          # Get login credentials from dbauth.py if possible.
-        try: import dbauth; kwargs = dbauth.auth
-        except ImportError: kwargs = {'database':'jmdict'}
-        kwargs['autocommit'] = True
-        Cursor = jdb.dbOpen (None, **kwargs)
+def setUpModule():
+       global Cursor
+       Cursor = DBmanager.use ("jmtest01", "jmtest01.sql")
 
-class Test_obj2struc (unittest.TestCase):
+class Obj2struc (unittest.TestCase):
 
       # Scalars...
     def test0001(_): _.assert_ (isEqual (serialize.obj2struc(None), None))
@@ -40,7 +34,7 @@ class Test_obj2struc (unittest.TestCase):
 
       # TBS... objects, hashes?...
 
-class Test_struc2obj (unittest.TestCase):
+class Struc2obj (unittest.TestCase):
 
       # Scalars...
     def test0001(_): _.assert_ (isEqual (serialize.struc2obj(None), None))
@@ -55,11 +49,11 @@ class Test_struc2obj (unittest.TestCase):
 
       # TBS... lists, tuples, hashes?...
 
-class Test_obj2struc (unittest.TestCase):
+class Obj2struc (unittest.TestCase):
 
     def test01(_): _.assert_ (isEqual (serialize.obj2struc(None), None))
 
-class Test_multirefs (unittest.TestCase):
+class Multirefs (unittest.TestCase):
       # Test that multiple references to a single object aren't
       # lost when serializing/deserializing.
 
@@ -80,14 +74,14 @@ class Test_multirefs (unittest.TestCase):
         _.assertEqual (b2.x, b2.y)
         _.assertNotEqual (id(b2.x), id(b2.y))
 
-class Test_roundtrip (unittest.TestCase):
+class Roundtrip (unittest.TestCase):
 
     def test001(_): rt (_, 1005250)
     def test002(_): rt (_, 1005930)
     def test003(_): rt (_, 1000920)
     def test004(_): rt (_, 2013840)
 
-class Test_objects (unittest.TestCase):
+class Objects (unittest.TestCase):
     def test001(_):
         e1 = Obj (id=555, seq=222, stat=2)
         e2 = serialize.unserialize (serialize.serialize (e1))
@@ -157,21 +151,19 @@ class Test_objects (unittest.TestCase):
         _.assertEqual (e1._rdng[1].txt, e2._rdng[1].txt)
         _.assertEqual (e1._sens[1]._gloss[1].txt, e2._sens[1]._gloss[1].txt)
 
+#=============================================================================
+# Support functions
+
 def isEqual (a, b):
         if type(a) != type(b) : return False
         return a == b
 
-Cursor = None
 def rt(_, seq):
         # Test round trip from entry object through
         # serialize.serialize, serialize.unserialize, back to
         # object.  Compare input and output objects
         # by converting both to xml and comparing
         # text.  (Watch out for order problems).
-
-          # FIXME: reading database to slow, too volatile.
-          #   read from a test xml file instead.
-        if not Cursor: globalSetup()
           # FIXME: don't hardwire corpus (aka src).
         sql = "SELECT id FROM entr WHERE seq=%s AND src=1"
         elist,r = jdb.entrList (Cursor, sql, [seq], ret_tuple=1)

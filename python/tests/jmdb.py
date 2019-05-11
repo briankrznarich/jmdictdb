@@ -4,9 +4,9 @@ import jdb, db
 # This module defines a _DBmanager class and creates a single
 # global instance of it that test modules may import and use in
 # order to share a common database(s) without reloading it for
-# each test.  This matters because the "jmtest" database takes
-# some 15+ seconds to reload... way too long to do each of hundreds
-# of tests.
+# each test.  This matters because the "jmtest01" database takes
+# some 15+ seconds to reload... way too long to do in each of
+# hundreds of tests.
 # Sharing a database between tests requires some displine on the
 # part of the tests not to make any changes that will affect other
 # tests and even with that goal there is some risk it will happen
@@ -19,23 +19,25 @@ import jdb, db
 #
 #    .use (dbname, filename)
 #
-#    dbname -- Name of a test database
+#    dbname -- Name of a test database.
 #    filename -- Name of a file containing sql commands needed to
 #      create the database.  This is typically produced by running
 #      Postgresql's 'pg_dump' command on a prototype test database.
 #
 # When .use() is called it will check if the database 'dbname' is
-# already loaded by:
+# already loaded in the Postgresql server by:
 # 1) Checking whether a database named 'dbname' was loaded from
 #    file 'filename' previously in this invocation of the test
 #    program.
 # 2) If (1) is not true, it will check if as database named 'dbname'
 #    exists on the server, and if so, if it has a table, created by
-#    DBmanager that contains that name of 'filename'.
+#    DBmanager, that contains that name of 'filename'.
 # If (1) and (2) are both true, .use() assumes the existing 'dbname'
 # database is the desired one and will return a jdb.dbOpen() cursor
 # to it.  If either (1) or (2) is false, .use() will drop any existing
-# 'dbname' database are create it by restoring from 'filename'.
+# 'dbname' database and create it by restoring from 'filename' (which
+# should be a "plain" sql dump produced by 'pg_dump' of the virgin
+# test database.)
 # Check (2) allows a database to be reused between invocations of the
 # test program.
 # A failure when loading will result in an exception.
@@ -53,7 +55,7 @@ class _DBmanager():
         cur = jdb.dbOpen (dbname)
         return cur
     def is_loaded (self, dbname, filename):
-        if dbname in self.loaded and self.loaded(os.path.abspath):
+        if dbname in self.loaded and self.loaded[dbname]==os.path.abspath:
             return True
         try:
             dbconn = db.connect (dbname)

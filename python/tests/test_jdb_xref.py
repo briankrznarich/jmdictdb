@@ -1,14 +1,9 @@
-# -*- coding: utf-8 -*-
-
-
 import sys, unittest, pdb
 if '../lib' not in sys.path: sys.path.append ('../lib')
 from objects import *
 import jdb
 
-Cur = None
-
-class Test_seq (unittest.TestCase):
+class Seq (unittest.TestCase):
     def test_001(_):
         xrefs = []
         cur = MockCursor (_, None)
@@ -135,6 +130,8 @@ class Test_seq (unittest.TestCase):
         _.assert_ (hasattr (x3, 'SEQ'))
         _.assertEqual (False, x3.SEQ)
 
+#=============================================================================
+# Support functions
 
 class MockCursor:
     def __init__ (self, test, args=None, returns=None):

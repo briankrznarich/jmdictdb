@@ -6,7 +6,13 @@
 import sys, pdb, unittest
 if '../lib' not in sys.path: sys.path.append ('../lib')
 import jdb
+from jmdb import DBmanager
 __unittest = 1
+
+Cursor = None
+def setUpModule():
+       global Cursor
+       Cursor = DBmanager.use ("jmtest01", "jmtest01.sql")
 
 KwdsAttrs = set (('DIAL','FLD','FREQ','GINF','KINF','LANG','MISC','POS',
                   'RINF','SRC','SRCT','STAT','XREF','CINF','GRP', 'COPOS'))
@@ -269,17 +275,7 @@ Current_kwds = [
         ('255', 'MISC', 192, 'work'),
         ]
 
-Cursor = None
-def globalSetup ():
-        global Cursor
-          # Get login credentials from dbauth.py if possible.
-        try: import dbauth; kwargs = dbauth.auth
-        except ImportError: kwargs = {'database':'jmdict'}
-        kwargs['autocommit'] = True
-        Cursor = jdb.dbOpen (None, **kwargs)
-
-
-class Test_Empty (unittest.TestCase):
+class Empty (unittest.TestCase):
     def setUp (_):
         _.o = jdb.Kwds()
 
@@ -314,7 +310,7 @@ class Test_Empty (unittest.TestCase):
         _.o.add ('DIAL', values)
         validate_rec (_, _.o, 'DIAL', *values)
 
-class Test_loadcsv (unittest.TestCase):
+class Loadcsv (unittest.TestCase):
 
     def setUp (_):
         _.o = jdb.Kwds ('data/kwds')
@@ -366,7 +362,7 @@ class Test_loadcsv (unittest.TestCase):
         actual = [getattr (_.o, x) for x in attrs if "_" in x]
         _.assertEqual (expected, actual)
 
-class Test_missing_csv (unittest.TestCase):
+class Missing_csv (unittest.TestCase):
     def test001 (_):
         _.assertRaises (IOError, jdb.Kwds, 'data/kwds/empty')
     def test002 (_):
@@ -385,11 +381,9 @@ class Test_missing_csv (unittest.TestCase):
 
 #FIXME: need Test_missing_db.
 
-class Test_loaddb (unittest.TestCase):
+class Loaddb (unittest.TestCase):
 
     def setUp (_):
-          #FIXME: use dedicated test database, or mock database
-        if not Cursor: globalSetup()
         _.o = jdb.Kwds (Cursor)
 
     def test001 (_):
@@ -432,7 +426,6 @@ class Test_actual_db (unittest.TestCase):
     def setUp (_):
         global Test_actual_db_test_object
         if Test_actual_db_test_object is None:
-            if not Cursor: globalSetup()
             Test_actual_db_test_object = jdb.Kwds(Cursor)
         _.o = Test_actual_db_test_object
 add_tests (Test_actual_db)
