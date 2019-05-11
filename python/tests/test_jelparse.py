@@ -268,7 +268,7 @@ def check (_, seq, exp=None):
         except IOError:
             exptxt = intxt
         outtxt = roundtrip (intxt, JELlexer, JELparser, DBcursor)
-        _.assert_ (8 <= len (outtxt))    # Sanity check for non-empty entry.
+        _.assertTrue (8 <= len (outtxt))    # Sanity check for non-empty entry.
         msg = "\nExpected:\n%s\nGot:\n%s" % (exptxt, outtxt)
         _.assertEqual (outtxt, exptxt, msg)
 
@@ -277,7 +277,7 @@ def check2 (_, test, exp=None):
         try: exptxt = (_.data[test + '_expect']).strip('\n')
         except KeyError: exptxt = intxt.strip('\n')
         outtxt = roundtrip (intxt, JELlexer, JELparser, DBcursor).strip('\n')
-        _.assert_ (8 <= len (outtxt))    # Sanity check for non-empty entry.
+        _.assertTrue (8 <= len (outtxt))    # Sanity check for non-empty entry.
         msg = "\nExpected:\n%s\nGot:\n%s" % (exptxt, outtxt)
         _.assertEqual (outtxt, exptxt, msg)
 

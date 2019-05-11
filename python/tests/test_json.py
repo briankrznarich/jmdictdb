@@ -14,44 +14,44 @@ def setUpModule():
 class Obj2struc (unittest.TestCase):
 
       # Scalars...
-    def test0001(_): _.assert_ (isEqual (serialize.obj2struc(None), None))
-    def test0002(_): _.assert_ (isEqual (serialize.obj2struc(1), 1))
-    def test0003(_): _.assert_ (isEqual (serialize.obj2struc(2000000000000), 2000000000000))
-    def test0004(_): _.assert_ (isEqual (serialize.obj2struc('abc'), 'abc'))
-    def test0005(_): _.assert_ (isEqual (serialize.obj2struc('abc'), 'abc'))
-    def test0006(_): _.assert_ (isEqual (serialize.obj2struc('\u304a\u5143\u6c17\u3067'), '\u304a\u5143\u6c17\u3067'))
-    def test0007(_): _.assert_ (isEqual (serialize.obj2struc(1.1428), 1.1428))
-    def test0008(_): _.assert_ (isEqual (serialize.obj2struc(True), True))
-    def test0009(_): _.assert_ (isEqual (serialize.obj2struc(False), False))
+    def test0001(_): _.assertTrue (isEqual (serialize.obj2struc(None), None))
+    def test0002(_): _.assertTrue (isEqual (serialize.obj2struc(1), 1))
+    def test0003(_): _.assertTrue (isEqual (serialize.obj2struc(2000000000000), 2000000000000))
+    def test0004(_): _.assertTrue (isEqual (serialize.obj2struc('abc'), 'abc'))
+    def test0005(_): _.assertTrue (isEqual (serialize.obj2struc('abc'), 'abc'))
+    def test0006(_): _.assertTrue (isEqual (serialize.obj2struc('\u304a\u5143\u6c17\u3067'), '\u304a\u5143\u6c17\u3067'))
+    def test0007(_): _.assertTrue (isEqual (serialize.obj2struc(1.1428), 1.1428))
+    def test0008(_): _.assertTrue (isEqual (serialize.obj2struc(True), True))
+    def test0009(_): _.assertTrue (isEqual (serialize.obj2struc(False), False))
 
       # lists, tuples
-    def test0101(_): _.assert_ (isEqual (serialize.obj2struc([]),         ['list',[]]))
-    def test0102(_): _.assert_ (isEqual (serialize.obj2struc([3]),        ['list',[3]]))
-    def test0103(_): _.assert_ (isEqual (serialize.obj2struc(['abc', 7]), ['list',['abc',7]]))
-    def test0104(_): _.assert_ (isEqual (serialize.obj2struc(()),         ['list',[]]))
-    def test0105(_): _.assert_ (isEqual (serialize.obj2struc((3,)),       ['list',(3.)]))
-    def test0106(_): _.assert_ (isEqual (serialize.obj2struc(('abc', 7)), ['list',('abc',7)]))
+    def test0101(_): _.assertTrue (isEqual (serialize.obj2struc([]),         ['list',[]]))
+    def test0102(_): _.assertTrue (isEqual (serialize.obj2struc([3]),        ['list',[3]]))
+    def test0103(_): _.assertTrue (isEqual (serialize.obj2struc(['abc', 7]), ['list',['abc',7]]))
+    def test0104(_): _.assertTrue (isEqual (serialize.obj2struc(()),         ['list',[]]))
+    def test0105(_): _.assertTrue (isEqual (serialize.obj2struc((3,)),       ['list',(3.)]))
+    def test0106(_): _.assertTrue (isEqual (serialize.obj2struc(('abc', 7)), ['list',('abc',7)]))
 
       # TBS... objects, hashes?...
 
 class Struc2obj (unittest.TestCase):
 
       # Scalars...
-    def test0001(_): _.assert_ (isEqual (serialize.struc2obj(None), None))
-    def test0002(_): _.assert_ (isEqual (serialize.struc2obj(1), 1))
-    def test0003(_): _.assert_ (isEqual (serialize.struc2obj(2000000000000), 2000000000000))
-    def test0004(_): _.assert_ (isEqual (serialize.struc2obj('abc'), 'abc'))
-    def test0005(_): _.assert_ (isEqual (serialize.struc2obj('abc'), 'abc'))
-    def test0006(_): _.assert_ (isEqual (serialize.struc2obj('\u304a\u5143\u6c17\u3067'), '\u304a\u5143\u6c17\u3067'))
-    def test0007(_): _.assert_ (isEqual (serialize.struc2obj(1.1428), 1.1428))
-    def test0008(_): _.assert_ (isEqual (serialize.struc2obj(True), True))
-    def test0009(_): _.assert_ (isEqual (serialize.struc2obj(False), False))
+    def test0001(_): _.assertTrue (isEqual (serialize.struc2obj(None), None))
+    def test0002(_): _.assertTrue (isEqual (serialize.struc2obj(1), 1))
+    def test0003(_): _.assertTrue (isEqual (serialize.struc2obj(2000000000000), 2000000000000))
+    def test0004(_): _.assertTrue (isEqual (serialize.struc2obj('abc'), 'abc'))
+    def test0005(_): _.assertTrue (isEqual (serialize.struc2obj('abc'), 'abc'))
+    def test0006(_): _.assertTrue (isEqual (serialize.struc2obj('\u304a\u5143\u6c17\u3067'), '\u304a\u5143\u6c17\u3067'))
+    def test0007(_): _.assertTrue (isEqual (serialize.struc2obj(1.1428), 1.1428))
+    def test0008(_): _.assertTrue (isEqual (serialize.struc2obj(True), True))
+    def test0009(_): _.assertTrue (isEqual (serialize.struc2obj(False), False))
 
       # TBS... lists, tuples, hashes?...
 
 class Obj2struc (unittest.TestCase):
 
-    def test01(_): _.assert_ (isEqual (serialize.obj2struc(None), None))
+    def test01(_): _.assertTrue (isEqual (serialize.obj2struc(None), None))
 
 class Multirefs (unittest.TestCase):
       # Test that multiple references to a single object aren't
@@ -172,7 +172,7 @@ def rt(_, seq):
         s = serialize.serialize (e1)
         e2 = serialize.unserialize (s)
         f1 = fmtxml.entr (e1)
-        _.assert_ (len (f1) > 40)  # Sanity check to detect empty entry.
+        _.assertTrue (len (f1) > 40)  # Sanity check to detect empty entry.
         f2 = fmtxml.entr (e2)
         _.assertEqual (f1, f2)
 

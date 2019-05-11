@@ -15,7 +15,7 @@ class Seq (unittest.TestCase):
         x1.TARG = e1;  x1._xsens = [2]
         cur = MockCursor (_, [1,12345,2], [[e1.src,e1.seq,1]])
         jdb.mark_seq_xrefs (cur, [x1])
-        _.assert_ (hasattr (x1, 'SEQ'))
+        _.assertTrue (hasattr (x1, 'SEQ'))
         _.assertEqual (True, x1.SEQ)
 
     def test_003(_):
@@ -27,9 +27,9 @@ class Seq (unittest.TestCase):
         x2.TARG = e1;  x2._xsens = []
         cur = MockCursor (_, [1,12345,2], [[1,12345,1]])
         jdb.mark_seq_xrefs (cur, [x1,x2])
-        _.assert_ (hasattr (x1, 'SEQ'))
+        _.assertTrue (hasattr (x1, 'SEQ'))
         _.assertEqual (True, x1.SEQ)
-        _.assert_ (hasattr (x2, 'SEQ'))
+        _.assertTrue (hasattr (x2, 'SEQ'))
         _.assertEqual (True, x2.SEQ)    #???
 
     def test_004(_):
@@ -47,9 +47,9 @@ class Seq (unittest.TestCase):
           # .xsens is different.  If the first has a ._xsens list,
           # then the displaying app will likely skip the second.  If
           # it doesn't, then it should display in seq form
-        _.assert_ (hasattr (x1, 'SEQ'))
+        _.assertTrue (hasattr (x1, 'SEQ'))
         _.assertEqual (True, x1.SEQ)
-        _.assert_ (hasattr (x2, 'SEQ'))
+        _.assertTrue (hasattr (x2, 'SEQ'))
         _.assertEqual (True, x2.SEQ)
 
     def test_005(_):
@@ -66,9 +66,9 @@ class Seq (unittest.TestCase):
           # entries of the same seq num, and all the entries if that
           # seq number are covered by the xrefs, so first xref gets
           # a .SEQ=True attribute, subsequent ones get SEQ=False.
-        _.assert_ (hasattr (x1, 'SEQ'))
+        _.assertTrue (hasattr (x1, 'SEQ'))
         _.assertEqual (True, x1.SEQ)
-        _.assert_ (hasattr (x2, 'SEQ'))
+        _.assertTrue (hasattr (x2, 'SEQ'))
         _.assertEqual (False, x2.SEQ)
 
     def test_006(_):
@@ -85,9 +85,9 @@ class Seq (unittest.TestCase):
           # entries of the same seq num, and all the entries of that
           # seq number are covered by the xrefs, but source .xsens are
           # different, so each xref gets a .SEQ=True attribute.
-        _.assert_ (hasattr (x1, 'SEQ'))
+        _.assertTrue (hasattr (x1, 'SEQ'))
         _.assertEqual (True, x1.SEQ)
-        _.assert_ (hasattr (x2, 'SEQ'))
+        _.assertTrue (hasattr (x2, 'SEQ'))
         _.assertEqual (True, x2.SEQ)
 
     def test_007(_):
@@ -103,8 +103,8 @@ class Seq (unittest.TestCase):
           # Expect no .SEQ attribute because there are two q=12345
           # entries, but each of the two source entry points to only
           # one of them, hence they cannot use a seq representation.
-        _.assert_ (not hasattr (x1, 'SEQ'))
-        _.assert_ (not hasattr (x2, 'SEQ'))
+        _.assertTrue (not hasattr (x1, 'SEQ'))
+        _.assertTrue (not hasattr (x2, 'SEQ'))
 
     def test_008(_):
           # 3 xrefs -> 3 different targets w same seq number, one
@@ -124,10 +124,10 @@ class Seq (unittest.TestCase):
           # entries of the same seq num, and all the entries of that
           # seq number are covered by the xrefs, so first xref gets
           # a .SEQ=True attribute, subsequent ones get SEQ=False.
-        _.assert_ (hasattr (x1, 'SEQ'))
+        _.assertTrue (hasattr (x1, 'SEQ'))
         _.assertEqual (True, x1.SEQ)
-        _.assert_ (not hasattr (x2, 'SEQ'))
-        _.assert_ (hasattr (x3, 'SEQ'))
+        _.assertTrue (not hasattr (x2, 'SEQ'))
+        _.assertTrue (hasattr (x3, 'SEQ'))
         _.assertEqual (False, x3.SEQ)
 
 #=============================================================================
@@ -146,7 +146,7 @@ class MockCursor:
         except AttributeError: jdb.KW = jdb.Kwds (jdb.std_csv_dir())
     def execute (self, sql, args=[]):
           # If self.args is None, this method should never be called.
-        self.test.assert_ (self.args is not None)
+        self.test.assertTrue (self.args is not None)
         expect_sql = "SELECT src,seq,COUNT(*) FROM entr " \
                         "WHERE src=%%s AND seq IN(%s) AND stat=%%s GROUP BY src,seq" \
                         % ",".join(["%s"]*(len(args)-2))
@@ -154,7 +154,7 @@ class MockCursor:
         self.test.assertEqual (self.args, args)
     def fetchall (self):
           # If self.args is None, this method should never be called.
-        self.test.assert_ (self.args is not None)
+        self.test.assertTrue (self.args is not None)
         return self.returns
 
 if __name__ == '__main__': unittest.main()

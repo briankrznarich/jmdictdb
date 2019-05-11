@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-
 # Tests the jdb.Kwds class.
-
 
 import sys, pdb, unittest
 if '../lib' not in sys.path: sys.path.append ('../lib')
@@ -283,17 +281,17 @@ class Empty (unittest.TestCase):
           # Check that .Tables has the expected set of attribute
           # names since we will use them in later tests, and doesn't
           # have any unexpected ones.
-        _.assert_ (hasattr (_.o, 'Tables'))
-        _.assertEquals (set (_.o.Tables.keys()), KwdsAttrs)
+        _.assertTrue (hasattr (_.o, 'Tables'))
+        _.assertEqual (set (_.o.Tables.keys()), KwdsAttrs)
 
     def test002 (_):
           # .attrs() method should return empty list for empty instance.
-        _.assertEquals (_.o.attrs(), [])
+        _.assertEqual (_.o.attrs(), [])
 
     def test003 (_):
           # .recs() method should return an empty list for every attribute.
         for a in KwdsAttrs:
-            _.assertEquals (_.o.recs(a), [])
+            _.assertEqual (_.o.recs(a), [])
 
     def test004 (_):
           # .recs() method should fail with an unknown attribute.
@@ -316,8 +314,8 @@ class Loadcsv (unittest.TestCase):
         _.o = jdb.Kwds ('data/kwds')
 
     def test001 (_):
-        _.assert_ (hasattr (_.o, 'KINF'))
-        _.assert_ (hasattr (_.o, 'GINF'))
+        _.assertTrue (hasattr (_.o, 'KINF'))
+        _.assertTrue (hasattr (_.o, 'GINF'))
         validate_rec (_, _.o, 'KINF', 13, 'xxx', 'line 1')
         validate_rec (_, _.o, 'KINF', 27, 'yy')
         validate_rec (_, _.o, 'KINF', 8, 'qq-r')
@@ -369,7 +367,7 @@ class Missing_csv (unittest.TestCase):
         o = jdb.Kwds()
         expected = set (o.Tables.values()) - set (['kwginf', 'kwkinf'])
         missing = o.loadcsv ('data/kwds')
-        _.assertEquals (expected, set (missing))
+        _.assertEqual (expected, set (missing))
     def test003 (_):
         o = jdb.Kwds()
         missing = o.loadcsv ('data/kwds/full')
@@ -377,7 +375,7 @@ class Missing_csv (unittest.TestCase):
           # a SQL view (see pg/conj.sql) and is only loaded when the kw* data
           # is loaded from a database rather then directly from *.csv files.
           # See IS-226.
-        _.assertEquals (['vcopos'], missing)
+        _.assertEqual (['vcopos'], missing)
 
 #FIXME: need Test_missing_db.
 

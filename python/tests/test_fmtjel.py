@@ -127,7 +127,8 @@ class Base (unittest.TestCase):
 def check (_, seq):
           # Read expected text, remove any unicode BOM or trailing whitespace
           # that may have been added when editing.
-        expected = open ("data/fmtjel/"+str(seq)+".txt",encoding='utf-8').read().rstrip()
+        with open ("data/fmtjel/"+str(seq)+".txt",encoding='utf-8') as f:
+            expected = f.read().rstrip()
         if expected[0] == '\ufeff': expected = expected[1:]
           # Read the entry from the database.  Be sure to get from the right
           # corpus and get only the currently active entry.  Assert that we
@@ -143,7 +144,7 @@ def check (_, seq):
         resulttxt = fmtjel.entr (entrs[0]).splitlines(True)
           # Confirm that the received text matched the expected text.
         if resulttxt: resulttxt = ''.join(resulttxt[1:])
-        _.assert_ (10 < len (resulttxt))
+        _.assertTrue (10 < len (resulttxt))
         msg = "\nExpected:\n%s\nGot:\n%s" % (expected, resulttxt)
         _.assertEqual (expected, resulttxt, msg)
 
@@ -152,7 +153,7 @@ def check2 (_, test, exp=None):
         try: exptxt = (_.data[test + '_expect']).strip('\n')
         except KeyError: exptxt = intxt.strip('\n')
         outtxt = roundtrip (intxt, JELlexer, JELparser, DBcursor).strip('\n')
-        _.assert_ (8 <= len (outtxt))    # Sanity check for non-empty entry.
+        _.assertTrue (8 <= len (outtxt))    # Sanity check for non-empty entry.
         msg = "\nExpected:\n%s\nGot:\n%s" % (exptxt, outtxt)
         _.assertEqual (outtxt, exptxt, msg)
 

@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 import sys, unittest, pdb
 if '../lib' not in sys.path: sys.path.append ('../lib')
 from objects import *
@@ -80,7 +77,7 @@ class Text_txt2restr (unittest.TestCase):
         for expect, r in zip ([2,0],   _.e._rdng): _.assertEqual (expect, len(r._restr))
         for expect, k in zip ([0,1,1], _.e._kanj): _.assertEqual (expect, len(k._restr))
         for r in _.e._rdng:
-            for x in r._restr: _.assert_ (isinstance (x, Restr))
+            for x in r._restr: _.assertTrue (isinstance (x, Restr))
         _.assertEqual (_.e._rdng[0]._restr[0], _.e._kanj[1]._restr[0])
         _.assertEqual (_.e._rdng[0]._restr[1], _.e._kanj[2]._restr[0])
         _.assertEqual ([2,3], retval)
@@ -90,7 +87,7 @@ class Text_txt2restr (unittest.TestCase):
         for expect, r in zip ([3,0],   _.e._rdng): _.assertEqual (expect, len(r._restr))
         for expect, k in zip ([1,1,1], _.e._kanj): _.assertEqual (expect, len(k._restr))
         for r in _.e._rdng:
-            for x in r._restr: _.assert_ (isinstance (x, Restr))
+            for x in r._restr: _.assertTrue (isinstance (x, Restr))
         _.assertEqual (_.e._rdng[0]._restr[0], _.e._kanj[0]._restr[0])
         _.assertEqual (_.e._rdng[0]._restr[1], _.e._kanj[1]._restr[0])
         _.assertEqual (_.e._rdng[0]._restr[2], _.e._kanj[2]._restr[0])
@@ -101,7 +98,7 @@ class Text_txt2restr (unittest.TestCase):
         for expect, s in zip ([2,0],   _.e._sens): _.assertEqual (expect, len(s._stagk))
         for expect, k in zip ([0,1,1], _.e._kanj): _.assertEqual (expect, len(k._stagk))
         for s in _.e._sens:
-            for x in s._stagk: _.assert_ (isinstance (x, Stagk))
+            for x in s._stagk: _.assertTrue (isinstance (x, Stagk))
         _.assertEqual (_.e._sens[0]._stagk[0], _.e._kanj[1]._stagk[0])
         _.assertEqual (_.e._sens[0]._stagk[1], _.e._kanj[2]._stagk[0])
         _.assertEqual ([2,3], retval)
@@ -111,7 +108,7 @@ class Text_txt2restr (unittest.TestCase):
         for expect, s in zip ([1,0], _.e._sens): _.assertEqual (expect, len(s._stagr))
         for expect, r in zip ([0,1], _.e._rdng): _.assertEqual (expect, len(r._stagr))
         for s in _.e._sens:
-            for x in s._stagr: _.assert_ (isinstance (x, Stagr))
+            for x in s._stagr: _.assertTrue (isinstance (x, Stagr))
         _.assertEqual (_.e._sens[0]._stagr[0], _.e._rdng[1]._stagr[0])
         _.assertEqual ([2], retval)
 
