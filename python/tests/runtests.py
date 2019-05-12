@@ -30,10 +30,10 @@ __unittest = 1
 def main (args, opts):
         suites = []
         if not args:
-            test_file_pattern = "test_*.py"
+            test_file_pattern = "tests/test_*.py"
             test_files = glob.glob (test_file_pattern)
             for filename in test_files:
-                args.append (filename[:-3])
+                args.append ((filename[:-3]).replace('/', '.'))
 
         for testset in args:
             s = unittest.defaultTestLoader.loadTestsFromName (testset)

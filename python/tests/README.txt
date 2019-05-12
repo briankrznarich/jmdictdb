@@ -26,14 +26,23 @@ possibly with multiple inheritance mixins.
 Because most tests do not adhere to unit testing principles, isolation
 between tests is not a high priority.  Consequently, caching is used
 extensively to avoid time consuming operations such as database creation.
+Database connections and things like JEL parser instances are created
+once per test runner execution and rused for multiple tests.
 
-An import data object is jdb.KW, a collection of static keyword tables
-initialized by jdb.dbOpen().  Because this is a module global it retains
-state between execution of test modules.  It is therefore critical that
-any test module that will reference it call jdb.dbOpen() or DBmanager.use()
-in at least in a setUpModule() function if not in test case or test setUp()
-functions.  In particular making those calls outside of any function will
-have the effect of executing them at test module import time and should
-any other test (even in a different test module) change the contents,
-all following tests (that don't call jdb.dbOpen()/DBmanager at run time)
-will see the changes too.
+An important data object is jdb.KW, a collection of static keyword 
+tables usualy initialized by jdb.dbOpen().  Because this is a module 
+global it retains state between execution of test modules.  It is 
+critical that any test module that will reference it call jdb.dbOpen() 
+or DBmanager.use() in at least in a setUpModule() function if not in 
+test case or test setUp() functions.  In particular making those calls 
+outside of any function will have the effect of executing them at test 
+module import time and should any other test (even in a different test 
+module) change the contents, all following tests (that don't call
+jdb.dbOpen()/DBmanager at run time) will see the changes too.
+
+If a test module code references other files (data files or modules to 
+import) references should be relative to the python/tests/ directory,
+not the python/tests/tests/ directory the test module are in.
+
+The tests can also be run by the standard unittest test runner with:
+  cd python/tests; python3 -m unittest discover -s tests
