@@ -30,7 +30,7 @@ __unittest = 1
 def main(): unittest.main()
 
   # Database name and load file for tests.
-DBNAME, DBFILE = "jmtest01", "jmtest01.sql"
+DBNAME, DBFILE = "jmtest01", "data/jmtest01.sql"
 
   # We initialize JEL lexer and parser objects that will be will be
   # fed test data and whose results will be checked.  The lexer and

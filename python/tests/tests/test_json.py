@@ -9,7 +9,7 @@ from jmdb import DBmanager
 Cursor = None
 def setUpModule():
        global Cursor
-       Cursor = DBmanager.use ("jmtest01", "jmtest01.sql")
+       Cursor = DBmanager.use ("jmtest01", "data/jmtest01.sql")
 
 class Obj2struc (unittest.TestCase):
 

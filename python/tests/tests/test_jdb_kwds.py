@@ -10,7 +10,7 @@ __unittest = 1
 Cursor = None
 def setUpModule():
        global Cursor
-       Cursor = DBmanager.use ("jmtest01", "jmtest01.sql")
+       Cursor = DBmanager.use ("jmtest01", "data/jmtest01.sql")
 
 KwdsAttrs = set (('DIAL','FLD','FREQ','GINF','KINF','LANG','MISC','POS',
                   'RINF','SRC','SRCT','STAT','XREF','CINF','GRP', 'COPOS'))
