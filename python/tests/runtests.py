@@ -29,8 +29,9 @@ __unittest = 1
 
 def main (args, opts):
         suites = []
+        testsdir = "tests"
         if not args:
-            test_file_pattern = "tests/test_*.py"
+            test_file_pattern = testsdir+('/' if testsdir else '')+"test_*.py"
             test_files = glob.glob (test_file_pattern)
             for filename in test_files:
                 args.append ((filename[:-3]).replace('/', '.'))
@@ -53,6 +54,8 @@ def runtests (suites, opts):
         if opts.verbosity == 1: summary = False
         else: summary = True
         for suite in suites:
+            if opts.debug:
+                suite.debug(); continue
             runner = unittest_extensions.TextTestRunner (
                 stream=sys.stdout, dstream=outf,
                 verbosity=opts.verbosity, summary=summary)
@@ -97,15 +100,18 @@ def parse_cmdline ():
   %prog will run all (by default) or selected tests.
 
 Arguments:
-  testcase      Specific testcase(s) to run.  TESTCASE has the form
+  tests         Specific test(s) to run.  TESTS has the form
                 module[.class[.method]].  If "method" is not given,
                 all the tests in the class will be run.  If "class"
                 is not not given, all the tests in all the classes
-                in the module will be run.
+                in the module will be run.  If the tests are in a
+                subdirectory, e.g., "tests", include it:
+                   tests.my_test_module.testcase1.test001
 
                 If no arguments are given, all tests in modules with
-                names matching the pattern, "test_*" (i.e. python
-                files matching "test_*.py") will be run."""
+                names matching the pattern, "tests.test_*" (i.e. python
+                files in subdirectory "tests/" matching "test_*.py")
+                will be run."""
 
         p = OptionParser (usage=u)
         p.add_option ("-o", "--output", metavar="FILENAME",
@@ -122,10 +128,18 @@ Arguments:
             help="""List tests that would be run, but don't actually
                 run them.  WHAT is one of "tests", "classes", or
                 "modules".  "tests" lists all test cases.  "classes"
-                lists all test classes and the number of test cases in
-                each.  "modules" lists all test modules and the
+                lists all test classes and the number of test cases
+                in each.  "modules" lists all test modules and the
                 numbers of classes and test cases in each.
                 WHAT can be abbreviated to the first character. """)
+        p.add_option ("-d", "--debug", default=False, action="store_true",
+            help="""Run tests in debug mode.  In this mode exceptions
+                will not be caught by unittest.  If runtests.py is
+                also started with the pdb debugger (e.g., with the
+                "-mpdb" python option), pdb will be started on the
+                exception.  This will occur with *any* exception
+                including SkipTest so generally you will want to
+                specify a single test in the runtests.py arguments.""")
         opts, args = p.parse_args ()
         if opts.verbosity not in (0,1,2):
             p.error ('Bad "verbosity" option value %s, must be 0, 1, or 2.')
