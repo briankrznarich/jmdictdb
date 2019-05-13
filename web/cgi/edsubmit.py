@@ -126,7 +126,7 @@
 
 import sys, os, datetime
 sys.path.extend (['../lib','../../python/lib','../python/lib'])
-import logger; from logger import L; logger.enable()
+import logger; from logger import L
 
 import jdb, jmcgi, fmtxml, serialize
 
@@ -136,6 +136,7 @@ class IsApprovedError (ValueError): pass
 
 def main( args, opts ):
         global Svc, Sid
+        logger.enable()
         jdb.reset_encoding (sys.stdout, 'utf-8')
         errs = []; dbh = svc = None
         try: form, svc, dbg, dbh, sid, sess, parms, cfg = jmcgi.parseform()

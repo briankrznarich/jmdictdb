@@ -47,10 +47,11 @@
 
 import sys, cgi, datetime
 sys.path.extend (['../lib','../../python/lib','../python/lib'])
-import logger; from logger import L; logger.enable()
+import logger; from logger import L
 import jdb, jmcgi
 
 def main (args, opts):
+        logger.enable()
         jdb.reset_encoding (sys.stdout, 'utf-8')
         try: form, svc, dbg, cur, sid, sess, parms, cfg = jmcgi.parseform()
         except Exception as e: jmcgi.err_page ([str (e)])

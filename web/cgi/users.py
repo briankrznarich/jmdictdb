@@ -20,10 +20,11 @@
 
 import sys, cgi, re, datetime, copy
 sys.path.extend (['../lib','../../python/lib','../python/lib'])
-import logger; from logger import L; logger.enable()
+import logger; from logger import L
 import jdb, jmcgi
 
 def main (args, opts):
+        logger.enable()
         jdb.reset_encoding (sys.stdout, 'utf-8')
         errs = []; chklist = {}
         try: form, svc, dbg, cur, sid, sess, parms, cfg = jmcgi.parseform()
