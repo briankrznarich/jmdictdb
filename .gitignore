@@ -4,9 +4,9 @@ __pycache__/
 \#*
 .#*
 *.log
-data/
-python/tests/tmp/
-python/lib/config.ini
-python/lib/config-pvt.ini
-python/lib/parser.out
-web/cgi/parser.out
+/data/
+/python/tests/tmp/
+/python/lib/config.ini
+/python/lib/config-pvt.ini
+/python/lib/parser.out
+/web/cgi/parser.out
