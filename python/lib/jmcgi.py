@@ -122,7 +122,7 @@ def parseform (readonly=False):
         if errs: raise ValueError (';'.join (errs))
 
           # Login, logout, and session identification...
-        scur = jdb.dbOpenSvc (cfg, svc, session=True, nokw=True)
+        scur = jdb.dbOpenSvc (cfg, svc, session=True, nokw=True, noverchk=True)
         action = form.getfirst ('loginout') # Will be None, "login" or "logout"
         sid = get_sid_from_cookie() or ''
         sid_from_cookie = bool (sid)

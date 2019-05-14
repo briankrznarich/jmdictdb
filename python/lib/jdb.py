@@ -25,6 +25,17 @@ import fmtxml
 import logger; from logger import L
 from objects import *
 
+  # Get the database version id number(s) required by this version
+  # of the JMdictDB API.  When dbOpen() is called it will check that
+  # all version id's in the DBVERS list are present in database table
+  # "db" and marked as active.  If not dbOpen will raise a KeyError
+  # exception.  Note that id's are integers conventionally expressed
+  # in hexidecimal.
+  # If "dbver" is empty no version check will be done.  This allows
+  # for ignoring version numbers temporarily during development.
+try: from dbver import DBVERS
+except ImportError: DBVERS = []
+
 global KW
 Debug = {}
 
@@ -2142,10 +2153,8 @@ def dbOpen (dbname_, **kwds):
 
             Only one of autocommit and isolation may be non-None.
 
-            require -- A list of int's or hexidecimal str's giving
-                the active updates required to be present in the 
-                database's "db" table.  If any are missing a 
-                KeyError exception is raised with the missing values.
+            noverchk -- Don't check that the database update version
+                matches DBVER.
 
             nokw -- Suppress the reading of keyword data from the
                 database and the creation of the jdb.KW variable.
@@ -2167,10 +2176,10 @@ def dbOpen (dbname_, **kwds):
         if 'isolation' in kwargs: del kwargs['isolation']
         nokw = kwargs.get('nokw');
         if 'nokw' in kwargs: del kwargs['nokw']
+        noverchk = kwargs.get('noverchk')
+        if 'noverchk' in kwargs: del kwargs['noverchk']
         if isolation is not None and autocommit:
             raise ValueError ("Only one of 'autocommit' and 'isolation' may be given.")
-        require = kwargs.get ('require')
-        if 'require' in kwargs: del kwargs['require']
         if dbname_: kwargs['database'] = dbname_
 
           # Remove kwds with None values since psycopg2 doesn't
@@ -2205,19 +2214,20 @@ def dbOpen (dbname_, **kwds):
         if not nokw:
             global KW
             KW = Kwds (conn.cursor())
-        if require: dbrequire (conn, require)
+        if DBVERS and not noverchk:
+            dbrequire (conn, DBVERS)
         return conn.cursor()
 
 def dbrequire (dbconn, require):
           # require -- A list of ints (typically given  in hexidecimal)
           #              of db update numbers required by the calling
           #              application.
+        if not require: return
         import db    # We import inside function to avoid importing if
                      #   this function is not called.
         missing = db.require (dbconn, require)
           #FIXME: include database name or URI in error message.
-          #FIXME? should db.require() raise error instead?
-        if missing: raise KeyError ("Database missing required updates: %s"
+        if missing: raise KeyError ("Database missing required update(s): %s"
                                     % ','.join(["%06.6x"%r for r in missing]))
 
 import urllib.parse

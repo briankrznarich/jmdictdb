@@ -33,6 +33,9 @@ CREATE LANGUAGE 'plpgsql';
 -- Should be a random 6-digit hexidecimal string.  One way to generate
 -- is with:
 --   python -c 'import random;print("%06.6x"%random.randint(0,16777215))'
+--
+-- When changing updateid don't forget to change python/lib/dbver.py to
+-- tell the JMdictDB API to expect the new version.
 
 \set updateid '''835781'''
 
