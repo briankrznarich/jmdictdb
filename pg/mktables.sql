@@ -34,7 +34,7 @@ CREATE LANGUAGE 'plpgsql';
 -- is with:
 --   python -c 'import random;print("%06.6x"%random.randint(0,16777215))'
 
-\set updateid '''1ef804'''
+\set updateid '''835781'''
 
 -- This is a function for the benefit of psql scripts that can be
 -- conditionally called to generate an error in order to stop the
