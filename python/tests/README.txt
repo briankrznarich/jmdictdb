@@ -29,20 +29,57 @@ extensively to avoid time consuming operations such as database creation.
 Database connections and things like JEL parser instances are created
 once per test runner execution and rused for multiple tests.
 
-An important data object is jdb.KW, a collection of static keyword 
-tables usualy initialized by jdb.dbOpen().  Because this is a module 
-global it retains state between execution of test modules.  It is 
-critical that any test module that will reference it call jdb.dbOpen() 
-or DBmanager.use() in at least in a setUpModule() function if not in 
-test case or test setUp() functions.  In particular making those calls 
-outside of any function will have the effect of executing them at test 
-module import time and should any other test (even in a different test 
+An important data object is jdb.KW, a collection of static keyword
+tables usualy initialized by jdb.dbOpen().  Because this is a module
+global it retains state between execution of test modules.  It is
+critical that any test module that will reference it call jdb.dbOpen()
+or DBmanager.use() in at least in a setUpModule() function if not in
+test case or test setUp() functions.  In particular making those calls
+outside of any function will have the effect of executing them at test
+module import time and should any other test (even in a different test
 module) change the contents, all following tests (that don't call
 jdb.dbOpen()/DBmanager at run time) will see the changes too.
 
-If a test module code references other files (data files or modules to 
+If a test module code references other files (data files or modules to
 import) references should be relative to the python/tests/ directory,
 not the python/tests/tests/ directory the test module are in.
 
 The tests can also be run by the standard unittest test runner with:
   cd python/tests; python3 -m unittest discover -s tests
+
+Creating the test database:
+---------------------------
+Prior to rev git-190508-02d9fdb the JMdictDB tests used the live "jmdict"
+database (loaded from the EDRDG jmdict XML file) as a source for test data.
+This was an unfortuate choice made when the tests were first implemented
+based on the erroneous assumption that most existing entries were stable
+and unlikely to change frequently.  In fact, entries are constantly being
+edited resulting in the need to constantly revise tests to keep up.
+
+The static test database was developed by identifying the entries used
+in the live tests (plus some additional ones that provide xref targets)
+and extracting them from a recent jmdict XML file, loading them into a
+new, empty JMdictDB database, from which a loadable copy was produced
+using Postgresql's pg_dump tool.  The process was:
+
+    # Extact the entries listed in jmtest01.seq from a full jmdict XML file.
+    #  and save them as jmtest01.xml in the tests/ directory.
+  $ tools/jmextract.py data/jmdict-190430.xml \
+     -s python/tests/data/jmtest01.seq >python/tests/data/jmtest01.xml
+  $ cp python/tests/data/jmdict.xml data/jmdict.xml
+    # Create a "jmnew" database from the test data xml file.
+  $ make jmnew
+  $ make loadjm     # Loads jmdict.xml into new database "jmnew"
+  $ make postload
+    # Dump the "jmnew" database containing the test data so it can
+    #  be reloaded later on demand when running tests.
+  $ pg_dump -d jmnew >python/tests/data/jmtest01.sql
+    # Drop the old "jmtest01" so that the new one will be loaded
+    # next time the tests are run.
+  $ dropdb jmtest01
+    # Run the tests.  The first time they are run, they should reload
+    # the test database from the new jmtest01.sql file.
+  $ cd python/tests && python3 runtests.py
+
+python/tests/data/data/jmtest01.seq is the list of entry sequence numbers
+that was determined to be needed be the test codes.

@@ -3893,7 +3893,7 @@ COPY public.conotes (id, txt) FROM stdin;
 --
 
 COPY public.db (id, active, ts) FROM stdin;
-2029572	t	2019-05-08 18:58:27.578365
+8607617	t	2019-05-14 10:46:08.849884
 \.
 
 
@@ -6508,7 +6508,7 @@ COPY public.xref (entr, sens, xref, typ, xentr, xsens, rdng, kanj, notes, nosens
 5	1	1	3	77	1	\N	1	\N	f	f
 9	1	1	3	11	1	1	\N	\N	f	f
 9	2	1	3	10	1	1	\N	\N	f	f
-12	1	1	3	73	1	\N	2	\N	f	f
+12	1	1	3	73	1	\N	2	\N	t	f
 16	1	1	3	70	1	\N	1	\N	f	f
 17	1	1	3	63	1	1	1	\N	f	f
 17	1	2	3	55	1	\N	1	\N	f	f
@@ -6558,9 +6558,9 @@ COPY public.xresolv (entr, sens, typ, ord, rtxt, ktxt, tsens, notes, prio) FROM 
 1	3	3	1	〇〇・まるまる	\N	1	\N	\N
 1	4	3	1	\N	句点	\N	\N	\N
 1	5	3	1	\N	半濁点	\N	\N	\N
-7	1	3	1	\N	此れ	1	\N	\N
-7	1	3	2	\N	其れ	1	\N	\N
-7	1	3	3	\N	何れ	1	\N	\N
+7	1	3	1	\N	何れ	1	\N	\N
+7	1	3	2	\N	此れ	1	\N	\N
+7	1	3	3	\N	其れ	1	\N	\N
 17	1	3	3	\N	其れ	1	\N	\N
 23	3	3	1	\N	曹長石	\N	\N	\N
 55	1	3	2	\N	此れ	1	\N	\N
