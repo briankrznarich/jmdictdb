@@ -35,7 +35,7 @@ class LexSpec:
         ('SNUMLIST','exclusive'),)
 
     tokens = ('SNUM', 'SEMI', 'BRKTL', 'TEXT', 'QTEXT', 'COLON',
-              'COMMA', 'DOT', 'EQL', 'SLASH', 'BRKTR', 'NL', 'FF',
+              'COMMA', 'DOT', 'EQL', 'SLASH', 'BRKTR', 'FF',
               'GTEXT', 'KTEXT', 'RTEXT', 'NUMBER', 'HASH')
 
     def __init__(self): pass

@@ -22,7 +22,7 @@ class Test_create (unittest.TestCase):
     def test002 (_):
         _.assertEqual (set(_.tokens),
                        set(('SNUM', 'SEMI', 'BRKTL', 'TEXT', 'QTEXT', 'COLON',
-                            'COMMA', 'DOT', 'EQL', 'SLASH', 'BRKTR', 'NL', 'FF',
+                            'COMMA', 'DOT', 'EQL', 'SLASH', 'BRKTR', 'FF',
                             'GTEXT', 'KTEXT', 'RTEXT', 'NUMBER', 'HASH')))
 
 class Test_single1 (unittest.TestCase):
