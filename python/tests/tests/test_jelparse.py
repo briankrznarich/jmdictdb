@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 #----- REMINDER ------------------------------------------------------
 # To make any changes to the jelparse code, edit jelparse.y.  Then
 # run 'make' in the lib dir to regenerate jelparse.py from jelparse.y.

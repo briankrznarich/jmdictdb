@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 import sys, unittest, pdb
 if '../lib' not in sys.path: sys.path.append ('../lib')
 import jdb, jellex, ply, unittest_extensions

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import sys, unittest, itertools, pdb
 from copy import deepcopy
 if '../lib' not in sys.path: sys.path.append ('../lib')

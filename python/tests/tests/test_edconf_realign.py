@@ -1,6 +1,4 @@
-﻿# -*- coding: utf-8 -*-
-
-import sys, re, copy, collections, unittest, pdb
+﻿import sys, re, copy, collections, unittest, pdb
 if '../lib' not in sys.path: sys.path.append ('../lib')
 import jdb, jmxml, xmlkw
 from objects import *

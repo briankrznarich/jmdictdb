@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import sys, re, unittest, pdb
 if '../lib' not in sys.path: sys.path.append ('../lib')
 import jdb

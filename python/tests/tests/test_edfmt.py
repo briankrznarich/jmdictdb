@@ -1,6 +1,3 @@
-#!/usr/env python
-
-
 import sys, re, unittest, pdb
 import unittest_extensions
 if '../lib' not in sys.path: sys.path.append ('../lib')

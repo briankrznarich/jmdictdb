@@ -1,8 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 # Tests the jdb.jstr_classify() function.
-
 
 import sys, pdb, unittest
 if '../lib' not in sys.path: sys.path.append ('../lib')
