@@ -44,8 +44,8 @@ import jdb, db
 
 class _DBmanager():
     def __init__ (self): self.loaded = {}
-    def use (self, dbname, filename):
-        if not self.is_loaded (dbname, filename):
+    def use (self, dbname, filename, force_reload=False):
+        if force_reload or not self.is_loaded (dbname, filename):
             print ('Loading database "%s" from %s' % (dbname, filename),
                    file=sys.stderr)
               # self.load() will raise CalledProcessError if it fails
