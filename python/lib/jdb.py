@@ -1296,26 +1296,18 @@ def addentr (cur, entr):
         setkeys (entr, eid)
           # Walk through the entr object tree writing each row object to
           # a new database row.
-        freqs = set()
         for h in getattr (entr, '_hist', []):
             dbinsert (cur, "hist", ['entr','hist','stat','unap','dt','userid','name','email','diff','refs','notes'], h)
         for k in getattr (entr, '_kanj', []):
             dbinsert (cur, "kanj", ['entr','kanj','txt'], k)
             for x in getattr (k, '_inf',   []): dbinsert (cur, "kinf",  ['entr','kanj','ord','kw'], x)
-            for x in getattr (k, '_freq',  []):
-                                  # Don't write any freq records that have rdng references; since
-                                  # the readings have not been written yet, the foreign key constraint
-                                  # will be violated and the write will fail.  They will written later
-                                  # when the readings are written.
-                if not getattr (x,'rdng',None): dbinsert (cur, "freq",  ['entr','rdng','kanj','kw','value'], x)
+            for x in getattr (k, '_freq',  []): dbinsert (cur, "freq",  ['entr','rdng','kanj','kw','value'], x)
         for r in getattr (entr, '_rdng', []):
             dbinsert (cur, "rdng", ['entr','rdng','txt'], r)
             for x in getattr (r, '_inf',   []): dbinsert (cur, "rinf",  ['entr','rdng','ord','kw'], x)
             for x in getattr (r, '_restr', []): dbinsert (cur, "restr", ['entr','rdng','kanj'], x)
             for x in getattr (r, '_freq',  []): dbinsert (cur, "freq",  ['entr','rdng','kanj','kw','value'], x)
             for x in getattr (r,   '_snd', []): dbinsert (cur, "rdngsnd", ['entr','rdng','ord','snd'], x)
-        for x in freqs:
-            dbinsert (cur, "freq",  ['entr','rdng','kanj','kw','value'], x)
         for s in getattr (entr, '_sens'):
             dbinsert (cur, "sens", ['entr','sens','notes'], s)
             for g in getattr (s, '_gloss', []): dbinsert (cur, "gloss", ['entr','sens','gloss','lang','ginf','txt'], g)
