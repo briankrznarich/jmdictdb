@@ -299,6 +299,14 @@ def entr_data (dbh, crit, args=None, ord=None, tables=None):
         #    to hold details of xref targets) and accomplished by
         #    by specifying a limited set of tables.  If not given
         #    the default is to use all tables.
+        #
+        #  Returns:
+        #   A dict object where each key is a table name (or pseudo
+        #   name like "xrer") given in 'tables' or in the default
+        #   list below) and each value is a list of objects.* objects
+        #   corresponding to the table type.  E.g., the value of the
+        #   "entr" key is a list of objects.Entr objects.  Note that
+        #   all the objects.* objects are subclasses of objects.DbRow.
 
         global Debug; time_start = time_last = time()
 
@@ -377,10 +385,10 @@ def entr_bld (t):
         # parent rows, thus building the object structure that
         # application programs will work with.
 
-        entr, rdng, kanj, sens, chr = [t.get (x, [])
-                                       for x in ('entr', 'rdng', 'kanj', 'sens', 'chr')]
-        mup ('_rdng',  entr, ['id'],          rdng,              ['entr'])
+        r = [t.get (x, []) for x in ('entr', 'rdng', 'kanj', 'sens', 'chr')]
+        entr, rdng, kanj, sens, chr = r
         mup ('_kanj',  entr, ['id'],          kanj,              ['entr'])
+        mup ('_rdng',  entr, ['id'],          rdng,              ['entr'])
         mup ('_sens',  entr, ['id'],          sens,              ['entr'])
         mup ('_hist',  entr, ['id'],          t.get('hist', []), ['entr'])
         mup ('_inf',   rdng, ['entr','rdng'], t.get('rinf', []), ['entr','rdng'])
@@ -404,9 +412,14 @@ def entr_bld (t):
         mup ('_snd',   entr, ['id'],          t.get('entrsnd',[]), ['entr'])
         mup ('_snd',   rdng, ['entr','rdng'], t.get('rdngsnd',[]), ['entr','rdng'])
         mup ('_grp',   entr, ['id'],          t.get('grp',[]),     ['entr'])
+        mup ('_xrslv', sens, ['entr','sens'], t.get('xresolv',[]), ['entr','sens'])
+          # For assigning to entr.chr, we reverse the roles of the mup()
+          # "parent" and "child" arguments ('entr' is passed as child,
+          # 'chr' as parent) in order that the assignment to entr.chr
+          # will be a single 'chr' object, not a list.
+        mup (None,     chr,  ['entr'],        entr,                ['id'],  'chr')
         mup ('_cinf',  chr,  ['entr'],        t.get('cinf',[]),    ['entr'])
-        if chr: mup ( None, chr, ['entr'], entr, ['id'], 'chr')
-        mup ('_xrslv', sens, ['entr','sens'],t.get('xresolv',[]),['entr','sens'])
+        mup ('_krslv', entr, ['id'],          t.get('kresolv',[]), ['entr'])
         return entr
 
 def filt (parents, pks, children, fks):
@@ -500,7 +513,15 @@ def mup (attr, parents, pks, childs, fks, pattr=None):
               #   single app?
             for p in (index.get (ckey, [])):
                 if attr: getattr (p, attr).append (c)
-                if pattr: setattr (c, pattr, p)
+              # Assign parent link to child if requested via 'pattr'.
+            if pattr:
+                  # There should be either 0 or 1 matching parent.  If 0 then
+                  # we assign None since the policy for the Entr and child
+                  # objects is to have all attributes present, even if empty.
+                parents = index.get (ckey, [None])
+                if len (parents) > 1:
+                    raise ValueError ("jdb.mup: more than 2 parents")
+                setattr (c, pattr, parents[0])
 
 #-------------------------------------------------------------------
 # The following functions deal with restriction lists.
@@ -1222,7 +1243,7 @@ def add_hist (
                                             % (entr.dfrm))
             if use_parent: raise ValueError ("'use_parent' requested but no 'pentr' arg given.")
 
-        h = Obj (dt= datetime.datetime.utcnow().replace(microsecond=0),
+        h = Hist (dt= datetime.datetime.utcnow().replace(microsecond=0),
                 stat=entr.stat, unap=entr.unap, userid=userid, name=name,
                 email=email, diff=None, notes=notes, refs=refs)
 
