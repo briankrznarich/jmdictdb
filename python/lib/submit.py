@@ -214,6 +214,7 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
              (';'.join (r.txt for r in entr._rdng))))
         L('submit.submission').debug("seqset: %s"
           % logseq (dbh, entr.seq, entr.src))
+        added = None, None, None
         oldid = entr.id
         entr.id = None          # Submissions, approvals and rejections will
         entr.unap = not disp    #   always produce a new db entry object so
@@ -327,10 +328,13 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
                 errs.append ("Bad url parameter (disp=%s)" % disp)
         L('submit.submission').debug("seqset: %s"
                                            % logseq (dbh, entr.seq, entr.src))
-        if not errs: return added
           # Note that changes have not been committed yet, caller is
           # expected to do that.
-        return None
+          # If no errors, 'added' is a 3-tuple of:
+          #   (entry-id, sequence-number, src-id)
+          # If there were errors, parameter 'errs' will have the error
+          # messages appended and 'added' will be (None,None,None).
+        return added
 
 def submit (dbh, entr, edtree, errs):
         KW = jdb.KW
