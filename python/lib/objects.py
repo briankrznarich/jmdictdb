@@ -61,11 +61,11 @@ class DbRow (Obj):
     def __init__(self, values=None, cols=None):
         if values is not None:
             if cols is not None:
-                self.__cols__ = cols
+                self.__cols__ = tuple(cols)
                 for n,v in zip (cols, values): setattr (self, n, v)
             else:
-                self.__cols__ = list(values.keys())
-                for n,v in list(values.items()): setattr (self, n, v)
+                self.__cols__ = tuple(values.keys())
+                for n,v in values.items(): setattr (self, n, v)
     def __getitem__ (self, idx):
         return getattr (self, self.__cols__[idx])
     def __setitem__ (self, idx, value):
@@ -102,14 +102,14 @@ def _p (o):
 
 class _Nothing: pass
 def _compare (self, other):
-        try: attrs = set (list(self.__dict__.keys()) + list(other.__dict__.keys()))
+        try: attrs = set (list(self.__dict__.keys())
+                          + list(other.__dict__.keys()))
         except AttributeError: return False
         for a in attrs:
-            s = getattr (self, a, _Nothing)
-            o = getattr (other, a, _Nothing)
-            if s is _Nothing: return False
-            if o is _Nothing: return False
-            if s != o: return False
+            if a == '__cols__': continue
+            s, o = getattr (self, a, _Nothing), getattr (other, a, _Nothing)
+            if s is _Nothing or o is _Nothing or s != o:
+                return False
         return True
 
 # JMdictDB database objects...
@@ -183,6 +183,9 @@ class Sens (DbRow):
         s._xrslv = _xrslv or []
 
 class Gloss (DbRow):
+      #FIXME: change param order to: ...,txt,ginf,lang.  This will allow
+      # ginf and lang to to be defaulted more easily.  But can we do this
+      # given the DB column order matches current param order?
     def __init__ (s, entr=None, sens=None, gloss=None, lang=None, ginf=None, txt=None):
         DbRow.__init__(s, ( entr,  sens,  gloss,  lang,  ginf,  txt),
                           ('entr','sens','gloss','lang','ginf','txt'))
