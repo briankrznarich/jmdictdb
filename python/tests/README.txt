@@ -1,5 +1,6 @@
+==============
 Notes on tests
-
+==============
 Although these tests use the Python "unittest" testing framework,
 they are for the most part functional or integration tests, not
 unit tests.   There are a large number of units and many have
@@ -7,9 +8,45 @@ relatively complex behavior; there are not enough development
 resources available to do the analysis and creation of mock objects
 required for "pure" unit tests.
 
-The testing infrastructure code in in this directory, the test
+The testing infrastructure code is in this directory, the test
 modules in tests/, data for the tests in data/.
 
+Running tests
+=============
+Although the tests can be run directly by the Python unittest module
+command line interface, e.g:
+  python3 -m unittest tests/test_*.py
+or
+  cd python/tests; python3 -m unittest discover -s tests
+
+a test runner program, runtests.py, was written that provides more
+control of the tests run and the results format than the unittest
+module does (or did, when runtests.py was written.)
+
+The command (run in python/tests/):
+
+  ./runtests.py 
+
+will run all tests.  To run a specific test or set of tests, specify
+them as 'module name' (always prefixed with "tests."), 'class' and
+'test',  Examples:
+
+  ./runtests.py tests.test_jelparse
+  ./runtests.py tests.test_jelparse.Roundtrip
+  ./runtests.py tests.test_jelparse.Roundtrip.test1000290
+
+Multiple test arguments can be given.  To debug test failures:
+
+  python3 -mpdb runtests.py -d [tests...]
+
+This will start the test under the Python debugger (type 'c' to start
+running) and will stop at the first error or failure allowing the use 
+of pdb to diagnose the problem.
+
+For more details on argument syntax: ./runtest.py --help
+
+Test construction
+=================
 In the test methods in the test modules, "_" is often used instead
 of the conventional "self" as the name of the first parameter for
 brevity.
@@ -44,11 +81,8 @@ If a test module code references other files (data files or modules to
 import) references should be relative to the python/tests/ directory,
 not the python/tests/tests/ directory the test module are in.
 
-The tests can also be run by the standard unittest test runner with:
-  cd python/tests; python3 -m unittest discover -s tests
-
-Creating the test database:
----------------------------
+Test databases
+==============
 Prior to rev git-190508-02d9fdb the JMdictDB tests used the live "jmdict"
 database (loaded from the EDRDG jmdict XML file) as a source for test data.
 This was an unfortuate choice made when the tests were first implemented
