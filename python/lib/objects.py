@@ -18,100 +18,13 @@
 #######################################################################
 
 import sys, datetime, pdb
+from db import DbRow, Obj
 
-#######################################################################
-#
-#  WARNING
-#
-#  The objects below (or any subclass of Obj) may by created in
-#  web/cgi/edconf.py and other programs by de-serializing input
-#  received from the internet or other untrusted user input.
-#
-#  It is critical that no methods be added to these objects that
-#  could result in destructive or undesired behavior since such
-#  behavior could be initiated by an arbitrary user supplying
-#  a hand-crafted serialized object to edconf.py or other such
-#  program.
-#
-#  These objects should be limited to acting like data structures.
-#
-#######################################################################
-#
-#  NOTE
+#  NOTE:
 #  When adding/deleting/modifying the classes below, be sure to
 #  check in python/lib/serialize.py for any corresponding changes
 #  that need to be made there.
 #
-#######################################################################
-
-class Obj(object):
-    # This creates "bucket of attributes" objects.  That is,
-    # it creates a generic object with no special behavior
-    # that we can set and get attribute values from.  One
-    # could use a keys in a dict the same way, but sometimes
-    # the attribute syntax results in more readable code.
-    def __init__ (self, **kwds):
-        for k,v in list(kwds.items()): setattr (self, k, v)
-    def __repr__ (self):
-        return self.__class__.__name__ + '(' \
-                 + ', '.join([k + '=' + _p(v)
-                              for k,v in list(self.__dict__.items()) if k != '__cols__']) + ')'
-
-class DbRow (Obj):
-    def __init__(self, values=None, cols=None):
-        if values is not None:
-            if cols is not None:
-                self.__cols__ = tuple(cols)
-                for n,v in zip (cols, values): setattr (self, n, v)
-            else:
-                self.__cols__ = tuple(values.keys())
-                for n,v in values.items(): setattr (self, n, v)
-    def __getitem__ (self, idx):
-        return getattr (self, self.__cols__[idx])
-    def __setitem__ (self, idx, value):
-        name = self.__cols__[idx]
-        setattr (self, name, value)
-    def __len__(self):
-        return len(self.__cols__)
-    def __iter__(self):
-        for n in self.__cols__: yield getattr (self, n)
-    def __eq__(self, other): return _compare (self, other)
-    def __ne__(self, other): return not _compare (self, other)
-    def __hash__(self): return id (self)    #FIXME?!
-    def copy (self):
-        c = self.__class__()
-        c.__dict__.update (self.__dict__)
-        return c
-    def new (self):
-        c = self.__class__()
-        c.__init__ ([None]*len(self.__cols__), self.__cols__)
-        return c
-
-def _p (o):
-        if isinstance (o, (int,str,bool,type(None))):
-            return repr(o)
-        if isinstance (o, (datetime.datetime, datetime.date, datetime.time)):
-            return str(o)
-        if isinstance (o, list):
-            if len(o) == 0: return "[]"
-            else: return "[...]"
-        if isinstance (o, dict):
-            if len(o) == 0: return "{}"
-            else: return "{...}"
-        else: return repr (o)
-
-class _Nothing: pass
-def _compare (self, other):
-        try: attrs = set (list(self.__dict__.keys())
-                          + list(other.__dict__.keys()))
-        except AttributeError: return False
-        for a in attrs:
-            if a == '__cols__': continue
-            s, o = getattr (self, a, _Nothing), getattr (other, a, _Nothing)
-            if s is _Nothing or o is _Nothing or s != o:
-                return False
-        return True
-
 # JMdictDB database objects...
 # * Each corresponds to a database table containing some
 #    part of a dictionary entry object.

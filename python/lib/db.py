@@ -37,9 +37,31 @@ class DbRowCursor (DictCursorBase):
             self.index = [x[0] for x in self.description]
             self._query_executed = 0
 
-class DbRow (object):
-    def __init__(self, cursor):
-        self.__cols__ = cursor.index
+class Obj(object):
+    # This creates "bucket of attributes" objects.  That is,
+    # it creates a generic object with no special behavior
+    # that we can set and get attribute values from.  One
+    # could use a keys in a dict the same way, but sometimes
+    # the attribute syntax results in more readable code.
+    def __init__ (self, **kwds):
+        for k,v in list(kwds.items()): setattr (self, k, v)
+    def __repr__ (self):
+        return self.__class__.__name__ + '(' \
+                 + ', '.join([k + '=' + _p(v)
+                              for k,v in list(self.__dict__.items())
+                              if k != '__cols__']) + ')'
+
+class DbRow (Obj):
+    def __init__ (self, values=None, cols=None):
+        if isinstance(values, DbRowCursor):
+            self.__cols__ = values.index
+        elif values is not None:
+            if cols is not None:
+                self.__cols__ = tuple(cols)
+                for n,v in zip (cols, values): setattr (self, n, v)
+            else:
+                self.__cols__ = tuple(values.keys())
+                for n,v in values.items(): setattr (self, n, v)
     def __getitem__ (self, idx):
         return getattr (self, self.__cols__[idx])
     def __setitem__ (self, idx, value):
@@ -50,17 +72,11 @@ class DbRow (object):
     def __iter__(self):
         for n in self.__cols__: yield getattr (self, n)
     def __eq__(self, other): return _compare (self, other)
-    def __ne__(self, other): return not _compare (self, other)
-    def __hash__(self): return id (self)    #FIXME?!
     @property
     def __list__(self): return [getattr (self, x) for x in self.__cols__]
     @property
     def __tuple__(self): return tuple((getattr(self,x) for x in self.__cols__))
-    def __repr__ (self):
-        return self.__class__.__name__ + '(' \
-                 + ', '.join([k + '=' + _p(v)
-                              for k,v in list(self.__dict__.items())
-                              if k != '__cols__']) + ')'
+
 def _p (o):
         if isinstance (o, (int,str,bool,type(None))):
             return repr(o)
@@ -74,6 +90,17 @@ def _p (o):
             else: return "{...}"
         else: return repr (o)
 
+class _Nothing: pass
+def _compare (self, other):
+        try: attrs = set (list(self.__dict__.keys())
+                          + list(other.__dict__.keys()))
+        except AttributeError: return False
+        for a in attrs:
+            if a == '__cols__': continue
+            s, o = getattr (self, a, _Nothing), getattr (other, a, _Nothing)
+            if s is _Nothing or o is _Nothing or s != o:
+                return False
+        return True
 
 def connect (dburi, cursor_factory=DbRowCursor):
         dbargs = parse_pguri (dburi)
@@ -93,7 +120,6 @@ def query (dbconn, sql, args=(), one=False, cursor_factory=None):
 def query1 (dbconn, sql, args=(), cursor_factory=None):
         return query (dbconn, sql, args, one=True,
                       cursor_factory=cursor_factory)
-
 
   # When passed as sql argument to a sql statement executed by psycopg2,
   # DEFAULT will result in a postgresql DEFAULT argument.
