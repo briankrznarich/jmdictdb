@@ -37,6 +37,25 @@ class DbRowCursor (DictCursorBase):
             self.index = [x[0] for x in self.description]
             self._query_executed = 0
 
+def connect (dburi, cursor_factory=DbRowCursor):
+        dbargs = parse_pguri (dburi)
+        dbconn = dbapi.connect (cursor_factory=cursor_factory, **dbargs)
+        return dbconn
+
+def ex (dbconn, sql, args=(), cursor_factory=None):
+        cur = dbconn.cursor (cursor_factory=cursor_factory)
+        cur.execute (sql, args)
+        return cur
+
+def query (dbconn, sql, args=(), one=False, cursor_factory=None):
+        cur = ex (dbconn, sql, args, cursor_factory=cursor_factory)
+        if one: return cur.fetchone()
+        else: return cur.fetchall()
+
+def query1 (dbconn, sql, args=(), cursor_factory=None):
+        return query (dbconn, sql, args, one=True,
+                      cursor_factory=cursor_factory)
+
 class Obj(object):
     # This creates "bucket of attributes" objects.  That is,
     # it creates a generic object with no special behavior
@@ -101,25 +120,6 @@ def _compare (self, other):
             if s is _Nothing or o is _Nothing or s != o:
                 return False
         return True
-
-def connect (dburi, cursor_factory=DbRowCursor):
-        dbargs = parse_pguri (dburi)
-        dbconn = dbapi.connect (cursor_factory=cursor_factory, **dbargs)
-        return dbconn
-
-def ex (dbconn, sql, args=(), cursor_factory=None):
-        cur = dbconn.cursor (cursor_factory=cursor_factory)
-        cur.execute (sql, args)
-        return cur
-
-def query (dbconn, sql, args=(), one=False, cursor_factory=None):
-        cur = ex (dbconn, sql, args, cursor_factory=cursor_factory)
-        if one: return cur.fetchone()
-        else: return cur.fetchall()
-
-def query1 (dbconn, sql, args=(), cursor_factory=None):
-        return query (dbconn, sql, args, one=True,
-                      cursor_factory=cursor_factory)
 
   # When passed as sql argument to a sql statement executed by psycopg2,
   # DEFAULT will result in a postgresql DEFAULT argument.
@@ -218,7 +218,8 @@ def parse_pguri (uri_string, allow_params=False):
         scheme = result.scheme
         if not scheme: scheme = 'postgresql'
         if scheme not in ('pg', 'postgresql','postgres'):
-            raise ValueError ("Bad scheme name ('%s') in URI: %s" % (result.scheme, uri_string))
+            raise ValueError ("Bad scheme name ('%s') in URI: %s"
+                              % (result.scheme, uri_string))
           # Add query items to results dict first so that uri parameters added
           #  sencond will overwrite if there are duplicates.
         connargs = query if allow_params else {}
@@ -231,17 +232,19 @@ def parse_pguri (uri_string, allow_params=False):
 
 def make_pguri (connargs):
         '''
-        Convert dict of connection arguments such as is returned from jdb.parse_pguri()
-        into a URI string.   The result will always have a scheme, "postgresql:"
+        Convert dict of connection arguments such as is returned from
+        jdb.parse_pguri() into a URI string.   The result will always
+        have a scheme, "postgresql:"
         '''
         # Postgresql URI syntax:
         #   postgresql://[user[:password]@][netloc][:port][/dbname][?param1=value1&...]
 
         # Why, oh why, does urllib not provide better support for this??
-        # Its urlunsplit() function does not seem to have any way to accept username
-        # password, port, etc.
+        # Its urlunsplit() function does not seem to have any way to
+        # accept username password, port, etc.
         auth = connargs.get('user','')
-        if auth and connargs.get ('password'): auth += ':' + connargs['password']
+        if auth and connargs.get ('password'):
+            auth += ':' + connargs['password']
         host = connargs.get('host','')
         if connargs.get('port'): host += ':' + str(connargs['port'])
         if auth: host = auth + '@' + host
@@ -251,7 +254,9 @@ def make_pguri (connargs):
             if not isinstance (v, (list,tuple)): v = [v]
             for vx in v: q.append ("%s=%s" % (k,vx))
         query = '&'.join (q)
-        uri = urlparse.urlunsplit (('postgresql',host,connargs.get('database',''),query,''))
+        uri = urlparse.urlunsplit (('postgresql',
+                                    host,connargs.get('database',''),
+                                    query,''))
         return uri
 
 def require (dbconn, want, table='db'):
@@ -334,7 +339,8 @@ def rowop (dbconn, tblname, pkey, values, minupd=False,
             if minupd:
                 currentrow = rowget (dbconn, tblname, pkey)
                 if not currentrow:
-                    raise KeyError('No row to update in table "%s", pk=%r' % pkey)
+                    raise KeyError('No row to update in table "%s", pk=%r'
+                                   % pkey)
                 diffs = rowchanges (values, currentrow)
             cols = ','.join(["%s=%%s"%x for x in diffs.keys()])
             sqlargs = list (diffs.values())  ## = [A(x) for x in diffs.values()]
@@ -352,14 +358,14 @@ def rowop (dbconn, tblname, pkey, values, minupd=False,
 
         elif not pkey and values:      # Insert
             cols = ','.join(list (values.keys()))
-            sqlargs = list(values.values())  ## = [A(x) for x in values.values()]
+            sqlargs = list(values.values())  # =[A(x) for x in values.values()]
             pmarks = ','.join (['%s'] * len (sqlargs))
             akexpr = ''
             if autokey:
                 pk1, pk2 = autokey    # Names of the primary key columns.
                 if pk1 not in values.keys():  # We must have a value for
                     raise KeyError (pk1)      #  the first part of the pk.
-                akexpr = ',(SELECT 1+COALESCE(MAX(%s),0) FROM %s WHERE %s=%%s)' \
+                akexpr = ',(SELECT 1+COALESCE(MAX(%s),0) FROM %s WHERE %s=%%s)'\
                          % (pk2, tblname, pk1)
                   # 'akexpr', when executed, will be like:
                   #   SELECT 1+MAX(pk2) FROM tblname WHERE pk1=values[pk1]
