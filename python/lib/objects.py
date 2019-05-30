@@ -17,7 +17,7 @@
 #  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 #######################################################################
 
-import sys, datetime, pdb
+import sys, pdb
 from db import DbRow, Obj
 
 #  NOTE:
