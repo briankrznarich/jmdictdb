@@ -148,13 +148,35 @@
 # allowed.  Hence, restr(kanj=2) below...
  
 [Entr (seq=3000080, stat=2, unap=False, 
-    _rdng=[Rdng(rdng=1,txt='あ', _restr=[Restr(rdng=1,kanj=2)]),
+    _rdng=[Rdng(rdng=1,txt='あ', _restr=[Restr(kanj=2)]),
            Rdng(rdng=2,txt='ああ')],
     _kanj=[Kanj(kanj=1,txt='亜'),
            Kanj(kanj=2,txt='蛙')],
     _sens=[Sens(sens=1,
         _gloss=[Gloss(lang=1,ginf=1,txt='e3000080')])])]
-_test_expect[0]._kanj[1]._restr = [_test_expect[0]._rdng[0]._restr[0]]
 
-
+## 1499230
+<entry>
+<ent_seq>1499230</ent_seq>
+<k_ele>
+<keb>葡萄</keb>
+</k_ele>
+<r_ele>
+<reb>ぶどう</reb>
+</r_ele>
+<r_ele>
+<reb>ブドウ</reb>
+<re_nokanji/>
+</r_ele>
+<sense>
+<gloss>grape</gloss>
+</sense>
+</entry>
+##--
+[Entr (seq=1499230, stat=2, unap=False,
+    _rdng=[Rdng(rdng=1,txt='ぶどう'),
+           Rdng(rdng=2,txt='ブドウ', _restr=[Restr(kanj=1)])],
+    _kanj=[Kanj(kanj=1,txt='葡萄')],
+    _sens=[Sens(sens=1,
+        _gloss=[Gloss(lang=1,ginf=1,txt='grape')])])]
 

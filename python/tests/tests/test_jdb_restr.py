@@ -14,43 +14,62 @@ class Test_restr2ext (unittest.TestCase):
 
     def test_002(_):
           # Restr on k2 results in list of remainder (k1, k3).
+        k1, k2, k3 = Kanj(kanj=1,txt='k1'), Kanj(kanj=2,txt='k2'), Kanj(kanj=3,txt='k3')
+        restrs = [Restr(kanj=2)]
+        result = jdb.restrs2ext_ (restrs, [k1,k2,k3], '_restr')
+        _.assertEqual ([k1,k3], result)
+
+    def test_002a(_):
+          # Restr on k2 results in list of remainder (k1, k3).
+          # Target Kanj are not numered.
         k1, k2, k3 = Kanj(txt='k1'), Kanj(txt='k2'), Kanj(txt='k3')
-        x1 = Restr()
-        restrs = [x1]; k2._restr = [x1]
+        restrs = [Restr(kanj=2)]
         result = jdb.restrs2ext_ (restrs, [k1,k2,k3], '_restr')
         _.assertEqual ([k1,k3], result)
 
     def test_003(_):
-          # Restr on k1,k2 results in list of remainder (k2).
+          # Restr on k1,k3 results in list of remainder (k2).
+        k1, k2, k3 = Kanj(kanj=1,txt='k1'), Kanj(kanj=2,txt='k2'), Kanj(kanj=3,txt='k3')
+        restrs = [Restr(kanj=1), Restr(kanj=3)]
+        result = jdb.restrs2ext_ (restrs, [k1,k2,k3], '_restr')
+        _.assertEqual ([k2], result)
+
+    def test_003a(_):
+          # Restr on k1,k3 results in list of remainder (k2).
+          # Target Kanj are not numbered.
         k1, k2, k3 = Kanj(txt='k1'), Kanj(txt='k2'), Kanj(txt='k3')
-        x1, x3 = Restr(), Restr()
-        restrs = [x1,x3]; k1._restr = [x1]; k3._restr = [x3]
+        restrs = [Restr(kanj=1), Restr(kanj=3)]
         result = jdb.restrs2ext_ (restrs, [k1,k2,k3], '_restr')
         _.assertEqual ([k2], result)
 
     def test_004(_):
           # All kanji restricted results in None ("nokanji" sentinal).
+        k1, k2, k3 = Kanj(kanj=1,txt='k1'), Kanj(kanj=2,txt='k2'), Kanj(kanj=3,txt='k3')
+        restrs = [Restr(kanj=1), Restr(kanj=2), Restr(kanj=3)]
+        result = jdb.restrs2ext_ (restrs, [k1,k2,k3], '_restr')
+        _.assertEqual (None, result)
+
+    def test_004a(_):
+          # All kanji restricted results in None ("nokanji" sentinal).
+          # Target Kanj are not numbered.
         k1, k2, k3 = Kanj(txt='k1'), Kanj(txt='k2'), Kanj(txt='k3')
-        x1, x2, x3 = Restr(), Restr(), Restr()
-        restrs = [x1,x2,x3]; k1._restr = [x1]; k2._restr = [x2]; k3._restr = [x3];
+        restrs = [Restr(kanj=1), Restr(kanj=2), Restr(kanj=3)]
         result = jdb.restrs2ext_ (restrs, [k1,k2,k3], '_restr')
         _.assertEqual (None, result)
 
     def test_012(_):
           # stagk restr on k2 results in list of remainder (k1, k3).
-        k1, k2, k3 = Kanj(txt='k1'), Kanj(txt='k2'), Kanj(txt='k3')
-        x1 = Restr()
-        restrs = [x1]; k2._stagk = [x1]
+        k1, k2, k3 = Kanj(kanj=1,txt='k1'), Kanj(kanj=2,txt='k2'), Kanj(kanj=3,txt='k3')
+        restrs = [Stagk(kanj=2), Stagk(kanj=3)]
         result = jdb.restrs2ext_ (restrs, [k1,k2,k3], '_stagk')
-        _.assertEqual ([k1,k3], result)
+        _.assertEqual ([k1], result)
 
     def test_022(_):
           # stagr restr on r2 results in list of remainder (r1, r3).
-        r1, r2, r3 = Rdng(txt='r1'), Rdng(txt='r2'), Rdng(txt='r3')
-        x1 = Restr()
-        restrs = [x1]; r2._stagr = [x1]
+        r1, r2, r3 = Rdng(rdng=1,txt='r1'), Rdng(rdng=2,txt='r2'), Rdng(rdng=3,txt='r3')
+        restrs = [Stagr(rdng=1)]
         result = jdb.restrs2ext_ (restrs, [r1,r2,r3], '_stagr')
-        _.assertEqual ([r1,r3], result)
+        _.assertEqual ([r2,r3], result)
 
 
 class Text_txt2restr (unittest.TestCase):
@@ -59,57 +78,109 @@ class Text_txt2restr (unittest.TestCase):
                 _rdng=[Rdng(txt='あ'),Rdng(txt='い')],
                 _kanj=[Kanj(txt='亜'),Kanj(txt='居'),Kanj(txt='迂')],
                 _sens=[Sens(_gloss=[Gloss(txt='A')]),Sens(_gloss=[Gloss(txt="B")])])
-    def test001 (_):
+
+    def test110 (_):   # Empty text list applied to rdng[0]
         rtxts = []
         retval = jdb.txt2restr (rtxts, _.e._rdng[0], _.e._kanj, '_restr')
-        for r in _.e._rdng: _.assertEqual ([], r._restr)
-        for k in _.e._kanj: _.assertEqual ([], k._restr)
+        _.assertEqual ([], _.e._rdng[0]._restr)
+        _.assertEqual ([], _.e._rdng[1]._restr)
         _.assertEqual ([], retval)
-    def test002 (_):
-        rtxts = []
-        retval = jdb.txt2restr (rtxts, _.e._rdng[1], _.e._kanj, '_restr')
-        for r in _.e._rdng: _.assertEqual ([], r._restr)
-        for k in _.e._kanj: _.assertEqual ([], k._restr)
-        _.assertEqual ([], retval)
-    def test011 (_):
+    def test111 (_):   # KR-restr, kanj[0] allowed, kanj[1],[2] disallowed.
         rtxts = ['亜']
         retval = jdb.txt2restr (rtxts, _.e._rdng[0], _.e._kanj, '_restr')
-        for expect, r in zip ([2,0],   _.e._rdng): _.assertEqual (expect, len(r._restr))
-        for expect, k in zip ([0,1,1], _.e._kanj): _.assertEqual (expect, len(k._restr))
-        for r in _.e._rdng:
-            for x in r._restr: _.assertTrue (isinstance (x, Restr))
-        _.assertEqual (_.e._rdng[0]._restr[0], _.e._kanj[1]._restr[0])
-        _.assertEqual (_.e._rdng[0]._restr[1], _.e._kanj[2]._restr[0])
+        _.assertEqual (_.e._rdng[0]._restr, [Restr(kanj=2), Restr(kanj=3)])
+        _.assertEqual (_.e._rdng[1]._restr, [])
         _.assertEqual ([2,3], retval)
-    def test012 (_):
-        rtxts = None    # Equiv to "nokanji".
+    def test112 (_):   # KR-restr, kanj[1],[2] allowed, kanj[0] disallowed.
+        rtxts = ['居', '迂']
         retval = jdb.txt2restr (rtxts, _.e._rdng[0], _.e._kanj, '_restr')
-        for expect, r in zip ([3,0],   _.e._rdng): _.assertEqual (expect, len(r._restr))
-        for expect, k in zip ([1,1,1], _.e._kanj): _.assertEqual (expect, len(k._restr))
-        for r in _.e._rdng:
-            for x in r._restr: _.assertTrue (isinstance (x, Restr))
-        _.assertEqual (_.e._rdng[0]._restr[0], _.e._kanj[0]._restr[0])
-        _.assertEqual (_.e._rdng[0]._restr[1], _.e._kanj[1]._restr[0])
-        _.assertEqual (_.e._rdng[0]._restr[2], _.e._kanj[2]._restr[0])
+        _.assertEqual (_.e._rdng[0]._restr, [Restr(kanj=1)])
+        _.assertEqual (_.e._rdng[1]._restr, [])
+        _.assertEqual ([1], retval)
+    def test113 (_):
+        rtxts = None    # "nokanji".
+        retval = jdb.txt2restr (rtxts, _.e._rdng[0], _.e._kanj, '_restr')
+        _.assertEqual (_.e._rdng[0]._restr,
+                       [Restr(kanj=1), Restr(kanj=2), Restr(kanj=3)])
+        _.assertEqual (_.e._rdng[1]._restr, [])
         _.assertEqual ([1,2,3], retval)
-    def test013 (_):
-        rtxts = ['亜']
-        retval = jdb.txt2restr (rtxts, _.e._sens[0], _.e._kanj, '_stagk')
-        for expect, s in zip ([2,0],   _.e._sens): _.assertEqual (expect, len(s._stagk))
-        for expect, k in zip ([0,1,1], _.e._kanj): _.assertEqual (expect, len(k._stagk))
-        for s in _.e._sens:
-            for x in s._stagk: _.assertTrue (isinstance (x, Stagk))
-        _.assertEqual (_.e._sens[0]._stagk[0], _.e._kanj[1]._stagk[0])
-        _.assertEqual (_.e._sens[0]._stagk[1], _.e._kanj[2]._stagk[0])
-        _.assertEqual ([2,3], retval)
-    def test014 (_):
-        rtxts = ['あ']
-        retval = jdb.txt2restr (rtxts, _.e._sens[0], _.e._rdng, '_stagr')
-        for expect, s in zip ([1,0], _.e._sens): _.assertEqual (expect, len(s._stagr))
-        for expect, r in zip ([0,1], _.e._rdng): _.assertEqual (expect, len(r._stagr))
-        for s in _.e._sens:
-            for x in s._stagr: _.assertTrue (isinstance (x, Stagr))
-        _.assertEqual (_.e._sens[0]._stagr[0], _.e._rdng[1]._stagr[0])
+
+    # Stagk tests...
+
+    def test210 (_):
+        rtxts = ['亜','迂']
+        retval = jdb.txt2restr (rtxts, _.e._sens[1], _.e._kanj, '_stagk')
+        _.assertEqual (_.e._sens[0]._stagk, [])
+        _.assertEqual (_.e._sens[1]._stagk, [Stagk(kanj=2)])
         _.assertEqual ([2], retval)
+
+    # Skagr tests...
+
+    def test310 (_):
+        rtxts = ['あ']
+        retval = jdb.txt2restr (rtxts, _.e._sens[1], _.e._rdng, '_stagr')
+        _.assertEqual (_.e._sens[0]._stagr, [])
+        _.assertEqual (_.e._sens[1]._stagr, [Stagr(rdng=2)])
+        _.assertEqual ([2], retval)
+
+    def test320 (_):
+        rtxts = ['い']
+        retval = jdb.txt2restr (rtxts, _.e._sens[0], _.e._rdng, '_stagr')
+        _.assertEqual (_.e._sens[0]._stagr, [Stagr(rdng=1)])
+        _.assertEqual (_.e._sens[1]._stagr, [])
+        _.assertEqual ([1], retval)
+
+class Restr_expand (unittest.TestCase):
+    def test_00011(_):
+        e = Entr(_rdng=[],
+                 _kanj=[])
+        _.assertEqual ([], list(jdb.restr_expand (e)))
+    def test_00012(_):
+        e = Entr(_rdng=[],
+                 _kanj=[Kanj(txt='')])
+        _.assertEqual ([], list(jdb.restr_expand (e)))
+    def test_00013(_):
+        e = Entr(_rdng=[Rdng(txt='')],
+                 _kanj=[])
+        _.assertEqual ([], list(jdb.restr_expand (e)))
+    def test_00021(_):
+        e = Entr(_rdng=[Rdng(txt='')],
+                 _kanj=[Kanj(txt='')])
+        _.assertEqual ([(0,0)], list(jdb.restr_expand (e)))
+    def test_00022(_):
+        e = Entr(_rdng=[Rdng(txt=''),Rdng(txt='')],
+                 _kanj=[Kanj(txt='')])
+        _.assertEqual ([(0,0),(1,0)], list(jdb.restr_expand (e)))
+    def test_00023(_):
+        e = Entr(_rdng=[Rdng(txt='')],
+                 _kanj=[Kanj(txt=''),Kanj(txt='')])
+        _.assertEqual ([(0,0),(0,1)], list(jdb.restr_expand (e)))
+    def test_00031(_):
+        e = Entr(_rdng=[Rdng(txt=''),Rdng(txt='')],
+                 _kanj=[Kanj(txt=''),Kanj(txt=''),Kanj(txt='')])
+        _.assertEqual ([(0,0),(0,1),(0,2),(1,0),(1,1),(1,2)],
+                       list(jdb.restr_expand (e)))
+    def test_00032(_):
+        e = Entr(_rdng=[Rdng(txt='',_restr=[Restr(kanj=1)]), Rdng(txt='')],
+                 _kanj=[Kanj(txt=''),Kanj(txt=''),Kanj(txt='')])
+        _.assertEqual ([(0,1),(0,2),(1,0),(1,1),(1,2)],
+                       list(jdb.restr_expand (e)))
+    def test_00033(_):
+        e = Entr(_rdng=[Rdng(txt=''), Rdng(txt='',_restr=[Restr(kanj=3)])],
+                 _kanj=[Kanj(txt=''),Kanj(txt=''),Kanj(txt='')])
+        _.assertEqual ([(0,0),(0,1),(0,2),(1,0),(1,1)],
+                       list(jdb.restr_expand (e)))
+    def test_00034(_):
+        e = Entr(_rdng=[Rdng(txt='',_restr=[Restr(kanj=1)]),
+                        Rdng(txt='',_restr=[Restr(kanj=3)])],
+                 _kanj=[Kanj(txt=''),Kanj(txt=''),Kanj(txt='')])
+        _.assertEqual ([(0,1),(0,2),(1,0),(1,1)],
+                       list(jdb.restr_expand (e)))
+    def test_00035(_):
+        e = Entr(_rdng=[Rdng(txt=''),
+                        Rdng(txt='', _restr=[Restr(kanj=1),Restr(kanj=2),Restr(kanj=3)])],
+                 _kanj=[Kanj(txt=''),Kanj(txt=''),Kanj(txt='')])
+        _.assertEqual ([(0,0),(0,1),(0,2)],
+                       list(jdb.restr_expand (e)))
 
 if __name__ == '__main__': unittest.main()

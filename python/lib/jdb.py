@@ -24,6 +24,7 @@ from collections import defaultdict
 import fmtxml
 import logger; from logger import L
 from objects import *
+from restr import *
 
   # Get the database version id number(s) required by this version
   # of the JMdictDB API.  When dbOpen() is called it will check that
@@ -205,7 +206,7 @@ def entrList (dbh, crit=None, args=None, ord='', tables=None, ret_tuple=False):
         #   If using a Tmptbl returned by Find() ('crit' form 1),
         #   'ord' is ignored and internally forced to "t.ord".
 
-        t = {}; e = []
+        t = {}; entrs = []
         if args is None: args = []
         if not crit and not args: raise ValueError("Either 'crit' or 'args' must have a value.")
         if not crit:
@@ -217,9 +218,10 @@ def entrList (dbh, crit=None, args=None, ord='', tables=None, ret_tuple=False):
         else:
             # Deprecated - use 'crit'=None and put a real list in 'args'.
             t = entr_data (dbh, ",".join([str(x) for x in crit]), args, ord, tables)
-        if t: e = entr_bld (t)
-        if ret_tuple: return e,t
-        return e
+        if t:
+            entrs = entr_bld (t)
+        if ret_tuple: return entrs,t
+        return entrs
 
 OrderBy = {
         'rdng':"x.entr,x.rdng",          'kanj':"x.entr,x.kanj",
@@ -400,11 +402,8 @@ def entr_bld (t):
         mup ('_dial',  sens, ['entr','sens'], t.get('dial', []), ['entr','sens'])
         mup ('_lsrc',  sens, ['entr','sens'], t.get('lsrc', []), ['entr','sens'])
         mup ('_restr', rdng, ['entr','rdng'], t.get('restr',[]), ['entr','rdng'])
-        mup ('_restr', kanj, ['entr','kanj'], t.get('restr',[]), ['entr','kanj'])
         mup ('_stagr', sens, ['entr','sens'], t.get('stagr',[]), ['entr','sens'])
-        mup ('_stagr', rdng, ['entr','rdng'], t.get('stagr',[]), ['entr','rdng'])
         mup ('_stagk', sens, ['entr','sens'], t.get('stagk',[]), ['entr','sens'])
-        mup ('_stagk', kanj, ['entr','kanj'], t.get('stagk',[]), ['entr','kanj'])
         mup ('_freq',  rdng, ['entr','rdng'], [x for x in t.get('freq',[]) if x.rdng],  ['entr','rdng'])
         mup ('_freq',  kanj, ['entr','kanj'], [x for x in t.get('freq',[]) if x.kanj],  ['entr','kanj'])
         mup ('_xref',  sens, ['entr','sens'], t.get('xref', []), ['entr','sens']);
@@ -420,7 +419,7 @@ def entr_bld (t):
         mup (None,     chr,  ['entr'],        entr,                ['id'],  'chr')
         mup ('_cinf',  chr,  ['entr'],        t.get('cinf',[]),    ['entr'])
         mup ('_krslv', entr, ['id'],          t.get('kresolv',[]), ['entr'])
-        return entr
+        return entr     # 'entr' is a list of Entr instances.
 
 def filt (parents, pks, children, fks):
         # Return a list of all parents (each a hash) in 'parents' that
@@ -522,282 +521,6 @@ def mup (attr, parents, pks, childs, fks, pattr=None):
                 if len (parents) > 1:
                     raise ValueError ("jdb.mup: more than 2 parents")
                 setattr (c, pattr, parents[0])
-
-#-------------------------------------------------------------------
-# The following functions deal with restriction lists.
-#-------------------------------------------------------------------
-        # Restriction lists limit readings to specific kanji (restr),
-        # or senses to specific readings (stagr) or kanji (stagk).
-        # In some external representations such as JMdict XML, these
-        # restrictions are given as text strings that list the kanji,
-        # readings, or kanji that the reading, sense, or sense respectively
-        # are limited to, with absence indicating that there are no
-        # restrictions.  In the case of "restr" (reading-kanji) restrictions
-        # there may also be a "nokanji" flag indicating that there are
-        # no kanji associated with the reading.  (The flag is needed
-        # since the absence of restr items indicate all kanji are allowable.)
-        #
-        # In the jdb API, restrictions are represented by lists of Restr
-        # objects attached dually to the lists Rdng._restr,Kanj._restr
-        # (for reading restrictions), Sens._stagr,Kanj._stagr (for stagr
-        # restrictions) or Sens._kanj, and Kanj._stagk (for stagk restrictions).
-        # A Restr object exists for each pair of Rdng,Kanj (or Sens,Rdng, or
-        # Sens,Kanj) that is *disallowed* (opposite of the XML).  There is
-        # in no need for a "nokanji" flag since that condition is effected
-        # when every kanji in the entry is given in a rdng object's _restr
-        # list.
-
-def find_restr (restrobj, objlist):
-        # Given an Restr object, 'restrobj', find the (first[*]) item
-        # in 'objlist' list that points (via an item in it's "_restr"
-        # list) to 'restrobj'.
-        #
-        # restrobj -- A Restr object.
-        # objlist -- A list of Kanj, Rdng, or Sens objects to search.
-        #
-        # Returns: A 2-tuple consisting of the found object, and its
-        #   0-based index in 'objectlist'.  If 'restrobj' is not found,
-        #   a KeyError is raised.
-        #
-        # [*] In a correctly structured entry, only one 'obj' in 'objlist'
-        # will reference a given 'restrobj'.  However it is of course
-        # possible to contruct an entry that violates this.
-        #
-        # Often in entries read from an external source, Restr objects
-        # will have .rdng, ,kanj, or .sens attributes that give the
-        # index (1-based) of the Rdng, Kanj, or Sens object that contains
-        # the Restr object.  However, because the lists are short and
-        # constructed entries may not have these values initialized, it
-        # is more convenient not to rely on the index values but use this
-        # function to search the list for the containing object.
-
-        for n, obj in enumerate (objlist):
-            restrlist = getattr (obj, '_restr', [])
-            for robj in restrlist:
-                if robj is restrobj: return obj, n
-        raise KeyError (restrobj)
-
-def find_restrs (restrobjs, objlist):
-        # Like find_restr() but first parameter is a list of Restr objects
-        # and returns a list of the 2-tuples returned by find_restr().
-
-        return [find_restr(x, objlist) for x in restrobjs]
-
-def restrs2txts (rdng, kanjs, attr='_restr'):
-        # Given a Rdng object and a list of Kanj objects from the
-        # same entry, return a list of text strings that give the
-        # allowed kanji for the reading as determined by the Rdng's
-        # ._restr list.
-        # This is similar to restrs2ext but returns a list of text
-        # strings rather than a list of Kanj objects.
-
-        restrs = getattr (rdng, attr, [])
-        if not restrs: return restrs
-        if len(restrs) == len(kanjs): return ['no' +
-                {'_restr':"kanji", '_stagr':"readings", '_stagk':"kanji"}[attr]]
-        return [x.txt for x in restrs2ext_ (restrs, kanjs, attr)]
-
-  #FIXME: fix modules using either of the following two functions
-  # function to standardize on one of them and remove the other.
-def restrs2ext (rdng, kanjs, attr='_restr'):
-        restrs = getattr (rdng, attr, [])
-        return restrs2ext_ (restrs, kanjs, attr)
-
-def restrs2ext_ (restrs, kanjs, attr='_restr'):
-        # Given a list of Restr objects, 'restr', create a list Kanj
-        # objects taken from 'kanjs' such that each Kanj object's
-        # ._restr list contains no Restr objects in 'restrs'.  However,
-        # if 'restrs' is an empty list, return an empty list.  And if
-        # every Kanj object in 'kanjs' has a ._restr list item that
-        # in in 'restrs', return None.  Note that common membership
-        # of a Restr object in the 'restrs', and kanj._restr lists
-        # constitutes a restriction -- the values of the attributes
-        # of the Restr objects ('.rdng', .kanj', etc) are ignored.
-        #
-        # This function can be used in generating restr text when
-        # displaying an entry in JMdict XML, JEL, or similar textual
-        # output from jdb entry objects.  A return value [] indicates
-        # there are no restr's, a return of None indicates "nokanji",
-        # and a list of kanji are the "restr" kanji for the reading
-        # 'restrs' is from.
-        #
-        # Although parameter names assume reading-kanji restrictions
-        # defined in 'rdng._restr", this function can be used for
-        # stagr or stagk restrictions by supplying a Sens object
-        # and list of Rdng or Kanj objects respectively for 'rdng'
-        # and 'kanj', and setting 'attr' to "_stagr" or "stagk"
-        # respectively.
-        #
-        # restr -- A list of Restr objects on a Rdng (or Sens) object.
-        # kanjs -- A list of Kanj (or Rdng) objects.
-        # attr -- Name of the attribute on the 'rdng' and 'kanj' object(s)
-        #   that contains the restriction list, one of: "_restr", "_stagr",
-        #   "_stagk".
-
-        invrestr = []
-        if len(restrs) > 0:
-              # Check for "nokanji" condition.
-              # FIXME: len test only reliable if we assume no dups in 'restrs'.
-            if len(restrs) == len(kanjs): return None
-            for kanj in kanjs:
-                for rk in getattr (kanj, attr, []):
-                      # See if restriction 'rk' is in 'restrs'.  "In" here
-                      # requires an identity test rather than the equality
-                      # test done by the "in" operator, which is the test
-                      # used by jdb.isin().  If so, this kanj is not one
-                      # that should go into the returned list.
-                    if isin (rk, restrs): break
-                else:
-                      # Get here if no break in above loop, i.e., this kanji
-                      # has no restr items in the 'restrs' list.  So we want
-                      # this kanji in the returned list.
-                    invrestr.append (kanj)
-        return invrestr
-
-def add_restrobj (rdng, rattr, kanj, kattr, pattr):
-        """
-        Create a restriction (Restr, Stagr or Stagk) object and link
-        it to the two items that the restriction applies to as well as
-        setting its .rdng, .kanj and .sens attributes as appropriate
-        from the linked-to objects.  The restriction object's .entr
-        values is set from 'rdng'.entr.
-        This is a helper function for the more utile functions
-        add_restr(), add_stagr(), add_stagk().
-        Pararmeters:
-          rdng -- A Rdng, Sens, or Sens object.
-          rattr -- One of "rdng", "sens", or "sens".
-          kanj -- A Kanj, Rdng, or Kanj object.
-          kattr -- One of "kanj", "rdng", or "kanj".
-          pattr -- One of "_restr", "_stagr", or "_stagk".
-
-        Examples:
-        To create a reading restr:
-            add_restr (rdng, 'rdng', kanj, 'kanj', '_restr')
-        To create a stagr restr:
-            add_restr (sens, 'sens', rdng, 'rdng', '_stagr')
-        To create a stagk restr:
-            add_restr (sens, 'sens', kanj, 'kanj', '_stagk')
-        """
-        if not hasattr (rdng, pattr): setattr (rdng, pattr, [])
-        if not hasattr (kanj, pattr): setattr (kanj, pattr, [])
-          #FIXME: gotta be a better way...
-        cls = globals()[pattr[1:].title()]
-        restr = cls ()
-        setattr (restr, 'entr', getattr (rdng, 'entr'))
-        setattr (restr, rattr, getattr (rdng, rattr))
-        setattr (restr, kattr, getattr (kanj, kattr))
-        getattr (rdng, pattr).append (restr)
-        getattr (kanj, pattr).append (restr)
-
-  # The following three functions will create a restriction object
-  # of the named type and add it to the restriction lists on the
-  # two objects given as arguments as well as setting its .rdng,
-  # .kanj or .sens attributes from the corresponding values in the
-  # argument objects.
-  # Parameters:
-  #   rdng, kanj, sens -- The Rdng, Kanj or Sens objects that the
-  #     restriction is to be added between.
-  # Returns: None (called for side-effects only.)
-def add_restr (rdng, kanj):
-        add_restrobj (rdng, 'rdng', kanj, 'kanj', '_restr')
-def add_stagr (sens, rdng):
-        add_restrobj (sens, 'sens', rdng, 'rdng', '_stagr')
-def add_stagk (sens, kanj):
-        add_restrobj (sens, 'sens', kanj, 'kanj', '_stagk')
-
-def txt2restr (restrtxts, rdng, kanjs, attr, bad=None):
-        # Converts a list of text strings, 'restrtxts', into a list of
-        # Restr objects and sets the value of the attribute named by 'attr'
-        # on 'rdng' to that list.  Each Restr is also attached to the
-        # restr list, 'attr', on the appropriate object in list 'kanjs'.
-        #
-        # restrtxts -- List of texts (that occur in kanjs) of allowed
-        #   restrictions.  However, if 'restrtxts' is empty, there
-        #   are no restrictions (all 'kanjs' items are ok.)  If
-        #   'restrtxts' is None, every 'kanjs' itmm is disallowed.
-        # kanjs -- List of Kanj (or Rdng) objects.
-        # attr -- Name of restr list attribute on Kanj objects ('_restr',
-        #   '_stagr', or '_stagk').
-        # bad -- If not none, should be an empty list onto which
-        #    will be appended any items in restrtxts that are not
-        #    in kanjs.
-        # Returns: A list of ints giving the 1-based indexes of the
-        #  kanji objects matching the restr list set on 'rdng'.
-
-        if attr == '_restr': restr_factory = Restr
-        elif attr == '_stagr': restr_factory = Stagr
-        elif attr == '_stagk': restr_factory = Stagk
-
-          # Check that all the restrtxts match a kanjs.
-        if bad is not None:
-            ktxts = [x.txt for x in kanjs]
-            for x in restrtxts:
-                if x not in ktxts: bad.append (x)
-
-        restrs = []; nkanjs = []
-        if restrtxts or restrtxts is None:
-            for n,k in enumerate (kanjs):
-                if restrtxts is None or k.txt not in restrtxts:
-                    r = restr_factory()
-                    restrs.append (r)
-                    a = getattr (k, attr, [])
-                    if not a: setattr (k, attr, a)
-                    a.append (r)
-                    nkanjs.append (n + 1)
-        setattr (rdng, attr, restrs)
-        return nkanjs
-
-def headword (entr):
-        # Return a 2-tuple giving the rdng / kanj numbers (base-1)
-        # or reading-kanji pair that represents the entry and which
-        # takes into consideration restrictions and 'uk' sense
-        # tags.  Either element of the 2-tuple, but not both,
-        # may be None if a reading of kanji element is not available
-        # or not appropriate.
-        # FIXME: I don't know how to pick headword.  Since there is
-        #  is no mention of "headword" in the JMdict DTD, I am not
-        #  even sure what a headword is.  Code below is just a guess.
-        rdngs = getattr (entr, '_rdng', [])
-        kanjs = getattr (entr, '_kanj', [])
-        if not rdngs and not kanjs:
-            raise ValueError ("Entry has no readings and no kanji")
-        if not rdngs: return None, 1
-        if not kanjs: return 1, None
-
-          # If the first reading is "nokanji", return only it.
-        if rdngs and len(getattr (rdngs[0], '_restr', [])) \
-                  == len(getattr (entr, '_kanj', [])):
-            return 1, None
-
-          # If first sense is 'uk', return only first reading.
-        uk = KW.MISC['uk'].id in [x.kw for x in
-                getattr (getattr (entr, '_sens', [None])[0], '_misc', [])]
-        if uk:
-            stagr = getattr (entr._sens[0], '_stagr', [])
-            for n, r in enumerate (rdngs):
-                if not isin (r, stagr): return n+1, None
-
-          # Otherwise return the first reading-kanji pair allowed
-          # by restrs, ordering by kanji before selection.
-          # FIXME: does not consider stagr, stagk.
-        rk = list (restr_expand (rdngs, kanjs))
-        rk.sort (key=lambda x: (x[1],x[0]))
-        nr, nk = rk[0]
-        return nr+1, nk+1
-
-def restr_expand (rdngs, kanjs, attr='_restr'):
-        for nr, r in enumerate (rdngs):
-            rrestr = getattr (r, attr, [])
-            for nk, k in enumerate (kanjs):
-                krestr = getattr (k, attr, [])
-                invalid = False
-                for rx in rrestr:
-                    for kx in krestr:
-                        if rx is kx:
-                            invalid = True;  break
-                    if invalid: break
-                else:
-                    yield nr, nk
 
 #-------------------------------------------------------------------
 # The following functions deal with freq objects.
@@ -1209,6 +932,47 @@ def resolv_xref (dbh, typ, rtxt, ktxt, slist=None, enum=None, corpid=None,
                     xrefs.append (x)
         return xrefs
 
+def headword (entr):
+        # Return a 2-tuple giving the rdng / kanj numbers (base-1)
+        # or reading-kanji pair that represents the entry and which
+        # takes into consideration restrictions and 'uk' sense
+        # tags.  Either element of the 2-tuple, but not both,
+        # may be None if a reading of kanji element is not available
+        # or not appropriate.
+        # FIXME: I don't know how to pick headword.  Since there is
+        #  is no mention of "headword" in the JMdict DTD, I am not
+        #  even sure what a headword is.  Code below is just a guess.
+
+        from jdb import KW
+
+        rdngs = getattr (entr, '_rdng', [])
+        kanjs = getattr (entr, '_kanj', [])
+        if not rdngs and not kanjs:
+            raise ValueError ("Entry has no readings and no kanji")
+        if not rdngs: return None, 1
+        if not kanjs: return 1, None
+
+          # If the first reading is "nokanji", return only it.
+        if rdngs and len(getattr (rdngs[0], '_restr', [])) \
+                  == len(getattr (entr, '_kanj', [])):
+            return 1, None
+
+          # If first sense is 'uk', return only first reading.
+        uk = KW.MISC['uk'].id in [x.kw for x in
+                getattr (getattr (entr, '_sens', [None])[0], '_misc', [])]
+        if uk:
+            stagr = getattr (entr._sens[0], '_stagr', [])
+            for n, r in enumerate (rdngs):
+                if not isin (r, stagr): return n+1, None
+
+          # Otherwise return the first reading-kanji pair allowed
+          # by restrs, ordering by kanji before selection.
+          # FIXME: does not consider stagr, stagk.
+        rk = list (restr_expand (entr))
+        rk.sort (key=lambda x: (x[1],x[0]))
+        nr, nk = rk[0]
+        return nr+1, nk+1
+
 #-------------------------------------------------------------------
 # The following functions deal with history lists.
 #-------------------------------------------------------------------
@@ -1370,14 +1134,11 @@ def setkeys (e, id=0):
             for p,x in enumerate (r._inf):   x.entr, x.rdng, x.ord = id, n, p+1
             for x in r._freq:                x.entr, x.rdng = id, n
             for x in r._restr:               x.entr, x.rdng = id, n
-            for x in r._stagr:               x.entr, x.rdng = id, n
             for m,x in enumerate (r._snd):   x.entr, x.rdng, x.ord = id, n, m+1
         for n,k in enumerate (e._kanj):
             n += 1;                          k.entr, k.kanj = id, n
             for p,x in enumerate (k._inf):   x.entr, x.kanj, x.ord = id, n, p+1
             for x in k._freq:                x.entr, x.kanj = id, n
-            for x in k._restr:               x.entr, x.kanj = id, n
-            for x in k._stagk:               x.entr, x.kanj = id, n
         for n,s in enumerate (e._sens):
             n += 1;                          s.entr, s.sens = id, n
             for m,x in enumerate (s._gloss): x.entr,x.sens,x.gloss = id, n, m+1

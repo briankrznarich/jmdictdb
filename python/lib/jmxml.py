@@ -583,23 +583,20 @@ class Jmparser (object):
                     of restrictions being processed.
             rdng -- If 'rtype' is "restr", a Rdng object, otherwise a Sens
                     object.
-            kanjs -- If 'rtype' is "restr" or ""stagk", the entry's list
+            kanjs -- If 'rtype' is "restr" or "stagk", the entry's list
                     of Kanj objects.  Otherwise, the entry's list of Rdng
                     objects.
             nokanji -- True if the rtype in "restr" and the reading has a
                     <no_kanji> element, false otherwise.
 
         Examples:
-        To use for restr restictions:
-
+        To use for restr restrictions:
             do_restrs (restr_elems, entr._rdng, entr._kanj, "restr", nokanji)
 
-        or stagr restictions:
-
+        or stagr restrictions:
             do_restrs (stagr_elems, entr._sens, entr._rdng, "stagr")
 
         or stagk restrictions:
-
             do_restrs (stagk_elems, entr._sens, entr._kanj, "stagk")
         """
 
@@ -615,16 +612,14 @@ class Jmparser (object):
         if not elems and nokanji is None: return
         if elems and nokanji is not None:
             self.warn ("Conflicting 'nokanji' and 're_restr' in reading %d." % rdng.rdng)
-        if nokanji is not None: allowed_kanj = []
+        if nokanji is not None: allowed_kanj = None
         else:
             allowed_kanj, dups = jdb.rmdups ([x.text for x in elems])
             if dups:
                 self.warn ("Duplicate %s item(s) %s in %s %d."
                         % (pattr[1:], "'"+"','".join(dups)+"'",
                            rattr, getattr (rdng,rattr)))
-        for kanj in kanjs:
-            if kanj.txt not in allowed_kanj:
-                jdb.add_restrobj (rdng, rattr, kanj, kattr, pattr)
+        jdb.txt2restr (allowed_kanj, rdng, kanjs)
 
     def parse_freq (self, fstr, ptype):
         # Convert a re_pri or ke_pri element string (e.g "nf30") into

@@ -35,10 +35,8 @@ class Test_parsexml (unittest.TestCase):
     def test_000050(_): _.dotest ('000050')
     def test_000060(_): _.dotest ('000060')  # rinf
     def test_000070(_): _.dotest ('000070')  # kinf
-    def test_000080(_):                      # restr
-        en, ex = _.dotest ('000080')
-        _.assertIs (en[0]._rdng[0]._restr[0],
-                    en[0]._kanj[1]._restr[0])
+    def test_000080(_): _.dotest ('000080')  # restr
+    def test_1499230(_):_.dotest ('1499230') # restr/nokanji
 
     # To do: restr combos, freq, pos, misc, fld, dial, lsrc, stagr,
     #   stagk, xrslv, gloss (lang, ginf), hist, grp
@@ -58,7 +56,7 @@ def getxml (fname, testid, mode=''):
         # start with "expect =" since it will be exec'd and the test code
         # will look for a variable named "expect".  The Python code may
         # be followed by another test data section of the end of the file.
-        # Throughout out the test data file, blank lines and lines
+        # Throughout the test data file, blank lines and lines
         # starting with a hash and a space, "# ", (comment line) are
         # ignored.
         # This function returns a two-tuple of test data (xml and python

@@ -42,8 +42,8 @@ class Objects (unittest.TestCase):
 
     def test070010(_):  # Restr
         e = jdb.Entr(_kanj=[jdb.Kanj(kanj=1, txt='果物'), jdb.Kanj(kanj=2, txt='菓物')],
-                     _rdng=[jdb.Rdng(rdng=1, txt='くだもの'), jdb.Rdng(rdng=2, txt='かぶつ')])
-        jdb.add_restr (e._rdng[1], e._kanj[1])
+                     _rdng=[jdb.Rdng(rdng=1, txt='くだもの'),
+                            jdb.Rdng(rdng=2, txt='かぶつ', _restr=[jdb.Restr(kanj=2)])])
         rt (_, e)
 
     def test080010(_):  # Sens
@@ -79,14 +79,14 @@ class Objects (unittest.TestCase):
 
     def test150010(_):  # Stagr
         e = jdb.Entr(_rdng=[jdb.Rdng(rdng=1,txt='くだもの'), jdb.Rdng(rdng=2,txt='かぶつ')],
-                     _sens=[jdb.Sens(sens=1), jdb.Sens(sens=2)])
-        jdb.add_stagr (e._sens[0], e._rdng[1])
+                     _sens=[jdb.Sens(sens=1, _stagr=[jdb.Stagr(rdng=2)]),
+                            jdb.Sens(sens=2)])
         rt(_, e)
 
     def test160010(_):  # Stagk
         e = jdb.Entr(_kanj=[jdb.Kanj(kanj=1,txt='果物'), jdb.Kanj(kanj=2,txt='菓物')],
-                     _sens=[jdb.Sens(sens=1), jdb.Sens(sens=2)])
-        jdb.add_stagk (e._sens[0], e._kanj[1])
+                     _sens=[jdb.Sens(sens=1, _stagk=[jdb.Stagk(kanj=1)]),
+                            jdb.Sens(sens=2)])
         rt(_, e)
 
     def test170010(_):  # Xref

@@ -57,24 +57,21 @@ class Entr (DbRow):
 
 class Rdng (DbRow):
     def __init__ (s, entr=None, rdng=None, txt=None,
-                     _inf=None, _freq=None, _restr=None, _stagr=None, _snd=None):
+                     _inf=None, _freq=None, _restr=None, _snd=None):
         DbRow.__init__(s, ( entr,  rdng,  txt),
                           ('entr','rdng','txt'))
         s._inf   = _inf   or []
         s._freq  = _freq  or []
         s._restr = _restr or []
-        s._stagr = _stagr or []
         s._snd   = _snd   or []
 
 class Kanj (DbRow):
     def __init__ (s, entr=None, kanj=None, txt=None,
-                     _inf=None, _freq=None, _restr=None, _stagk=None):
+                     _inf=None, _freq=None):
         DbRow.__init__(s, ( entr,  kanj,  txt),
                           ('entr','kanj','txt'))
         s._inf   = _inf   or []
         s._freq  = _freq  or []
-        s._restr = _restr or []
-        s._stagk = _stagk or []
 
 class Sens (DbRow):
     def __init__ (s, entr=None, sens=None, notes=None,

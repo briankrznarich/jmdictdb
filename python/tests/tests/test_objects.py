@@ -87,10 +87,8 @@ class Test_Attrs (unittest.TestCase):
     # Check the jmdictdb objects for the expected attribute sets.
     def test000010(_): attrchk (_, Entr(),    ['id','src','stat','seq','dfrm','unap','srcnote','notes',
                                                '_kanj','_rdng','_sens','_hist','_snd','_grp','chr','_krslv'])
-    def test000020(_): attrchk (_, Rdng(),    ['entr','rdng','txt',
-                                               '_inf','_freq','_restr','_stagr','_snd'])
-    def test000030(_): attrchk (_, Kanj(),    ['entr','kanj','txt',
-                                               '_inf','_freq','_restr','_stagk'])
+    def test000020(_): attrchk (_, Rdng(),    ['entr','rdng','txt','_inf','_freq','_restr','_snd'])
+    def test000030(_): attrchk (_, Kanj(),    ['entr','kanj','txt','_inf','_freq'])
     def test000040(_): attrchk (_, Sens(),    ['entr','sens','notes','_gloss','_pos','_misc','_fld','_dial',
                                                '_lsrc','_stagr','_stagk','_xref','_xrer','_xrslv'])
     def test000050(_): attrchk (_, Gloss(),   ['entr','sens','gloss','lang','ginf','txt'])
