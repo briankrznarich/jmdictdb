@@ -207,7 +207,7 @@ def get_entr_cands (dbconn, xref_src, targ_src, start=None, stop=None,
         c3 = "v.stat=2 AND NOT v.unapp" if active else ""
           # Disallow resolution to deleted or rejected entries.
           #FIXME: should not hardwire 'stat' value.
-        c4 = "tstat=2"
+        c4 = "(tstat=2 OR tstat IS NULL)"
           #FIXME: following condition controls whether or not unapproved
           # xrefs are considered as target candidates.  It is disabled
           # because it is probably the wrong thing to do right now.  If an
@@ -318,7 +318,7 @@ def del_xresolv (dbconn, xref_src=[], targ_src=None, start=None, stop=None,
         c1, args1 = src_clause (xref_src, targ_src)
         c2, args2 = idrange_clause (start, stop)
         c3 = "v.stat=2 AND NOT v.unapp" if active else ""
-        c4 = "tstat=2"
+        c4 = "(tstat=2 OR tstat IS NULL)"
         c5 = "" #"NOT tunap" if appr_targ else "")
         whr = " AND ".join([c for c in [c0,c1,c2,c3,c4,c5] if c])
         if whr: whr = "WHERE " + whr
