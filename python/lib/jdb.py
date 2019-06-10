@@ -957,10 +957,12 @@ def augment_xrefs (dbh, xrefs, rev=False):
         Debug['Xrefsum2 retrieval time'] = time() - start
 
 def add_xsens_lists (xrefs, rev=False):
-        # Add an ._xsens attribute to the first xref is each
+        # Add a ._xsens attribute to the first xref in each
         # set of xrefs with the same .entr, .sens, .typ, .xentr
         # and .notes, that contains a list of all xsens numbers
-        # of the xrefs in that set.
+        # of the xrefs in that set.  A ._xsens attribute with a
+        # value of [] is added to the second and subsequent xrefs
+        # of each set.
 
         index = {}
         for x in xrefs:

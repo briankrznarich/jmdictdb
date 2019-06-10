@@ -317,6 +317,7 @@ def xrefs (xrefs, src):
         #   If not, legacy JMdict XML will be generated.
 
         fmt = []
+
           # Mark each xref that differs only by .xsens value with
           # a ._xsens attribute that will be a list of all .xsens
           # values on the first such xref, and an emply list on
@@ -324,7 +325,7 @@ def xrefs (xrefs, src):
         jdb.add_xsens_lists (xrefs)
 
         for x in xrefs:
-              # If ._xsens is empty, this xref can we ignored since
+              # If ._xsens is empty, this xref can be ignored since
               # we already formatted a preceeding matching xref that
               # contained a list of all .xsens values.
             if not x._xsens: continue
@@ -335,9 +336,9 @@ def xrefs (xrefs, src):
               # will be used in the xml xref, as well and the
               # the number of senses, which we also need.
             try: targ = x.TARG
-            except AttributeError:
-                raise AttributeError ("xref missing TARG attribute.  Did you forget to call augment_xrefs()?")
-
+            except AttributeError: raise AttributeError (
+                                   "xref missing TARG attribute.  "
+                                   "Did you forget to call augment_xrefs()?")
               # If generating JMdict-compatible XML, don't generate
               # xrefs to entries that are unapproved or whose status
               # is not active (i.e. deleted or rejected.)
@@ -352,19 +353,29 @@ def xrefs (xrefs, src):
               # the same target and sense, if the number of xsens values
               # in the .xsens list equals the number of target senses,
               # there is one xref pointing to each sense.
-            if len(targ._sens) != len(x._xsens):
-                  # There is not an xref for each target sense, so we
-                  # want to generate xrefs with explicit target senses.
+            if len(targ._sens) == len(x._xsens) or x.nosens:
+                  # There is an xref for each target sense or the "nosens"
+                  # flag is set on this xref.  Both indicate that we want
+                  # to present a generic xref that refers to the entire
+                  # entry rather than a particular sense of it.  The former
+                  # condition was used prior to the introduction of the
+                  # "nosens" flag and is supported for compatibility with
+                  # existing entries.
+                  #FIXME? we assume here that the .nosens flag is on the
+                  # first xref of the group marked by '.xsens'.  But there
+                  # is nothing in the database that enforces that.  It is
+                  # not well defined how we should treat a nosens flag on
+                  # an xref to a sense other than 1; right now we ignore it.
+                fmt.append (fmtdxref % '')
+            else:
+                  # Otherwise, we want to generate an separate xref for
+                  # each target senses.
                 for s in x._xsens:
                       # The string returned by xref() has a "%s"
                       # placeholder for the sense number.  Generate
                       # an xref element with sense for each xref in
                       # the group.  \u30FB is mid-height dot.
                     fmt.append (fmtdxref % '\u30FB%d' % s)
-            else:
-                  # There is an xref for each target sense so we want
-                  # to supress the target sense numbers.
-                fmt.append (fmtdxref % '')
         return fmt
 
 def xref (xref, src):

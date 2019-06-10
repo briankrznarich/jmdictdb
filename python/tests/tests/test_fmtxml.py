@@ -115,4 +115,177 @@ class Test_entr_diff (unittest.TestCase):
         s = fmtxml.entr_diff (e1, e2, n=0)
         _.assertEqual (s, f.t_exp['0400020'])
 
+class Test_xrefs (unittest.TestCase):
+    def setUp(_):
+        import xmlkw
+        jdb.KW = jdb.Kwds ('data/fmtxml/kw/')
+          # XKW is a fmtxml glocal that is normally initialized inside
+          # fmtxml.entr() but since we are not calling .entr() we need
+          # initialize XKW "by hand".
+        fmtxml.XKW = xmlkw.make (jdb.KW)
+
+    def test_00010(_):   # Xrefs must be augmented (have a .TARG attr)
+        with _.assertRaisesRegex (AttributeError, 'missing TARG attribute'):
+           fmtxml.xrefs([Xref()],None)
+
+    def test_01010(_):   # Tests that fmtxml.xrefs() doesn't blow up.
+        x = Xref(); setattr(x,'TARG',Entr())
+        o = fmtxml.xrefs([x],None)
+        _.assertEqual(o, [])
+
+    def test_01020(_):   # Most minimal test that produces an xml xref.
+        x = Xref(typ=3,rdng=1)
+        setattr(x,'TARG',Entr(stat=2,
+                              _rdng=[Rdng(txt='ゴミ')],
+                              _sens=[Sens(sens=1)]))
+        o = fmtxml.xrefs([x],None)
+        _.assertEqual(o, ['<xref>ゴミ</xref>'])
+
+    def test_01030(_):   # Xref to kanji.
+        x = Xref(typ=3,xsens=1,rdng=1)
+        setattr(x,'TARG',Entr(stat=2,
+                              _kanj=[Kanj(txt='忠実')],
+                              _rdng=[Rdng(txt='ちゅうじつ')],
+                              _sens=[Sens(sens=1)]))
+        o = fmtxml.xrefs([x],None)
+        _.assertEqual(o, ['<xref>ちゅうじつ</xref>'])
+
+    def test_01040(_):   # Xref to reading.
+        x = Xref(typ=3,xsens=1,kanj=1)
+        setattr(x,'TARG',Entr(stat=2,
+                              _kanj=[Kanj(txt='忠実')],
+                              _rdng=[Rdng(txt='ちゅうじつ')],
+                              _sens=[Sens(sens=1)]))
+        o = fmtxml.xrefs([x],None)
+        _.assertEqual(o, ['<xref>忠実</xref>'])
+
+    def test_01050(_):   # Xref to kanji and reading.
+        x = Xref(typ=3,xsens=1,kanj=1,rdng=1)
+        setattr(x,'TARG',Entr(stat=2,
+                              _kanj=[Kanj(txt='忠実')],
+                              _rdng=[Rdng(txt='ちゅうじつ')],
+                              _sens=[Sens(sens=1)]))
+        o = fmtxml.xrefs([x],None)
+        _.assertEqual(o, ['<xref>忠実・ちゅうじつ</xref>'])
+
+    def test_01060(_):   # Xref to kanji and reading.
+        x = Xref(typ=3,xsens=1,kanj=3,rdng=2)
+        setattr(x,'TARG',Entr(stat=2,
+                              _kanj=[Kanj(txt='海辺'),Kanj(txt='海べ'),Kanj(txt='海邊')],
+                              _rdng=[Rdng(txt='うみべ'),Rdng(txt='かいへん')],
+                              _sens=[Sens(sens=1)]))
+        o = fmtxml.xrefs([x],None)
+        _.assertEqual(o, ['<xref>海邊・かいへん</xref>'])
+
+    def test_01070(_):   # Xref to one of multiple senses produces xref
+                        #  with sense number.
+        x = Xref(typ=3,xsens=1,rdng=1)
+        setattr(x,'TARG',Entr(stat=2,
+                              _rdng=[Rdng(txt='ゴミ')],
+                              _sens=[Sens(sens=1),Sens(sens=2)]))
+        o = fmtxml.xrefs([x],None)
+        _.assertEqual(o, ['<xref>ゴミ・1</xref>'])
+
+    def test_01080(_):   # Xref to one of multiple senses produces xref
+                        #  with sense number.
+        x = Xref(typ=3,xsens=2,rdng=1)
+        setattr(x,'TARG',Entr(stat=2,
+                              _rdng=[Rdng(txt='ゴミ')],
+                              _sens=[Sens(sens=1),Sens(sens=2)]))
+        o = fmtxml.xrefs([x],None)
+        _.assertEqual(o, ['<xref>ゴミ・2</xref>'])
+
+    def test_02010(_):   # Xrefs to all senses of target are coalesced.
+        targ = Entr(stat=2,
+                    _rdng=[Rdng(txt='ゴミ')],
+                    _sens=[Sens(sens=1),Sens(sens=2)])
+        xm = [Xref(typ=3,xsens=1,rdng=1), Xref(typ=3,xsens=2,rdng=1)]
+        for x in xm: setattr(x,'TARG',targ)
+        o = fmtxml.xrefs(xm,None)
+        _.assertEqual(o, ['<xref>ゴミ</xref>'])
+
+    def test_02020(_):   # Xrefs to subset of senses of produces xref
+                        #  to each sense.
+        targ = Entr(stat=2,
+                    _rdng=[Rdng(txt='ゴミ')],
+                    _sens=[Sens(sens=1),Sens(sens=2),Sens(sens=3)])
+        xm = [Xref(typ=3,xsens=1,rdng=1), Xref(typ=3,xsens=2,rdng=1)]
+        for x in xm: setattr(x,'TARG',targ)
+        o = fmtxml.xrefs(xm,None)
+        _.assertEqual(o, ['<xref>ゴミ・1</xref>', '<xref>ゴミ・2</xref>'])
+
+    def test_02030(_):   # "nosens" xref.
+        targ = Entr(stat=2,
+                    _rdng=[Rdng(txt='ゴミ')],
+                    _sens=[Sens(sens=1),Sens(sens=2),Sens(sens=3)])
+        x = Xref(typ=3,xsens=1,rdng=1,nosens=True);  setattr(x,'TARG',targ)
+        o = fmtxml.xrefs([x],None)
+        _.assertEqual(o, ['<xref>ゴミ</xref>'])
+
+    def test_02040(_):   # "nosens" xref.
+        targ = Entr(stat=2,
+                    _rdng=[Rdng(txt='ゴミ')],
+                    _sens=[Sens(sens=1),Sens(sens=2),Sens(sens=3)])
+        x = Xref(typ=3,xsens=1,rdng=1,nosens=True);  setattr(x,'TARG',targ)
+        o = fmtxml.xrefs([x],None)
+        _.assertEqual(o, ['<xref>ゴミ</xref>'])
+
+    def test_02050(_):   # Multiple xrefs.
+        targ1 = Entr(stat=2,
+                    _rdng=[Rdng(txt='ゴミ')],
+                    _sens=[Sens(sens=1),Sens(sens=2)])
+        targ2 = Entr(stat=2,
+                    _kanj=[Kanj(txt='ゴミ箱')],
+                    _sens=[Sens(sens=1),Sens(sens=2)])
+        x1 = Xref(typ=3,xentr=200,xsens=1,rdng=1);  setattr(x1,'TARG',targ1)
+        x2 = Xref(typ=3,xentr=201,xsens=1,kanj=1);  setattr(x2,'TARG',targ2)
+        o = fmtxml.xrefs([x1,x2],None)
+        _.assertEqual(o, ['<xref>ゴミ・1</xref>','<xref>ゴミ箱・1</xref>'])
+
+    def test_02060(_):   # Multiple xrefs with one "nosens".
+        targ1 = Entr(stat=2,
+                    _rdng=[Rdng(txt='ゴミ')],
+                    _sens=[Sens(sens=1),Sens(sens=2)])
+        targ2 = Entr(stat=2,
+                    _kanj=[Kanj(txt='ゴミ箱')],
+                    _sens=[Sens(sens=1),Sens(sens=2)])
+        x1 = Xref(typ=3,xentr=200,xsens=1,rdng=1,nosens=True);  setattr(x1,'TARG',targ1)
+        x2 = Xref(typ=3,xentr=201,xsens=1,kanj=1);  setattr(x2,'TARG',targ2)
+        o = fmtxml.xrefs([x1,x2],None)
+        _.assertEqual(o, ['<xref>ゴミ</xref>','<xref>ゴミ箱・1</xref>'])
+
+    def test_02070(_):   # Multiple xrefs with one "nosens".
+        targ1 = Entr(stat=2,
+                    _rdng=[Rdng(txt='ゴミ')],
+                    _sens=[Sens(sens=1),Sens(sens=2)])
+        targ2 = Entr(stat=2,
+                    _kanj=[Kanj(txt='ゴミ箱')],
+                    _sens=[Sens(sens=1),Sens(sens=2)])
+        x1 = Xref(typ=3,xentr=200,xsens=1,rdng=1,nosens=True);  setattr(x1,'TARG',targ1)
+        x2 = Xref(typ=3,xentr=201,xsens=1,kanj=1);  setattr(x2,'TARG',targ2)
+        o = fmtxml.xrefs([x1,x2],None)
+        _.assertEqual(o, ['<xref>ゴミ</xref>','<xref>ゴミ箱・1</xref>'])
+
+    def test_02080(_):   # "nosens" xref works, even if sense!=1, as long
+                         #  as it's on the first xref of the target group.
+        targ = Entr(stat=2,
+                    _rdng=[Rdng(txt='ゴミ')],
+                    _sens=[Sens(sens=1),Sens(sens=2),Sens(sens=3)])
+        x1 = Xref(typ=3,xsens=2,rdng=1,nosens=True);  setattr(x1,'TARG',targ)
+        x2 = Xref(typ=3,xsens=3,rdng=1);  setattr(x2,'TARG',targ)
+        o = fmtxml.xrefs([x1,x2],None)
+        _.assertEqual(o, ['<xref>ゴミ</xref>'])
+
+    def test_02090(_):   # "nosens" xref doesn't work if it's not on the
+                         #  first xref of the target group.
+        targ = Entr(stat=2,
+                    _rdng=[Rdng(txt='ゴミ')],
+                    _sens=[Sens(sens=1),Sens(sens=2),Sens(sens=3)])
+        x1 = Xref(typ=3,xsens=2,rdng=1);  setattr(x1,'TARG',targ)
+        x2 = Xref(typ=3,xsens=3,rdng=1,nosens=True);  setattr(x2,'TARG',targ)
+        o = fmtxml.xrefs([x1,x2],None)
+        _.assertEqual(o, ['<xref>ゴミ・2</xref>','<xref>ゴミ・3</xref>'])
+
+
+
 if __name__ == '__main__': unittest.main()
