@@ -60,11 +60,6 @@ if _ not in sys.path: sys.path.insert(0, _)
 import re, itertools, io
 import db, jdb
 import logging, logger; from logger import L
-  # Set to True to disable multiple threads for debugging.
-  #FIXME: doesn't work.
-Debug = 0 # True
-
-NWRITERS = 1    # Number of threads doing inserts.
 
 #-----------------------------------------------------------------------
 
@@ -142,7 +137,8 @@ def resolve (dbconn, tmpf, xref_src, targ_src, start=None, stop=None,
               # 'rows' is a set of target candidate rows for all the
               # unresolved xrefs for a single entry.
             xrefs = process_entr_cands (rows)
-            L('resolve').debug("process_entr_cands returned %s xrefs" % len(xrefs))
+            L('resolve').debug("process_entr_cands returned %s xrefs"
+                               % len(xrefs))
             for x in xrefs:
                 csv  = '\t'.join ([str(x.entr), str(x.sens), str(x.xref),
                                    str(x.typ), str(x.xentr), str(x.xsens),
@@ -352,7 +348,8 @@ def mkxref (v):
         nosens = False
         if not v.tsens:
             if v.nsens != 1:
-                L('multiple senses').warning("using sense 1: %s" % (fs(v)))
+                L('multiple senses').warning("using 'nosens' xref: %s"\
+                                             % (fs(v)))
                 nosens = True
             v.tsens = 1
         if v.tsens > v.nsens:
