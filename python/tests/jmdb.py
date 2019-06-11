@@ -1,4 +1,4 @@
-import sys, os, subprocess, re, pdb
+import sys, os, subprocess, hashlib, re, pdb
 import jdb, db
 
 # This module defines a _DBmanager class and creates a single
@@ -42,8 +42,10 @@ import jdb, db
 # test program.
 # A failure when loading will result in an exception.
 
+HASH_METHOD = 'sha1'
+
 class _DBmanager():
-    def __init__ (self): self.loaded = {}
+    def __init__ (self): pass
     def use (self, dbname, filename, force_reload=False):
         if force_reload or not self.is_loaded (dbname, filename):
             print ('Loading database "%s" from %s' % (dbname, filename),
@@ -51,22 +53,27 @@ class _DBmanager():
               # self.load() will raise CalledProcessError if it fails
               # which we let propagate up to our caller.
             self.load (dbname, filename)
-            self.loaded[dbname] = filename
         cur = jdb.dbOpen (dbname)
         return cur
     def is_loaded (self, dbname, filename):
-        if dbname in self.loaded and self.loaded[dbname]==os.path.abspath:
-            return True
         try:
             dbconn = db.connect (dbname)
             rs = db.query (dbconn, "SELECT * FROM testsrc;")
         except db.Error as e:
             if not re.search ('(relation|database) \S+ does not exist',
                               str(e)):
-                print ("jmdb: validate failed: %s" % e, file=sys.stderr)
+                print ("jmdb: database error: %s" % e, file=sys.stderr)
             return False
-        if len(rs) != 1 or len(rs[0]) != 1: return False
-        return rs[0][0] == os.path.abspath (filename)
+        if len(rs) != 1 or len(rs[0]) != 3:
+            print ("jmdb: unexpected signature data", file=sys.stderr)
+            return False
+        if rs[0][0] != os.path.abspath (filename):
+            print ("jmdb: filename mismatch", file=sys.stderr)
+            return False
+        if rs[0][2] != self.hash (HASH_METHOD, filename):
+            print ("jmdb: hash mismatch", file=sys.stderr)
+            return False
+        return True
     def load (self, dbname, filename):
           # Reload a fresh copy of a test database into the postgresql
           # database server.
@@ -80,6 +87,7 @@ class _DBmanager():
         if not dbname.startswith ("jmtest"):
             raise RuntimeError ('reloaddb: dbname must start with "jmtest"')
         absfn = os.path.abspath (filename)
+        hash = self.hash (HASH_METHOD, filename)
         def run (cmd):
               # The "stdout" argument will send stdout to /dev/null; we
               # want to supress all the notice-level messages from psql
@@ -98,9 +106,13 @@ class _DBmanager():
         run ('PGOPTIONS="--client-min-messages=warning" '
                 'psql -d %s -c '
                 '"DROP TABLE IF EXISTS testsrc;'
-                ' CREATE TABLE testsrc (filename TEXT);'
-                ' INSERT INTO testsrc VALUES(\'%s\');"'
-                % (dbname, os.path.abspath (filename)))
+                ' CREATE TABLE testsrc (filename TEXT, method TEXT, hash TEXT);'
+                ' INSERT INTO testsrc VALUES(\'%s\', \'%s\', \'%s\');"'
+                % (dbname, os.path.abspath (filename), HASH_METHOD, hash))
+    def hash (self, method, filename):
+        with open (filename, 'rb') as f:
+            h = hashlib.new (method, f.read())
+        return (h.digest()).hex()
 
   # Create a single instance of _DBmanager that will be shared by
   # all tests run in a single invocation of a unittest test program.
