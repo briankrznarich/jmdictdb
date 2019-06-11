@@ -18,27 +18,21 @@ class Test_restr (unittest.TestCase):
     def test_002(_):
         k1, k2, k3 = Kanj(txt='k1'), Kanj(txt='k2'), Kanj(txt='k3')
         kanjs = [k1, k2, k3]
-        rdng = Rdng()
-        rx1 = Restr(); rdng._restr.append (rx1);  k1._restr.append (rx1)
-        rx3 = Restr(); rdng._restr.append (rx3);  k3._restr.append (rx3)
+        rdng = Rdng(_restr=[Restr(kanj=1), Restr(kanj=3)])
         xml = fmtxml.restrs (rdng, kanjs)
         _.assertEqual (['<re_restr>k2</re_restr>'], xml)
 
     def test_003(_):
         k1, k2, k3 = Kanj(txt='k1'), Kanj(txt='k2'), Kanj(txt='k3')
         kanjs = [k1, k2, k3]
-        rdng = Rdng()
-        rx1 = Restr(); rdng._restr.append (rx1);  k2._restr.append (rx1)
+        rdng = Rdng(_restr=[Restr(kanj=2)])
         xml = fmtxml.restrs (rdng, kanjs)
         _.assertEqual (['<re_restr>k1</re_restr>','<re_restr>k3</re_restr>'], xml)
 
     def test_004(_):
         k1, k2, k3 = Kanj(txt='k1'), Kanj(txt='k2'), Kanj(txt='k3')
         kanjs = [k1, k2, k3]
-        rdng = Rdng()
-        rx1 = Restr(); rdng._restr.append (rx1);  k1._restr.append (rx1)
-        rx2 = Restr(); rdng._restr.append (rx2);  k2._restr.append (rx2)
-        rx3 = Restr(); rdng._restr.append (rx3);  k3._restr.append (rx3)
+        rdng = Rdng (_restr=[Restr(kanj=1), Restr(kanj=2), Restr(kanj=3)])
         xml = fmtxml.restrs (rdng, kanjs)
         _.assertEqual (['<re_nokanji/>'], xml)
 

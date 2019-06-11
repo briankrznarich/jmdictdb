@@ -98,10 +98,10 @@ class Restr (unittest.TestCase):
         e1 = Entr (id=100, src=1, seq=1000010, stat=2, unap=False)
         e1._kanj = [Kanj(txt='手紙',), Kanj(txt='切手')]
         e1._rdng = [Rdng(txt='てがみ'), Rdng(txt='あとで'), Rdng(txt='きって')]
-        r = Restr(); e1._rdng[0]._restr.append (r); e1._kanj[1]._restr.append(r)
-        r = Restr(); e1._rdng[1]._restr.append (r); e1._kanj[0]._restr.append(r)
-        r = Restr(); e1._rdng[2]._restr.append (r); e1._kanj[0]._restr.append(r)
-        r = Restr(); e1._rdng[2]._restr.append (r); e1._kanj[1]._restr.append(r)
+        e1._rdng[0]._restr.append (jdb.Restr(kanj=2))
+        e1._rdng[1]._restr.append (jdb.Restr(kanj=1))
+        e1._rdng[2]._restr.append (jdb.Restr(kanj=1))
+        e1._rdng[2]._restr.append (jdb.Restr(kanj=2))
         expect =  'jmdict 1000010 A {100}\n' \
                   '手紙；切手\n' \
                   'てがみ[手紙]；あとで[切手]；きって[nokanji]\n'
