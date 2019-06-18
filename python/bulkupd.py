@@ -18,15 +18,10 @@
 #  51 Franklin Street, Fifth Floor, Boston, MA  02110#1301, USA
 #######################################################################.
 
-import sys, re, logging, pdb
+import sys, re, logging, time, pdb
 
-# Have to call basicConfig() before imports because edsubmit.py imports jmcgi.py
-# imports tal.py which calls logging.basicConfig() which causes our call to have
-# no effect.  Not sure best way to fix -- if we remove the basicConfig call from  
-# tal.py we may have to configure in every app that uses tal.py.  Or possibly now
-# in python3 the default config would be ok?
 _format = '%(asctime)s %(levelname).1s %(name)s(%(process)s):%(funcName)s: %(message)s'
-logging.basicConfig (level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S', format=_format)
+logging.basicConfig (level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S', format=_format)
 
 import os, inspect
 _ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
@@ -66,7 +61,7 @@ def main (cmdargs=sys.argv):
           # UpdateError, which we catch and print, then continue
           # with the next entry.
         done = 0
-        for seq, src, edits in cmds:
+        for cmdnum, (seq, src, edits) in enumerate (cmds):
             L.info ("Modifying seq# %s, src %s" % (seq, src))
             try: entr = getentry (cur, seq, src)
             except UpdateError as e:
@@ -79,6 +74,12 @@ def main (cmdargs=sys.argv):
                     L.error (e); break
             else: # Executed if the for-loop exits normally (not via 'break').
                 entr._hist.append (hist)
+                   # Pause between updates to database if --delay was
+                   # given (in order to lighten load on server for large
+                   # updates) but skip delay first time through loop.
+                if cmdnum != 0 and args.delay is not None:
+                    L.debug ("pausing for %s mS")
+                    time.sleep (args.delay/1000.0)
                 try: submit (cur, entr, args.userid, args.noaction)
                 except UpdateError as e: L.error (e)
                 else: done += 1
@@ -420,6 +421,11 @@ def parse_cmdline (cmdargs):
                 "This argument is not validated in any way -- write access to the "
                 "database by the user executing this program is sufficient to allow "
                 "any changes including approval of the updated entry.  ")
+
+        p.add_argument ("--delay", type=int, default=None,
+            help="Pause for this number of milliseconds between each update"
+                "operation.  This allows for lightening the load on the "
+                "database server.")
 
         p.add_argument ("-d", "--database", default="pg:///jmdict",
             help="URI for database to open.  The general form is: \n"
