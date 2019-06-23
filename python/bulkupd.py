@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #######################################################################
 #  This file is part of JMdictDB.
-#  Copyright (c) 2014 Stuart McGraw
+#  Copyright (c) 2014,2019 Stuart McGraw
 #
 #  JMdictDB is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published
@@ -18,18 +18,17 @@
 #  51 Franklin Street, Fifth Floor, Boston, MA  02110#1301, USA
 #######################################################################.
 
-import sys, re, logging, time, pdb
-
-_format = '%(asctime)s %(levelname).1s %(name)s(%(process)s):%(funcName)s: %(message)s'
-logging.basicConfig (level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S', format=_format)
-
-import os, inspect
+import sys, os, inspect, pdb
 _ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
 _ = os.path.join (os.path.dirname (_), 'python', 'lib')
 if _ not in sys.path: sys.path.insert(0, _)
+import sys, re, logging, time
 import psycopg2
 import jdb
 from submit import submission
+
+_format = '%(asctime)s %(levelname).1s %(name)s(%(process)s):%(funcName)s: %(message)s'
+logging.basicConfig (level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S', format=_format)
 
 L = logging.getLogger ('bulkupd.py')
 
@@ -40,15 +39,19 @@ BULKUPD_TAG = '-*- via bulkupd.py -*-'
 
 def main (cmdargs=sys.argv):
           # Parse command line arguments.
-        args = parse_cmdline (cmdargs)
-
+        global Args
+        Args = args = parse_cmdline (cmdargs)
+          # Default into for entries' history records.
+        hist = dict (name=args.name or '', email=args.email or '',
+                     userid=args.userid or '',
+                     notes=args.comment or '', refs=args.refs or '')
           # Open a database connection.
         cur = jdb.dbOpen (None, **jdb.parse_pguri (args.database))
 
           # Parse the input command file.  The result is a list of
-          #  3-tuples of seq, src, edits.  'edits' in turn is a list
-          #  of Cmd() instances that describe a sequence of changes
-          #  to be made to the entry identified by seq,src.
+          #  3-tuples of seqnums, src, edits.  'edits' in turn is a list
+          #  of Cmd() instances that describe a sequence of changes to be
+          #  made to the entry identified by seq,src.
           #  parse_cmdfile() returns None if any errors occured.
         if not args.filename: f = sys.stdin
         else: f = open (args.filename)
@@ -63,41 +66,53 @@ def main (cmdargs=sys.argv):
           # and any failed attempts will result in some flavor of
           # UpdateError, which we catch and print, then continue
           # with the next entry.
-        done = 0
-        for cmdnum, (seq, src, edits) in enumerate (cmds):
-            L.info ("Modifying seq# %s, src %s" % (seq, src))
-            try: entr = getentry (cur, seq, src)
-            except UpdateError as e:
-                L.error (e); continue
-            hist = jdb.Hist (name=args.name, email=args.email,
-                             userid=args.userid,
-                             notes=args.comment or '',
-                             refs=args.refs or '')
+        tdone = tskipped = tfailed = trolledback = 0
+        for n, (seqnums, src, edits) in enumerate (cmds, start=1):
+            L.info ("\nProcessing directives set %d" % n)
+            done,skipped,failed,rolledback \
+              = apply (cur, edits, src, seqnums, hist)
+            L.info ("Directives set %d: %d updated, %d skipped, %d failed"
+                    % (n, done, skipped, failed))
+            tdone+=done;  tskipped==skipped;
+            tfailed+=failed; trolledback+=rolledback
+        L.info ("Updated: %d, skipped: %d, failed: %d"
+                % (tdone,tskipped,tfailed))
+        if rolledback:
+            L.info ("%d updates rolled back due to --noaction" % trolledback)
+
+def apply (cur, edits, src, seqnums, hist):
+        '''
+          Apply each change in 'edits' to each entry in 'seqnum'.'''
+
+        done = skipped = failed = rolledback = 0
+        entries = getentries (cur, seqnums, src)
+        skipped += len(seqnums) - len(entries)
+        for entr in entries:
             for edit in edits:
                 try: doedit (entr, hist, edit)
                 except UpdateError as e:
-                    L.error (e); break
+                    L.error ("Entry %s: %s" % (entr.seq, e));
+                    skipped += 1;  break
             else: # Executed if the for-loop exits normally (not via 'break').
-                entr._hist.append (hist)
                    # Pause between updates to database if --delay was
                    # given (in order to lighten load on server for large
                    # updates) but skip delay first time through loop.
-                if cmdnum != 0 and args.delay is not None:
+                if Args.delay is not None:
                     L.debug ("pausing for %s mS")
-                    time.sleep (args.delay/1000.0)
-                try: submit (cur, entr, args.userid, args.noaction)
-                except UpdateError as e: L.error (e)
-                else: done += 1
-        if len(cmds) != done: L.error ("%d entries not updated due to errors"
-                                        % (len(cmds)-done))
-        noactmsg = "not updated due to --noaction option" if args.noaction else "updated"
-        L.info ("%d entries %s" % (done, noactmsg))
+                    time.sleep (Args.delay/1000.0)
+                try: stat = submit (cur, entr, Args.userid, Args.noaction)
+                except UpdateError as e:
+                    L.error (e);  failed += 1
+                else:
+                    done += 1;
+                    if not stat: rolledback += 1
+        return done, skipped, failed, rolledback
 
 def parse_cmdfile (cmdfile, initial_corpus):
         # Read and parse the file 'cmdfile' and return None is any errors were
         # encountered or a list of 3-tuples representing the parsed contents if
         # not.  Each 3-tuple consists of:
-        #   seq-number -- (int) sequence number of entry to be edited.
+        #   seqnums -- A list of (int) sequence numbers of entry to be edited.
         #   corpus-number -- (int) id number of corpus containing entry.
         #   cmds -- A list cof Cmd() instances that are the edits to be
         #     applied to the entry.
@@ -106,33 +121,44 @@ def parse_cmdfile (cmdfile, initial_corpus):
         except KeyError:
             L.error ("Unknown corpus: '%s'" % initial_corpus)
             return None
-        cmds = [];  edits = None
+        cmds = [];  seqnums = [];  edits = []
         for lnnum, ln in enumerate (cmdfile, start=1):
-            ln = ln.rstrip()
+            ln = ln.strip()
             if not ln: continue                 # Skip blank lines.
             if re.match (r'\s*#', ln): continue # Skip comment lines.
-            try: cmdtxt, rest = ln.split (maxsplit=1)
-            except ValueError:
-                L.error ("line %d: Invalid directive line" % (lnnum))
-                errors += 1; continue
-            if cmdtxt == 'corpus':
-                try: src = jdb.KW.SRC[rest].id
-                except KeyError:
-                    L.error ("line %d: Unknown corpus: '%s'" % (lnnum, rest))
-                    errors += 1; corpus = None
-            elif cmdtxt == 'seq':
-                try: seq = int (rest)
-                except ValueError:
-                    L.error ("line %d: Bad seq number: '%s'" % (lnnum, rest))
-                    errors += 1; seq = None
-                edits = []
-                if seq and src: cmds.append ([seq, src, edits])
+            if ln[0] in "0123456789":
+                cmdtxt = 'seq';  rest = ln
             else:
+                try: cmdtxt, rest = ln.split (maxsplit=1)
+                except ValueError:
+                    L.error ("line %d: Invalid directive line" % (lnnum))
+                    errors += 1; continue
+            if cmdtxt in ('corpus', 'seq'):
+                  # A "seq" or "corpus" command ends the previous batch
+                  # of edits and starts a new one.  Save the seqence numbers
+                  # and edits already collected.
+                if edits:
+                    cmds.append ([seqnums, src, edits])
+                    edits = [];  seqnums = []
+                if cmdtxt == 'corpus':
+                    try: src = jdb.KW.SRC[rest].id
+                    except KeyError:
+                        L.error ("line %d: Unknown corpus: '%s'" % (lnnum, rest))
+                        errors += 1; corpus = None
+                else: #cmdtxt == 'seq'
+                    for seqtxt in rest.split():
+                        try: seq = int (seqtxt)
+                        except ValueError:
+                            L.error ("line %d: Bad seq number: '%s'" % (lnnum, seqtxt))
+                            errors += 1; seq = None
+                        else: seqnums.append (seq)
+            else: #'cmdtxt' is other than "corpus' or "seq".
                 try: cmd = Cmd (cmdtxt, rest)
                 except ParseError as e:
                     L.error ("line %d: %s" % (lnnum, e))
                     errors += 1; continue
                 else: edits.append (cmd)
+        if edits: cmds.append ([seqnums, src, edits])
         if errors: return None
         return cmds
 
@@ -196,9 +222,9 @@ def clean_quoted_string (s):
         s = (s.replace (r'\"', '"'))[1:-1]
         return s
 
-def getentry (cur, seq, src):
+def getentries (cur, seqnums, src):
         # cur -- An open DBAPI cursor to a JMdictDB database.
-        # seq -- Sequence number of entry to retrieve.
+        # seqnums -- List of sequence number of entries to retrieve.
         # src -- Corpus id number of entry to retrieve.
 
           # Read the entry.  If we get more than one, bail
@@ -207,21 +233,35 @@ def getentry (cur, seq, src):
           # ignore entries that are rejected, or are deleted-
           # approved.
         KW = jdb.KW
-        sql = "SELECT id FROM entr WHERE seq=%%s AND src=%%s "\
-                "AND (stat=%s OR (stat=%s and unap))"\
+        sql = "SELECT id FROM entr WHERE seq IN %%s AND src=%%s "\
+                "AND ((stat=%s and NOT unap) OR (stat=%s and unap))"\
                 % (KW.STAT['A'].id, KW.STAT['D'].id)
-        entries, raw = jdb.entrList (cur, sql, (seq, src), ret_tuple=True)
+        entries, raw = jdb.entrList (cur, sql, (tuple(seqnums), src),
+                                     ret_tuple=True)
+        if len (entries) > len (seqnums):
+            raise RetrievalError (
+              "More entries received (%s) than requested (%s)"
+              % (len(entries), len(seqnums)))
+        missing = set (seqnums) - set ([e.seq for e in entries])
+        L.debug ("Read %d entries, expected %d, %d missing"
+                 % (len(entries), len(seqnums), len(missing)))
+        if missing:
+               # Print missing entries in same order they occur in 'seqnums'.
+            for seq in seqnums:
+                if seq in missing:
+                    L.warning ("Entry %s not found" % seq)
         jdb.augment_xrefs (cur, raw['xref'])
-        if len(entries) > 1: raise MultipleError (seq)
-        if len(entries) == 0: raise MissingError (seq)
-        entr = entries[0]
-        if entr.dfrm: raise ChildError (seq)
-        return entr
+          # Remove and entries with children.
+        filtered = []
+        for e in entries:
+            if not e.dfrm: filtered.append (e)
+            else: L.error ("Entry %s has dependent edited entry" % e.seq)
+        return filtered
 
 def doedit (entr, hist, cmd):
         # entr -- A jdb.Entr() instance to be edited.
-        # hist --  A jdb.Hist instance that will be edited (if the edit
-        #   is to add a comment or refs.)
+        # hist --  A dict with default info for the edited entry's history
+        #   record.  The keys should correspond to Hist init parameters.
         # cmd -- A Cmd instance that describes changes to be made to entry.
         #
         # Apply the change described by <cmd> to <entr> and /or <hist>.
@@ -229,6 +269,8 @@ def doedit (entr, hist, cmd):
         # Should return True if <entr> or <hist> were actually changed,
         # False if not, but currently always retuns True.
 
+        h = jdb.Hist (**hist)
+        entr._hist.append (h)
         new = None
         if cmd.operand in ('kanj', 'rdng'):
             tlist = getattr (entr, '_'+cmd.operand)
@@ -247,8 +289,8 @@ def doedit (entr, hist, cmd):
             edit (tlist, 'kw', old, new, cmd.operand, cmd.old, cmd.new)
         elif cmd.operand == 'entr':
             if cmd.cmd == 'del': entr.stat = jdb.KW.STAT['D'].id
-        elif cmd.operand == 'comment': hist.notes = cmd.new
-        elif cmd.operand == 'refs': hist.refs = cmd.new
+        elif cmd.operand == 'comment': h.notes = cmd.new
+        elif cmd.operand == 'refs': h.refs = cmd.new
         else: raise ValueError (cmd.operand)
 
         return True #FIXME: how to determine if no change was made to entry?
@@ -327,17 +369,19 @@ def submit (cur, entr, userid, noaction):
         entr.dfrm = entr.id   # This tells submission() that we are editing an
                               #  existing entry, not creating a new entry.
 
-          # Call the edsubmit's submission() function to make
-          # the change to the entry in the database.  This will
-          # take care of generating the history record and
-          # removing the superceded entry properly.
+          # Call the submission() function to make the change to the entry
+          # in the database.  This will take care of generating the history
+          # record and removing the superceded entry properly.
 
-        L.info ("Submitting %s entry with userid='%s'"
-                % ("approved" if action=='a' else "unapproved", userid))
+        L.info ("Submitting %s entry %s (%s) with userid='%s'"
+                % ("approved" if action=='a' else "unapproved",
+                   entr.seq, jdb.KW.SRC[entr.src].kw, userid))
         errs = []
         cur.execute ("BEGIN")
-        try: submission (cur, entr, action, errs, is_editor=bool(userid), userid=userid)
+        try: entrid,_,_ = submission (cur, entr, action, errs,
+                                      is_editor=bool(userid), userid=userid)
         except psycopg2.DatabaseError as e: errs.append (str(e))
+        if entrid: L.info ("Added entry id=%s" % entrid)
         if errs:
             L.error ("Submission failed, rolling back")
             cur.execute ("ROLLBACK")
@@ -346,11 +390,15 @@ def submit (cur, entr, userid, noaction):
         if noaction:
             L.info ("Rolling back transaction in noaction mode")
             cur.execute ("ROLLBACK")
+            stat = 0
         else:
-            L.info ("Doing commit")
+            stat = 1
+            L.debug ("Doing commit")
             cur.execute("COMMIT")
+        return stat   # Return 1 if committed, 0 if noaction rollback.
 
 class ParseError (Exception): pass
+class RetrievalError(Exception): pass
 class DirectiveError (ParseError):
     def __str__(self): return "Unrecognised directive: '%s'" % self.args[0]
 class ArgumentsError (ParseError):
@@ -411,7 +459,10 @@ def parse_cmdline (cmdargs):
 
         p.add_argument ("-c", "--comment", default=None,
             help="Text that will be used for a comment for all updated entries "
-                "that don't have entry-specific comments in the command file.")
+                "that don't have entry-specific comments in the command file.  "
+                "Note that an additional line will be added automatically that "
+                "indicates this was a bulk update so that infomation need not "
+                "be included in this option's value.")
 
         p.add_argument ("-r", "--refs", default=None,
             help="Text that will be used for references for all updated entries "
@@ -440,11 +491,9 @@ def parse_cmdline (cmdargs):
             help="URI for database to open.  The general form is: \n"
                 " pg://[user[:password]@][netloc][:port][/dbname][?param1=value1&...] \n"
                 "Examples: \n"
-                " pg://localhost \n"
-                " pg://localhost/jmdict \n"
-                " pg:///jmdict \n"
-                " pg://user@localhost \n"
-                " pg://user:mypassword@/jmdict \n"
+                " jmnew \n"
+                " pg://remotehost/jmdict \n"
+                " pg://user:mypassword@/jmtest \n"
                 " pg://remotehost.somewhere.org:8866 \n"
                 "For more details see \"Connection URIs\" in the \"Connections Strings\" "
                 "section of the Postgresql \"libq\" documentation. ")
@@ -455,7 +504,7 @@ Input file syntax:
 The input file is a text file and each line contains a directive followed
 by arguments.  The number and meaning of the arguments depends on the
 directive.  Blank lines and comments (lines starting with a # character,
-possibly preceeded with whitspace) are ignored.
+possibly preceeded with whitespace) are ignored.
 
 Directives:
     corpus <name>
@@ -464,10 +513,12 @@ Directives:
         A corpus can be also be specified with the --corpus command line
         option and it will remain in effect until a "corpus" directive
         is encountered in the input file.
-    seq <seq-number>
-        Set the current entry to seq number <seq-number>.  The directives
-        below will apply to this entry until a new "seq" directive is
-        encountered.
+    [seq] <seq-number> [<seq-number>...]
+        Set the current entry set to given sequence numbers.  The directives
+        following will apply to these entries.  The "seq" text is optional;
+        a line starting with a number is assumed to be a "seq" line.  Multiple
+        seq lines can occur in succession and the following edit directives
+        will apply to all of given entries.
     add <operand> [<sense#>] <new-value>
         <operand> may be any of:
           kanj, rdng, gloss, pos, misc, fld, dial, comment, refs
@@ -475,6 +526,9 @@ Directives:
           is kanj, rdng, comment or refs.  It is optional for other operands
           and is the sense number containing the items to be acted on.
           If not given, the default is 1.
+          For "comment" note that an additional line will be added auto-
+          matically that indicates this was a bulk update so that infomation
+          need not be included in the comment text.
         <new-value> If operand is kanj, rdng, gloss, comment or refs, this
           is the text for the item to be added.  If it contains any white-
           space, the entire string should be enclosed in double-quote (")
@@ -483,31 +537,31 @@ Directives:
           character.  If operand is pos, misc, fld or dial, <new-value> is
           the keyword that is to be added.
     del <operand> [<sense#>] <old-value>
-         <operand> and <sense#> have the same meanings as for the "add"
-         directive except that "comment" and "refs" are not valid.
-         <old_value> is either text or a keyword that will searched for
-         in the current entry and removed.  An error will be generated and
-         no changes made to the current entry if no text or keyword matching
-         <old-value> is found.
+        <operand> and <sense#> have the same meanings as for the "add"
+        directive except that "comment" and "refs" are not valid.
+        <old_value> is either text or a keyword that will searched for
+        in the current entry and removed.  An error will be generated and
+        no changes made to the current entry if no text or keyword matching
+        <old-value> is found.
     del entr xxx
-         The entry with the current seq number will be deleted. "xxx" is
-         some arbitrary text required to keep the parser happy.
+        The entry with the current seq number will be deleted. "xxx" is
+        any arbitrary text (required to keep the parser happy.)
     repl <operand> [<sense#>] <new-value> <old-value>
-         <operand> and <sense#> have the same meanings as for the "add"
-         directive except that "comment" and "refs" are not valid.
-         <old_value> is either text or a keyword and will be replaced by
-         <new-value>.  An error will be generated and no change made to
-         the current entry if no text or keyword matching <old-value> is
-         found.
+        <operand> and <sense#> have the same meanings as for the "add"
+        directive except that "comment" and "refs" are not valid.
+        <old_value> is either text or a keyword and will be replaced by
+        <new-value>.  An error will be generated and no change made to
+        the current entry if no text or keyword matching <old-value> is
+        found.
 
-Usage example:
+Usage examples:
     python3 bulkupd.py -u jwb -c 'Update per edict maillist discussion' \\
         -s 'Jim Breen' -e 'jimbreen@gmail.com'
       # Following entry is 呉れる（くれる）
     seq 1269130
     repl pos v1 v1-ik
       # Following entry is だ
-    seq 2089020
+    2089020
     add pos cop-da
       # Following is 良い（いい）
     seq 1605820
@@ -515,9 +569,25 @@ Usage example:
     repl pos[2] adj-i adj-ix
     repl pos[3] adj-i adj-ix
     repl pos[4] adj-i adj-ix
-    seq 1882070
+      # Multiple seq numbers can be given
+    seq 1882070 1901840 1901860 1927550
     add comment "deleted because ..."
-    del entr xxx
+    del entr x
+      # Multiple sequence number can also occur on separate
+      # lines.  The following does the same as the preceding
+      # example.
+    1882070
+    1901840
+    1901860
+    1927550
+    add comment "deleted because ..."
+    del entr x
+      # ... or any combination of the above.
+    1882070 1901840
+    1901860
+    seq 1927550
+    add comment "deleted because ..."
+    del entr x
 
 Missing capabilities:
 There is no way at present to do the following:

@@ -163,6 +163,11 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
         # userid -- The userid if submitter is logged in editor or
         #   None if not.
         #
+        # Returns:
+        # A 3-tuple of (entry-id, sequence-number, src-id) for the
+        # added entry (or None,None,None if there was an error in
+        # which case error message(s) added to parameter 'errs').
+        #
         # Note that we never modify existing database entries other
         # than to sometimes completetly erase them.  Submissions
         # of all three types (submit, approve, reject) *always*
@@ -330,10 +335,10 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
                                            % logseq (dbh, entr.seq, entr.src))
           # Note that changes have not been committed yet, caller is
           # expected to do that.
-          # If no errors, 'added' is a 3-tuple of:
+          # If no errors the return value is a 3-tuple of:
           #   (entry-id, sequence-number, src-id)
           # If there were errors, parameter 'errs' will have the error
-          # messages appended and 'added' will be (None,None,None).
+          # messages appended and return value will be (None,None,None).
         return added
 
 def submit (dbh, entr, edtree, errs):
