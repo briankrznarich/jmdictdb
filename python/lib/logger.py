@@ -23,11 +23,15 @@
 
 import sys, logging, traceback, os, datetime, re, pdb
 
-# The function L() is a convenience function provided to importers
-# as a consise way to write logging calls.  It is used like:
-#   L('logger_name').info("log message...")
-
+  # The function L() is a convenience function provided to importers
+  # as a consise way to write logging calls.  It is used like:
+  #   L('logger_name').info("log message...")
 L = logging.getLogger;
+
+  # Define an aditional logging level for summary messages: informational
+  # messages that are for providing top-level summary of results and
+  # which should be shown even when info-level messages aren't.
+SUMMARY = 36
 
 def log_config (level="warning", filename=None, ts=None, filters=None):
         """
@@ -44,11 +48,10 @@ def log_config (level="warning", filename=None, ts=None, filters=None):
           will be present if true, absent if false.
         filters -- A list of strings that specify logging messages to
           output.  Each consists of an initial (case-insensitive) letter
-          from the set ('w', 'i', 'd'} (corresponding to the logging levels,
-          WARNING, INFO, DEBUG) optionally preceeded by a "!" character and
-          the remainder of the string being a regular expression.
-          - Logging messages with a level greater or equal to the logger's
-            level will be output as expected regardless of the filters.
+          from the set ('s', 'w', 'i', 'd'} (corresponding to the logging
+          levels, SUMMARY, WARNING, INFO, DEBUG) optionally preceeded by
+          a "!" character and the remainder of the string being a regular
+          expression.
           - Messages with a level less than the logger's level will be
             compared with each filter in the order given looking for a
             match: the message's log level is greater or equal to the
@@ -58,7 +61,8 @@ def log_config (level="warning", filename=None, ts=None, filters=None):
             message will be printed and no further filters will be compared.
           - If the matched filter was preceeded with a "!" the log message
             will not be printed  no further filters will be compared.
-          - If the log message matched no filters it will not be output.
+          - If the log message matched no filters it is output if its level
+            is greater than the logger's level, otherwise supressed.
 
           Example:
             logger.log_config (level="error", filters=['!D^xx', 'Dyes$'])
@@ -71,6 +75,24 @@ def log_config (level="warning", filename=None, ts=None, filters=None):
           forth message would be output because the 'Dyes$' filter would
           match before the '!D^xx' filter could reject it.
         """
+
+          # Replace the Python "logging" module's CRITICAL level with a more
+          # meaningful (to us) value of FATAL.  The numerical level remains
+          # the same (50) as does the function name logging.critical().  We
+          # are interested only in changing the output messages.
+        logging.addLevelName (50, 'FATAL')
+          # The following might be more interoperable with other libraries'
+          # use of logging but accesses a logging module "private" variable.
+        #logging._levelToName[50] = 'FATAL'  # Replaces 'CRITICAL'.
+          # Add a new SUMMARY level between WARNING and ERROR.  This
+          # is for high level info messages tha summarize succesful
+          # results such as a message that 'n' items were processed.
+        logging.addLevelName (SUMMARY, 'SUMMARY')
+          # Remove any existing handlers.  This allows us to reconfigure
+          # logging even if caller previously called basicConfig().
+        for handler in logging.root.handlers[:]:
+            logging.root.removeHandler(handler)
+
         msgdest, disable = {'stream': sys.stderr}, False
         if filename:
             if os.access (filename, os.W_OK):
@@ -92,6 +114,7 @@ def log_config (level="warning", filename=None, ts=None, filters=None):
         if ts is None: want_ts = bool (filename)
         else: want_ts = ts
         tsfmt = '%(asctime)s-%(process)d ' if want_ts else ''
+          # Now do our configuration.
         logging.basicConfig (
             level=levelnum(level),
             format=tsfmt + '%(levelname)1.1s %(name)s: %(message)s',
@@ -131,7 +154,7 @@ def levelnum( level ):
             raise ValueError ("bad 'level' parameter: %s" % level)
         return lvl
 
-Level_abbr2num = {'C':50,'E':40,'W':30,'I':20,'D':10}
+Level_abbr2num = {'F':50,'E':40,'S':36,'W':30,'I':20,'D':10}
 def parse_filter_list (flist, lvllimit=30):
         regexes = []
         for t in flist:
@@ -152,8 +175,7 @@ def _logmsg_filter (rec, regexes, lvllimit):
           # rec -- Log record created by a logger.
           # regexes -- List of (level,regex) tuples.
           # lvllimit -- Logging level at or above which logging messages
-          #   will always be output.
-        if rec.levelno >= lvllimit: return True
+          #   will be output if no regexes were matched.
         for lvl,regex in regexes:
             if rec.levelno < abs(lvl) or not re.search(regex,rec.name):
                 continue
@@ -162,9 +184,11 @@ def _logmsg_filter (rec, regexes, lvllimit):
               #  True to output the message.  If 'lvl' is negative, this
               #  is a negative match: return False to NOT output the message.
             return True if lvl >= 0 else False
+        if rec.levelno >= lvllimit: return True
         return False
 
-  # Please document me!
+  # This function can be used as the sys.excepthook handler by CGI
+  # scripts to present an error message in HTML format.
 def handler( ex_cls, ex, tb ):
         import jmcgi
         errid = datetime.datetime.now().strftime("%y%m%d-%H%M%S")\
