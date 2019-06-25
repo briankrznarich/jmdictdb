@@ -4,6 +4,8 @@ BEGIN;
 -- Treat rdng and kanj "freq" tags as independent (db-835781)
 -- Also some cleanup: remove unneccessary views, add missing FK'
 --  to table "gloss".
+-- Create missing views "vrslv" and helper "vrkrestr" used by
+--  xresolv.py.
 
 \set dbversion  '''835781'''  -- Update version applied by this update.
 \set require    '''1ef804'''  -- Database must be at this version in
@@ -89,5 +91,82 @@ INSERT INTO freq(entr,rdng,kanj,kw,value)
 DROP TABLE freq_tmp;
 
 ALTER TABLE gloss ADD FOREIGN KEY (ginf) REFERENCES kwginf(id);
+
+------------------------------------------------------------------------------
+--  The following two views are used by python/xresolv.py.
+
+CREATE OR REPLACE VIEW vrkrestr AS (
+    SELECT e.id,e.src,e.stat,e.unap,
+           r.rdng,r.txt AS rtxt,rk.kanj,rk.txt AS ktxt,
+           (SELECT COUNT(*) FROM sens s WHERE s.entr=e.id) AS nsens
+    FROM entr e
+    JOIN rdng r ON r.entr=e.id
+    LEFT JOIN
+        (SELECT r.entr,r.rdng,k.kanj,k.txt
+        FROM rdng r
+        LEFT JOIN kanj k ON k.entr=r.entr
+        LEFT JOIN restr j ON j.entr=r.entr AND j.rdng=r.rdng AND j.kanj=k.kanj
+        WHERE j.rdng IS NULL) AS rk ON rk.entr=r.entr AND rk.rdng=r.rdng);
+
+CREATE OR REPLACE VIEW vrslv AS (
+    -- Query for xresolv with both 'rtxt' and 'ktxt'
+    SELECT v.seq, v.src, v.stat, v.unap, v.entr, v.sens, v.typ, v.ord,
+           v.rtxt, v.ktxt, v.tsens, v.notes, v.prio,
+           c.src AS tsrc, c.stat AS tstat, c.unap AS tunap,
+           count(*) AS nentr, min(c.id) AS targ,
+           c.rdng, c.kanj, FALSE AS nokanji,
+           max(c.nsens) AS nsens
+    FROM (SELECT z.*,seq,src,stat,unap
+          FROM xresolv z JOIN entr e ON e.id=z.entr
+          WHERE ktxt IS NOT NULL AND rtxt IS NOT NULL)
+          AS v
+    LEFT JOIN vrkrestr c ON v.rtxt=c.rtxt AND v.ktxt=c.ktxt AND v.entr!=c.id
+    GROUP BY v.seq,v.src,v.stat,v.unap,v.entr,v.sens,v.typ,v.ord,v.rtxt,v.ktxt,
+             v.tsens,v.notes,v.prio, c.src,c.stat,c.unap,c.rdng,c.kanj
+    UNION
+
+    -- Query for xresolv with only rtxt
+    SELECT v.seq, v.src, v.stat, v.unap, v.entr, v.sens, v.typ, v.ord,
+           v.rtxt, v.ktxt, v.tsens, v.notes, v.prio,
+           c.src AS tsrc, c.stat AS tstat, c.unap AS tunap,
+           count(*) AS nentr, min(c.id) AS targ,
+           c.rdng, NULL AS kanj, nokanji, max(c.nsens) AS nsens
+    FROM
+       (SELECT z.*,seq,src,stat,unap
+        FROM xresolv z JOIN entr e ON e.id=z.entr
+        WHERE ktxt IS NULL AND rtxt IS NOT NULL)
+        AS v
+    LEFT JOIN
+       (SELECT e.id,e.src,e.stat,e.unap,r.txt as rtxt,r.rdng,
+                 -- The "not exists..." clause below is true if there
+                 -- are no kanj table rows for the entry.
+               (NOT EXISTS (SELECT 1 FROM kanj k WHERE k.entr=e.id))
+                 -- This cause is true if this reading is tagged <nokanji>.
+                 OR j.rdng IS NOT NULL AS nokanji,
+               (SELECT count(*) FROM sens s WHERE s.entr=e.id) AS nsens
+        FROM entr e JOIN rdng r ON r.entr=e.id
+        LEFT JOIN re_nokanji j ON j.id=e.id AND j.rdng=r.rdng)
+        AS c ON (v.rtxt=c.rtxt AND v.entr!=c.id)
+    GROUP BY v.seq,v.src,v.stat,v.unap,v.entr,v.sens,v.typ,v.ord,v.rtxt,v.ktxt,
+             v.tsens,v.notes,v.prio, c.src,c.stat,c.unap,c.rdng,c.nokanji
+    UNION
+
+    -- Query for xresolv with only ktxt
+    SELECT v.seq, v.src, v.stat, v.unap, v.entr, v.sens, v.typ, v.ord,
+           v.rtxt, v.ktxt, v.tsens, v.notes, v.prio,
+           c.src AS tsrc, c.stat AS tstat, c.unap AS tunap,
+           count(*) AS nentr, min(c.id) AS targ,
+           NULL AS rdng, c.kanj, NULL AS nokanji, max(c.nsens) AS nsens
+    FROM
+       (SELECT z.*,seq,src,stat,unap FROM xresolv z JOIN entr e ON e.id=z.entr
+        WHERE rtxt IS NULL AND ktxt IS NOT NULL)
+        AS v
+    LEFT JOIN
+       (SELECT e.id,e.src,e.stat,e.unap,k.txt as ktxt,k.kanj,
+               (SELECT count(*) FROM sens s WHERE s.entr=e.id) AS nsens
+        FROM entr e JOIN kanj k ON k.entr=e.id)
+        AS c ON (v.ktxt=c.ktxt AND v.entr!=c.id)
+    GROUP BY v.seq,v.src,v.stat,v.unap,v.entr,v.sens,v.typ,v.ord,v.rtxt,v.ktxt,
+             v.tsens,v.notes,v.prio, c.src,c.stat,c.unap,c.kanj);
 
 COMMIT;
