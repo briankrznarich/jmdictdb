@@ -24,27 +24,37 @@ _ = os.path.join (os.path.dirname (_), 'python', 'lib')
 if _ not in sys.path: sys.path.insert(0, _)
 import sys, re, logging, time
 import psycopg2
-import jdb
+import jdb, logger
 from submit import submission
-
-_format = '%(asctime)s %(levelname).1s %(name)s(%(process)s):%(funcName)s: %(message)s'
-logging.basicConfig (level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S', format=_format)
-
-L = logging.getLogger ('bulkupd.py')
 
   # The following text will be automatically appended to the history
   # comments field of every entry updated by a bulk update operation.
   # This text should match the corresponding value in cgi/updates.py.
 BULKUPD_TAG = '-*- via bulkupd.py -*-'
 
+from logging import getLogger as L
+pgm = "bulkupd.py"
+def F(*args, **kwargs): L(pgm).critical(*args, **kwargs) or sys.exit(1)
+def E(*args, **kwargs): L(pgm).error(*args, **kwargs)
+def S(*args, **kwargs): L(pgm).log(logger.SUMMARY,*args, **kwargs)
+def W(*args, **kwargs): L(pgm).warning(*args, **kwargs)
+def I(*args, **kwargs): L(pgm).info(*args, **kwargs)
+def D(*args, **kwargs): L(pgm).debug(*args, **kwargs)
+
 def main (cmdargs=sys.argv):
           # Parse command line arguments.
         global Args
+
         Args = args = parse_cmdline (cmdargs)
+        msg_filters = [r'!Dlib.jdb.entr_data\.db']
+        if args.loglevel != "debug": msg_filters.append ('!I^submit')
+        logger.log_config (level=args.loglevel, filters=msg_filters)
+
           # Default into for entries' history records.
         hist = dict (name=args.name or '', email=args.email or '',
                      userid=args.userid or '',
                      notes=args.comment or '', refs=args.refs or '')
+
           # Open a database connection.
         cur = jdb.dbOpen (None, **jdb.parse_pguri (args.database))
 
@@ -54,12 +64,12 @@ def main (cmdargs=sys.argv):
           #  made to the entry identified by seq,src.
           #  parse_cmdfile() returns None if any errors occured.
         if not args.filename: f = sys.stdin
-        else: f = open (args.filename)
+        else:
+            try: f = open (args.filename)
+            except OSError as e: F(str(e))
         cmds = parse_cmdfile (f, args.corpus)
         if f != sys.stdin: f.close()
-        if cmds is None:
-            L.error ("Exiting due to errors in input file")
-            return
+        if cmds is None: F("Exiting due to errors in input file")
 
           # Now go through 'cmds' and make the requested
           # change to each entry.  Changes are commited individually
@@ -68,17 +78,17 @@ def main (cmdargs=sys.argv):
           # with the next entry.
         tdone = tskipped = tfailed = trolledback = 0
         for n, (seqnums, src, edits) in enumerate (cmds, start=1):
-            L.info ("\nProcessing directives set %d" % n)
+            I("\nProcessing directives set %d" % n)
             done,skipped,failed,rolledback \
               = apply (cur, edits, src, seqnums, hist)
-            L.info ("Directives set %d: %d updated, %d skipped, %d failed"
+            I("Directives set %d: %d updated, %d skipped, %d failed"
                     % (n, done, skipped, failed))
             tdone+=done;  tskipped==skipped;
             tfailed+=failed; trolledback+=rolledback
-        L.info ("Updated: %d, skipped: %d, failed: %d"
+        S("Updated: %d, skipped: %d, failed: %d"
                 % (tdone,tskipped,tfailed))
         if rolledback:
-            L.info ("%d updates rolled back due to --noaction" % trolledback)
+            S("%d updates rolled back due to --noaction" % trolledback)
 
 def apply (cur, edits, src, seqnums, hist):
         '''
@@ -91,18 +101,18 @@ def apply (cur, edits, src, seqnums, hist):
             for edit in edits:
                 try: doedit (entr, hist, edit)
                 except UpdateError as e:
-                    L.error ("Entry %s: %s" % (entr.seq, e));
+                    E("Entry %s: %s" % (entr.seq, e));
                     skipped += 1;  break
             else: # Executed if the for-loop exits normally (not via 'break').
                    # Pause between updates to database if --delay was
                    # given (in order to lighten load on server for large
                    # updates) but skip delay first time through loop.
                 if Args.delay is not None:
-                    L.debug ("pausing for %s mS")
+                    D("pausing for %s mS")
                     time.sleep (Args.delay/1000.0)
                 try: stat = submit (cur, entr, Args.userid, Args.noaction)
                 except UpdateError as e:
-                    L.error (e);  failed += 1
+                    E(e);  failed += 1
                 else:
                     done += 1;
                     if not stat: rolledback += 1
@@ -119,7 +129,7 @@ def parse_cmdfile (cmdfile, initial_corpus):
         errors = 0
         try: src = jdb.KW.SRC[initial_corpus].id
         except KeyError:
-            L.error ("Unknown corpus: '%s'" % initial_corpus)
+            E("Unknown corpus: '%s'" % initial_corpus)
             return None
         cmds = [];  seqnums = [];  edits = []
         for lnnum, ln in enumerate (cmdfile, start=1):
@@ -131,7 +141,7 @@ def parse_cmdfile (cmdfile, initial_corpus):
             else:
                 try: cmdtxt, rest = ln.split (maxsplit=1)
                 except ValueError:
-                    L.error ("line %d: Invalid directive line" % (lnnum))
+                    E("line %d: Invalid directive line" % (lnnum))
                     errors += 1; continue
             if cmdtxt in ('corpus', 'seq'):
                   # A "seq" or "corpus" command ends the previous batch
@@ -143,19 +153,19 @@ def parse_cmdfile (cmdfile, initial_corpus):
                 if cmdtxt == 'corpus':
                     try: src = jdb.KW.SRC[rest].id
                     except KeyError:
-                        L.error ("line %d: Unknown corpus: '%s'" % (lnnum, rest))
+                        E("line %d: Unknown corpus: '%s'" % (lnnum, rest))
                         errors += 1; corpus = None
                 else: #cmdtxt == 'seq'
                     for seqtxt in rest.split():
                         try: seq = int (seqtxt)
                         except ValueError:
-                            L.error ("line %d: Bad seq number: '%s'" % (lnnum, seqtxt))
+                            E("line %d: Bad seq number: '%s'" % (lnnum, seqtxt))
                             errors += 1; seq = None
                         else: seqnums.append (seq)
             else: #'cmdtxt' is other than "corpus' or "seq".
                 try: cmd = Cmd (cmdtxt, rest)
                 except ParseError as e:
-                    L.error ("line %d: %s" % (lnnum, e))
+                    E("line %d: %s" % (lnnum, e))
                     errors += 1; continue
                 else: edits.append (cmd)
         if edits: cmds.append ([seqnums, src, edits])
@@ -243,19 +253,19 @@ def getentries (cur, seqnums, src):
               "More entries received (%s) than requested (%s)"
               % (len(entries), len(seqnums)))
         missing = set (seqnums) - set ([e.seq for e in entries])
-        L.debug ("Read %d entries, expected %d, %d missing"
+        D("Read %d entries, expected %d, %d missing"
                  % (len(entries), len(seqnums), len(missing)))
         if missing:
                # Print missing entries in same order they occur in 'seqnums'.
             for seq in seqnums:
                 if seq in missing:
-                    L.warning ("Entry %s not found" % seq)
+                    W("Entry %s not found" % seq)
         jdb.augment_xrefs (cur, raw['xref'])
           # Remove and entries with children.
         filtered = []
         for e in entries:
             if not e.dfrm: filtered.append (e)
-            else: L.error ("Entry %s has dependent edited entry" % e.seq)
+            else: E("Entry %s has dependent edited entry" % e.seq)
         return filtered
 
 def doedit (entr, hist, cmd):
@@ -288,7 +298,9 @@ def doedit (entr, hist, cmd):
             new, old = kw2id (cmd.operand, cmd.new, cmd.old)
             edit (tlist, 'kw', old, new, cmd.operand, cmd.old, cmd.new)
         elif cmd.operand == 'entr':
-            if cmd.cmd == 'del': entr.stat = jdb.KW.STAT['D'].id
+            if cmd.cmd == 'del':
+                I("Marking entry for deletion")
+                entr.stat = jdb.KW.STAT['D'].id
         elif cmd.operand == 'comment': h.notes = cmd.new
         elif cmd.operand == 'refs': h.refs = cmd.new
         else: raise ValueError (cmd.operand)
@@ -321,14 +333,14 @@ def edit (tlist, srchattr, old, new, operand,  t_old, t_new):
             except ValueError as e:
                raise NotFoundError (t_old, operand)
             if not new:
-                L.info ("Deleting '%s' from '%s'" % (t_old, operand))
+                I("Deleting '%s' from '%s'" % (t_old, operand))
                 del tlist[index]
         if new:
             if not old:
-                L.info ("Appending '%s' to '%s'" % (t_new, operand))
+                I("Appending '%s' to '%s'" % (t_new, operand))
                 tlist.append (new)
             else:
-                L.info ("Replacing '%s' with '%s' in '%s'" % (t_old, t_new, operand))
+                I("Replacing '%s' with '%s' in '%s'" % (t_old, t_new, operand))
                 tlist[index] = new
 
 def kw2id (operand, new, old):
@@ -373,7 +385,7 @@ def submit (cur, entr, userid, noaction):
           # in the database.  This will take care of generating the history
           # record and removing the superceded entry properly.
 
-        L.info ("Submitting %s entry %s (%s) with userid='%s'"
+        I("Submitting %s entry %s (%s) with userid='%s'"
                 % ("approved" if action=='a' else "unapproved",
                    entr.seq, jdb.KW.SRC[entr.src].kw, userid))
         errs = []
@@ -381,19 +393,19 @@ def submit (cur, entr, userid, noaction):
         try: entrid,_,_ = submission (cur, entr, action, errs,
                                       is_editor=bool(userid), userid=userid)
         except psycopg2.DatabaseError as e: errs.append (str(e))
-        if entrid: L.info ("Added entry id=%s" % entrid)
+        if entrid: D("Added entry id=%s" % entrid)
         if errs:
-            L.error ("Submission failed, rolling back")
+            E("Submission failed, rolling back")
             cur.execute ("ROLLBACK")
             errmsg = ('\n'.join (errs)).rstrip()
             raise SubmitError (entr.seq, errmsg)
         if noaction:
-            L.info ("Rolling back transaction in noaction mode")
+            D("Rolling back transaction in noaction mode")
             cur.execute ("ROLLBACK")
             stat = 0
         else:
             stat = 1
-            L.debug ("Doing commit")
+            D("Doing commit")
             cur.execute("COMMIT")
         return stat   # Return 1 if committed, 0 if noaction rollback.
 
@@ -497,6 +509,11 @@ def parse_cmdline (cmdargs):
                 " pg://remotehost.somewhere.org:8866 \n"
                 "For more details see \"Connection URIs\" in the \"Connections Strings\" "
                 "section of the Postgresql \"libq\" documentation. ")
+
+        p.add_argument ("-l", "--loglevel", default="info",
+                        choices=['error','summary','warn','info','debug'],
+            help="Logging level for messages: only mesages at or above"
+               "this level will be printed.")
 
         p.epilog = """\
 Input file syntax:
