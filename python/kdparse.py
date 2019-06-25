@@ -36,6 +36,7 @@ if _ not in sys.path: sys.path.insert(0, _)
 from xml.etree import cElementTree as ElementTree
 import jdb, pgi
 from iso639maps import iso639_1_to_2
+import pylib.progress_bar
 
   # The version of the kanjidic XML file that this program is known to
   # work with.  The version number is found in the "<database_version>"
@@ -76,12 +77,21 @@ def main (args, opts):
         if opts.g: langs = [KW.LANG[iso639_1_to_2[x]].id for x in opts.g.split(',')]
         else: langs = None
         workfiles = pgi.initialize (opts.t)
-        srcdate = parse_xmlfile (args[0], 4, workfiles, opts.b, opts.c, langs)
+
+        pbar = None
+        if opts.progbar:
+            total_items = opts.c \
+                    or pylib.progress_bar.count_items (args[0],'<character>')
+            pbar = pylib.progress_bar.InitBar (
+                    title=args[0], size=total_items, offset=2, stream=sys.stdout)
+
+        if not pbar: print ("Parsing...", file=sys.stderr)
+        srcdate = parse_xmlfile (args[0], 4, workfiles, opts.b, opts.c, langs, pbar)
         srcrec = jdb.Obj (id=4, kw='kanjidic', descr='kanjidic2.xml',
                           dt=srcdate, seq='seq_kanjidic', srct=KW.SRCT['kanjidic'].id)
         pgi.wrcorp (srcrec, workfiles)
         pgi.finalize (workfiles, opts.o, not opts.k)
-        print ("\nDone!", file=sys.stderr)
+        if not pbar: print ("\nDone!", file=sys.stderr)
 
 class LnFile:
       # Wrap a standard file object so as to keep track
@@ -92,7 +102,7 @@ class LnFile:
         s = self.source.readline();  self.lineno += 1
         return s
 
-def parse_xmlfile (infn, srcid, workfiles, start, count, langs):
+def parse_xmlfile (infn, srcid, workfiles, start, count, langs, pbar):
 
         global Lineno
 
@@ -130,7 +140,7 @@ def parse_xmlfile (infn, srcid, workfiles, start, count, langs):
                 # the number of entries requested in the -c
                 # option.
 
-                if cntr >= count: break
+                if count and cntr >= count: break
 
             if elem.tag == 'header' and event == 'end':
                 xmldate = (elem.find ('date_of_creation')).text
@@ -149,16 +159,11 @@ def parse_xmlfile (infn, srcid, workfiles, start, count, langs):
             # If we haven't reached that starting line number
             # (given by the -b option) yet, then don't process
             # this entry, but we still need to clear the parsed
-            # entry bofore continuing in order to avoid excessive
+            # entry before continuing in order to avoid excessive
             # memory consumption.
 
             if Lineno >= start:
-
-                # If this is the first entry processed (cnt0==0)
-                # save the current entry counter value.
-
                 cntr += 1
-                if cntr == 1: print ("Parsing...", file=sys.stderr)
 
                 # Process and write this entry.
 
@@ -166,11 +171,8 @@ def parse_xmlfile (infn, srcid, workfiles, start, count, langs):
                 jdb.setkeys (entr, cntr)
                 pgi.wrentr (entr, workfiles)
 
-                # A progress bar.  The modulo number is picked
-                # to provide slightly less that 80 dots for a full
-                # kanjidic2 file.
-
-                if (cntr - 1) % 166 == 0: sys.stderr.write (".")
+                # Update the progress bar (if using one.)
+                if pbar: pbar (cntr)
 
             # We no longer need the parsed xml info for this
             # item so dump it to reduce memory consumption.
@@ -423,10 +425,8 @@ arguments:
              help="Begin processing at first entry that occurs "
                 "at or after line number B.")
         p.add_option ("-c", "--count",
-             type="int", dest="c", default=9999999,
-             help="Stop after processing C entries."
-                "If both -c and -e are given processing will stop "
-                "as soon as either condition is met.")
+             type="int", dest="c", default=None,
+             help="Stop after processing C entries.")
         p.add_option ("-o", "--outfile",
              type="str", dest="o", default=None,
              help="Write the output load data to this filename.  If "
@@ -442,6 +442,9 @@ arguments:
              type="str", dest="l", default=None,
              help="Write warning and errors messages to this filename. "
                 "If not given write to stderr.")
+        p.add_option("--no-progress",
+            dest="progbar", action="store_false", default=True,
+            help="Don't show the progress bar.")
         p.add_option ("-e", "--encoding",
              type="str", dest="e", default="utf-8",
              help="If --logfile given, write to it using this encoding.")

@@ -24,6 +24,7 @@ _ = os.path.join (os.path.dirname(_), 'python', 'lib')
 if _ not in sys.path: sys.path.insert(0, _)
 
 import jdb, jmxml, xmlkw, pgi, fmt
+import pylib.progress_bar
 
 def main (args, opts):
         global KW
@@ -37,6 +38,13 @@ def main (args, opts):
         xlang = None
         if opts.lang:
             xlang = [KW.LANG[x].id for x in opts.lang.split(',')]
+
+        pbar = None
+        if opts.progbar:
+            total_items = opts.count \
+                    or pylib.progress_bar.count_items (args[0],'<entry>')
+            pbar = pylib.progress_bar.InitBar (
+                    title=args[0], size=total_items, offset=2)
 
           #FIXME: we open the xml file with utf-8 encoding even though
           # its encoding may be given within the file and may be different.
@@ -52,9 +60,7 @@ def main (args, opts):
                                                  seqnum_incr=opts.sequence[1]):
             if typ == 'entry':
                 eid += 1
-                if not ((eid - 1) % 1800):
-                    sys.stdout.write ('.'); sys.stdout.flush()
-                    logfile.flush()
+                if pbar: pbar (eid)
                 if not getattr (entr, 'src', None): entr.src = corpid
                 jdb.setkeys (entr, eid)
                 pgi.wrentr (entr, tmpfiles)
@@ -234,6 +240,10 @@ Arguments:
         p.add_option ("-l", "--logfile", default="jmparse.log",
             dest="logfile", metavar="FILENAME",
             help="Name of file to write log messages to.")
+
+        p.add_option("--no-progress",
+            dest="progbar", action="store_false", default=True,
+            help="Don't show the progress bar.")
 
         p.add_option ("-t", "--tempdir", default=".",
             dest="tempdir", metavar="DIRPATH",

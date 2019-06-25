@@ -52,6 +52,7 @@ if _ not in sys.path: sys.path.insert(0, _)
 import re, datetime
 import jdb, pgi
 from pylib import diagnum
+import pylib.progress_bar
 
 Seq = None
 Lnnum = None
@@ -72,12 +73,19 @@ def main (args, opts):
         if opts.logfile:
             logfile = open (opts.logfile, "w", encoding=opts.encoding)
         def msg (message): _msg (logfile, opts.verbose, message)
+        pbar = None
+        if opts.progbar:
+            total_items = opts.count \
+                          or pylib.progress_bar.count_items (args[0]) / 2
+            pbar = pylib.progress_bar.InitBar (
+                    title=args[0], size=total_items, offset=2)
 
         fin = ABPairReader (args[0], encoding='utf-8')
           # FIXME: following gives localtime, change to utc or lt+tz.
         mtime = datetime.date.fromtimestamp(os.stat(args[0])[8])
         corpid, corprec \
-            = pgi.parse_corpus_opt (opts.corpus, "examples", mtime, KW.SRCT['examples'].id)
+            = pgi.parse_corpus_opt (opts.corpus, "examples", mtime,
+                                    KW.SRCT['examples'].id)
         tmpfiles = pgi.initialize (opts.tempdir)
         if not opts.noaction:
             tmpfiles = pgi.initialize (opts.tempdir)
@@ -87,11 +95,11 @@ def main (args, opts):
                 entr.src = corpid
                 jdb.setkeys (entr, eid+1)
                 pgi.wrentr (entr, tmpfiles)
-            if not (eid % 2000):
-                sys.stdout.write ('.'); sys.stdout.flush()
+            if pbar: pbar (eid)
             if opts.count and eid+1 >= opts.count: break
         sys.stdout.write ('\n')
-        if not opts.noaction: pgi.finalize (tmpfiles, opts.output, not opts.keep)
+        if not opts.noaction: pgi.finalize (tmpfiles, opts.output,
+                                            not opts.keep)
 
 def parse_ex (fin, begin):
         # This is a generator function that will process one (A and B) pair
@@ -114,9 +122,9 @@ def parse_ex (fin, begin):
                   # Japanese id number.  Generate a seq number by mapping each
                   # pair to a "square number".  These are numbers generated
                   # by assigning sequential numbers on a grid (x>=0, y>=0)
-                  # starting at the origin proceeding down the diagonal, 
+                  # starting at the origin proceeding down the diagonal,
                   # assigning number to each cell on the column and row at
-                  # the diagonal cell. 
+                  # the diagonal cell.
                 id_en, id_jp = int(mo.group(2)), int(mo.group(3))
                 Seq = diagnum.xy2sq1 (id_en, id_jp)
             else:
@@ -127,8 +135,8 @@ def parse_ex (fin, begin):
             except ParseError as e:
                 msg (e.args[0]); continue
             if not idxlist: continue
-              # Turns out some of the entries in the examples file are duplicates
-              # (including the ID#) so we check the seq#
+              # Turns out some of the entries in the examples file are
+              # duplicates (including the ID#) so we check the seq#.
             if Seq in seq_cache:
                 msg ("Duplicate id#: %s_%s" % (id_en, id_jp))
                 continue
@@ -275,8 +283,8 @@ def parse_cmdline ():
 
 %prog will read a file containing Tanaka corpus example sentence pairs
 (as described at http://www.edrdg.org/wiki/index.php/Tanaka_Corpus) and
-create a data file that can be subsequently loaded into a jmdict Postgresql
-database (usually after pre-processing by jmload.pl).
+create a data file that can be subsequently loaded into a JMdictDB
+database.
 
 Arguments:
         filename -- Name of input examples file.  Default is
@@ -369,6 +377,10 @@ Arguments:
                 "affect the output .pgi file or the temp files which "
                 "are always written with utf-8 encoding.")
 
+        p.add_option("--no-progress",
+            dest="progbar", action="store_false", default=True,
+            help="Don't show the progress bar.")
+
         p.add_option ("-n", "--noaction", default=False,
             dest="noaction", action="store_true",
             help="Parse only, no database access used: do not resolve "
@@ -381,11 +393,11 @@ Arguments:
 
         opts, args = p.parse_args ()
         if opts.verbose is None: opts.verbose = not bool (opts.logfile)
-        if len (args) > 1: print ("%d arguments given, expected at most one", file=sys.stderr)
+        if len (args) > 1:
+            print ("%d arguments given, expected at most one",file=sys.stderr)
         if len (args) < 1: args = ["examples.txt"]
         return args, opts
 
 if __name__ == '__main__':
         args, opts = parse_cmdline()
         main (args, opts)
-
