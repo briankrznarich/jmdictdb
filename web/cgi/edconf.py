@@ -311,9 +311,13 @@ def kr (ktxt, rtxt):
         else: txt = ''
         return txt
 
+def src_type (src):
+        '  Return the src type keyword for a src id.'
+        return jdb.KW.SRCT[jdb.KW.SRC[src].srct].kw
+
 def check_for_errors (e, errs):
-        # Do some validation of the entry.  This is nowhere near complete
-        # Yhe database integrity rules will in principle catch all serious
+        # Do some validation of the entry.  This is nowhere near complete.
+        # The database integrity rules will in principle catch all serious
         # problems but catching db errors and back translating them to a
         # user-actionable message is difficult so we try to catch the obvious
         # stuff here.
@@ -324,12 +328,9 @@ def check_for_errors (e, errs):
         if not getattr (e,'src',None):
             errs.append ("No Corpus specified.  Please select the corpus "
                          "that this entry will be added to.")
-
-        ## FIXME: IS-190.
-        #if not getattr (entr, '_rdng', None) \
-        #        and entr.src==jdb.KW.SRC['jmdict'].id:
-        #    errs.append ("No readings were entered for this entry.  "\
-        #                 "All JMdict entries require a reading.")
+        if not getattr (e, '_rdng', None) and src_type (e.src) == 'jmdict':
+            errs.append ("No readings were entered for this entry.  "\
+                         "All JMdict entries require a reading.")
 
         if not getattr (e,'_rdng',None) and not getattr (e,'_kanj'):
             errs.append ("Both the Kanji and Reading boxes are empty.  "
@@ -340,10 +341,9 @@ def check_for_errors (e, errs):
             if not getattr (s, '_gloss'):
                 errs.append ("Sense %d has no glosses.  Every sense must have at least "\
                              "one regular gloss, or a [lit=...] or [expl=...] tag." % (n+1))
-            ## FIXME: Can't be sure that jmdict is "jmdict". IS-190 is the real fix.
-            #if not getattr (s, '_pos') and e.src==jdb.KW.SRC['jmdict'].id:
-            #   errs.append ("Sense %d has no PoS (part-of-speech) tag.  "\
-            #                "Every sense must have at least one." % (n+1))
+            if not getattr (s, '_pos') and src_type (e.src) == 'jmdict':
+               errs.append ("Sense %d has no PoS (part-of-speech) tag.  "\
+                            "Every sense must have at least one." % (n+1))
 
           # Check for duplicate reading, kanji or gloss text (IS-205).
         nodups, dups = jdb.rmdups (e._rdng, lambda x: x.txt)
@@ -374,9 +374,8 @@ def check_for_warnings (cur, entr, parent_seq, chklist):
                                   getattr (entr,'_rdng',[]), entr.src, parent_seq)
         if dups: chklist['dups'] = dups
 
-          # FIXME: IS-190.
         if not getattr (entr, '_rdng', None) \
-                and entr.src==jdb.KW.SRC['jmdict'].id:
+                and src_type (entr.src) == 'jmdict':
             chklist['norebs'] = True
 
           # FIXME: Should pass list of the kanj/rdng text rather than
@@ -386,8 +385,7 @@ def check_for_warnings (cur, entr, parent_seq, chklist):
                                                 if not jdb.jstr_keb (k.txt))
         chklist['invrebs'] = ", ".join (r.txt for r in getattr (entr,'_rdng',[])
                                                 if not jdb.jstr_reb (r.txt))
-          # FIXME: IS-190.
-        if entr.src==jdb.KW.SRC['jmdict'].id:
+        if src_type (entr.src) == 'jmdict':
             chklist['nopos']   = ", ".join (str(n+1) for n,x in enumerate (getattr (entr,'_sens',[]))
                                                        if not x._pos)
         chklist['jpgloss'] = ", ".join ("%d.%d: %s"%(n+1,m+1,'"'+'", "'.join(re.findall('[\uFF01-\uFF5D]', g.txt))+'"')
