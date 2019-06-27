@@ -215,3 +215,9 @@
   [restr=締める; 〆る]
   to total
 
+#----------------------------------------------------------------------------------
+# 9000010_data
+# (IS-248; the "nokanji" tag without kanji in entry should produce a parse error.)
+
+アルバイト[nokanji]
+[1] part-time work

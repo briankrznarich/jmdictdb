@@ -157,6 +157,7 @@ class Restr (unittest.TestCase):
     def test0300270(_): check2(_,'0300270')
     def test0300280(_): check2(_,'0300280')
     def test0300290(_): check2(_,'0300290')
+    def test9000010(_): check_err(_,'9000010', "Reading 1 has 'nokanji' tag but entry has no kanji")
 
 class Xref (unittest.TestCase):
     def setUp (_):
@@ -278,6 +279,9 @@ def check2 (_, test, exp=None):
         _.assertTrue (8 <= len (outtxt))    # Sanity check for non-empty entry.
         msg = "\nExpected:\n%s\nGot:\n%s" % (exptxt, outtxt)
         _.assertEqual (outtxt, exptxt, msg)
+
+def check_err (_, test, regex):
+        _.assertRaisesRegex (jelparse.ParseError, regex, check2,_,test)
 
 def roundtrip (intxt, lexer, parser, dbcursor):
           # Since hg-180523-6b1a12 we use '\f' to separate the kanji, reading

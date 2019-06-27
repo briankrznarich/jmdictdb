@@ -768,7 +768,7 @@ def mk_restrs (listkey, rdngs, kanjs):
 
               # bld_rdngs() guarantees that {_NOKANJI} and {_RESTR}
               # won't both be present on the same rdng.
-            if nokanj and restrtxt:
+            if nokanj and not kanjs:
                   # Only rdng-kanj restriction should have "nokanji" tag, so
                   # message can hardwire "reading" and "kanji" text even though
                   # this function in also used for sens-rdng and sens-kanj
