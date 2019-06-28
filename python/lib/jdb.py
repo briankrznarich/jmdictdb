@@ -772,6 +772,37 @@ def mark_seq_xrefs (cur, xrefs):
                 else:
                     marked[key1][key2][key3] = x.SEQ = True
 
+def xresolv (dbh, entr):
+        # Try to resolve any unresolved xrefs (in the ._xrslv list for each
+        # sense) in Entr object 'entr'.  Those that can be resolved will be
+        # removed from the ._xrslv list and corresponding xrefs added to the
+        # ._xref list on the same sense.
+
+        errs = []
+        for ns, s in enumerate (entr._sens, start=1):
+            unsuccessful = []
+            for nx, xr in enumerate (s._xrslv):
+                slist = None if not xr.tsens else [xr.tsens]
+                seq = getattr (xr, 'SEQ', None)
+                corpid = getattr (xr, 'SRC', '')
+                  # corpid may be None, '', a corpus name or corpus id number.
+                if corpid == '': corpid = entr.src
+                elif corpid != None:
+                    try: corpid = int(corpid)
+                    except ValueError: corpid = KW.SRC[corpid].id
+                try:
+                    xrefs = resolv_xref (dbh, xr.typ, xr.rtxt, xr.ktxt, slist,
+                                         seq, corpid)
+                except ValueError as e:
+                   #print("jdb.xresolv: %s[%s][%s]: %s"%(entr.seq, ns, nx, e),
+                   #      file=sys.stderr)
+                    unsuccessful.append (xr)
+                    errs.append ((ns, nx, str(e)))
+                else:
+                    s._xref.extend (xrefs)
+            s._xrslv = unsuccessful
+        return errs
+
 def resolv_xref (dbh, typ, rtxt, ktxt, slist=None, enum=None, corpid=None,
                  one_entr_only=True, one_sens_only=False, krdetect=False):
 
