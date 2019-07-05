@@ -63,13 +63,18 @@ class _DBmanager():
             if not re.search ('(relation|database) \S+ does not exist',
                               str(e)):
                 print ("jmdb: database error: %s" % e, file=sys.stderr)
+            print ("jmdb: no signature table found", file=sys.stderr)
             return False
         if len(rs) != 1 or len(rs[0]) != 3:
             print ("jmdb: unexpected signature data", file=sys.stderr)
             return False
-        if rs[0][0] != os.path.abspath (filename):
-            print ("jmdb: filename mismatch", file=sys.stderr)
-            return False
+        # Code below is commented out in order to ignore the testdb filename
+        # and rely only on the hash to identify the expected test database.
+        # The motivation is that tests are often run from repository clones
+        # causing the filename difference to result in an unnecessary reload.
+        #if rs[0][0] != os.path.abspath (filename):
+        #    print ("jmdb: filename mismatch", file=sys.stderr)
+        #    return False
         if rs[0][2] != self.hash (HASH_METHOD, filename):
             print ("jmdb: hash mismatch", file=sys.stderr)
             return False
