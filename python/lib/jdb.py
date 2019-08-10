@@ -1143,7 +1143,7 @@ def addentr (cur, entr):
             for x in s._xrer:  dbinsert (cur, "xref",  ['entr','sens','xref','typ','xentr',
                                                         'xsens','rdng','kanj','notes'], x)
             for x in s._xrslv: dbinsert (cur,"xresolv",['entr','sens','typ','ord','rtxt','ktxt',
-                                                        'tsens','notes','prio'], x)
+                                                        'tsens','vsrc','vseq','notes','prio'], x)
         for x in entr._snd:    dbinsert (cur, "entrsnd", ['entr','ord','snd'], x)
         for x in entr._grp:    dbinsert (cur, "grp",     ['entr','kw','ord'], x)
         if entr.chr:

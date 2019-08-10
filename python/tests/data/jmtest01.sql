@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.7 (Ubuntu 10.7-0ubuntu0.18.04.1)
--- Dumped by pg_dump version 10.7 (Ubuntu 10.7-0ubuntu0.18.04.1)
+-- Dumped from database version 10.9 (Ubuntu 10.9-0ubuntu0.18.04.1)
+-- Dumped by pg_dump version 10.9 (Ubuntu 10.9-0ubuntu0.18.04.1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -12,6 +12,7 @@ SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
 SET check_function_bodies = false;
+SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
@@ -2074,11 +2075,13 @@ ALTER TABLE public.vrkrestr OWNER TO jmdictdb;
 CREATE TABLE public.xresolv (
     entr integer NOT NULL,
     sens smallint NOT NULL,
-    typ smallint NOT NULL,
     ord smallint NOT NULL,
+    typ smallint NOT NULL,
     rtxt character varying(250),
     ktxt character varying(250),
     tsens smallint,
+    vsrc smallint,
+    vseq bigint,
     notes character varying(250),
     prio boolean DEFAULT false,
     CONSTRAINT xresolv_check CHECK (((rtxt IS NOT NULL) OR (ktxt IS NOT NULL)))
@@ -2116,11 +2119,13 @@ CREATE VIEW public.vrslv AS
     max(c.nsens) AS nsens
    FROM (( SELECT z.entr,
             z.sens,
-            z.typ,
             z.ord,
+            z.typ,
             z.rtxt,
             z.ktxt,
             z.tsens,
+            z.vsrc,
+            z.vseq,
             z.notes,
             z.prio,
             e.seq,
@@ -2157,11 +2162,13 @@ UNION
     max(c.nsens) AS nsens
    FROM (( SELECT z.entr,
             z.sens,
-            z.typ,
             z.ord,
+            z.typ,
             z.rtxt,
             z.ktxt,
             z.tsens,
+            z.vsrc,
+            z.vseq,
             z.notes,
             z.prio,
             e.seq,
@@ -2212,11 +2219,13 @@ UNION
     max(c.nsens) AS nsens
    FROM (( SELECT z.entr,
             z.sens,
-            z.typ,
             z.ord,
+            z.typ,
             z.rtxt,
             z.ktxt,
             z.tsens,
+            z.vsrc,
+            z.vseq,
             z.notes,
             z.prio,
             e.seq,
@@ -3893,7 +3902,8 @@ COPY public.conotes (id, txt) FROM stdin;
 --
 
 COPY public.db (id, active, ts) FROM stdin;
-8607617	t	2019-05-14 10:46:08.849884
+11084276	t	2019-08-09 19:50:53.856433
+2029572	f	2019-05-14 10:46:08.849884
 \.
 
 
@@ -4019,140 +4029,140 @@ COPY public.fld (entr, sens, ord, kw) FROM stdin;
 --
 
 COPY public.freq (entr, rdng, kanj, kw, value) FROM stdin;
-3	1	\N	4	1
-3	\N	1	4	1
-6	1	\N	1	1
-7	1	\N	1	1
-7	\N	1	1	1
-8	1	\N	1	1
-8	\N	1	1	1
-9	1	\N	4	1
-10	1	\N	1	1
-11	1	\N	1	1
 12	1	\N	1	1
-12	\N	1	1	1
-16	1	\N	4	1
-16	2	\N	1	1
-16	\N	1	4	1
-16	\N	2	1	1
-17	1	\N	4	1
-17	\N	1	4	1
-18	1	\N	1	1
-18	\N	1	1	1
-18	\N	2	1	1
-19	1	\N	2	1
-19	1	\N	1	1
 20	1	\N	2	1
-20	1	\N	1	1
-23	1	\N	2	1
-23	1	\N	1	1
-27	3	\N	2	1
-28	1	\N	2	1
-30	1	\N	2	1
-30	1	\N	1	1
-34	1	\N	2	1
-35	1	\N	1	1
-35	1	\N	7	2
-35	1	\N	5	26
-35	\N	1	1	1
-35	\N	1	7	2
-35	\N	1	5	26
-35	\N	2	1	1
-35	\N	3	1	1
-35	\N	3	7	2
-35	\N	3	5	34
-36	1	\N	7	2
+58	1	\N	1	1
+54	1	\N	1	1
 36	1	\N	5	41
-36	\N	1	7	2
-36	\N	1	5	41
-37	1	\N	1	1
-37	1	\N	7	1
-37	1	\N	5	6
-37	\N	1	1	1
-37	\N	1	7	1
-37	\N	1	5	6
-38	1	\N	1	1
-38	1	\N	7	1
-38	1	\N	5	14
-38	\N	1	1	1
-38	\N	1	7	1
-38	\N	1	5	14
-38	\N	2	1	1
-40	1	\N	1	1
-40	\N	1	1	1
-40	\N	2	1	1
-42	1	\N	1	1
+59	1	\N	5	18
 42	1	\N	7	2
-42	1	\N	5	45
-42	\N	1	1	1
-42	\N	1	7	2
-42	\N	1	5	45
-43	1	\N	7	1
-43	1	\N	5	19
-43	\N	1	7	1
-43	\N	1	5	19
-46	1	\N	1	1
+27	3	\N	2	1
+34	1	\N	2	1
 46	1	\N	7	2
-46	1	\N	5	35
-46	\N	1	1	1
-46	\N	1	7	2
-46	\N	1	5	35
-47	1	\N	4	1
-47	2	\N	4	1
-47	\N	1	4	1
-48	1	\N	7	2
-48	1	\N	5	30
-48	\N	1	7	2
-48	\N	1	5	30
-49	1	\N	1	1
-49	\N	1	1	1
-51	1	\N	7	1
-51	1	\N	5	17
-51	\N	1	7	1
-51	\N	1	5	17
+30	1	\N	1	1
+58	1	\N	7	1
+53	1	\N	5	16
+58	1	\N	5	2
+60	1	\N	1	1
+35	1	\N	5	26
+28	1	\N	2	1
+8	1	\N	1	1
+43	1	\N	5	19
+16	2	\N	1	1
 52	1	\N	7	1
 52	1	\N	5	18
-52	2	\N	1	1
-52	2	\N	7	1
+40	1	\N	1	1
+37	1	\N	1	1
+53	1	\N	1	1
+56	1	\N	7	1
+38	1	\N	1	1
+16	1	\N	4	1
+59	1	\N	7	1
+11	1	\N	1	1
+49	1	\N	1	1
+48	1	\N	7	2
+37	1	\N	5	6
+47	2	\N	4	1
+42	1	\N	5	45
+43	1	\N	7	1
+20	1	\N	1	1
 52	2	\N	5	21
+52	2	\N	1	1
+53	1	\N	7	1
+19	1	\N	1	1
+46	1	\N	5	35
+38	1	\N	7	1
+17	1	\N	4	1
+36	1	\N	7	2
+52	2	\N	7	1
+9	1	\N	4	1
+73	1	\N	1	1
+48	1	\N	5	30
+38	1	\N	5	14
+35	1	\N	7	2
+23	1	\N	1	1
+35	1	\N	1	1
+55	1	\N	1	1
+30	1	\N	2	1
+18	1	\N	1	1
+56	1	\N	5	14
+53	2	\N	1	1
+63	1	\N	5	5
+42	1	\N	1	1
+6	1	\N	1	1
+3	1	\N	4	1
+46	1	\N	1	1
+37	1	\N	7	1
+19	1	\N	2	1
+23	1	\N	2	1
+10	1	\N	1	1
+7	1	\N	1	1
+47	1	\N	4	1
+51	1	\N	5	17
+51	1	\N	7	1
+63	1	\N	7	1
+12	\N	1	1	1
+38	\N	2	1	1
+58	\N	1	1	1
+54	\N	1	1	1
+36	\N	1	5	41
+18	\N	2	1	1
+59	\N	1	5	18
+42	\N	1	7	2
+35	\N	2	1	1
+46	\N	1	7	2
+58	\N	1	7	1
+35	\N	3	1	1
+53	\N	1	5	16
+58	\N	1	5	2
+60	\N	1	1	1
+35	\N	1	5	26
+8	\N	1	1	1
+43	\N	1	5	19
+16	\N	2	1	1
 52	\N	1	7	1
 52	\N	1	5	18
-52	\N	2	1	1
-52	\N	2	7	1
-52	\N	2	5	21
-53	1	\N	1	1
-53	1	\N	7	1
-53	1	\N	5	16
-53	2	\N	1	1
+40	\N	1	1	1
+37	\N	1	1	1
 53	\N	1	1	1
-53	\N	1	7	1
-53	\N	1	5	16
-54	1	\N	1	1
-54	\N	1	1	1
-55	1	\N	1	1
-55	\N	1	1	1
-56	1	\N	7	1
-56	1	\N	5	14
 56	\N	1	7	1
-56	\N	1	5	14
-58	1	\N	1	1
-58	1	\N	7	1
-58	1	\N	5	2
-58	\N	1	1	1
-58	\N	1	7	1
-58	\N	1	5	2
-59	1	\N	7	1
-59	1	\N	5	18
+38	\N	1	1	1
+16	\N	1	4	1
 59	\N	1	7	1
-59	\N	1	5	18
-60	1	\N	1	1
-60	\N	1	1	1
-63	1	\N	7	1
-63	1	\N	5	5
-63	\N	1	7	1
-63	\N	1	5	5
-73	1	\N	1	1
+49	\N	1	1	1
+48	\N	1	7	2
+37	\N	1	5	6
+42	\N	1	5	45
+43	\N	1	7	1
+52	\N	2	5	21
+52	\N	2	1	1
+53	\N	1	7	1
+46	\N	1	5	35
+38	\N	1	7	1
+17	\N	1	4	1
+36	\N	1	7	2
+40	\N	2	1	1
+52	\N	2	7	1
 73	\N	1	1	1
+48	\N	1	5	30
+38	\N	1	5	14
+35	\N	1	7	2
+35	\N	1	1	1
+55	\N	1	1	1
+35	\N	3	5	34
+18	\N	1	1	1
+56	\N	1	5	14
+35	\N	3	7	2
+63	\N	1	5	5
+42	\N	1	1	1
+3	\N	1	4	1
+46	\N	1	1	1
+37	\N	1	7	1
+7	\N	1	1	1
+47	\N	1	4	1
+51	\N	1	5	17
+51	\N	1	7	1
+63	\N	1	7	1
 \.
 
 
@@ -6552,21 +6562,21 @@ COPY public.xref (entr, sens, xref, typ, xentr, xsens, rdng, kanj, notes, nosens
 -- Data for Name: xresolv; Type: TABLE DATA; Schema: public; Owner: jmdictdb
 --
 
-COPY public.xresolv (entr, sens, typ, ord, rtxt, ktxt, tsens, notes, prio) FROM stdin;
-1	1	3	1	まる	丸	1	\N	\N
-1	2	3	1	にじゅうまる	二重丸	\N	\N	\N
-1	3	3	1	〇〇・まるまる	\N	1	\N	\N
-1	4	3	1	\N	句点	\N	\N	\N
-1	5	3	1	\N	半濁点	\N	\N	\N
-7	1	3	1	\N	何れ	1	\N	\N
-7	1	3	2	\N	此れ	1	\N	\N
-7	1	3	3	\N	其れ	1	\N	\N
-17	1	3	3	\N	其れ	1	\N	\N
-23	3	3	1	\N	曹長石	\N	\N	\N
-55	1	3	2	\N	此れ	1	\N	\N
-59	1	3	1	まんざい	万歳	\N	\N	\N
-76	1	3	1	\N	十五年戦争	\N	\N	\N
-76	1	3	2	\N	太平洋戦争	\N	\N	\N
+COPY public.xresolv (entr, sens, ord, typ, rtxt, ktxt, tsens, vsrc, vseq, notes, prio) FROM stdin;
+1	1	1	3	まる	丸	1	\N	\N	\N	\N
+1	2	1	3	にじゅうまる	二重丸	\N	\N	\N	\N	\N
+1	3	1	3	〇〇・まるまる	\N	1	\N	\N	\N	\N
+1	4	1	3	\N	句点	\N	\N	\N	\N	\N
+1	5	1	3	\N	半濁点	\N	\N	\N	\N	\N
+7	1	1	3	\N	何れ	1	\N	\N	\N	\N
+7	1	2	3	\N	此れ	1	\N	\N	\N	\N
+7	1	3	3	\N	其れ	1	\N	\N	\N	\N
+17	1	3	3	\N	其れ	1	\N	\N	\N	\N
+23	3	1	3	\N	曹長石	\N	\N	\N	\N	\N
+55	1	2	3	\N	此れ	1	\N	\N	\N	\N
+59	1	1	3	まんざい	万歳	\N	\N	\N	\N	\N
+76	1	1	3	\N	十五年戦争	\N	\N	\N	\N	\N
+76	1	2	3	\N	太平洋戦争	\N	\N	\N	\N	\N
 \.
 
 
@@ -7343,7 +7353,7 @@ ALTER TABLE ONLY public.xref
 --
 
 ALTER TABLE ONLY public.xresolv
-    ADD CONSTRAINT xresolv_pkey PRIMARY KEY (entr, sens, typ, ord);
+    ADD CONSTRAINT xresolv_pkey PRIMARY KEY (entr, sens, ord, typ);
 
 
 --
@@ -8275,6 +8285,14 @@ ALTER TABLE ONLY public.gloss
 
 ALTER TABLE ONLY public.gloss
     ADD CONSTRAINT gloss_ginf_fkey FOREIGN KEY (ginf) REFERENCES public.kwginf(id);
+
+
+--
+-- Name: gloss gloss_ginf_fkey1; Type: FK CONSTRAINT; Schema: public; Owner: jmdictdb
+--
+
+ALTER TABLE ONLY public.gloss
+    ADD CONSTRAINT gloss_ginf_fkey1 FOREIGN KEY (ginf) REFERENCES public.kwginf(id);
 
 
 --
