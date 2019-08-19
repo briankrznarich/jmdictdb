@@ -169,11 +169,16 @@ def render( filename, vars, env):
         text = t.render( vars )
         return text
 
-def init (tmpl_dir=None, trim=False, lstrip=True):
-        if tmpl_dir is None:
+def init (tmpl_dir=None, trim=False, lstrip=True, jinja_env=None):
+          # When called by a cgi script, 'tmpl_path' should be given
+          # and 'jinja_env' should be None; when called by the Flask
+          # app, the opposite should be effected.
+        if tmpl_dir is None and not jinja_env:
             tmpl_dir = os.path.join (os.path.dirname (__file__), 'tmpl')
-        env = jinja2.Environment( loader 
-            = jinja2.FileSystemLoader (tmpl_dir) )
+        if not jinja_env:
+            env = jinja2.Environment( loader
+                = jinja2.FileSystemLoader (tmpl_dir) )
+        else: env = jinja_env
           # By default Jinja2 strips tailing newline from the rendered
           # template but we want result file to match temple exactly except
           # for replacement values, so following changes Jinja2's behavior.

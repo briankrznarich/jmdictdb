@@ -1,3 +1,22 @@
+#######################################################################
+#  This file is part of JMdictDB.
+#  Copyright (c) 2019 Stuart McGraw
+#
+#  JMdictDB is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published
+#  by the Free Software Foundation; either version 2 of the License,
+#  or (at your option) any later version.
+#
+#  JMdictDB is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with JMdictDB; if not, write to the Free Software Foundation,
+#  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#######################################################################
+
 import sys, datetime, pdb
 import psycopg2, psycopg2.extras
 from psycopg2.extras import DictCursorBase
@@ -38,7 +57,8 @@ class DbRowCursor (DictCursorBase):
             self._query_executed = 0
 
 def connect (dburi, cursor_factory=DbRowCursor):
-        dbargs = parse_pguri (dburi)
+        if isinstance (dburi, str): dbargs = parse_pguri (dburi)
+        else: dbargs = dburi
         dbconn = dbapi.connect (cursor_factory=cursor_factory, **dbargs)
         return dbconn
 
@@ -92,9 +112,11 @@ class DbRow (Obj):
         for n in self.__cols__: yield getattr (self, n)
     def __eq__(self, other): return _compare (self, other)
     @property
-    def __list__(self): return [getattr (self, x) for x in self.__cols__]
+    def __aslist(self): return [getattr (self, x) for x in self.__cols__]
     @property
-    def __tuple__(self): return tuple((getattr(self,x) for x in self.__cols__))
+    def __astuple(self): return tuple((getattr(self,x) for x in self.__cols__))
+    @property
+    def __asdict(self): return dict((x,getattr(self,x)) for x in self.__cols__)
 
 def _p (o):
         if isinstance (o, (int,str,bool,type(None))):

@@ -369,17 +369,19 @@ def entr_data (dbh, crit, args=None, ord=None, tables=None):
             else: assert False   # this should never happen.
             if tbl not in t: t[tbl] = []
             try:
-                L('lib.jdb.entr_data.db.sql').debug("sql: "+sql)
-                L('lib.jdb.entr_data.db.sql').debug("args: %r"%(args,))
+                #L('lib.jdb.entr_data.db.sql').debug("sql: "+sql)
+                #L('lib.jdb.entr_data.db.sql').debug("args: %r"%(args,))
                 t[tbl].extend (dbread (dbh, sql, args, cls=cls))
-                L('lib.jdb.entr_data.db.time').debug("table %s read time: %s"%(tbl,time()-time_last))
+                #L('lib.jdb.entr_data.db.time').debug(
+                #    "table %s read time: %s" % (round(tbl,time()-time_last,6)))
                 time_last = time()
             except (psycopg2.ProgrammingError) as e:
                 L('lib.jdb.entr_data').error(str(e))
                 L('lib.jdb.entr_data.db.sql').error("  sql: "+sql)
                 L('lib.jdb.entr_data.db.sql').error("  args: %r"%(args,))
                 dbh.connection.rollback()
-        L('lib.jdb.entr_data.db.time').debug("total time: %s"%(time()-time_start))
+        L('lib.jdb.entr_data.db.time').debug(
+            "total time: %s" % (round(time()-time_start,6)))
         return t
 
 def entr_bld (t):
@@ -2028,6 +2030,7 @@ def dbOpen (dbname_, **kwds):
             KW = Kwds (conn.cursor())
         if DBVERS and not noverchk:
             dbrequire (conn, DBVERS)
+        L('jdb.dbOpen').debug("Opened db '%s', KW %sinitialized" % (conn.dsn,('NOT ' if nokw else '')))
         return conn.cursor()
 
 def dbrequire (dbconn, require):
@@ -2163,7 +2166,8 @@ def getSvc (cfg, svcname, readonly=False, session=False):
         # The options returned by this function are specific
         # to the psycopg2 DBAPI.
 
-        cfgsec = cfg['db_' + svcname]
+        if not svcname.startswith ('db_'): svcname = "db_" + svcname
+        cfgsec = cfg[svcname]
         if session: cfgsec = cfg[cfgsec['session_db']]
         if readonly: user, pw = 'sel_user', 'sel_pw'
         else: user, pw = 'user', 'pw'

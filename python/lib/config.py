@@ -18,6 +18,7 @@
 #######################################################################
 
 import sys, os, os.path, configparser
+import logger; from logger import L
 import jdb
 
   # The following supplies default values for any config.ini
@@ -30,7 +31,7 @@ DEFAULTS = {
     'web': {
         'STATUS_DIR': '.',
         ##'CONTACT_EMAIL': 'admin@localsite.example',
-        'DEFAULT_SVC': 'db_jmdict',
+        'DEFAULT_SVC': 'jmdict',
         'DEF_ENTRIES_PER_PAGE': 100,
         'MAX_ENTRIES_PER_PAGE': 1000,
         'MIN_ENTRIES_PER_PAGE': 1,
@@ -61,7 +62,7 @@ DEFAULTS = {
         'session_db': 'db_session', },
         }
 
-def cfgRead (cfgname, pvtname):
+def cfgRead (cfgname, pvtname=None):
         # Open and parse a config file and optional pvt config
         # file returning the results as a config.Config() object.
         # If 'cfgname' contains a path separator character (either
@@ -78,23 +79,31 @@ def cfgRead (cfgname, pvtname):
 
           # findfile() will raise IOError if unable to find file.
         cfg_files = [findfile (cfgname)]
-        try: pvtfn = findfile (pvtname)
-        except IOError: pass
-        else: cfg_files.append (pvtfn)
+        if pvtname:
+            try: pvtfn = findfile (pvtname)
+            except IOError as e:
+                L('lib.config').warn("Can't find file %s: %s" % (pvtname,e))
+            else: cfg_files.append (pvtfn)
         cfg = configparser.ConfigParser (interpolation=None)
           # Disable ConfigParser's normal lowercasing of option names.
         cfg.optionxform = lambda option: option
           # Set default values.
         cfg.read_dict (DEFAULTS)
+          #FIXME: would like to report why unread files couldn't be read
+          # but cfg.read() only reports if they were read or not, not why.
         read_files = cfg.read (cfg_files)
           # Make sure we were able to read 'cfgname'.
-        if cfg_files[0] not in read_files:
+        if not read_files or cfg_files[0] not in read_files:
             raise IOError ("Unable to read config file: %s" % cfgfiles[0])
-          #FIXME: would be nice to generate a log warning or info message
-          # if the 'pvtname' file was not read but we can't do that here
-          # because logging is not initialized yet (we need to read the
-          # config files to get the logging settings before initializing
-          # the logging facility.)
+          # We would like to generate a log message saying what config
+          # files were read but we haven't configured logging yet (the
+          # logging configuration is defined in the config files we just
+          # read but haven't processed yet.)  So instead, add the read
+          # config file names to the configparser object in a new "status"
+          # section so they can be reported later.
+        cfg.add_section ('status')
+        cfg_files = '\n  '.join((os.path.abspath(x) for x in read_files))
+        cfg.set ('status', 'cfg_files', cfg_files)
         return cfg
 
 def findfile (name):
