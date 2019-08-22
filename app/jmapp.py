@@ -115,10 +115,18 @@ def srchformq():
                         svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
                         this_page=Rq.full_path)
 
-@App.route ('/srchform.py')
-def srchform():
+@App.route ('/srchres.py')
+def srchres():
         vLogEntry()
-        return Render ('srchform.jinja')
+        sqlp = (fv ('sql') or '')
+        p0, pt = int(fv('p0') or 0), int(fv('pt') or -1)
+        so = srvlib.extract_srch_params (Rq.args)
+        rs, pt, stats
+            = srvlib.srchres (G.dbcur, so, sqlp, pt, p0, G.cfg, G.user)
+        return Render ("srchres.jinja",
+            results=rs, p0=p0, pt=pt, stats=stats, so=so, sql=sqlp,
+            svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
+            this_page=Rq.full_path)
 
 @App.route ('/submit.py', methods=['POST'])
 def submit():

@@ -1,25 +1,35 @@
-{#- Display JMdictDB entries
-    NOTES:
-    - Much of this form is very similar to edconf.tal and edits made
-      to this form likely also need to be made to edform.tal.
-    - See aslso the notes in layout.jinja which apply in general to
-      all the templates including this one.
+{#- Display a list of search results.
+    Parameters:
+    svc -- Service (ie database) name.
+    *dbg -- Debug flag.
+    results -- Search results to display for this page (list
+    p0 -- Index (base-0) of the first display result entry in the full
+        results set.
+    pt -- Number of entries in the full results set.
+    *sql -- 
+
+    [*] denotes a parameter not used in page other than to propagate
+      to form data on submit.
+
+    See also the notes in layout.jinja which apply in general to 
+    all templates based on it including this one.
 -#}
 {%- extends "layout.jinja" %}
 {%- block title %}Search results{% endblock %}
 {%- block body_attrs %} class="srchres" {%endblock%}
 {%- block page_content %}
     <!-- srchres.jinja, part of JMdictDB.  Copyright (c) 2018 Stuart McGraw -->
-  {% set p1=p0+(results|length) %}
+  {% set p1 = p0 + (results|length) %}
     <div class="item">
     {%- if p1<pt and results|length>10 %}
       <form action="srchres.py" method="get">
         <input name="next" value="Next page" type="submit">
+        <input type="hidden" name="pt" value="{{pt}}">
+        <input type="hidden" name="p0" value="{{p1}}">
+        <input type="hidden" name="this_page" value="{{this_page}}">
+        {% if sql %}<input type="hidden" name="sql" value="{{sql}}">{%endif%}
         {% if svc %}<input type="hidden" name="svc" value="{{svc}}">{%endif%}
         {% if dbg|d %}<input type="hidden" name="dbg" value="{{dbg}}">{%endif%}
-        <input type="hidden" name="p0" value="{{p0}}">
-        <input type="hidden" name="pt" value="{{pt}}">
-        {% if sql %}<input type="hidden" name="sql" value="{{sql}}">{%endif%}
         </form>
       {%endif%}{# p1<pt... #}
       <form action="entr.py" method="get">
@@ -54,7 +64,7 @@
           <tr class="resrow">
             <td><input type="checkbox" name="e" value="{{r.id}}"></td>
             <td class="seq">{{r.src|TALabbr('SRC')|safe}}{{' '}}{#--#}
-              <a href="entr.py?svc={{svc}}&amp;sid={{sid}}&amp;e={{r.id}}">{{r.seq}}</a></td>
+              <a href="entr.py?svc={{svc}}&amp;e={{r.id}}">{{r.seq}}</a></td>
             <td><span{% if r.unap %} class="pend"{% endif %}>{{r.stat|TALabbrtxt('STAT')}}{{'*' if r.unap else ''}}</span></td>
             <td>{{'P' if r.p else ''}}&nbsp;</td>
             <td class="kanj">{{r.kanj}}</td>
@@ -66,17 +76,17 @@
         <input type=submit name="show" value="Display selected entries">
         <input type=reset value="Reset">
         {%+ if svc %}<input type=hidden name="svc" value="{{svc}}">{%endif%}
-        {%+ if sid %}<input type=hidden name="sid" value="{{sid}}">{%endif%}
         {%+ if dbg|d %}<input type="hidden" name="dbg" value="{{dbg}}">{%endif%}
         </form>
       {%- if p1<pt and results|length>0 %}
       <form action="srchres.py" method="get">
         <input name="next" value="Next page" type="submit">
+        <input type="hidden" name="pt" value="{{pt}}">
+        <input type="hidden" name="p0" value="{{p1}}">
+        <input type="hidden" name="this_page" value="{{this_page}}">
+        {% if sql %}<input type="hidden" name="sql" value="{{sql}}">{%endif%}
         {% if svc %}<input type="hidden" name="svc" value="{{svc}}">{%endif%}
         {% if dbg|d %}<input type="hidden" name="dbg" value="{{dbg}}">{%endif%}
-        <input type="hidden" name="p0" value="{{p0}}">
-        <input type="hidden" name="pt" value="{{pt}}">
-        {% if sql %}<input type="hidden" name="sql" value="{{sql}}">{%endif%}
         </form>
         {%-endif%}{# p1<pt... #}
       {%-endif%}{# not results else (i.e. equiv to "if results") #}
