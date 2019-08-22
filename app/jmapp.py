@@ -92,9 +92,8 @@ def entr():
         elist, qlist, disp = fvn('e'), fvn('q'), fv('disp')
         data,errs = rest.v_entr (elist, qlist, disp, cur=G.dbcur)
         return Render ('entr.jinja',
-                        entries=data, disp=disp,
-                        svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
-                        this_page=Rq.full_path)
+            entries=data, disp=disp,
+            svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user)
 
 @App.route ('/help.py')
 def help():
@@ -106,14 +105,22 @@ def helpq():
         vLogEntry()
         return Render ('helpq.jinja')
 
+@App.route ('/srchform.py')
+def srchform():
+        vLogEntry()
+        data, errs = rest.v_srchform()
+        pos,misc,stat,fld,dial,kinf,rinf,corp,freq = data
+        return Render ('srchform.jinja', KW=jdb.KW,
+            pos=pos, misc=misc, stat=stat, src=corp, freq=freq,
+            fld=fld, kinf=kinf, rinf=rinf, dial=dial,
+            svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user)
+
 @App.route ('/srchformq.py')
 def srchformq():
         vLogEntry()
         data, errs = rest.v_srchformq()
-        corp = srvlib.reshape (data, 10)
-        return Render ('srchformq.jinja', src=corp,
-                        svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
-                        this_page=Rq.full_path)
+        return Render ('srchformq.jinja',
+            src=data, svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user)
 
 @App.route ('/srchres.py')
 def srchres():
@@ -121,7 +128,7 @@ def srchres():
         sqlp = (fv ('sql') or '')
         p0, pt = int(fv('p0') or 0), int(fv('pt') or -1)
         so = srvlib.extract_srch_params (Rq.args)
-        rs, pt, stats
+        rs, pt, stats \
             = srvlib.srchres (G.dbcur, so, sqlp, pt, p0, G.cfg, G.user)
         return Render ("srchres.jinja",
             results=rs, p0=p0, pt=pt, stats=stats, so=so, sql=sqlp,
