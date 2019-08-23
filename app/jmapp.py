@@ -71,7 +71,7 @@ def before_request():
 @App.route ('/')
 def home():
         vLogEntry()
-        return Redirect (Url('srchformq'))
+        return Redirect (Url('srchform'))
 
 @App.route ('/login', methods=['POST'])
 def login():
@@ -130,10 +130,11 @@ def srchres():
         so = srvlib.extract_srch_params (Rq.args)
         rs, pt, stats \
             = srvlib.srchres (G.dbcur, so, sqlp, pt, p0, G.cfg, G.user)
+        if len(rs) == 1: return Redirect (Url ('entr', e=rs[0].id))
         return Render ("srchres.jinja",
-            results=rs, p0=p0, pt=pt, stats=stats, so=so, sql=sqlp,
+            results=rs, p0=p0, pt=pt, stats=stats, sql=sqlp,
             svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
-            this_page=Rq.full_path)
+            params=Rq.args)
 
 @App.route ('/submit.py', methods=['POST'])
 def submit():

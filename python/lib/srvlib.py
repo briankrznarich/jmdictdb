@@ -166,9 +166,6 @@ def extract_srch_params (params):
         Extract search related url parameters from the current Flask
         request object.
 
-        params -- A Flask request.args object (which will in turn be a
-            a werkzeug.MultiDict object).  This contains the parsed
-            url parameters in a request.
 
         returns: A srch.SearchItems item initiailized from 'params'
             that can be used to generate sql for performing the search.
