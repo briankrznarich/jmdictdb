@@ -272,6 +272,31 @@ def validate_user (dburi, username, pw):
         sql = "SELECT userid,fullname,email,priv FROM users "\
               "WHERE %s=%%s AND pw=crypt(%%s, pw) AND not disabled"\
               % (field,)
+        pdb.set_trace()
         userprofile = db.query1 (dbconn, sql, (username,pw))
         if not userprofile: return None
         return userprofile
+
+#FIXME: we shouldn't be dealing with Flask objects in this module as we do
+# below (should do that in srvlib) but we need access to db.DbRow and we
+# don't have access to the db module in srvlib.
+
+def get_user (svc, session):
+        '''-------------------------------------------------------------------
+        Extract the user profile of a logged user from a Flask session
+        object.  If not logged in (ie there is no user info stored in
+        the session object), return None.  Note that logins are per service;
+        a login to the "jmdict" service is not valid for access to the
+        "jmtest" service.
+
+        svc -- Service name.
+        session -- A Flask client-side 'session' object.
+        -------------------------------------------------------------------'''
+
+        u = session.get ('user_' + svc)
+        if not u: return None
+          # Convert the user info which is stored as a dict in the session
+          # object back to a DbRoe object since we still use former cgi code
+          # (e.g., jmcgi.is_editor()) tht expects a DbRow, not a dict.
+        userobj = db.DbRow (u)
+        return userobj

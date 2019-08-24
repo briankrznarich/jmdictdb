@@ -51,7 +51,14 @@ App = flask.Flask (__name__, static_folder='./static',
 app_config (App)
 
 def prereq():
-        G.user = Session.get ('user_'+G.svc)
+          # Get info about the logged in user.  Following sets G.user
+          #  to a db.DbRow object containing user information if user is
+          #  currently logged in, or None if not.  Note that logins are
+          #  per 'svc' service (eg a login for service "jmdict" will not
+          #  provide access to "jmtest", one will need to log into "jmtest"
+          #  separately) but multiple logins can be stored simultaneously
+          #  in Session.
+        G.user = rest.get_user (G.svc, Session)
         L('jmapp.prereq').debug("cfg files: %s"%G.cfg.get('status','cfg_files'))
           # The following logging statement should usually be disabled
           # because the output contains database login credentials.
@@ -93,7 +100,8 @@ def entr():
         data,errs = rest.v_entr (elist, qlist, disp, cur=G.dbcur)
         return Render ('entr.jinja',
             entries=data, disp=disp,
-            svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user)
+            svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
+            this_page=Rq.full_path)
 
 @App.route ('/help.py')
 def help():
@@ -113,14 +121,16 @@ def srchform():
         return Render ('srchform.jinja', KW=jdb.KW,
             pos=pos, misc=misc, stat=stat, src=corp, freq=freq,
             fld=fld, kinf=kinf, rinf=rinf, dial=dial,
-            svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user)
+            svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
+            this_page=Rq.full_path)
 
 @App.route ('/srchformq.py')
 def srchformq():
         vLogEntry()
         data, errs = rest.v_srchformq()
         return Render ('srchformq.jinja',
-            src=data, svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user)
+            src=data, svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
+            this_page=Rq.full_path)
 
 @App.route ('/srchres.py')
 def srchres():
@@ -134,7 +144,7 @@ def srchres():
         return Render ("srchres.jinja",
             results=rs, p0=p0, pt=pt, stats=stats, sql=sqlp,
             svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
-            params=Rq.args)
+            params=Rq.args, this_page=Rq.full_path)
 
 @App.route ('/submit.py', methods=['POST'])
 def submit():
@@ -145,6 +155,5 @@ def submit():
 def updates():
         vLogEntry()
         return Render ('updates.jinja')
-
 
 if __name__ == '__main__': main()

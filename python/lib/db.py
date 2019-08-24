@@ -111,12 +111,9 @@ class DbRow (Obj):
     def __iter__(self):
         for n in self.__cols__: yield getattr (self, n)
     def __eq__(self, other): return _compare (self, other)
-    @property
-    def __aslist(self): return [getattr (self, x) for x in self.__cols__]
-    @property
-    def __astuple(self): return tuple((getattr(self,x) for x in self.__cols__))
-    @property
-    def __asdict(self): return dict((x,getattr(self,x)) for x in self.__cols__)
+    def _tolist(self): return [getattr(self, x) for x in self.__cols__]
+    def _totuple(self): return tuple((getattr(self,x) for x in self.__cols__))
+    def _todict(self): return dict((x,getattr(self,x)) for x in self.__cols__)
 
 def _p (o):
         if isinstance (o, (int,str,bool,type(None))):

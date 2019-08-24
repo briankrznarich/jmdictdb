@@ -57,7 +57,10 @@ def login_handler (svc, cfg):
             username, pw = fv('username'), fv('password')
             prev_page = fv('this_page')
             userobj = validate_user (G.svc, username, pw, cfg)
-            G.user = Session['user_'+G.svc] = userobj
+              # The returned 'userobj' is a DbRow object so in order to
+              # store it in the Flask session, we convert it to a dict
+              # via its _todict() method.
+            G.user = Session['user_'+G.svc] = userobj._todict()
         elif action == 'logout':
             G.user = Session['user_'+G.svc] = None
         return
@@ -86,7 +89,6 @@ def validate_user (svc, username, pw, cfg):
           # profile (ie, the corresponding row in the database).
           # Otherwise None is returned.
         userprofile = rest.validate_user (sessdb_connargs, username, pw)
-        if userprofile: userprofile = userprofile.__dict__
         L('srvlib.validate').debug("returning: %s" % userprofile)
         return userprofile
 
