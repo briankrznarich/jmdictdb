@@ -56,11 +56,12 @@ def login_handler (svc, cfg):
         if action == 'login':
             username, pw = fv('username'), fv('password')
             prev_page = fv('this_page')
-            userobj = validate_user (G.svc, username, pw, cfg)
-              # The returned 'userobj' is a DbRow object so in order to
-              # store it in the Flask session, we convert it to a dict
-              # via its _todict() method.
-            G.user = Session['user_'+G.svc] = userobj._todict()
+            u = validate_user (G.svc, username, pw, cfg)
+              # validate_user() returns a DbRow object or None.  In
+              # order to store the non-None value in the Flask session,
+              # we convert it to a dict via its _todict() method.
+            if u:
+               G.user, Session['user_'+G.svc] = u, u._todict()
         elif action == 'logout':
             G.user = Session['user_'+G.svc] = None
         return
@@ -132,36 +133,36 @@ def srchres (cur, so, sqlp, pt, p0, cfg, user):
         cfg -- Config object as returned by lib.config().
         user -- User object if user is logged or None if not.
         -------------------------------------------------------------------'''
-        errs = []
-        if so:
+        import jmcgi
+        if not sqlp: # Search parameters have been parsed and supplied
+                # in 'so'.  This is a normal search from a search page.
+
             try: condlist = srch.so2conds (so)
             except ValueError as e:
-                errs.append (str (e))
+                return None, [str(e)]
+            if not condlist: return None, ["No search criteria given"]
               # FIXME: [IS-115] Following will prevent kanjidic entries from
               #  appearing in results.  Obviously hardwiring id=4 is a hack.
-            else:
-                #condlist.append (('entr e', 'e.src!=4', []))
-                sql, sql_args = jdb.build_search_sql (condlist)
-        elif sqlp:
+            #condlist.append (('entr e', 'e.src!=4', []))
+            sql, sql_args = jdb.build_search_sql (condlist)
+        else: # A search using raw sql is requested.
               # 'sqlp' is a SQL statement string that allows an arbitrary
               # search.  Because arbitrary sql can also do other things
-              # such as delete the database, it should only be run as a
-              # user with read-only access to the database and it is the
-              # job of srch.adv_srch_allowed() to check that.
-            if not srch.adv_srch_allowed (cfg, user):
-                jmcgi.err_page (["'sql' parameter is disallowed."])
+              # such as delete the database, it is permitted only by
+              # logged-in editors and executed in the database by a
+              # read-only user.
+            if not jmcgi.adv_srch_allowed (cfg, user):
+                return [],['"sql" search allowed only by logged in editors']
             sql = sqlp.strip()
             if sql.endswith (';'): sql = sql[:-1]
             sql_args = []
-
-        if errs: return [], errs
 
         srch_timeout = cfg.get ('search', 'SEARCH_TIMEOUT')
         rs, pt, stats \
            = rest.run_search (cur, sql, sql_args, srch_timeout,
                               pt, p0, entrs_per_page (cfg))
 
-        return rs, pt, stats
+        return (rs, pt, stats), []
 
 def extract_srch_params (params):
         '''-------------------------------------------------------------------

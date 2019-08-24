@@ -272,7 +272,6 @@ def validate_user (dburi, username, pw):
         sql = "SELECT userid,fullname,email,priv FROM users "\
               "WHERE %s=%%s AND pw=crypt(%%s, pw) AND not disabled"\
               % (field,)
-        pdb.set_trace()
         userprofile = db.query1 (dbconn, sql, (username,pw))
         if not userprofile: return None
         return userprofile

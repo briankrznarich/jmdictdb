@@ -135,16 +135,27 @@ def srchformq():
 @App.route ('/srchres.py')
 def srchres():
         vLogEntry()
-        sqlp = (fv ('sql') or '')
         p0, pt = int(fv('p0') or 0), int(fv('pt') or -1)
+        sqlp = (fv ('sql') or '')
         so = srvlib.extract_srch_params (Rq.args)
-        rs, pt, stats \
+        data, errs \
             = srvlib.srchres (G.dbcur, so, sqlp, pt, p0, G.cfg, G.user)
-        if len(rs) == 1: return Redirect (Url ('entr', e=rs[0].id))
-        return Render ("srchres.jinja",
-            results=rs, p0=p0, pt=pt, stats=stats, sql=sqlp,
+        if not errs:
+            rs, pt, stats = data
+            if len(rs) == 1: return Redirect (Url ('entr', e=rs[0].id))
+            return Render ("srchres.jinja",
+                results=rs, p0=p0, pt=pt, stats=stats, sql=sqlp,
+                svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
+                params=Rq.args, this_page=Rq.full_path)
+        return Render ('error.jinja', errs=errs, cssclass='errormsg',
+                svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user)
+
+@App.route ('/srchsql.py')
+def srchsql():
+        vLogEntry()
+        return Render ('srchsql.jinja',
             svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
-            params=Rq.args, this_page=Rq.full_path)
+            this_page=Rq.full_path)
 
 @App.route ('/submit.py', methods=['POST'])
 def submit():
@@ -155,5 +166,6 @@ def submit():
 def updates():
         vLogEntry()
         return Render ('updates.jinja')
+
 
 if __name__ == '__main__': main()
