@@ -91,7 +91,12 @@ def login():
 @App.route ('/edform.py')
 def edform():
         vLogEntry()
-        return Render ('edform.jinja')
+        from lib.views.edform import view
+        data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
+        if errs:
+             return Render ('error.jinja', errs=errs, cssclass='errormsg',
+                            svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user)
+        return Render ('edform.jinja', this_page=Rq.full_path, **data)
 
 @App.route ('/entr.py')
 def entr():
