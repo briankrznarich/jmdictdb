@@ -94,8 +94,7 @@ def edconf():
         from lib.views.edconf import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
-             return Render ('error.jinja', errs=errs, cssclass='errormsg',
-                            svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user)
+             return Render ('error.jinja', errs=errs, cssclass='errormsg')
         return Render ('edconf.jinja', this_page=Rq.full_path, **data)
 
 @App.route ('/edform.py')
@@ -104,8 +103,7 @@ def edform():
         from lib.views.edform import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
-             return Render ('error.jinja', errs=errs, cssclass='errormsg',
-                            svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user)
+             return Render ('error.jinja', errs=errs, cssclass='errormsg')
         return Render ('edform.jinja', this_page=Rq.full_path, **data)
 
 @App.route ('/entr.py')
@@ -162,8 +160,7 @@ def srchres():
                 results=rs, p0=p0, pt=pt, stats=stats, sql=sqlp,
                 svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
                 params=Rq.args, this_page=Rq.full_path)
-        return Render ('error.jinja', errs=errs, cssclass='errormsg',
-                svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user)
+        return Render ('error.jinja', errs=errs, cssclass='errormsg')
 
 @App.route ('/srchsql.py')
 def srchsql():
@@ -172,10 +169,17 @@ def srchsql():
             svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
             this_page=Rq.full_path)
 
+@App.route ('/edsubmit.py', methods=['POST'])
 @App.route ('/submit.py', methods=['POST'])
 def submit():
         vLogEntry()
-        return Render ('submitted.jinja')
+        from lib.views.submit import view
+        data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.form)
+        if errs:
+             return Render ('error.jinja', errs=errs, cssclass='errormsg')
+        return Render ('submitted.jinja',
+            svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
+            **data)
 
 @App.route ('/updates.py')
 def updates():

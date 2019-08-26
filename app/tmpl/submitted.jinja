@@ -1,0 +1,44 @@
+{%- extends "layout.jinja" %}
+{% block title %}Submission successful{% endblock %}
+{%- block page_content %}
+<!-- submitted.jinja, part of JMdictDB.  Copyright (c) 2018 Stuart McGraw -->
+    <div class="item">
+      <p><b><i>Thank you for your contribution!</i></b></p>
+
+      <p>Your update has been added to the JMdict database.</p>
+      <ul>
+        <li>
+          If you are not an editor, your update has been added to the
+          database with provisional status and will be added to the JMdict
+          XML, Edict and other dictionaries after approval by an editor.</li>
+        <li>
+          If your submission was done as an editor, then the Approve,
+          Delete, or Reject status becomes effective immediately.</li>
+        <li>
+          Comments and questions regarding your submission, to which you
+          may wish to respond, may be added to the entry before or during
+          approval.
+          Click on the Id# link or Seq# links below to see them and the
+          status of your submission.</li>
+        <li>
+          The Id# link may become inactive
+          after approval but you will still be able to see the comments
+          in the history section of the entry shown by Seq#.</li>
+        </ul>
+
+      <p/>
+      <table>
+        <tr><td>Corpus</td><td>Seq#</td><td>Id#</td></tr>
+        <tr>
+        {%- for a in added %}
+          {#- 'added' is a list of 3-tuples of (id#,seq#,src) for
+               each (although typically only one) added entry.  #}
+          <tr>
+          <td>{{a[2]|TALabbrtxt('SRC')}}</td>
+          <td><a href="entr.py?q={{a[1]}}&amp;svc={{svc}}">{{a[1]}}</a>
+          <td><a href="entr.py?e={{a[0]}}&amp;svc={{svc}}">{{a[0]}}</a>
+          </tr>
+          {%- endfor %}
+        </table>
+      </div>
+  {%- endblock %}
