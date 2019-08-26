@@ -88,6 +88,16 @@ def login():
         srvlib.login_handler (G.svc, G.cfg)
         return flask.redirect (return_to)
 
+@App.route ('/edconf.py')
+def edconf():
+        vLogEntry()
+        from lib.views.edconf import view
+        data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
+        if errs:
+             return Render ('error.jinja', errs=errs, cssclass='errormsg',
+                            svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user)
+        return Render ('edconf.jinja', this_page=Rq.full_path, **data)
+
 @App.route ('/edform.py')
 def edform():
         vLogEntry()
