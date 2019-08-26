@@ -38,60 +38,6 @@ from logger import L
 # View functions
 #=============================================================================
 
-def v_entr (elist, qlist, disp, cur=None):
-        import fmtxml, fmtjel, xslfmt, jmcgi
-        errs = []
-        entries = jmcgi.get_entrs (cur, elist, qlist, errs)
-        if errs: {'data':[], 'errors':errs}
-
-          # Add a .SEQKR attribute to each entry in 'entries' that
-          # gives the kanji and reading of the newest (most recently
-          # edited) entry that has the same sequence number.
-        seqkr_decorate (entries)
-
-          # Sort the entries.  The sorting order will group entries
-          # with the same sequence number (.src,.seq) together and
-          # each of those groups will be ordered by the kanji/reading
-          # of the newest (most recently edited) entry in the group.
-          # (The kanji and/or readings of an entry are sometimes changed
-          # and this order will keep the changed entries together with
-          # their pre-changed versions, while maintaining an overall
-          # ordering by kanji/reading.)  Within each group having the
-          # same sequence number, entries are sorted in descending order
-          # by the timestamp of the most recent history; that is, from
-          # the most recently edited entry to the least recently edited
-          # one.
-        entries.sort (key=lambda e: (
-                e.SEQKR[0], e.SEQKR[1],
-                e.src, e.seq,  # In case different seqs have same SEQKR.
-                  # e._hist[*].dt is a datatime.datetime instance.
-                -(e._hist[-1].dt.timestamp() if e._hist else 0),
-                -e.id))
-        for e in entries:
-            for s in e._sens:
-                if hasattr (s, '_xref'): jdb.augment_xrefs (cur, s._xref)
-                if hasattr (s, '_xrer'): jdb.augment_xrefs (cur, s._xrer, 1)
-            if hasattr (e, '_snd'): jdb.augment_snds (cur, e._snd)
-        cur.close()
-        if disp == 'xml':
-            etxts = [fmtxml.entr (e) for e in entries]
-        elif disp == 'jm':
-            etxts = [fmtxml.entr (e, compat='jmdict') for e in entries]
-        elif disp == 'jmne':
-            etxts = [fmtxml.entr (e, compat='jmnedict') for e in entries]
-        elif disp == 'jel':
-            etxts = [fmtjel.entr (e) for e in entries]
-        elif disp == 'ed':
-            etxts = [xslfmt.entr (e) for e in entries]
-        else:
-            etxts = ['' for e in entries]
-        jmcgi.htmlprep (entries)
-        jmcgi.add_encodings (entries)    # For kanjidic entries.
-        if disp == 'ed': etxts = [jmcgi.txt2html (x) for x in etxts]
-        jmcgi.add_filtered_xrefs (entries, rem_unap=True)
-        entrs = list (zip (entries, etxts))
-        return [entrs, []]
-
 def v_srchform():
           # reshapes()'s last argument is the maximum number of checkboxes
           # to put on a line, and is ajusted empirically to make the total

@@ -109,12 +109,11 @@ def edform():
 @App.route ('/entr.py')
 def entr():
         vLogEntry()
-        elist, qlist, disp = fvn('e'), fvn('q'), fv('disp')
-        data,errs = rest.v_entr (elist, qlist, disp, cur=G.dbcur)
-        return Render ('entr.jinja',
-            entries=data, disp=disp,
-            svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
-            this_page=Rq.full_path)
+        from lib.views.entr import view
+        data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
+        if errs:
+             return Render ('error.jinja', errs=errs, cssclass='errormsg')
+        return Render ('entr.jinja', this_page=Rq.full_path, **data)
 
 @App.route ('/help.py')
 def help():

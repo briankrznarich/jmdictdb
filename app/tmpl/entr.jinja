@@ -1,9 +1,18 @@
-{#- Display JMdictDB entries
+{#- Display one or multiple JMdictDB entries
     NOTE:
     - This template is used to display one of more JMdictDB entries.
       It is also used as the base for the edconf.jinja template when
       displaying new or updated entries for confirmation prior to
       submission.
+    Parameters:
+      entries -- A sequence of 2-tuples, each consisting of:
+        [0] -- A jdb.Entr object with the entry to display.
+        [1] -- A text string representing the entry in the alternative
+            format (eg, XML, Edict, etc) specified by 'disp'.  If 'disp'
+            is None this item is ignored.
+      disp -- Display format.  One of: None (normal display), 'jel' (JEL),
+            'ed' (Edict), 'jm' (JMdict XML), 'xml' (JMnedict XML), 'xml'
+            (JMdictDB XML).
 -#}
 {%- extends "layout.jinja" %}
 {%- block title %}Entries{% endblock %}
