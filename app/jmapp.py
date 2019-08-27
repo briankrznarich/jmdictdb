@@ -88,6 +88,9 @@ def login():
         srvlib.login_handler (G.svc, G.cfg)
         return flask.redirect (return_to)
 
+# See lib/views/README.txt for a description of the conventions
+# used in the followinmg views.
+
 @App.route ('/edconf.py')
 def edconf():
         vLogEntry()
@@ -128,38 +131,31 @@ def helpq():
 @App.route ('/srchform.py')
 def srchform():
         vLogEntry()
-        data, errs = rest.v_srchform()
-        pos,misc,stat,fld,dial,kinf,rinf,corp,freq = data
-        return Render ('srchform.jinja', KW=jdb.KW,
-            pos=pos, misc=misc, stat=stat, src=corp, freq=freq,
-            fld=fld, kinf=kinf, rinf=rinf, dial=dial,
-            svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
-            this_page=Rq.full_path)
+        from lib.views.srchform import view
+        data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
+        if errs:
+             return Render ('error.jinja', errs=errs, cssclass='errormsg')
+        return Render ('srchform.jinja', this_page=Rq.full_path, **data)
 
 @App.route ('/srchformq.py')
 def srchformq():
         vLogEntry()
-        data, errs = rest.v_srchformq()
-        return Render ('srchformq.jinja',
-            src=data, svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
-            this_page=Rq.full_path)
+        from lib.views.srchformq import view
+        data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
+        if errs:
+             return Render ('error.jinja', errs=errs, cssclass='errormsg')
+        return Render ('srchformq.jinja', this_page=Rq.full_path, **data)
 
 @App.route ('/srchres.py')
 def srchres():
         vLogEntry()
-        p0, pt = int(fv('p0') or 0), int(fv('pt') or -1)
-        sqlp = (fv ('sql') or '')
-        so = srvlib.extract_srch_params (Rq.args)
-        data, errs \
-            = srvlib.srchres (G.dbcur, so, sqlp, pt, p0, G.cfg, G.user)
-        if not errs:
-            rs, pt, stats = data
-            if len(rs) == 1: return Redirect (Url ('entr', e=rs[0].id))
-            return Render ("srchres.jinja",
-                results=rs, p0=p0, pt=pt, stats=stats, sql=sqlp,
-                svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
-                params=Rq.args, this_page=Rq.full_path)
-        return Render ('error.jinja', errs=errs, cssclass='errormsg')
+        from lib.views.srchres import view
+        data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
+        if errs:
+            return Render ('error.jinja', errs=errs, cssclass='errormsg')
+        if len(data['results']) == 1:
+            return Redirect (Url ('entr', e=data['results'][0].id))
+        return Render ("srchres.jinja", this_page=Rq.full_path, **data)
 
 @App.route ('/srchsql.py')
 def srchsql():

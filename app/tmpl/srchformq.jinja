@@ -1,18 +1,16 @@
 {#- Search for JMdictDB entries
     Context variables:
       svc, dbg -- See layout.jinja.
-      src, stat, freq, kinf, rinf, pos, misc, fld, dial --
-        These are all 2-D arrays of dimension R rows by C columns of
-        jdb.Kwds instances representing rows in a database kwxxx table,
-        where 'xxx' stands for "src", "stat", etc.  Each Kwds object
-        (and the coresponding table row) contains information about a
-        JMdictDB keyword (aka tag value):
+      src --
+        A 2-D array of dimension R rows by C columns of a jdb.Kwds
+        instance representing rows in the database kwsrc table
+        The Kwds object (and the coresponding table row) contains
+        information about a JMdictDB keyword (aka tag value):
           id -- Id number of the keyword
           kw -- Short string giving the keyword.
           descr -- A longer description of the keyword.
-        The keywords for each table are organised into a RxC array by
-        srchform.py because they are displayed in that form here.
-      KW -- The full, loaded jdb.Kwds instance.
+        The keywords for the table are organised into a RxC array by
+        srchformq.py because they are displayed in that form here.
 -#}
 {%- extends "layout.jinja" %}
 {%- block title %}Basic Search{% endblock %}

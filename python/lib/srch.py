@@ -381,3 +381,78 @@ def like_substr (s):
         # '%' characters.
         t = '%' + re.sub (r'([?_%])', r'\\\1', s) + '%'
         return t
+
+def run_search (cur, sql, sql_args, timeout,
+                pgtotal, pgoffset=0, entrs_per_page=100):
+        import time
+        stats = {}
+        orderby = "ORDER BY __wrap__.kanj,__wrap__.rdng,__wrap__.seq,__wrap__.id"
+        page = "OFFSET %s LIMIT %s" % (pgoffset, entrs_per_page)
+        sql2 = "SELECT __wrap__.* FROM esum __wrap__ " \
+                 "JOIN (%s) AS __user__ ON __user__.id=__wrap__.id %s %s" \
+                  % (sql, orderby, page)
+        stats['sql']=sql; stats['args']=sql_args; stats['orderby']=orderby
+        t0 = time.time()
+        try: rs = jdb.dbread (cur, sql2, sql_args, timeout=timeout)
+        except db.QueryCanceledError as e:
+            msg = "The database query took too long to execute.  Please "\
+                "make your search more specific."
+            raise ValueError (msg)
+        except Exception as e:          #FIXME, what exception value(s)?
+            raise ValueError ("Database error (%s): %s" % (e.__class__.__name__, e))
+        stats['dbtime'] = time.time() - t0
+        reccnt = len(rs)
+        if pgtotal < 0:
+          # 'pgtotal'<0 says that we do not yet know the total number of
+          # results available (probably because this is the first call
+          # with the current
+          # search parameters.)
+            if reccnt >= entrs_per_page:
+              # If reccnt==entrs_per_page (it shouldn't really ever be
+              # greater because it was used in a LIMIT condition in query
+              # above), there may be more entries available.  We will
+              # run the query below to find the total number of matching
+              # results and return it.  The caller can then, on subsequent
+              # calls, give it back to us and we won't determine it again.
+              # This is a performance optimization since it can be an
+              # expensive query to run when there are a large number of
+              # matches.  If is possible the number will change between
+              # calls but that will that should not cause any major problem
+              # since database changes are infrequent.
+                sql3 = "SELECT COUNT(*) AS cnt FROM (%s) AS i " % sql
+                cntrec = jdb.dbread (cur, sql3, sql_args, timeout=timeout)
+                pgtotal = cntrec[0][0]  # Total number of entries.
+            else:
+              # The number of results are less than the number we asked for
+              # so we know we know we have all of them.
+                pgtotal = reccnt
+        return rs, pgtotal, stats
+
+def reshape (array, ncols, default=None):
+        result = []
+        for i in range(0, len(array), ncols):
+            result.append (array[i:i+ncols])
+        if len(result[-1]) < ncols:
+            result[-1].extend ([default]*(ncols - len(result[-1])))
+        return result
+
+def grpsparse (grpsstr):
+        if not grpsstr: return []
+        return grpsstr.split()
+
+def dateparse (dstr, upper, errs):
+        if not dstr: return None
+        dstr = dstr.strip();  dt = None
+        if not dstr: return None
+          # Add a time if it wasn't given.
+        if len(dstr) < 11: dstr += " 23:59" if upper else " 00:00"
+          # Note: we use time.strptime() to parse because it returns
+          # struct easily converted into a 9-tuple, which in turn is
+          # easily JSONized, unlike a datetime.datetime object.
+        try: dt = time.strptime (dstr, "%Y/%m/%d %H:%M")
+        except ValueError:
+            try: dt = time.strptime (dstr, "%Y-%m-%d %H:%M")
+            except ValueError:
+                errs.append ("Unable to parse date/time string '%s'." % dstr)
+        if dt: return time.mktime (dt)
+        return None
