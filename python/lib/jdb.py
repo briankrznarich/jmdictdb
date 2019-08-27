@@ -783,8 +783,8 @@ def xresolv (dbh, entr):
             unsuccessful = []
             for nx, xr in enumerate (s._xrslv):
                 slist = None if not xr.tsens else [xr.tsens]
-                seq = getattr (xr, 'SEQ', None)
-                corpid = getattr (xr, 'SRC', '')
+                seq = xr.vseq
+                corpid = xr.vsrc
                   # corpid may be None, '', a corpus name or corpus id number.
                 if corpid == '': corpid = entr.src
                 elif corpid != None:
