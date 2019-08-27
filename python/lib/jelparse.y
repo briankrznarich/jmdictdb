@@ -799,8 +799,8 @@ def x2xrslv (t):
           #          "xrefnum" and "jref" above.)
         results = []
         for s in t[3] or [None]:
-            x = Xrslv (typ=t[0], rtxt=t[1], ktxt=t[2], tsens=s)
-            x.SEQ, x.SRC = t[4], t[5]
+            x = Xrslv (typ=t[0], rtxt=t[1], ktxt=t[2], tsens=s,
+                       vsrc=t[5], vseq=t[4])
             results.append (x)
         return results
 

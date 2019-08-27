@@ -311,7 +311,7 @@ def is_editor (sess):
         or 'A' privilege error."""
 
         if not sess: return None
-        return getattr (sess, 'priv', None) in 'EA'
+        return getattr (sess, 'priv', '\uffff') in 'EA'
 
 def get_user (uid, svc, cfg):
         cur = jdb.dbOpenSvc (cfg, svc, session=True, nokw=True)
