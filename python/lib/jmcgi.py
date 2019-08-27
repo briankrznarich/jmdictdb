@@ -314,7 +314,7 @@ def is_editor (sess):
         return getattr (sess, 'priv', '\uffff') in 'EA'
 
 def get_user (uid, svc, cfg):
-        cur = jdb.dbOpenSvc (cfg, svc, session=True, nokw=True)
+        cur = jdb.dbOpenSvc (cfg, svc, session=True, noverchk=True, nokw=True)
         sql = "SELECT * FROM users WHERE userid=%s"
         users = jdb.dbread (cur, sql, (uid,))
           # 'userid' is primary key of users table so we should never
