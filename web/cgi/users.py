@@ -34,7 +34,7 @@ def main (args, opts):
         if not sess or sess.priv != 'A': users = []
         else:
             sql = "SELECT * FROM users ORDER BY userid"
-            sesscur = jdb.dbOpenSvc (cfg, svc, session=True, nokw=True)
+            sesscur = jdb.dbOpenSvc (cfg, svc, session=True, noverchk=True, nokw=True)
             users = jdb.dbread (sesscur, sql)
             L('cgi.users').debug('read %d rows from table "user"' % (len(users),))
         jmcgi.jinja_page ("users.jinja", users=users, session=sess,

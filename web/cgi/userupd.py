@@ -167,7 +167,7 @@ def main( args, opts ):
                            % (fv('subjid'), ','.join([c for c,p in collist]))
 
         if result != 'nochange':
-            sesscur = jdb.dbOpenSvc (cfg, svc, session=True, nokw=True)
+            sesscur = jdb.dbOpenSvc (cfg, svc, session=True, noverchk=True, nokw=True)
             L('cgi.userupd.db').debug("sql:  %r" % sql)
               # 'values_sani' should be the same as values but with any
               # password text masked out.
