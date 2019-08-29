@@ -181,5 +181,60 @@ def updates():
         vLogEntry()
         return Render ('updates.jinja')
 
+@App.route ('/user.py')
+def user():
+        vLogEntry()
+        from lib.views.user import view
+        data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
+        if errs:
+             return render ('error.jinja', errs=errs, cssclass='errormsg')
+        return render ('user.jinja', this_page=Rq.full_path, **data)
+
+@App.route ('/users.py')
+def users():
+        vLogEntry()
+        from lib.views.users import view
+        data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
+        if errs:
+             return render ('error.jinja', errs=errs, cssclass='errormsg')
+        return render ('users.jinja', this_page=Rq.full_path, **data)
+
+@App.route ('/userupd.py', methods=['POST'])
+def userupd():
+        vLogEntry()
+        from lib.views.userupd import view
+        data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.form)
+        if errs:
+             return render ('error.jinja', **errs, cssclass='errormsg')
+        if 'result' in data:
+          # Queue a confirmation message for display on the next page.
+          # 'result' is a category like "success" or "error" and is
+          # used in the template for styling.
+            result, msg = data.get('result')
+            flask.flash (msg, result)
+          # If current user is an Admin user, redirect back to the users
+          # list page since the page for the subject user may have been
+          # deleted.
+        if G.user.priv == 'A': redir_to = 'users'
+          # For non-Admin user, send them back to their own user page.
+        else: redir_to = 'user'
+        return Redirect (Url (redir_to, svc=G.svc, **data))
+
+def render (tmpl, **data):
+        '''-------------------------------------------------------------------
+        # Render a Jinja2 template adding additional standard data.
+        # Almost all templates extend base template "layout.jinja" and
+        # that template requires a standard set of variables that this
+        # function will automatically add (svc, cfg, user, dbg), avoiding
+        # the need to specifically reference them all directly in each
+        # view.
+        # Parameters:
+        #   tmpl -- Name of the Jinja2 template.
+        #   data -- (dict) Context data referenced by variables in the
+        #     template.
+        -------------------------------------------------------------------'''
+        return Render (tmpl,
+                       svc=G.svc, cfg=G.cfg, user=G.user, dbg=fv('dbg'),
+                       **data)
 
 if __name__ == '__main__': main()
