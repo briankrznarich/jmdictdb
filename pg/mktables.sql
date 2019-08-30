@@ -70,7 +70,7 @@ INSERT INTO db(id) VALUES(x:updateid::INT);
 
 -- Presents table "db" with hexadecimal id numbers for convenience.
 CREATE OR REPLACE VIEW dbx AS (
-    SELECT LPAD(TO_HEX(id),6,'0') AS id, active, ts
+    SELECT LPAD(TO_HEX(id),6,'0') AS id, active, ts, id AS idd
     FROM db 
     ORDER BY ts DESC);
 ---------------------------------------------------------------------------
