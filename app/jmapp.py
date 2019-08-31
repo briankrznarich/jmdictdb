@@ -50,6 +50,23 @@ App = flask.Flask (__name__, static_folder='./static',
                              template_folder='./tmpl')
 app_config (App)
 
+def render (tmpl, **data):
+        '''-------------------------------------------------------------------
+        # Render a Jinja2 template adding additional standard data.
+        # Almost all templates extend base template "layout.jinja" and
+        # that template requires a standard set of variables that this
+        # function will automatically add (svc, cfg, user, dbg), avoiding
+        # the need to specifically reference them all directly in each
+        # view.
+        # Parameters:
+        #   tmpl -- Name of the Jinja2 template.
+        #   data -- (dict) Context data referenced by variables in the
+        #     template.
+        -------------------------------------------------------------------'''
+        return Render (tmpl,
+                       svc=G.svc, cfg=G.cfg, user=G.user, dbg=fv('dbg'),
+                       **data)
+
 def prereq():
           # Get info about the logged in user.  Following sets G.user
           #  to a db.DbRow object containing user information if user is
@@ -160,9 +177,7 @@ def srchres():
 @App.route ('/srchsql.py')
 def srchsql():
         vLogEntry()
-        return Render ('srchsql.jinja',
-            svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
-            this_page=Rq.full_path)
+        return render ('srchsql.jinja', this_page=Rq.full_path)
 
 @App.route ('/edsubmit.py', methods=['POST'])
 @App.route ('/submit.py', methods=['POST'])
@@ -172,9 +187,7 @@ def submit():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.form)
         if errs:
              return Render ('error.jinja', errs=errs, cssclass='errormsg')
-        return Render ('submitted.jinja',
-            svc=G.svc, cfg=G.cfg, dbg=fv('dbg'), user=G.user,
-            **data)
+        return render ('submitted.jinja', **data)
 
 @App.route ('/updates.py')
 def updates():
@@ -227,22 +240,5 @@ def userupd():
           # For non-Admin user, send them back to their own user page.
         else: redir_to = 'user'
         return Redirect (Url (redir_to, svc=G.svc, **data))
-
-def render (tmpl, **data):
-        '''-------------------------------------------------------------------
-        # Render a Jinja2 template adding additional standard data.
-        # Almost all templates extend base template "layout.jinja" and
-        # that template requires a standard set of variables that this
-        # function will automatically add (svc, cfg, user, dbg), avoiding
-        # the need to specifically reference them all directly in each
-        # view.
-        # Parameters:
-        #   tmpl -- Name of the Jinja2 template.
-        #   data -- (dict) Context data referenced by variables in the
-        #     template.
-        -------------------------------------------------------------------'''
-        return Render (tmpl,
-                       svc=G.svc, cfg=G.cfg, user=G.user, dbg=fv('dbg'),
-                       **data)
 
 if __name__ == '__main__': main()
