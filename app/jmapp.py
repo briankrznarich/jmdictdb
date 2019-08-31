@@ -179,7 +179,15 @@ def submit():
 @App.route ('/updates.py')
 def updates():
         vLogEntry()
-        return Render ('updates.jinja')
+        from lib.views.updates import view
+        data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
+        if errs:
+             return render ('error.jinja', errs=errs, cssclass='errormsg')
+          # Depending on the url parameters that were given the returned
+          # data can be for either of two pages; the name of the one to
+          # use is returned in data['page'] and will be either "updates"
+          # or "entr".
+        return render (data['page']+'.jinja', this_page=Rq.full_path, **data)
 
 @App.route ('/user.py')
 def user():
