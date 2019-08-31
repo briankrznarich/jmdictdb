@@ -457,6 +457,7 @@ def parse (krstext):
 
 def url_int (name, form, errs):
         v = form.get (name)
+        if v == '': v = None
         if not v: return v
         try: n = int (v)
         except ValueError:

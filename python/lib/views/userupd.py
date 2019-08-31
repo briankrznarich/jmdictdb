@@ -30,6 +30,9 @@ def view (svc, cfg, sess, cur, params):
 
         errs = []; so = None; stats = {}
         fv = params.get; fl = params.getlist
+          # fvn() will retrieve empty param as None rather than ''.
+        fvn = lambda x: params.get(x) or None
+
           # The form values "userid", "fullname", "email", "priv",
           #  "disabled", come from editable fields in the user.py
           #  page.
@@ -56,13 +59,15 @@ def view (svc, cfg, sess, cur, params):
           #  from the User form.
         action = {(0,0):'u', (0,1):'d', (1,0):'n', (1,1):'x'}\
                    [(bool(fv('new')),bool(fv('delete')))]
-        L('cgi.userupd').debug("new=%r, delete=%r, action=%r, subjid=%r, userid=%r" % (fv('new'), fv('delete'), action, fv('subjid'), fv('userid')))
+        f_subjid, f_userid  = fvn('subjid'), fvn('userid')
+        L('cgi.userupd').debug("new=%r, delete=%r, action=%r, subjid=%r, userid=%r"
+            % (fv('new'), fv('delete'), action, f_subjid, f_userid))
 
         prolog = None
         if not sess:
             prolog = "<p>You must login before you can change your "\
                      "user settings.</p>"
-        elif fv('subjid') != sess.userid and sess.priv != 'A':
+        elif f_subjid != sess.userid and sess.priv != 'A':
             prolog = "<p>You do not have sufficient privilege to alter "\
                      "settings for anyone other than yourself.</p>"
         elif action in ('nd') and sess.priv != 'A':
@@ -78,39 +83,39 @@ def view (svc, cfg, sess, cur, params):
          # None which has the beneficial effect of causing gen_sql_-
          # params() to generate change parameters for every form value
          # which is what we want when creating a user.
-        subj = jmcgi.get_user (fv('subjid'), svc, cfg)
+        subj = jmcgi.get_user (f_subjid, svc, cfg)
         if action in 'nu':   # "new" or "update" action...
             if action == 'u':
                L('cgi.userupd').debug("update user %r" % sanitize_o(subj))
             else:
-                L('cgi.userupd').debug("create user %r" % fv('userid'))
+                L('cgi.userupd').debug("create user %r" % f_userid)
             if action == 'n' and \
-                    (subj or fv('userid')==sess.userid
-                     or jmcgi.get_user(fv('userid'), svc, cfg)):
-                  # This is the creation of a new user (fv('userid')).
+                    (subj or f_userid==sess.userid
+                     or jmcgi.get_user(f_userid, svc, cfg)):
+                  # This is the creation of a new user (f_userid).
                   # The userid must not already exist.  The tests for
                   # subj and sess.userid are simply to avoid an expensive
                   # get_user() call when we already know the user exists.
                 errors.append ("Account name %s is already in use."
-                               % fv('userid'))
-            if action == 'u' and fv('userid')!=subj.userid \
-                    and (fv('userid')==sess.userid \
-                         or jmcgi.get_user(fv('userid'), svc, cfg)):
+                               % f_userid)
+            if action == 'u' and f_userid!=subj.userid \
+                    and (f_userid==sess.userid \
+                         or jmcgi.get_user(f_userid, svc, cfg)):
                   # This is an update of an existing user.
-                  # If the new userid (fv('userid')) is the same as the
+                  # If the new userid (f_userid) is the same as the
                   # subj.userid it's not being changed and is ok.  If
                   # different then it must not be the same as an exiting
                   # userid.  The test for sess.userid is simply to avoid
                   # an expensive get_user() call when we already know
                   # that user exists.
                 errors.append ("Account name %s is already in use."
-                               % fv('userid'))
+                               % f_userid)
 
               # Get the parameters we'll need for the sql statement used
               # to update the user/sessions database.
             collist, values, err \
-                = gen_sql_params (sess.priv=='A', subj, fv('pw1'), fv('pw2'),
-                                  fv('userid'), fv('fullname'), fv('email'),
+                = gen_sql_params (sess.priv=='A', subj, fvn('pw1'), fvn('pw2'),
+                                  f_userid, fvn('fullname'), fvn('email'),
                                   fv('priv'), fv('disabled'))
             errors.extend (err)
             L('cgi.userupd').debug("collist: %r" % collist)
@@ -125,11 +130,11 @@ def view (svc, cfg, sess, cur, params):
               # which is not what will happen (we delete the "subjid"
               # user.)
             values = []
-            if fv('userid') != fv('subjid'):
+            if f_userid != f_subjid:
                 errors.append (
                     "Can't delete user when userid has been changed.")
             if not subj:
-                errors.append ("User '%s' doesn't exist." % fv('subjid'))
+                errors.append ("User '%s' doesn't exist." % f_subjid)
 
         if errors:
             return {}, {'errs': errors,
@@ -144,25 +149,24 @@ def view (svc, cfg, sess, cur, params):
             pmarks = ','.join (p for c,p in collist)
             sql = "INSERT INTO users(%s) VALUES (%s)" % (cols, pmarks)
             values_sani = sanitize_v (values, collist)
-            summary = "added user \"%s\"" \
-                      % ''.join(p for c,p in collist if c=='userid')
+            summary = "added user \"%s\"" % f_userid
         elif action == 'd':                       # Delete existing user...
             sql = "DELETE FROM users WHERE userid=%s"
-            values.append (fv('subjid'))
+            values.append (f_subjid)
             values_sani = values
-            summary = "deleted user \"%s\"" % fv('subjid')
+            summary = "deleted user \"%s\"" % f_subjid
         else:                                     # Update existing user...
             if not collist: result = 'nochange'
             else:
                 if subj and subj.userid == sess.userid \
-                        and fv('userid') and fv('userid'):
-                    update_session = fv('userid')
+                        and f_userid and f_userid:
+                    update_session = f_userid
                 updclause = ','.join (("%s=%s" % (c,p)) for c,p in collist)
                 sql = "UPDATE users SET %s WHERE userid=%%s" % updclause
-                values.append (fv('subjid'))
+                values.append (f_subjid)
                 values_sani = sanitize_v (values, collist)
                 summary = "updated user %s (%s)" \
-                           % (fv('subjid'), ','.join([c for c,p in collist]))
+                           % (f_subjid, ','.join([c for c,p in collist]))
 
         if result != 'nochange':
             sesscur = jdb.dbOpenSvc (cfg, svc, session=True, noverchk=True, nokw=True)
