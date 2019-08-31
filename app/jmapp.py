@@ -108,6 +108,15 @@ def login():
 # See lib/views/README.txt for a description of the conventions
 # used in the followinmg views.
 
+@App.route ('/conj.py')
+def conj():
+        vLogEntry()
+        from lib.views.conj import view
+        data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
+        if errs:
+             return render ('error.jinja', errs=errs, cssclass='errormsg')
+        return render ('conj.jinja', this_page=Rq.full_path, **data)
+
 @App.route ('/edconf.py')
 def edconf():
         vLogEntry()
@@ -135,15 +144,19 @@ def entr():
              return Render ('error.jinja', errs=errs, cssclass='errormsg')
         return Render ('entr.jinja', this_page=Rq.full_path, **data)
 
-@App.route ('/help.py')
-def help():
+@App.route ('/edhelp.py')
+def edhelp():
         vLogEntry()
-        return Render ('help.jinja')
+        from lib.views.edhelp import view
+        data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
+        if errs:
+             return render ('error.jinja', errs=errs, cssclass='errormsg')
+        return render ('edhelp.jinja', this_page=Rq.full_path, **data)
 
-@App.route ('/helpq.py')
-def helpq():
+@App.route ('/edhelpq.py')
+def edhelpq():
         vLogEntry()
-        return Render ('helpq.jinja')
+        return render ('edhelpq.jinja', this_page=Rq.full_path)
 
 @App.route ('/srchform.py')
 def srchform():
