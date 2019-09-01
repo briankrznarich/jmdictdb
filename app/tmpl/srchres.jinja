@@ -102,12 +102,12 @@
 
 {% macro next_page_button() %}
       <form action="srchres.py" method="get">
-        <input name="next" value="Next page" type="submit">
-        <input type="hidden" name="p0" value="{{p0+100}}">
+        <input type="submit" value="Next Page">
+        <input type="hidden" name="p0" value="{{p0+(results|length)}}">
         <input type="hidden" name="pt" value="{{pt}}">
       {#- Pass the same set #}
-      {% for k,v in params.items() if k not in ('p0','pt') %}
+      {%- for k,v in params.items(multi=True) if k not in ('p0','pt') and v %}
         <input type="hidden" name="{{k}}" value="{{v}}">
-        {% endfor %}
+        {%- endfor %}
         </form>
   {% endmacro %}

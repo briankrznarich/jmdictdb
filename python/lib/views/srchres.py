@@ -25,19 +25,29 @@ import jdb, srch
 def view (svc, cfg, user, cur, params):
         '''-------------------------------------------------------------------
         Run a database search for entries using the search parameters
-        in 'so' or the sql query in 'sqlp' and return one page of results
-        starting at offest 'p0' with 'epg' entries per page.
-        cur -- Open JMdictDB database cursor from jdb.dbOpen() or equiv.
+        in 'params'.
+
+        Parameters (standard set for view function calls):
+        svc -- Database service name (not used).
+        cfg -- Configuration settings.
+        user -- Currently logged in user or None for anonymouse user.
+        params -- A dict or similar (eg Flask Request object) containing
+          search parameters.
+
+        Parameters in 'params':
         so -- A srch.SearchItems object as return by extract_srch_params().
-        sqlp --
-        pt -- Total number of search results or -1.
-        p0 -- Offset in search result.
-        cfg -- Config object as returned by lib.config().
-        user -- User object if user is logged or None if not.
+        sqlp -- A sql statement returning a set of entry id numbers.
+        pt -- Total number of search results or -1 if not yet known.
+        p0 -- Offset in search results of first entry to show on page.
+        ps -- Page size: number of entries per page.  If not present
+          this will be obtained from the configuration settings.
+        Additional ones per code in extract_srch_params().
         -------------------------------------------------------------------'''
+
         errs = []
-        p0 = params.get('p0', 0, int)
-        pt = params.get('pt', -1, int)
+        p0 = params.get('p0', 0, int)   # Starting entry # on page.
+        pt = params.get('pt', -1, int)  # Total # of found entries.
+        ps = params.get('ps', 0, int)   # Page size (max # of entries/page).
         sqlp = params.get ('sql', '')
         so = extract_srch_params (params)
         if not sqlp: # Search parameters have been parsed and supplied
@@ -66,15 +76,13 @@ def view (svc, cfg, user, cur, params):
         srch_timeout = cfg.get ('search', 'SEARCH_TIMEOUT')
         try: rs, pt, stats \
                 = srch.run_search (cur, sql, sql_args, srch_timeout,
-                                   pt, p0, entrs_per_page (cfg))
+                                   pt, p0, entrs_per_page (cfg, ps))
         except srch.TimeoutError as e: return {}, [str(e)]
         return dict(results=rs, p0=p0, pt=pt, stats=stats, params=params), []
 
 def extract_srch_params (params):
         '''-------------------------------------------------------------------
-        Extract search related url parameters from the current Flask
-        request object.
-
+        Extract search related url parameters from the request parameters
 
         returns: A srch.SearchItems item initiailized from 'params'
             that can be used to generate sql for performing the search.
@@ -117,7 +125,8 @@ def extract_srch_params (params):
         so.mt = fv('mt')
         return so
 
-def entrs_per_page (cfg, ps=100):
+def entrs_per_page (cfg, ps=0):
+        if not ps: ps = 0   # In case we receive ps=None.
         epp = min (max (int (ps or cfg.get('web','DEF_ENTRIES_PER_PAGE')),
                         int(cfg.get('web','MIN_ENTRIES_PER_PAGE'))),
                    int(cfg.get('web','MAX_ENTRIES_PER_PAGE')))
