@@ -67,3 +67,23 @@ def get_user (svc, session):
           # (e.g., jmcgi.is_editor()) tht expects a DbRow, not a dict.
         userobj = db.DbRow (u)
         return userobj
+
+class SvcUnknownError(RuntimeError): pass
+class SvcDbError(RuntimeError): pass
+
+def dbOpenSvc (cfg, svcname, readonly=False, session=False, **kwds):
+        '''-------------------------------------------------------------------
+        A thin wrapper around jdb.dbOpenSvc() to catch common exceptions.
+        Takes same arguments and returns same values as jdb.dbOpenSvc(),
+        see that function for documentation.
+        We transform a KeyError in a SvcUnknownError ('svcname' not found
+        in configuration file 'cfg') and a OperationalError (database not
+        found, an exception raised by psycopg2) into SvcDbError.
+        FIXME? the exceptions caught may be too broad and could be caused
+         by something other than the given reasons.
+        -------------------------------------------------------------------'''
+        try:
+            cur = jdb.dbOpenSvc (cfg, svcname, readonly, session, **kwds)
+        except KeyError as e: raise SvcUnknownError(svcname)
+        except db.OperationalError as e: raise SvcDbError(svcname)
+        return cur

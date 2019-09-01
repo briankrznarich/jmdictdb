@@ -84,7 +84,7 @@ def prereq():
           # Enable for debugging only.
         #L('jmapp.prereq').debug("svc=%s; cfg=%r"
         #                        % (G.svc,dict(G.cfg['db_'+G.svc])))
-        G.dbcur = jdb.dbOpenSvc (G.cfg, G.svc)
+        G.dbcur = rest.dbOpenSvc (G.cfg, G.svc)
 
 @App.before_request
 def before_request():
@@ -92,9 +92,12 @@ def before_request():
         G.cfg = App.config['CFG']
         G.svc = fv ('svc') or G.cfg.get('web','DEFAULT_SVC') or 'jmdict'
         if Rq.endpoint in ('login','logout','static'): return
+        msg = None
         try: prereq()
-        except KeyError: return Render ('error.jinja', svc=None,
-            errs=["Unknown service (svc parameter)"], cssclass='errormsg')
+        except rest.SvcUnknownError: msg = "Unknown service (%s)" % G.svc
+        except rest.SvcDbError: msg = "Unavailable service (%s)" % G.svc
+        if msg: return Render ('error.jinja', svc=None, errs=[msg],
+                               cssclass='errormsg')
 
 @App.route ('/')
 def home():
