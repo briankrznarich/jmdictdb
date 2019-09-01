@@ -17,7 +17,7 @@
 #  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #######################################################################
 
-import sys, cgi, re
+import sys, re
 sys.path.extend (['../lib','../../python/lib','../python/lib'])
 import logger; from logger import L
 import jdb, jmcgi
