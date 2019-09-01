@@ -18,6 +18,9 @@
 #######################################################################
 
 import jdb, datetime, re
+from db import QueryCanceledError
+
+class TimeoutError (RuntimeError): pass
 
 class SearchItems (jdb.Obj):
     """Convenience class for creating objects for use as an argument
@@ -394,12 +397,13 @@ def run_search (cur, sql, sql_args, timeout,
         stats['sql']=sql; stats['args']=sql_args; stats['orderby']=orderby
         t0 = time.time()
         try: rs = jdb.dbread (cur, sql2, sql_args, timeout=timeout)
-        except db.QueryCanceledError as e:
+        except QueryCanceledError as e:
             msg = "The database query took too long to execute.  Please "\
                 "make your search more specific."
-            raise ValueError (msg)
-        except Exception as e:          #FIXME, what exception value(s)?
-            raise ValueError ("Database error (%s): %s" % (e.__class__.__name__, e))
+            raise TimeoutError (msg)
+          # Let any other database error bubble up.
+        #except Exception as e:          #FIXME, what exception value(s)?
+        #    raise ValueError ("Database error (%s): %s" % (e.__class__.__name__, e))
         stats['dbtime'] = time.time() - t0
         reccnt = len(rs)
         if pgtotal < 0:

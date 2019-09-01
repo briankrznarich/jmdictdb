@@ -64,11 +64,11 @@ def view (svc, cfg, user, cur, params):
             sql_args = []
 
         srch_timeout = cfg.get ('search', 'SEARCH_TIMEOUT')
-        rs, pt, stats \
-           = srch.run_search (cur, sql, sql_args, srch_timeout,
-                              pt, p0, entrs_per_page (cfg))
-        return dict(results=rs, p0=p0, pt=pt, stats=stats,
-                    svc=svc, cfg=cfg, user=user, params=params), []
+        try: rs, pt, stats \
+                = srch.run_search (cur, sql, sql_args, srch_timeout,
+                                   pt, p0, entrs_per_page (cfg))
+        except srch.TimeoutError as e: return {}, [str(e)]
+        return dict(results=rs, p0=p0, pt=pt, stats=stats, params=params), []
 
 def extract_srch_params (params):
         '''-------------------------------------------------------------------

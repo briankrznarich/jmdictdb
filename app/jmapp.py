@@ -90,7 +90,9 @@ def before_request():
         G.cfg = App.config['CFG']
         G.svc = fv ('svc') or G.cfg.get('web','DEFAULT_SVC') or 'jmdict'
         if Rq.endpoint in ('login','logout','static'): return
-        prereq()
+        try: prereq()
+        except KeyError: return Render ('error.jinja', svc=None,
+            errs=["Unknown service (svc parameter)"], cssclass='errormsg')
 
 @App.route ('/')
 def home():
@@ -191,10 +193,10 @@ def srchres():
         from lib.views.srchres import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
-            return Render ('error.jinja', errs=errs, cssclass='errormsg')
+            return render ('error.jinja', errs=errs, cssclass='errormsg')
         if len(data['results']) == 1:
-            return Redirect (Url ('entr', e=data['results'][0].id))
-        return Render ("srchres.jinja", this_page=Rq.full_path, **data)
+            return redirect (Url ('entr', e=data['results'][0].id))
+        return render ("srchres.jinja", this_page=Rq.full_path, **data)
 
 @App.route ('/srchsql.py')
 def srchsql():
