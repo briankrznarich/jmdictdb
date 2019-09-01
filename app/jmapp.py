@@ -67,6 +67,8 @@ def render (tmpl, **data):
                        svc=G.svc, cfg=G.cfg, user=G.user, dbg=fv('dbg'),
                        **data)
 
+def path(): return Rq.script_root + Rq.full_path
+
 def prereq():
           # Get info about the logged in user.  Following sets G.user
           #  to a db.DbRow object containing user information if user is
@@ -103,9 +105,10 @@ def home():
 def login():
         vLogEntry()
         return_to = fv ('this_page')
-        if not return_to.startswith ('/'): flask.abort(400)
+        #L('view.login').debug("return_to=%r"%return_to)
+        if not return_to.startswith (Rq.script_root): flask.abort(400)
         srvlib.login_handler (G.svc, G.cfg)
-        return flask.redirect (return_to)
+        return Redirect (return_to)
 
 # See lib/views/README.txt for a description of the conventions
 # used in the followinmg views.
@@ -117,7 +120,7 @@ def conj():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
-        return render ('conj.jinja', this_page=Rq.full_path, **data)
+        return render ('conj.jinja', this_page=path(), **data)
 
 @App.route ('/edconf.py')
 def edconf():
@@ -126,7 +129,7 @@ def edconf():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return Render ('error.jinja', errs=errs, cssclass='errormsg')
-        return Render ('edconf.jinja', this_page=Rq.full_path, **data)
+        return Render ('edconf.jinja', this_page=path(), **data)
 
 @App.route ('/edform.py')
 def edform():
@@ -135,7 +138,7 @@ def edform():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return Render ('error.jinja', errs=errs, cssclass='errormsg')
-        return Render ('edform.jinja', this_page=Rq.full_path, **data)
+        return Render ('edform.jinja', this_page=path(), **data)
 
 @App.route ('/entr.py')
 def entr():
@@ -144,7 +147,7 @@ def entr():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return Render ('error.jinja', errs=errs, cssclass='errormsg')
-        return Render ('entr.jinja', this_page=Rq.full_path, **data)
+        return Render ('entr.jinja', this_page=path(), **data)
 
 @App.route ('/edhelp.py')
 def edhelp():
@@ -153,12 +156,12 @@ def edhelp():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
-        return render ('edhelp.jinja', this_page=Rq.full_path, **data)
+        return render ('edhelp.jinja', this_page=path(), **data)
 
 @App.route ('/edhelpq.py')
 def edhelpq():
         vLogEntry()
-        return render ('edhelpq.jinja', this_page=Rq.full_path)
+        return render ('edhelpq.jinja', this_page=path())
 
 @App.route ('/groups.py')
 def groups():
@@ -167,7 +170,7 @@ def groups():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
-        return render ('groups.jinja', this_page=Rq.full_path, **data)
+        return render ('groups.jinja', this_page=path(), **data)
 
 @App.route ('/srchform.py')
 def srchform():
@@ -176,7 +179,7 @@ def srchform():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return Render ('error.jinja', errs=errs, cssclass='errormsg')
-        return Render ('srchform.jinja', this_page=Rq.full_path, **data)
+        return Render ('srchform.jinja', this_page=path(), **data)
 
 @App.route ('/srchformq.py')
 def srchformq():
@@ -185,7 +188,7 @@ def srchformq():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return Render ('error.jinja', errs=errs, cssclass='errormsg')
-        return Render ('srchformq.jinja', this_page=Rq.full_path, **data)
+        return Render ('srchformq.jinja', this_page=path(), **data)
 
 @App.route ('/srchres.py')
 def srchres():
@@ -195,13 +198,13 @@ def srchres():
         if errs:
             return render ('error.jinja', errs=errs, cssclass='errormsg')
         if len(data['results']) == 1:
-            return redirect (Url ('entr', e=data['results'][0].id))
-        return render ("srchres.jinja", this_page=Rq.full_path, **data)
+            return Redirect (Url ('entr', e=data['results'][0].id))
+        return render ("srchres.jinja", this_page=path(), **data)
 
 @App.route ('/srchsql.py')
 def srchsql():
         vLogEntry()
-        return render ('srchsql.jinja', this_page=Rq.full_path)
+        return render ('srchsql.jinja', this_page=path())
 
 @App.route ('/edsubmit.py', methods=['POST'])
 @App.route ('/submit.py', methods=['POST'])
@@ -224,7 +227,7 @@ def updates():
           # data can be for either of two pages; the name of the one to
           # use is returned in data['page'] and will be either "updates"
           # or "entr".
-        return render (data['page']+'.jinja', this_page=Rq.full_path, **data)
+        return render (data['page']+'.jinja', this_page=path(), **data)
 
 @App.route ('/user.py')
 def user():
@@ -233,7 +236,7 @@ def user():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
-        return render ('user.jinja', this_page=Rq.full_path, **data)
+        return render ('user.jinja', this_page=path(), **data)
 
 @App.route ('/users.py')
 def users():
@@ -242,7 +245,7 @@ def users():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
-        return render ('users.jinja', this_page=Rq.full_path, **data)
+        return render ('users.jinja', this_page=path(), **data)
 
 @App.route ('/userupd.py', methods=['POST'])
 def userupd():

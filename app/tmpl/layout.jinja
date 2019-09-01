@@ -61,7 +61,7 @@
             </td>
           <td align="right" rowspan="1">
           {%- if this_page|d %} {# Supress the login form is 'this_page' is undefined or false. #}
-            <form method="{{'get' if dbg|d else'post'}}" action="/login">
+            <form method="{{'get' if dbg|d else'post'}}" action="{{url_for('login')}}">
               <input type="hidden" name="svc" value="{{svc}}">
               <input type="hidden" name="this_page" value="{{this_page}}">
             {%- if user %}

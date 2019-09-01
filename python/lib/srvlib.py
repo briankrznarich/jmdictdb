@@ -55,7 +55,6 @@ def login_handler (svc, cfg):
         L('login_handler').debug("svc=%s, action=%s" % (svc, action))
         if action == 'login':
             username, pw = fv('username'), fv('password')
-            prev_page = fv('this_page')
             u = validate_user (G.svc, username, pw, cfg)
               # validate_user() returns a DbRow object or None.  In
               # order to store the non-None value in the Flask session,
