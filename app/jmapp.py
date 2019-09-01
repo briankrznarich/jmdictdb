@@ -158,6 +158,15 @@ def edhelpq():
         vLogEntry()
         return render ('edhelpq.jinja', this_page=Rq.full_path)
 
+@App.route ('/groups.py')
+def groups():
+        vLogEntry()
+        from lib.views.groups import view
+        data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
+        if errs:
+             return render ('error.jinja', errs=errs, cssclass='errormsg')
+        return render ('groups.jinja', this_page=Rq.full_path, **data)
+
 @App.route ('/srchform.py')
 def srchform():
         vLogEntry()
