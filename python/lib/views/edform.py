@@ -178,8 +178,7 @@ def view (svc, cfg, user, cur, parms):
             e.stxt = fmtjel.senss (e._sens, e._kanj, e._rdng)
 
         return dict (parms=parms, extra={},
-                     entrs=entrs, srcs=srcs, is_editor=is_editor,
-                     svc=svc, dbg=dbg, user=user, cfg=cfg), []
+                     entrs=entrs, srcs=srcs, is_editor=is_editor), []
 
 def remove_freqs (entr):
         for r in getattr (entr, '_rdng', []): r._freq = []

@@ -25,5 +25,4 @@ import jdb, srch
 def view (svc, cfg, user, cur, params):
         d = sorted (jdb.KW.recs('SRC'), key=lambda x:x.kw.lower())
         corpora = srch.reshape (d, 10)
-        return dict(src=corpora,
-                    svc=svc, cfg=cfg, user=user, params=params), []
+        return dict(src=corpora), []

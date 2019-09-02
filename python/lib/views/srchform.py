@@ -55,5 +55,4 @@ def view (svc, cfg, user, cur, params):
            if x.kw!='nf' and x.kw!='gA': freq.extend ([Kwfreq(x.kw+'1', x.descr),
                                                        Kwfreq(x.kw+'2', x.descr)])
         return dict(pos=pos, misc=misc, stat=stat, fld=fld, dial=dial,
-                    kinf=kinf, rinf=rinf, src=src, freq=freq, KW=jdb.KW,
-                    svc=svc, cfg=cfg, user=user), []
+                    kinf=kinf, rinf=rinf, src=src, freq=freq, KW=jdb.KW), []

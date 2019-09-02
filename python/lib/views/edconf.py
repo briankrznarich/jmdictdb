@@ -213,7 +213,6 @@ def view (svc, cfg, user, cur, form):
 
         entrs = [[entr, None]]  # Package 'entr' as expected by entr.jinja.
         return dict (entries=entrs, serialized=serialized, chklist=chklist,
-                     svc=svc, dbg=fv('dbg'), user=user, cfg=cfg,
                      disp=disp), []
 
 def realign_xrers (entr, pentr):

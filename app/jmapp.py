@@ -131,8 +131,8 @@ def edconf():
         from lib.views.edconf import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
-             return Render ('error.jinja', errs=errs, cssclass='errormsg')
-        return Render ('edconf.jinja', this_page=path(), **data)
+             return render ('error.jinja', errs=errs, cssclass='errormsg')
+        return render ('edconf.jinja', this_page=path(), **data)
 
 @App.route ('/edform.py')
 def edform():
@@ -140,8 +140,8 @@ def edform():
         from lib.views.edform import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
-             return Render ('error.jinja', errs=errs, cssclass='errormsg')
-        return Render ('edform.jinja', this_page=path(), **data)
+             return render ('error.jinja', errs=errs, cssclass='errormsg')
+        return render ('edform.jinja', this_page=path(), **data)
 
 @App.route ('/entr.py')
 def entr():
@@ -149,8 +149,8 @@ def entr():
         from lib.views.entr import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
-             return Render ('error.jinja', errs=errs, cssclass='errormsg')
-        return Render ('entr.jinja', this_page=path(), **data)
+             return render ('error.jinja', errs=errs, cssclass='errormsg')
+        return render ('entr.jinja', this_page=path(), **data)
 
 @App.route ('/edhelp.py')
 def edhelp():
@@ -181,8 +181,8 @@ def srchform():
         from lib.views.srchform import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
-             return Render ('error.jinja', errs=errs, cssclass='errormsg')
-        return Render ('srchform.jinja', this_page=path(), **data)
+             return render ('error.jinja', errs=errs, cssclass='errormsg')
+        return render ('srchform.jinja', this_page=path(), **data)
 
 @App.route ('/srchformq.py')
 def srchformq():
@@ -190,8 +190,8 @@ def srchformq():
         from lib.views.srchformq import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
-             return Render ('error.jinja', errs=errs, cssclass='errormsg')
-        return Render ('srchformq.jinja', this_page=path(), **data)
+             return render ('error.jinja', errs=errs, cssclass='errormsg')
+        return render ('srchformq.jinja', this_page=path(), **data)
 
 @App.route ('/srchres.py')
 def srchres():
@@ -218,7 +218,7 @@ def submit():
         from lib.views.submit import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.form)
         if errs:
-             return Render ('error.jinja', errs=errs, cssclass='errormsg')
+             return render ('error.jinja', errs=errs, cssclass='errormsg')
         return render ('submitted.jinja', **data)
 
 @App.route ('/updates.py')
