@@ -1,7 +1,6 @@
 {#- Display a list of search results.
     Parameters:
     svc -- Service (ie database) name.
-    dbg -- Debug flag (has no effect on this page, propogated linked pages).
     results -- Search results to display for this page (list of database
       rows from search).
     p0 -- Index (base-0) of the first display search results entry in the
@@ -68,7 +67,6 @@
         <input type=submit name="show" value="Display selected entries">
         <input type=reset value="Reset">
         {%+ if svc %}<input type=hidden name="svc" value="{{svc}}">{%endif%}
-        {%+ if dbg|d %}<input type="hidden" name="dbg" value="{{dbg}}">{%endif%}
         </form>
       {%- if p1<pt and results|length>0 %}
       {{ next_page_button() }}

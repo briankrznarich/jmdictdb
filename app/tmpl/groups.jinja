@@ -34,7 +34,6 @@
         {% if results|d %}<input type="submit" name="show" value="Display selected entries">{% endif %}
         {% if results|d %}<input type="reset" name="show" value="Reset">{% endif %}
         {% if svc|d %}<input type="hidden" name="svc" value="{{svc}}">{% endif %}
-        {% if dbg|d %}<input type="hidden" name="dbg" value="{{dbg}}">{% endif %}
         </form>
       </div>
   {% endblock %}

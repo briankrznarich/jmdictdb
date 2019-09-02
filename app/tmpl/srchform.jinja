@@ -1,6 +1,6 @@
 {#- Search for JMdictDB entries
     Context variables:
-      svc, dbg -- See layout.jinja.
+      svc -- See layout.jinja.
       src, stat, freq, kinf, rinf, pos, misc, fld, dial --
         These are all 2-D arrays of dimension R rows by C columns of
         jdb.Kwds instances representing rows in a database kwxxx table,
@@ -54,7 +54,6 @@
     <!-- srchform.jinja, part of JMdictDB.  Copyright (c) 2018 Stuart McGraw -->
     <form action="srchres.py" name="srchres" method="get">
       {%+ if svc %}<input type="hidden" name="svc" value="{{svc}}">{%endif%}
-      {% if dbg|d %}<input type="hidden" name="dbg" value="{{dbg}}">{%endif%}
       <!-- <input type="hidden" name="srchres" value="1"> -->
       <table class="item">
         <tr>

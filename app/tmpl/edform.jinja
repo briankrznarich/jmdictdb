@@ -1,6 +1,6 @@
 {#- Search for JMdictDB entries
     Context variables:
-      svc, dbg -- See layout.jinja.
+      svc -- See layout.jinja.
 
 .  -#}
 
@@ -222,7 +222,6 @@
               {%+ if svc %}<input type="hidden" name="svc" value="{{svc}}">{% endif %}
               {%+ if e.id %}<input type="hidden" name="id" value="{{e.id}}">{% endif %}
               {%+ if e.id %}<input type="hidden" name="stat" value="{{e.stat}}">{% endif %}
-              {%+ if dbg %}<input type="hidden" name="dbg" value="{{dbg}}">{% endif %}
               {%- if not user.userid|d %}
                 {#- #3 src parameter when existing entry and user is not editor. #}
                 {#-FIXME? shouldn't this also be generated if NOCORPOPT is false?

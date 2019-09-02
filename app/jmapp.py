@@ -55,7 +55,7 @@ def render (tmpl, **data):
         # Render a Jinja2 template adding additional standard data.
         # Almost all templates extend base template "layout.jinja" and
         # that template requires a standard set of variables that this
-        # function will automatically add (svc, cfg, user, dbg), avoiding
+        # function will automatically add (svc, cfg, user), avoiding
         # the need to specifically reference them all directly in each
         # view.
         # Parameters:
@@ -64,7 +64,7 @@ def render (tmpl, **data):
         #     template.
         -------------------------------------------------------------------'''
         return Render (tmpl,
-                       svc=G.svc, cfg=G.cfg, user=G.user, dbg=fv('dbg'),
+                       svc=G.svc, cfg=G.cfg, user=G.user,
                        **data)
 
 def path(): return Rq.script_root + Rq.full_path
@@ -99,6 +99,13 @@ def before_request():
         if msg: return Render ('error.jinja', svc=None, errs=[msg],
                                cssclass='errormsg')
 
+#=============================================================================
+#  View functions.
+#  The functions below are executed in response to Flask receiving 
+#  an HTTP request using the URL path given in each @App.route 
+#  decorator.
+#=============================================================================
+
 @App.route ('/')
 def home():
         vLogEntry()
@@ -114,7 +121,7 @@ def login():
         return Redirect (return_to)
 
 # See lib/views/README.txt for a description of the conventions
-# used in the followinmg views.
+# used in the following views.
 
 @App.route ('/conj.py')
 def conj():

@@ -1,6 +1,6 @@
 {#- Search for JMdictDB entries
     Context variables:
-      svc, dbg -- See layout.jinja.
+      svc -- See layout.jinja.
       src --
         A 2-D array of dimension R rows by C columns of a jdb.Kwds
         instance representing rows in the database kwsrc table
@@ -85,7 +85,6 @@
                 <td>
                   <input name="search" value="Search" type="submit">
                   {%+ if svc %}<input type="hidden" name="svc" value="{{svc}}">{%endif%}
-                  {% if dbg|d %}<input type="hidden" name="dbg" value="{{dbg}}">{%endif%}
                   <!-- <input type="hidden" name="srchres" value="1"> -->
                   <input type="reset" value="Reset">
                   </td>

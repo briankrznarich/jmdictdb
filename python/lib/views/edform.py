@@ -113,7 +113,6 @@ from srvlib import fv, fvn as fl
 def view (svc, cfg, user, cur, parms):
         errs = []; entrs =[]
         is_editor = jmcgi.is_editor (user)
-        dbg = fv ('dbg')
         def_corp = fv ('c')             # Default corpus for new entries.
         defcorpid = None
         if def_corp:

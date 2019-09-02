@@ -1,10 +1,10 @@
 {#- Present user  settings for editing.
     Context variables:
-      svc, user, dbg -- See layout.jinja.
+      svc, user -- See layout.jinja.
       subject -- A user table row containing for the user to view/update.
       new -- (bool) "New user" checkbox should be checked by default.
     Post values:
-      svc, dbg -- See layout,jinja.
+      svc -- See layout,jinja.
       new, delete -- Values of corresponding checkboxes.
       userid, fullname, email -- Values of corresponding text boxes.
       pw1, pw2 -- (text) Blank if no password change requested or
@@ -40,15 +40,14 @@
       {%- if result|d == 'nochange' %}
         <div class="flash warn">No user setting changes were found.</div>
         {%- endif %}
-      <form action="userupd.py" method="{{'get' if dbg else 'post'}}">
+      <form action="userupd.py" method="post">
         {%+ if svc %}<input type="hidden" name="svc" value="{{svc}}">{%endif%}
-        {% if dbg|d %}<input type="hidden" name="dbg" value="{{dbg}}">{%endif%}
         <input type="hidden" name="subjid" value="{{subject.userid|d}}">
         <table width="100%">
         {% if user.priv=='A' %}
           <tr>
-            <td><a href="user.py?svc={{svc}}&dbg={{dbg}}&new=1">Add new user</a></td>
-            <td><a href="users.py?svc={{svc}}&dbg={{dbg}}">List all users</a></td>
+            <td><a href="user.py?svc={{svc}}&new=1">Add new user</a></td>
+            <td><a href="users.py?svc={{svc}}">List all users</a></td>
             <td class="notes"></td>
             </tr>
           {#- ########

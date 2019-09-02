@@ -122,10 +122,9 @@
 
 {% block action %}
       <br><br>
-      <form action="edsubmit.py" method="{{'get' if dbg|d else 'post'}}">
+      <form action="edsubmit.py" method="post">
         {%+ if svc|d %}<input type="hidden" name="svc" value="{{svc}}">{% endif %}
         <input type="hidden" name="entr" value="{{serialized}}">
-        {%+ if dbg|d %}<input type="hidden" name="dbg" value="1">{% endif %}
         <input type="Submit" value="Submit">
         {%- if disp %}
         <span class="caution">
