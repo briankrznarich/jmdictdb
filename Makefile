@@ -103,8 +103,6 @@ CGI_FILES = conj.py \
 	srchformq.py \
 	srchres.py \
 	srchsql.py \
-	jbedit.py \
-	jbedits.py \
 	updates.py \
 	user.py \
 	users.py \
@@ -139,7 +137,6 @@ TMPL_FILES = conj.jinja \
 	edhelp.jinja \
 	edhelpq.jinja \
 	error.jinja \
-	jbedits.jinja \
 	layout.jinja \
 	srchform.jinja \
 	srchformq.jinja \

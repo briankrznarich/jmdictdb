@@ -34,8 +34,6 @@ DEFAULTS = {
         'DEF_ENTRIES_PER_PAGE': 100,
         'MAX_ENTRIES_PER_PAGE': 1000,
         'MIN_ENTRIES_PER_PAGE': 1,
-        'EDITDATA_DIR': '/home/me/public_html/editdata',
-        'EDITDATA_URL': 'http://localhost/~me/editdata',
         'GAHOH_URL': '', },
     'logging': {
         'LOG_FILENAME': 'jmdictdb.log',
