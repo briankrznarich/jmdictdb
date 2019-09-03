@@ -40,7 +40,7 @@ DEFAULTS = {
         'GAHOH_URL': '', },
     'logging': {
         'LOG_FILENAME': 'jmdictdb.log',
-        'LOG_LEVEL': 'warning',
+        'LOG_LEVEL': 'info',
         'LOG_FILTERS': '', },
     'search': {
         'ENABLE_SQL_SEARCH': 'editors',

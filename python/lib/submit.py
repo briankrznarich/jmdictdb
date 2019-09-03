@@ -211,7 +211,7 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
         KW = jdb.KW
           #FIXME: temporary hack...
         global Svc, Sid
-        L('submit.submission').info(("disp=%s, is_editor=%s, userid=%s, entry id=%s,\n" + " "*36 + "parent=%s, stat=%s, unap=%s, seq=%s, src=%s")
+        L('submit.submission').info(("disp=%r, is_editor=%r, userid=%r, entry id=%r,\n" + " "*24 + "parent=%r, stat=%r, unap=%r, seq=%r, src=%r")
           % (disp, is_editor, userid, entr.id, entr.dfrm, entr.stat,
              entr.unap, entr.seq, entr.src))
         L('submit.submission').info("entry text: %s %s"

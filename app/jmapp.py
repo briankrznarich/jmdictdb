@@ -36,15 +36,15 @@ def main():
         App.run (host='0.0.0.0', debug=True)
 
 def app_config (app):
-        logger.log_config ("debug")
         app.session_cookie_name = 'jmapp'
         app.secret_key = 'secret'
-        jinja.init (jinja_env=app.jinja_env)
         try: cfg = config.cfgRead ('config.ini', 'config-pvt.ini')
         except IOError:
             print ("Unable to load config.ini file(s)", file=sys.stderr)
             flask.abort (500)
         app.config['CFG'] = cfg
+        logger.log_config_from_cfg (cfg)
+        jinja.init (jinja_env=app.jinja_env)
 
 App = flask.Flask (__name__, static_folder='./static',
                              template_folder='./tmpl')
