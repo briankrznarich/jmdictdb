@@ -27,7 +27,7 @@
 #
 ########################################################################
 
-import sys, re, datetime, dateutil.parser, pdb
+import sys, os, re, datetime, dateutil.parser, pdb
 import flask; from flask import session as Session, g as G, request as Rq
 import jinja2, rest, jdb, srch
 import logging; L = logging.getLogger;
@@ -112,5 +112,16 @@ def reshape (array, ncols, default=None):
             result[-1].extend ([default]*(ncols - len(result[-1])))
         return result
 
+def check_status (cfg):
+        # Server will respond with a "excessive load" or "maintence"
+        # page if the files "status_maint" or "'status_load" exist
+        # in the directory named in the configuration file key
+        # [web]/STATUS_DIR.
 
-
+        sfd = cfg.get ('web', 'STATUS_DIR')
+        page = None
+        if os.access (os.path.join (sfd, 'status_maint'), os.F_OK):
+            page = 'status_maint.html'
+        elif os.access (os.path.join (sfd, 'status_load'), os.F_OK):
+            page = 'status_load.html'
+        return page

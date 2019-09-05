@@ -90,6 +90,9 @@ def prereq():
 def before_request():
         L('view.before_request').debug("For endpoint %s" % Rq.endpoint)
         G.cfg = App.config['CFG']
+        if not Rq.path.startswith ('/static'):
+            down = srvlib.check_status (G.cfg)
+            if down: return Redirect (Url('static', filename=down))
         G.svc = fv ('svc') or G.cfg.get('web','DEFAULT_SVC') or 'jmdict'
         if Rq.endpoint in ('login','logout','static'): return
         msg = None
