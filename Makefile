@@ -48,13 +48,13 @@ DBOLD = jmold
 # python/lib/config.ini file should match.
 USER = jmdictdb
 
-# Postgres user that has select-only (i.e. read-only access
+# Postgresql user that has select-only (i.e. read-only access
 # to the database.  Used only for creating this user in target
 # 'jminit'.  Users defined in the python/lib/config.ini file
 # should match.
 RO_USER = jmdictdbv
 
-# A postgresql user that has superuser database privs.
+# A Postgresql user that has superuser database privs.
 PG_SUPER = postgres
 
 # Name of the machine hosting the Postgresql database server.
@@ -109,15 +109,17 @@ CGI_FILES = conj.py \
 	userupd.py
 WEB_CGI	= $(addprefix $(CGI_DIR)/,$(CGI_FILES))
 
-LIB_FILES = jdb.py \
+LIB_FILES = .htaccess \
 	config.py \
 	db.py \
+	dbver.py \
 	edict2.xsl \
 	edparse.py \
 	fmt.py \
 	fmtjel.py \
 	fmtxml.py \
 	iso639maps.py \
+	jdb.py \
 	jellex.py \
 	jelparse.py \
 	jelparse_tab.py \
@@ -125,18 +127,21 @@ LIB_FILES = jdb.py \
 	jmcgi.py \
 	logger.py \
 	objects.py \
+	restr.py \
 	serialize.py \
+	submit.py \
 	xmlkw.py \
 	xslfmt.py
 WEB_LIB	= $(addprefix $(LIB_DIR)/,$(LIB_FILES))
 
 TMPL_FILES = conj.jinja \
-	entr.jinja \
 	edconf.jinja \
 	edform.jinja \
 	edhelp.jinja \
 	edhelpq.jinja \
+	entr.jinja \
 	error.jinja \
+	groups.jinja \
 	layout.jinja \
 	srchform.jinja \
 	srchformq.jinja \

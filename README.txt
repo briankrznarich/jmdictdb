@@ -517,6 +517,12 @@ usual during loading.
    ~/public_html/cgi-bin/ for the cgi files and ~/public_html/lib/
    for the supporting library files.
 
+   IMPORTANT: the webserver should deny access to the lib/ directory
+   as it contains sensitive infomation in some files.  'make web'
+   will install a .htaccess file that restricts access but you may
+   need to use a "AllowOverride Limit" or equivalent in the Apache
+   configuration to allow it to take effect.
+
 11. Create a config.ini file (use the python/lib/config.sample file
    as a guide).  The config.ini file should go in the same directory
    as the library files: in python/lib/ if you are serving the files
