@@ -25,6 +25,8 @@ import jdb
   # The values given in config.ini.sample and here should be
   # kept in sync since the former also serves as documentation
   # for these defaults.
+  # Note too that defaults are not provided here for database
+  # login credentials (see config-pvt-sample.ini for details).
 
 DEFAULTS = {
     'web': {
@@ -42,21 +44,6 @@ DEFAULTS = {
     'search': {
         'ENABLE_SQL_SEARCH': 'editors',
         'SEARCH_TIMEOUT': 3000, },
-
-    'db_session': {
-        #'host': 'localhost',
-        'dbname': 'jmdict',
-        'user': 'jmdictdb',
-        #'pw': 'xxxxxx',
-        'session_db': 'db_session', },
-    'db_jmdict': {
-        #'host': 'localhost',
-        'dbname': 'jmdict',
-        #'sel_user': 'jmdictdbv',
-        #'sel_pw': 'xxxxxx',
-        'user': 'jmdictdb',
-        #'pw': 'xxxxxx',
-        'session_db': 'db_session', },
         }
 
 def cfgRead (cfgname, pvtname):
