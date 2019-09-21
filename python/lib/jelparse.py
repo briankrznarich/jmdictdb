@@ -321,6 +321,10 @@ def p_jref_4(p):
     '''jref : jitem'''
     p[0] = p[1] + [None,'']
 
+def p_jref_5(p):
+    '''jref : jitem TEXT'''
+    p[0] = p[1] + [None, p[2]]
+
 def p_jitem_1(p):
     '''jitem : dotlist'''
     p[0] = [p[1], None]

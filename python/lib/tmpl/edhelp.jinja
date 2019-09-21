@@ -684,32 +684,44 @@
             <td class="syntable">Cross-reference</td>
             <td class="syntable">Senses</td>
             <td class="syntable">
-              [see=<span style="font-style: italic;">SEQ・KK・RR</span>[<span style="font-style: italic;">sense-nums</span>]]<br>
-              [ant=<span style="font-style: italic;">SEQ・KK・RR</span>[<span style="font-style: italic;">sense-nums</span>]]<br>
+              (a) [TYP=<span style="font-style: italic;">SEQ CORP・KK・RR</span>[<span style="font-style: italic;">sense-nums</span>]]<br>
+              (b) [TYP=<span style="font-style: italic;">KK・RR CORP</span>[<span style="font-style: italic;">sense-nums</span>]]<br>
               <br>
-              (1) There are two kinds of cross-reference:
-                <ul><li>See also (a general cross reference)
-                </li><li>Antonym</li></ul>
-              (2) SEQ is the sequence number of the of the cross reference.
-                KK is the kanji of the target of the cross reference, RR is
+              (1) TYP can be either "see" or "ant":
+                <ul><li>see: See also (a general cross reference)
+                </li><li>ant: Antonym</li></ul>
+              (2) SEQ is the sequence number of the of the cross reference
+                target.
+                CORP is the corpus name containing the cross reference target
+                and is only needed if different than the entry being edited. 
+                KK is the kanji of the cross reference target, RR is
                 its reading.  sense-nums is the specific sense(s) in the target
                 being referenced. At least one of SEQ, KK, or RR must be
                 given.<br>
-              (3) SEQ・ may be left out if KK and/or RR are supplied and uniquely
-                identify a single target entry.  The kanji (KK・ part) or reading
-                (・RR part) may be left out if the remaining part still uniquely
-                identifies the target entry.<br>
-              (4) If SEQ is given, KK and RR are optional and if given will be
-                used when displaying the xref.  If KK and/or RR are not given, a
-                suitable KK/RR pair for display will be selected automatically.
+              (3-form a) If SEQ is given, KK and RR are optional and if given
+                will be used when displaying the xref.  If KK and/or RR are not
+                given, a suitable KK/RR pair for display will be selected
+                automatically.
                 <br>
-              (5) sense-num is optional if the target word has only one sense.
+              (4-form b) SEQ・ may be left out if KK and/or RR are supplied and
+                uniquely identify a single target entry.  The kanji (KK・ part)
+                or reading (・RR part) may be left out if the remaining part
+                still uniquely identifies the target entry.<br>
+              (5) In other words, the difference between the two forms is:
+                <ul style="list-style-type: lower-alpha">
+                  <li>The xref target is uniquely identified by SEQ (and CORP
+                    if given.)  KK/RR are used only when displaying the xref.</li>
+                  <li>The xref target is identified by searching for KK and RR
+                    (in corpus CORP if given, in the current corpus if not) and
+                    the xref will be unresolved if there are mutiple or no entries
+                    that match.</li></ul>
+              (6) sense-num is optional if the target word has only one sense.
                 Otherwise, it must be given.  Multiple sense numbers can be
                 given, separated by commas.<br>
-              (6) To make an cross reference to a kanji or reading entry
+              (7) To make an cross reference to a kanji or reading entry
                 that contains a "・" character, put the kanji or reading in
                 double quotes. <br>
-              (7) When an entry is displayed, it will show cross references
+              (8) When an entry is displayed, it will show cross references
                 to other entries with a right-pointing arrow (⇒).  These cross
                 references will appear as [see=...] or [ant=...] tags in the
                 edit page and can be edited directly.  Cross references shown 
@@ -723,6 +735,7 @@
               [ant=暑い[1,2]]<br>
               [see=1006830・その[1]]<br>
               [see="スポーツ・ファン"]
+              [see=万事 jmnedict]
               </td>
             </tr>
 

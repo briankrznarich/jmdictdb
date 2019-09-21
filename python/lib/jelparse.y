@@ -33,7 +33,7 @@ class ParseError (ValueError):
 %%
                 /* CAUTION.  Note that the Ply parser processes Python
                  * comments and requires parens and quotes to be balanced,
-                 * even in comments.  Thus english contractions or possesives
+                 * even in comments.  Thus english contractions or possessives
                  * are written with two apostrophes (e.g. "don''t") below.
                 */
 entr    : preentr
@@ -140,23 +140,21 @@ taglists
         ;
 taglist
         : BRKTL tags BRKTR
-                /* # Note: Each tag is a
-                  # n-seq' where n is typically 2 or 3. The
-                  # first item of the n-seq is either None or a string
-                  # giving the type of tag, e.g. 'POS', 'lsrc',
+                /* # Note: Each tag is a n-seq' where n is typically 2
+                  # or 3. The first item of the n-seq is either None or
+                  # a string giving the type of tag, e.g. 'POS', 'lsrc',
                   # etc.  In the tagitem production, we can identify
                   # the tag type based on syntax in many cases, and
-                  # when so, we resolve
-                  # the tag to a type string and number id value.
-                  # However, is some cases, particularly when we have
-                  # an single unadorned tag string like "vi", we cannot
-                  # tell what type of tag it is because the tag is ambiguous.
-                  # In the case of "vi" for
-                  # example, it could be a POS tag (instransitive verb)
-                  # or a LANG tag (Vietnamese).  In these cases we represent
-                  # the tag as a 2-tuple of (None, <tag-string>) and
-                  # resolve the tag at a higher level when we know
-                  # the context of the tag (kanji, gloss, sense, etc).
+                  # when so, we resolve the tag to a type string and
+                  # number id value.  However, is some cases, particularly
+                  # when we have a single unadorned tag string like "vi",
+                  # we cannot tell what type of tag it is because the tag
+                  # is ambiguous.  In the case of "vi" for example, it
+                  # could be a POS tag (intransitive verb) or a LANG tag
+                  # (Vietnamese).  In these cases we represent the tag as
+                  # a 2-tuple of (None, <tag-string>) and resolve the tag
+                  # at a higher level when we know the context of the tag
+                  # (kanji, gloss, sense, etc).
                   #
                   # Thus, if we parse a string with a sense
                   #
@@ -252,8 +250,8 @@ tagitem         /* Semantic value depends of the tag type:
                 p[0] = [["lsrc", p[7], la.id, p[5]]] }
 
         | TEXT EQL jrefs        /* This rule is used for the following input syntax:
-                                     xref=q.k.r[n1,n2,..],
-                                     restr=k;k;.. (restr, stagr,stagk),
+                                     xref=seq#.kanj.rdng[s#,s#,...],
+                                     restr=k;k;.. (restr, stagr, stagk),
                                      lsrc=qtxt, note=qtxt,
                                      and any other tag=QTEXT items.
                                 */
@@ -320,8 +318,15 @@ jref            /* Return 4-seq:
                 { p[0] = [[],p[2]] + p[1] }
         | xrefnum DOT jitem
                 { p[0] = p[3] + p[1] }
-        | jitem
+        | jitem   /*FIXME? below, the last item of the returned value (p[0])
+                   * is set to '' which indicates the xref is to be resolved
+                   * within the referencing entry's corpus.  I don't think
+                   * there is any syntax currently to force None which would
+                   * cause resolution across all corpora. But likely there is
+                   * little to no need to resolve across multiple corpora. */
                 { p[0] = p[1] + [None,''] }
+        | jitem TEXT    /* kanji-reading corpus */
+                { p[0] = p[1] + [None, p[2]] }
         ;
 jitem           /* 'jitem' value is a list of length 2.
                    [0]: None, or a 'dotlist' which is a list of jtext items.
