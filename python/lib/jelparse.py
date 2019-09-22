@@ -254,6 +254,13 @@ def p_tagitem_10(p):
     tag = p[1];  taglist = [];  tagtype = 'XREF';  KW = jdb.KW
     for jref in p[3]:
         dotlist, slist, seq, corpus = jref
+        if corpus:
+              # Convert corpus name to id number here (rather than
+              # than later in say, x2xrslv()), so that any error
+              # will point to position close to the corpus text in
+              # the input.
+            try: corpus = KW.SRC[corpus].id
+            except KeyError: perror (p, "Unknown corpus: %s" % corpus)
         if tag in [x.kw for x in KW.recs('XREF')]:
               # FIXME: instead of using XREF kw''s directly, do we want to
               #  change to an lsrc syntax like, "xref=cf:..."
@@ -319,7 +326,7 @@ def p_jref_3(p):
 
 def p_jref_4(p):
     '''jref : jitem'''
-    p[0] = p[1] + [None,'']
+    p[0] = p[1] + [None,None]
 
 def p_jref_5(p):
     '''jref : jitem TEXT'''
@@ -355,11 +362,11 @@ def p_jtext_3(p):
 
 def p_xrefnum_1(p):
     '''xrefnum : NUMBER'''
-    p[0] = [toint(p[1]), '']
+    p[0] = [toint(p[1]), None]
 
 def p_xrefnum_2(p):
     '''xrefnum : NUMBER HASH'''
-    p[0] = [toint(p[1]), None]
+    p[0] = [-toint(p[1]), None]
 
 def p_xrefnum_3(p):
     '''xrefnum : NUMBER TEXT'''
@@ -800,11 +807,12 @@ def x2xrslv (t):
           #   [1] -- Target reading text or None.
           #   [2] -- Target kanji text or None.
           #   [3] -- List of target senses, may be None.
-          #   [4] -- Target sequence number or None.
-          #   [5] -- Target corpus name or '' (resolve against any
-          #          corpora) or None (resolve against same corpus
-          #          as the parent entry's '.src'.  (See yacc rules
-          #          "xrefnum" and "jref" above.)
+          #   [4] -- Target sequence number (if positive) or target
+          #          entry id number (if negative) or None.
+          #   [5] -- Target corpus id number or None (=resolve against
+          #          the entry's '.src' corpus.)  See yacc rule
+          #          "tagitem|TEXT EQL jrefs", also rules "xrefnum"
+          #          and "jref".
         results = []
         for s in t[3] or [None]:
             x = Xrslv (typ=t[0], rtxt=t[1], ktxt=t[2], tsens=s,

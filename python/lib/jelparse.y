@@ -258,6 +258,13 @@ tagitem         /* Semantic value depends of the tag type:
                 { tag = p[1];  taglist = [];  tagtype = 'XREF';  KW = jdb.KW
                 for jref in p[3]:
                     dotlist, slist, seq, corpus = jref
+                    if corpus:
+                          # Convert corpus name to id number here (rather than
+                          # than later in say, x2xrslv()), so that any error
+                          # will point to position close to the corpus text in
+                          # the input.
+                        try: corpus = KW.SRC[corpus].id
+                        except KeyError: perror (p, "Unknown corpus: %s" % corpus)
                     if tag in [x.kw for x in KW.recs('XREF')]:
                           # FIXME: instead of using XREF kw''s directly, do we want to
                           #  change to an lsrc syntax like, "xref=cf:..."
@@ -309,8 +316,9 @@ jrefs
 jref            /* Return 4-seq:
                  * 0: A 'dotlist' or [].
                  * 1: List of sense numbers or [].
-                 * 2: Xref seq or entry number or None.
-                 * 3: Xref corpus name, '', or None.
+                 * 2: Xref seq number (if positive) or entry id number
+                 *    (if negative) or None.
+                 * 3: Xref corpus name, or None.
                  */
         : xrefnum
                 { p[0] = [[],[]] + p[1] }
@@ -318,13 +326,8 @@ jref            /* Return 4-seq:
                 { p[0] = [[],p[2]] + p[1] }
         | xrefnum DOT jitem
                 { p[0] = p[3] + p[1] }
-        | jitem   /*FIXME? below, the last item of the returned value (p[0])
-                   * is set to '' which indicates the xref is to be resolved
-                   * within the referencing entry's corpus.  I don't think
-                   * there is any syntax currently to force None which would
-                   * cause resolution across all corpora. But likely there is
-                   * little to no need to resolve across multiple corpora. */
-                { p[0] = p[1] + [None,''] }
+        | jitem
+                { p[0] = p[1] + [None,None] }
         | jitem TEXT    /* kanji-reading corpus */
                 { p[0] = p[1] + [None, p[2]] }
         ;
@@ -353,14 +356,14 @@ jtext
                 { p[0] = jellex.qcleanup (p[1][1:-1]) }
         ;
 xrefnum         /* Return 2-seq:
-                 * 0: Value (integer) of xref seq or entry number.
-                 * 1: Corpus: ''=Same corp as entr; None=Any corp;
-                 *      str=corpus name.
+                 * 0: Value (integer) of xref seq (if positive) or entry
+                 *    id number (if negative).
+                 * 1: Corpus: None=Current corpus, str=corpus name.
                  */
         : NUMBER                /* Seq number. */
-                { p[0] = [toint(p[1]), ''] }
-        | NUMBER HASH           /* Entry id number */
                 { p[0] = [toint(p[1]), None] }
+        | NUMBER HASH           /* Entry id number */
+                { p[0] = [-toint(p[1]), None] }
         | NUMBER TEXT           /* Seq number, corpus */
                 { p[0] = [toint(p[1]), p[2]] }
         ;
@@ -797,11 +800,12 @@ def x2xrslv (t):
           #   [1] -- Target reading text or None.
           #   [2] -- Target kanji text or None.
           #   [3] -- List of target senses, may be None.
-          #   [4] -- Target sequence number or None.
-          #   [5] -- Target corpus name or '' (resolve against any
-          #          corpora) or None (resolve against same corpus
-          #          as the parent entry's '.src'.  (See yacc rules
-          #          "xrefnum" and "jref" above.)
+          #   [4] -- Target sequence number (if positive) or target
+          #          entry id number (if negative) or None.
+          #   [5] -- Target corpus id number or None (=resolve against
+          #          the entry's '.src' corpus.)  See yacc rule
+          #          "tagitem|TEXT EQL jrefs", also rules "xrefnum"
+          #          and "jref".
         results = []
         for s in t[3] or [None]:
             x = Xrslv (typ=t[0], rtxt=t[1], ktxt=t[2], tsens=s,

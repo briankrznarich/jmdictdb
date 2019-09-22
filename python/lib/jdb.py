@@ -785,8 +785,9 @@ def xresolv (dbh, entr):
                 slist = None if not xr.tsens else [xr.tsens]
                 seq = xr.vseq
                 corpid = xr.vsrc
-                  # corpid may be None, '', a corpus name or corpus id number.
-                if corpid == '': corpid = entr.src
+                  # 'corpid' may be a corpus name, corpus id number,
+                  #  or None (resolve to an entry in the same corpus).
+                if corpid is None: corpid = entr.src
                 elif corpid != None:
                     try: corpid = int(corpid)
                     except ValueError: corpid = KW.SRC[corpid].id
