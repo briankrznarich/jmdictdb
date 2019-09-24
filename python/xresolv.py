@@ -204,6 +204,9 @@ def get_entr_cands (dbconn, xref_src, targ_src, start=None, stop=None,
           # Disallow resolution to deleted or rejected entries.
           #FIXME: should not hardwire 'stat' value.
         c4 = "(tstat=2 OR tstat IS NULL)"
+          # Disallow resolution from rejected or deleted entries.
+          #FIXME: should not hardwire 'stat' value.
+        c6 = "stat=2"
           #FIXME: following condition controls whether or not unapproved
           # xrefs are considered as target candidates.  It is disabled
           # because it is probably the wrong thing to do right now.  If an
@@ -218,7 +221,8 @@ def get_entr_cands (dbconn, xref_src, targ_src, start=None, stop=None,
           # resolution failing due to multiple targets forcing manual
           # intervention which seems the best option at the moment.
         c5 = "" #"NOT tunap" if appr_targ else "")
-        whr = " AND ".join([c for c in [c1,c2,c3,c4,c5] if c])
+
+        whr = " AND ".join([c for c in [c1,c2,c3,c4,c5,c6] if c])
         if whr: whr = "WHERE " + whr
         args = tuple (args1 + args2)
         sql = "SELECT * FROM vrslv v %s"\
@@ -315,8 +319,9 @@ def del_xresolv (dbconn, xref_src=[], targ_src=None, start=None, stop=None,
         c2, args2 = idrange_clause (start, stop)
         c3 = "v.stat=2 AND NOT v.unapp" if active else ""
         c4 = "(tstat=2 OR tstat IS NULL)"
+        c6 = "stat=2"
         c5 = "" #"NOT tunap" if appr_targ else "")
-        whr = " AND ".join([c for c in [c0,c1,c2,c3,c4,c5] if c])
+        whr = " AND ".join([c for c in [c0,c1,c2,c3,c4,c5,c6] if c])
         if whr: whr = "WHERE " + whr
         args = args1 + args2
         sql = "DELETE FROM xresolv v"\
