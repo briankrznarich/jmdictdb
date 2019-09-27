@@ -18,6 +18,10 @@
 # the test program is run.
 #---------------------------------------------------------------------
 
+# JEL parsing tests for xrefs, formerly included here in class Xref,
+# have been rewritten and moved into a separate file:
+#   test_jelparse_vref.py.
+
 import sys, os, unittest, signal, pdb
 if '../lib' not in sys.path: sys.path.append ('../lib')
 import jdb, jellex, jelparse, fmtjel
@@ -158,29 +162,6 @@ class Restr (unittest.TestCase):
     def test0300280(_): check2(_,'0300280')
     def test0300290(_): check2(_,'0300290')
     def test9000010(_): check_err(_,'9000010', "Reading 1 has 'nokanji' tag but entry has no kanji")
-
-class Xref (unittest.TestCase):
-    def setUp (_):
-        _.data = loadData ('data/jelparse/xref.txt', r'# ([0-9]{7}[a-zA-Z0-9_]+)')
-    def test0310010(_): check2(_,'0310010')
-    def test0310020(_): check2(_,'0310020')
-    def test0310030(_): check2(_,'0310030')
-    def test0310040(_): check2(_,'0310040')
-    def test0310050(_): check2(_,'0310050')
-    def test0310060(_): check2(_,'0310060')
-    def test0310070(_): check2(_,'0310070')
-    def test0310080(_): check2(_,'0310080')
-      # Following test fails, xref senses in sorted order rather than
-      # order given.
-    #def test0310090(_): check2(_,'0310090')
-    def test0310100(_): check2(_,'0310100')
-    def test0310210(_): check2(_,'0310210')
-    def test0310310(_): check2(_,'0310310')
-    def test0310320(_): check2(_,'0310320')
-      # Following test disabled for now as there are no longer (as of
-      # 2019-04-20) any entries with both dotted reading# and dotted
-      # kanji that I can find.
-    #def test0310330(_): check2(_,'0310330')
 
 class Ginf (unittest.TestCase):
     def setUp (_):
