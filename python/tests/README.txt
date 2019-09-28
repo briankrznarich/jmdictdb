@@ -117,3 +117,26 @@ using Postgresql's pg_dump tool.  The process was:
 
 python/tests/data/data/jmtest01.seq is the list of entry sequence numbers
 that was determined to be needed be the test codes.
+
+Updating test databases
+=======================
+When new tests are added it is sometimes necessary to add new new
+test entries to the test database(s).  Additionally, if the JMdictDB
+database schema is updated to a new version, the test database must
+be updated to match.
+
+Maintenance on the test database can be performed on the test database
+using the usual Postgresql tools.
+
+To update the schema of a test database file, load it into a database,
+apply the updates, then save it:
+
+  $ dropdb --if-exists jmtemp
+  $ createdb -O jmdictdb jmtemp
+  $ psql -d jmtemp -f python/tests/data/test01.sql
+  $ psql -d jmtemp -f patches/nnn-xxxxxx.sql
+  $ pg_dump -d jmtemp > python/tests/data/test01.sql
+
+While it is loaded, changes can be made using the JMdictDB web pages
+if a service has been set up in config.ini to allow access to the test
+database.
