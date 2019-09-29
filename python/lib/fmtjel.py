@@ -57,7 +57,7 @@ def entr (entr, nohdr=False):
         # parsable by jelparse().
 
         sects = []
-        if not nohdr: sects.append (fmt.entrhdr (entr))
+        if not nohdr: sects.append (entrhdr (entr))
         k = getattr (entr, '_kanj', [])
         r = getattr (entr, '_rdng', [])
         s = getattr (entr, '_sens', [])
@@ -132,15 +132,15 @@ def sens (sens, kanjs, rdngs, nsens):
 
         _xrslv = ['[' + xrslv (x) + ']' for x in getattr (sens, '_xrslv', [])]
 
-        kwds  = iif (pos,  '[' + ','.join (pos)  + ']', '')
-        kwds += iif (misc, '[' + ','.join (misc) + ']', '')
-        kwds += iif (fld,  '[' + ','.join (fld)  + ']', '')
-        dial  = iif (dial, '[' + ','.join(dial)  + ']', '')
+        kwds  = ('[' + ','.join (pos)  + ']') if pos  else ''
+        kwds += ('[' + ','.join (misc) + ']') if misc else ''
+        kwds += ('[' + ','.join (fld)  + ']') if fld  else ''
+        dial  = ('[' + ','.join(dial)  + ']') if dial else ''
         restr = stagk + stagr
           # Join restrs with "," if they are alone, but with
           # ";" if in a list prefixed with "restr=".
-        restr = iif (restr, '[restr=' + '; '.join (qtxt(x) for x in restr) + ']', '')
-        _lsrc = iif (_lsrc, '[' + ','.join (_lsrc) + ']', '')
+        restr = ('[restr=' + '; '.join (qtxt(x) for x in restr) + ']') if restr else ''
+        _lsrc = ('[' + ','.join (_lsrc) + ']') if _lsrc else ''
         note  = ''
         if getattr(sens,'notes',None): note = '[note=' + qtxt(sens.notes) + ']'
 
@@ -271,18 +271,16 @@ def markup_xrefs (cur, xrefs):
         jdb.add_xsens_lists (xrefs)
         jdb.mark_seq_xrefs (cur, xrefs)
 
-def iif (c, a, b):
-    if c: return a
-    return b
-
-def main():
-        cur = jdb.dbOpen ('jmnew')
-        entrs, data = jdb.entrList (cur, [542], ret_tuple=True)
-        jdb.augment_xrefs (cur, data['xref'])
-        jdb.augment_xrefs (cur, data['xref'], rev=1)
-        markup_xrefs (cur, data['xref'])
-        for e in entrs:
-            txt = entr (e)
-            print (txt)
-
-if __name__ == '__main__': main ()
+def entrhdr (entr):
+    if not (entr.seq or entr.src or entr.stat or entr.unap): return ""
+    a = [str(entr.seq) if entr.seq else "0"]
+    if entr.src: a.append (jdb.KW.SRC[entr.src].kw)
+    statt = jdb.KW.STAT[entr.stat].kw if entr.stat else ""
+    if entr.unap: statt += "*"
+    if statt: a.append (statt)
+    extra = []
+    for x in ('id', 'dfrm'):
+        if getattr (entr, x): extra.append ("%s=%r" % (x, getattr (entr, x)))
+    if extra: a.append ("[" + "; ".join(extra) + "]")
+    hdr = " ".join (a)
+    return hdr

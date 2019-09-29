@@ -91,7 +91,7 @@ class General (unittest.TestCase):
 class Restr (unittest.TestCase):
     def test_001(_):
         e1 = Entr (id=100, src=1, seq=1000010, stat=2, unap=False)
-        expect = 'jmdict 1000010 A {100}\n\n\n'
+        expect = '1000010 jmdict A [id=100]\n\n\n'
         jeltxt = fmtjel.entr (e1)
         _.assertEqual (expect, jeltxt)
     def test_002(_):
@@ -102,7 +102,7 @@ class Restr (unittest.TestCase):
         e1._rdng[1]._restr.append (jdb.Restr(kanj=1))
         e1._rdng[2]._restr.append (jdb.Restr(kanj=1))
         e1._rdng[2]._restr.append (jdb.Restr(kanj=2))
-        expect =  'jmdict 1000010 A {100}\n' \
+        expect =  '1000010 jmdict A [id=100]\n' \
                   '手紙；切手\n' \
                   'てがみ[手紙]；あとで[切手]；きって[nokanji]\n'
         jeltxt = fmtjel.entr (e1)
