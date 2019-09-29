@@ -21,8 +21,8 @@
 import sys, cgi, copy, time
 sys.path.extend (['../lib','../../python/lib','../python/lib'])
 import logger; from logger import L
-import jdb, jmcgi, serialize, jelparse, db   # db is imported only for
-                                             #  access to dbapi exceptions.
+import jdb, jmcgi, serialize, db   # db is imported only for
+                                   #  access to dbapi exceptions.
 def main( args, opts ):
         logger.enable()
         jdb.reset_encoding (sys.stdout, 'utf-8')
