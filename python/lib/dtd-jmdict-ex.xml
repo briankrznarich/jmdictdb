@@ -496,6 +496,7 @@ various information fields.
 <!ENTITY zool "zoology term">
 <!ENTITY joc "jocular, humorous term">
 <!ENTITY anat "anatomical term">
+<!ENTITY Christn "Christian term">
 <!ENTITY surname "family or surname">
 <!ENTITY place "place name">
 <!ENTITY unclass "unclassified name">
