@@ -13,6 +13,7 @@
 13	exp	Expressions (phrases, clauses, etc.)
 14	int	interjection (kandoushi)
 15	cop-da	copula
+16	cop	copula
 17	n	noun (common) (futsuumeishi)
 18	n-adv	adverbial noun (fukushitekimeishi)
 19	n-suf	noun, used as a suffix
