@@ -2,8 +2,7 @@
 BEGIN;
 
 -- Add new kwmisc values "net-sl", "dated", "hist", "lit".
--- Add new kwpos value "cop"
--- New random number is 7256aa
+-- Change kwpos value "cop-da" to "cop".
 
 \set dbversion  '''7256aa'''  -- Update version applied by this update.
 \set require    '''12b5e2'''  -- Database must be at this version in
@@ -22,6 +21,6 @@ INSERT INTO kwmisc VALUES(85,'net-sl','Internet slang');
 INSERT INTO kwmisc VALUES(86,'dated','dated term');
 INSERT INTO kwmisc VALUES(87,'hist','historical term');
 INSERT INTO kwmisc VALUES(88,'lit','literary or formal term');
-INSERT INTO kwpos VALUES(16,'cop','copula');
+UPDATE kwpos SET kw='cop' WHERE id=15;
 
 COMMIT;
