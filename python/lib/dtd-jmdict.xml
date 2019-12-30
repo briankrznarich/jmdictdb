@@ -407,7 +407,7 @@ various information fields.
 <!ENTITY net-sl "Internet slang">
 <!ENTITY dated "dated term">
 <!ENTITY hist "historical term">
-<!ENTITY lit "literary or formal term">
+<!ENTITY litf "literary or formal term">
 <!ENTITY surname "family or surname">
 <!ENTITY place "place name">
 <!ENTITY unclass "unclassified name">

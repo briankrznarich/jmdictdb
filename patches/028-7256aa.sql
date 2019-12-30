@@ -20,7 +20,7 @@ UPDATE db SET active=FALSE WHERE id!=x:dbversion::INT;
 INSERT INTO kwmisc VALUES(85,'net-sl','Internet slang');
 INSERT INTO kwmisc VALUES(86,'dated','dated term');
 INSERT INTO kwmisc VALUES(87,'hist','historical term');
-INSERT INTO kwmisc VALUES(88,'lit','literary or formal term');
+INSERT INTO kwmisc VALUES(88,'litf','literary or formal term');
 UPDATE kwpos SET kw='cop' WHERE id=15;
 
 COMMIT;
