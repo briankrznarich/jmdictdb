@@ -1,14 +1,21 @@
 \set ON_ERROR_STOP
 BEGIN;
 
--- This update replaces and superceeds update 027-835781.
--- Treat rdng and kanj "freq" tags as independent.
+-- Treat rdng and kanj "freq" tags as independent.  Formerly we allowed
+--  paired tags but that feature was never used and dropping it allows
+--  significant code simplications.
 -- Cleanup: remove unneccessary views, add missing FK' to table "gloss".
--- Add columns "src" and "seq" to table xresolv.  This supports 
+-- Add columns "src" and "seq" to table xresolv.  This supports
 --  updates to jelparse/xrslv functions which now produce unresolved
---  xrefs as intermediate step prior to resolving them. 
+--  xrefs as intermediate step prior to resolving them.
 -- Create missing views "vrslv" and helper "vrkrestr" used by
 --  xresolv.py.
+-- Add new columns 'vseq' and 'vsrc' to table xresolv to allow
+--  for unambiguous unresolved xrefs.
+-- Swap order of columns 'typ' and 'ord' in table xresolv is order
+--  to more closely align with layout of table xref (xresolv.ord and
+--  xref.xref serve simlar purposes.)
+-- Add a decimal id column to view dbx.
 
 \set dbversion  '''a921f4'''  -- Update version applied by this update.
 \set require    '''1ef804'''  -- Database must be at this version in
@@ -24,7 +31,7 @@ UPDATE db SET active=FALSE WHERE id!=x:dbversion::INT;
 
 CREATE OR REPLACE VIEW dbx AS (
     SELECT LPAD(TO_HEX(id),6,'0') AS id, active, ts, id AS idd
-    FROM db 
+    FROM db
     ORDER BY ts DESC);
 
 DROP TABLE IF EXISTS freq_tmp;
