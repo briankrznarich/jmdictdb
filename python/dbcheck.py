@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 #######################################################################
 #  This file is part of JMdictDB.
 #  Copyright (c) 2010 Stuart McGraw
@@ -19,9 +18,14 @@
 #  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 #######################################################################
 
-# This run some checks on the data in a jmdictdb database.
+# This runs some checks on the data in a jmdictdb database.
 
-import sys, os, re
+import sys, os, inspect, pdb
+_ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
+_ = os.path.join (os.path.dirname(_), 'python', 'lib')
+if _ not in sys.path: sys.path.insert(0, _)
+
+import re
 import jdb
 
 LIMIT = 30      # Max number of results top retreive.
@@ -77,14 +81,14 @@ def main (args, opts):
             ("Entries with a JIS semicolon in a gloss:",
 
                 # Hex string is unicode codepoint of JIS semicolon.
-            u"SELECT entr FROM gloss WHERE txt LIKE '%%\uFF1B%%' "\
+            "SELECT entr FROM gloss WHERE txt LIKE '%%\uFF1B%%' "\
                 "ORDER BY entr LIMIT %s" % LIMIT),
 
             #------ 6 -- JIS space in gloss.
             ("Entries with a JIS space in a gloss:",
 
                 # Hex string is unicode codepoint of JIS space.
-            u"SELECT entr FROM gloss WHERE txt LIKE '%%\u3000%%' "\
+            "SELECT entr FROM gloss WHERE txt LIKE '%%\u3000%%' "\
                 "ORDER BY entr LIMIT %s" % LIMIT),
 
             #------ 7 -- No readings.
@@ -171,22 +175,22 @@ def main (args, opts):
             bad = run_check (cur, "Check %d"%(n+1), msg, sql, sqlargs)
             if bad: errs += 1
             else: ok += 1
-        if Opts.verbose: print "%d ok" % ok
-        if Opts.verbose and errs: print "%d errors" % errs
+        if Opts.verbose: print("%d ok" % ok)
+        if Opts.verbose and errs: print("%d errors" % errs)
         if errs: sys.exit(1)
 
 def run_check (cur, name, msg, sql, sqlargs):
         cur.execute (sql, sqlargs)
         rs = cur.fetchall()
         if rs:
-            print >>sys.stderr, "\nFailed: %s\n--------" % name
-            print >>sys.stderr, msg
-            print >>sys.stderr, ', '.join ([str(r) for r in rs]
-                             + ['more...' if len(rs) >= LIMIT else ''])
+            print("\nFailed: %s\n--------" % name, file=sys.stderr)
+            print(msg, file=sys.stderr)
+            print(', '.join ([str(r) for r in rs]
+                             + ['more...' if len(rs) >= LIMIT else '']), file=sys.stderr)
             return 1
 
         elif Opts.verbose:
-            print >>sys.stderr, "\nPassed: %s" % name
+            print("\nPassed: %s" % name, file=sys.stderr)
             return 0
 
 #=====================================================================
