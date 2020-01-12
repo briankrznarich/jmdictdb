@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #######################################################################
 #  This file is part of JMdictDB.
-#  Copyright (c) 2010 Stuart McGraw
+#  Copyright (c) 2010,2020 Stuart McGraw
 #
 #  JMdictDB is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published
@@ -19,221 +19,295 @@
 #######################################################################
 
 # This runs some checks on the data in a jmdictdb database.
+# Run 'python3 dbcheck.py --help' for details.
 
 import sys, os, inspect, pdb
 _ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
 _ = os.path.join (os.path.dirname(_), 'python', 'lib')
 if _ not in sys.path: sys.path.insert(0, _)
 
-import re
+import re, textwrap
 import jdb
 
-LIMIT = 30      # Max number of results top retreive.
+CHECKS = [
+      # Each check is a 4-tuple of:
+      #  0 - Check id number.  This is the number used to select
+      #    or exclude checks on the command line.  They do not
+      #    have to be in order or contiguous.
+      #  1 - Short description.  A brief one-line description
+      #    of the check.
+      #  2 - A long description of the check that is printed in
+      #    failure reports and with --list if -v is also given.
+      #    If more than entry ids are reported for failures this
+      #    description show give the meaning of the reported
+      #    values.
+      #  3 - A SQL statement that is run to execute the check.
+      #    It must return the entry id numbers of failing
+      #    entries in a column named "id" and possibly other
+      #    details in additional columns.
 
-def main (args, opts):
-        global Opts;  Opts = opts
-        cur = jdb.dbOpen (opts.database, **jdb.dbopts(opts))
+    (1, "Approved but edit of another entry",
+      "Entries that are \"approved\" (entr.unap is FALSE)"
+        " but have a non-NULL entr.dfrm value indicating they"
+        " are edits of another entry.  Approved entries should"
+        " always have a NULL entr.dfrm value.",
+      "SELECT e.id "
+        "FROM entr e "
+        "WHERE NOT e.unap AND e.dfrm IS NOT NULL "
+        "ORDER BY e.id"),
 
-        checks = [
-            #------ 1 -- Approved but edit of another entry.
-            ("The following entries are \"approved\" (entr.unap is FALSE) \n"\
-             "but are listed as being edits of another entry (entr.dfrm \n"\
-             "is non-NULL):",
+    (2, "Dfrm cycles",
+      "Entries that are part of a dfrm cycle.  The entr.dfrm"
+        " value of an unapproved entr points to the entry"
+        " it is an edit of, which may in turn be an edit of"
+        " some other entry.  No entry may have a .frm value"
+        " that, directly or through a chain of other entries,"
+        " refers back to itself.",
+      "WITH RECURSIVE wt (id, dfrm, depth, path, cycle) AS ("
+             "SELECT e.id, e.dfrm, 1, ARRAY[e.id], false "
+             "FROM entr e "
+               "UNION ALL "
+             "SELECT e.id, e.dfrm, wt.depth+1, path||e.id, e.id=ANY(path) "
+             "FROM entr e, wt "
+             "WHERE e.id = wt.dfrm AND NOT cycle) "
+          "SELECT DISTINCT wt.id FROM wt WHERE cycle"),
 
-            "SELECT e.id "\
-                "FROM entr e "\
-                "WHERE NOT e.unap AND e.dfrm IS NOT NULL "\
-                "ORDER BY e.id LIMIT %s" % LIMIT),
+    (3, "Multiple active entries",
+      "More that one approved and active entry exists with the"
+        " same sequence number in a corpus.  Only one should exist."
+        " Results are the entry id of the first entry of the"
+        " multiple ones, the common seq number and the corpus name.",
+      "SELECT MIN(e.id) AS id, c.kw, e.seq "
+          "FROM entr e JOIN kwsrc c ON c.id=e.src "
+          "WHERE NOT unap and stat=2 "
+          "GROUP BY c.kw,e.seq HAVING count(*)>1 "
+          "ORDER BY MIN(e.id)"),
 
-            #------ 2 -- Dfrm cycle.
-            ("The following entries are part of a dfrm cycle:",
+    (4, "Multiple seq#s in edit set",
+      "Some entries in the edit tree have different corpus or seq"
+        " numbers.  Normally all the entries in a tree of edits will"
+        " have the same seq# and corpus.  This may not be a problem"
+        " if an edit changed an entry's seq# or corpus but it is"
+        " unusual enough to report.",
+      "SELECT e1.id AS id, e2.id AS id2 "
+          "FROM entr e1 "
+          "JOIN entr e2 ON e2.dfrm=e1.id "
+          "WHERE e1.src!=e2.src OR e1.seq!=e2.seq "
+          "ORDER BY e1.id,e2.id"),
 
-            "WITH RECURSIVE wt (id, dfrm, depth, path, cycle) AS ("\
-                   "SELECT e.id, e.dfrm, 1, ARRAY[e.id], false "\
-                   "FROM entr e "\
-                     "UNION ALL "\
-                   "SELECT e.id, e.dfrm, wt.depth+1, path||e.id, e.id=ANY(path) "\
-                   "FROM entr e, wt "\
-                   "WHERE e.id = wt.dfrm AND NOT cycle) "\
-                "SELECT DISTINCT wt.id FROM wt WHERE cycle LIMIT %s" % LIMIT),
+    (5, "JIS semicolon in gloss",
+      "Entries with a JIS semicolon in a gloss.  Gloss text should"
+         " not contain any Japanese characters but JIS semicolons"
+         " are sometimes entered by mistake instead of an ASCII "
+         " semicolon.",
+        # Hex string is unicode codepoint of JIS semicolon.
+      "SELECT entr AS id FROM gloss WHERE txt LIKE '%%\uFF1B%%' "
+          "ORDER BY entr"),
 
-            #------ 3 -- Multiple A entries in seqset.
-            ("More that one \"A\" (approved and active) entry is a \n"\
-             "seqset.  Following are the src,seq numbers:",
+    (6, "JIS space in gloss",
+      "Entries with a JIS space in a gloss.  Gloss text should"
+         " not contain any Japanese characters but JIS space"
+         " characters are sometimes entred by mistake instead"
+         " of an ASCII space.",
+        # Hex string is unicode codepoint of JIS space.
+      "SELECT entr AS id FROM gloss WHERE txt LIKE '%%\u3000%%' "
+          "ORDER BY entr"),
 
-                # FIXME: We have to exclude the Examples corpus (see IS-157)
-                #  but there is no guarantee the its 'src' number is 3.
-            "SELECT src, seq FROM entr e WHERE NOT unap and stat=2 AND src!=3 "\
-                "GROUP BY src, seq HAVING count(*)>1 "\
-                "ORDER BY src,seq  LIMIT %s" % LIMIT),
+    (7, "No readings or kanji",
+      "Every non-deleted, non-rejected entry must have at least"
+        " one reading or kanji.",
+      "SELECT e.id FROM entr e WHERE stat=2 "
+          "AND NOT EXISTS (SELECT 1 FROM rdng r WHERE r.entr=e.id) "
+          "AND NOT EXISTS (SELECT 1 FROM kanj k WHERE k.entr=e.id) "
+          "ORDER BY e.id"),
 
-            #------ 4 -- Multiple src/seq in editset.
-            ("Entry id's in editsets where some entries have different \n"\
-             "corpus or seq# than others:",
+    (8, "No readings",
+      "Every non-deleted, non-rejected entry in a jmdict or jmnedict"
+        " corpus must have at least one reading.  This is not true"
+        " for the examples or kanjdic corpora so those are excluded"
+        " from this check.",
+      "SELECT e.id FROM entr e "
+          "JOIN kwsrc c ON c.id=e.src JOIN kwsrct t ON t.id=c.srct "
+          "WHERE stat=2 AND t.kw IN ('jmdict','jmnedict') "
+            "AND NOT EXISTS (SELECT 1 FROM rdng r WHERE r.entr=e.id) "
+          "ORDER BY e.id"),
 
-            "SELECT e1.id, e2.id "\
-                "FROM entr e1 "\
-                "JOIN entr e2 ON e2.dfrm=e1.id "\
-                "WHERE e1.src!=e2.src OR e1.seq!=e2.seq "\
-                "ORDER BY e1.id,e2.id LIMIT %s" % LIMIT),
+    (9, "No senses",
+      "Every entry other than those in the kanjidic corpus must have"
+        " at least one sense.",
+      "SELECT e.id FROM entr e "
+          "JOIN kwsrc c ON c.id=e.src JOIN kwsrct t ON t.id=c.srct "
+          "WHERE t.kw NOT IN ('kanjidic') "
+            "AND NOT EXISTS (SELECT 1 FROM sens s WHERE s.entr=e.id) "
+          "ORDER BY e.id"),
 
-            #------ 5 -- JIS semicolon in gloss.
-            ("Entries with a JIS semicolon in a gloss:",
+    (10, "No glosses",
+      "Every sense must have at least one gloss.",
+      "SELECT e.id, s.sens FROM entr e JOIN sens s ON s.entr=e.id "
+          "WHERE NOT EXISTS "
+          "(SELECT 1 FROM gloss g WHERE g.entr=s.entr AND g.sens=s.sens) "
+          "ORDER BY e.id,s.sens"),
 
-                # Hex string is unicode codepoint of JIS semicolon.
-            "SELECT entr FROM gloss WHERE txt LIKE '%%\uFF1B%%' "\
-                "ORDER BY entr LIMIT %s" % LIMIT),
+    (11, "No part-of-speech",
+      "Each sense in a jmdict corpus entry, by convention, must have"
+        " at least one part-of speech tag.",
+        # We report only the entry id numbers.  To report the sens
+        # numbers too use ""SELECT e.id,s.sens FROM..."
+      "SELECT DISTINCT e.id FROM entr e JOIN sens s ON s.entr=e.id "
+          "JOIN kwsrc c ON c.id=e.src JOIN kwsrct t ON t.id=c.srct "
+          "WHERE t.kw='jmdict' AND NOT EXISTS "
+          "(SELECT 1 FROM pos p WHERE p.entr=s.entr AND p.sens=s.sens) "
+          "ORDER BY e.id"),
 
-            #------ 6 -- JIS space in gloss.
-            ("Entries with a JIS space in a gloss:",
+    (12, "Non-sequential kanj numbers",
+      "Entries with kanj.kanj numbers that are not sequential or do "
+        "not start at one.",
+      "SELECT entr AS id FROM kanj "
+          "GROUP BY entr HAVING MIN(kanj)!=1 OR COUNT(*)!=MAX(kanj) "
+          "ORDER by entr"),
 
-                # Hex string is unicode codepoint of JIS space.
-            "SELECT entr FROM gloss WHERE txt LIKE '%%\u3000%%' "\
-                "ORDER BY entr LIMIT %s" % LIMIT),
+    (13, "Non-sequential rdng numbers",
+      "Entries with rdng.rdng numbers that are not sequential or do "
+        " not start at one.",
+      "SELECT entr AS id FROM rdng "
+          "GROUP BY entr HAVING MIN(rdng)!=1 OR COUNT(*)!=MAX(rdng) "
+          "ORDER by entr"),
 
-            #------ 7 -- No readings.
-            ("Entries with no readings:",
+    (14, "Non-sequential sens numbers",
+      "Entries with sens.sens numbers that are not sequential or do "
+        " not start at one.",
+      "SELECT entr AS id FROM sens "
+          "GROUP BY entr HAVING MIN(sens)!=1 OR COUNT(*)!=MAX(sens) "
+          "ORDER by entr"),
 
-                # FIXME: We have to exclude the Examples corpus (since none of
-                #  its entries have readings) but there is no guarantee that its
-                #  'src' number is 3.
-                # Don't bother reporting deleted or rejected entries.
-            "SELECT e.id FROM entr e WHERE src!=3 AND stat=2 AND NOT EXISTS "\
-                "(SELECT 1 FROM rdng r WHERE r.entr=e.id) "\
-                "ORDER BY e.id LIMIT %s" % LIMIT),
+    (15, "Non-sequential gloss numbers",
+      "Entries with gloss.gloss numbers that are not sequential or do "
+        " not start at one.  Numbers reported are (entr.id, sens.sens)"
+        " of the sense containing the problematic gloss.",
+      "SELECT entr AS id, sens FROM gloss "
+          "GROUP BY entr,sens HAVING MIN(gloss)!=1 OR COUNT(*)!=MAX(gloss) "
+          "ORDER by entr,sens"),
 
-            #------ 8 -- No senses.
-            ("Entries with no senses:",
+    (16, "Deleted or rejected without history",
+      "Deleted or rejected entries with no history will not be "
+        " expunged by the usual maintenance scripts because with no history, "
+        " they have no \"age\".",
+      "SELECT e.id FROM entr e WHERE stat IN (4,6)"
+          "AND NOT EXISTS (SELECT 1 FROM hist h WHERE h.entr=e.id) "
+          "ORDER by e.id"),
 
-            "SELECT e.id FROM entr e WHERE NOT EXISTS "\
-                "(SELECT 1 FROM sens s WHERE s.entr=e.id) "\
-                "ORDER BY e.id LIMIT %s" % LIMIT),
+    (17, "Xref to same seq#",
+      "Xrefs must not point to an entry with the same seq# and corpus. "
+        " Results are reported as (entr.id, target-entr.id).",
+      "SELECT e.id, ex.id AS id2 FROM entr e "
+          "JOIN sens s ON s.entr=e.id "
+          "JOIN xref x ON x.entr=s.entr AND x.sens=s.sens "
+          "JOIN entr ex ON ex.id=x.xentr "
+          "WHERE e.seq=ex.seq AND e.src=ex.src "
+          "ORDER by e.id"),
 
-            #------ 9 -- No glosses.
-            ("Entries with glossless senses:",
+    (18, "Nosens xref points to sense other than 1",
+      "JMdictDB represents a non-sense specific xref (ie, one to"
+        " to an entire entry) by setting the xref's .nosens flag"
+        " to True and the target sense (.xsens) to 1.  Entries"
+        " reported by this check have .xsens set to something"
+        " other than 1.",
+      "SELECT e.id FROM entr e "
+          "JOIN sens s ON s.entr=e.id "
+          "JOIN xref x ON x.entr=s.entr AND x.sens=s.sens "
+          "WHERE x.nosens AND x.xsens!=1 "
+          "ORDER by e.id"),
+      ]
 
-            "SELECT e.id,s.sens FROM entr e JOIN sens s ON s.entr=e.id WHERE NOT EXISTS "\
-                "(SELECT 1 FROM gloss g WHERE g.entr=s.entr AND g.sens=s.sens) "\
-                "ORDER BY e.id,s.sens LIMIT %s" % LIMIT),
-
-            #------ 10 -- No PoS.
-            ("Entries with senses that have no PoS:",
-
-                # FIXME: Poslessness is a bad thing only in jmdict corpora but
-                #  but there is no way to identify such.  We'll take a guess that
-                #  there is only one and its 'src' is 1.
-            "SELECT e.id,s.sens FROM entr e JOIN sens s ON s.entr=e.id WHERE src=1 AND NOT EXISTS "\
-                "(SELECT 1 FROM pos p WHERE p.entr=s.entr AND p.sens=s.sens) "\
-                "ORDER BY e.id,s.sens LIMIT %s" % LIMIT),
-
-            #------ 11 -- Non-sequential kanj numbers.
-            ("Entries with kanj.kanj numbers that are not sequential or do "\
-             "not start at one.",
-
-            "SELECT entr FROM kanj "\
-                "GROUP BY entr HAVING MIN(kanj)!=1 OR COUNT(*)!=MAX(kanj) "\
-                "ORDER by entr LIMIT %s" % LIMIT),
-
-            #------ 12 -- Non-sequential rdng numbers.
-            ("Entries with rdng.rdng numbers that are not sequential or do "\
-             "not start at one.",
-
-            "SELECT entr FROM rdng "\
-                "GROUP BY entr HAVING MIN(rdng)!=1 OR COUNT(*)!=MAX(rdng) "\
-                "ORDER by entr LIMIT %s" % LIMIT),
-
-            #------ 13 -- Non-sequential sens numbers.
-            ("Entries with sens.sens numbers that are not sequential or do "\
-             "not start at one.",
-
-            "SELECT entr FROM sens "\
-                "GROUP BY entr HAVING MIN(sens)!=1 OR COUNT(*)!=MAX(sens) "\
-                "ORDER by entr LIMIT %s" % LIMIT),
-
-            #------ 14 -- Non-sequential gloss numbers.
-            ("Entries with gloss.gloss numbers that are not sequential or do "\
-             "not start at one.",
-
-            "SELECT entr,sens FROM gloss "\
-                "GROUP BY entr,sens HAVING MIN(gloss)!=1 OR COUNT(*)!=MAX(gloss) "\
-                "ORDER by entr,sens LIMIT %s" % LIMIT),
-
-            #------ 15 -- Deleted or rejected without history.
-            ("Deleted or rejected entries with no history.  These will not be "\
-             "expunged by the usual maintenance scripts because with no history, "\
-             "they have no \"age\".",
-
-            "SELECT e.id FROM entr e WHERE stat IN (4,6)"\
-                "AND NOT EXISTS (SELECT 1 FROM hist h WHERE h.entr=e.id) "\
-                "ORDER by e.id LIMIT %s" % LIMIT),
-            ]
-
+def main():
+        args = parse_cmdline()
+        if args.list:
+            list_checks (CHECKS, args.verbose);  sys.exit (0);
+        cur = jdb.dbOpen (None, **jdb.parse_pguri (args.database))
         errs = ok = 0
-        for n, (msg, sql) in enumerate (checks):
-            if args and n+1 not in args: continue
-            sqlargs = None   # See the comments in jb.dbread().
-            bad = run_check (cur, "Check %d"%(n+1), msg, sql, sqlargs)
+        for check in CHECKS:
+            chknum, descr, msg, sql = check
+            skip = (chknum not in args.chknum) != args.exclude
+            if args.chknum and skip: continue
+            bad = run_check (cur, check, args.limit, args.corpus, args.verbose)
             if bad: errs += 1
             else: ok += 1
-        if Opts.verbose: print("%d ok" % ok)
-        if Opts.verbose and errs: print("%d errors" % errs)
+        if args.verbose: print ("%d ok" % ok)
+        if args.verbose and errs: print ("%d errors" % errs)
         if errs: sys.exit(1)
 
-def run_check (cur, name, msg, sql, sqlargs):
-        cur.execute (sql, sqlargs)
+def run_check (cur, check, limit, corpus, verbose):
+        chknum, descr, msg, sql = check
+        name = "Check %d: %s" % (chknum, descr)
+        if corpus:
+            sql = "SELECT w.* FROM (%s) AS w "\
+                  "JOIN entr e ON e.id=w.id WHERE e.src=%s"\
+                  % (sql, jdb.KW.SRC[corpus].id)
+        if limit: sql += " LIMIT %s" % limit
+        cur.execute (sql)
         rs = cur.fetchall()
         if rs:
-            print("\nFailed: %s\n--------" % name, file=sys.stderr)
-            print(msg, file=sys.stderr)
-            print(', '.join ([str(r) for r in rs]
-                             + ['more...' if len(rs) >= LIMIT else '']), file=sys.stderr)
+            print ("\nFailed: %s\n--------" % name, file=sys.stderr)
+            print (textwrap.fill(msg), file=sys.stderr)
+            print (', '.join ([str(r) for r in rs]
+                             + ['more...' if len(rs) >= limit else '']), file=sys.stderr)
             return 1
+        if verbose:
+            print ("\nPassed: %s" % name, file=sys.stderr)
+        return 0
 
-        elif Opts.verbose:
-            print("\nPassed: %s" % name, file=sys.stderr)
-            return 0
+def list_checks (checks, verbose):
+        for c in checks:
+            chknum, descr, msg, sql = c
+            print ("Check %d: %s" % (chknum, descr))
+            if verbose: print (textwrap.fill(msg), "\n")
 
 #=====================================================================
-
-from optparse import OptionParser, Option
+from argparse import ArgumentParser
+from lib.pylib.argparse_formatters import ParagraphFormatter
 
 def parse_cmdline ():
-        u = \
-"""\n\t%prog [options] [check-num [check-num [...]]]
+        u = """\
+Run a number of checks on the database that look for data problems.  If no
+errors are found, no output is produced (if -v not given) and %(prog)s
+will exit with a status of 0.  If there are errors messages will be written
+to stderr and %(prog)s will exit will a status of 1."""
 
-Run a number of checks on the database that look for data
-problems.  If no errors are found, no output is produced
-(if -v not given) and %prog will exit with a status of 0.
-If there are errors messages will be written to stderr and
-%prog will exit will a status of 1.
+        p = ArgumentParser (description=u, formatter_class=ParagraphFormatter)
 
-Arguments -- List of check numbers to run.  If none given,
-    all checks will be run."""
+        p.add_argument ("chknum", nargs='*', type=int, default=None,
+            help="Optional list of check numbers to run, or if -x was given, "
+               "to not run.  If omitted, all checks are run.")
 
-        p = OptionParser (usage=u, add_help_option=False)
+        p.add_argument ("-x", "--exclude", action="store_true", default=False,
+            help="If given, the chknum arguments are the numbers of "
+                "checks not to run.")
 
-        p.add_option ("-v", "--verbose", default=False, action='store_true',
-            help="Note successful checks as well a failed ones in output.")
+        p.add_argument ("-l", "--list", action="store_true", default=False,
+            help="List a brief summary of each available test and exit.")
 
-        p.add_option ("-d", "--database", default="jmdict",
-            help="Name of the database to load.")
-        p.add_option ("-h", "--host",
-            help="Name host machine database resides on.")
-        p.add_option ("-u", "--user",
-            help="Connect to database with this username.")
-        p.add_option ("-p", "--password",
-            help="Connect to database with this password.")
-        p.add_option ("--help",
-            action="help", help="Print this help message.")
+        p.add_argument ("-c", "--corpus", default=None,
+            help="Limit checks to one particular corpus.")
 
-        opts, args = p.parse_args ()
-        for i in range (len(args)):
-            try: args[i] = int (args[i])
-            except ValueError: p.error ('Argument "%s" is not an integer' % args[i])
+        p.add_argument ("--limit", type=int, default=30,
+            help="Maximum number of failures to report for a failing "
+               "check.  Use \"--limit 0\" to disable any limit. ")
 
-        return args, opts
+        p.add_argument ("-v", "--verbose", default=False, action='store_true',
+            help="Report successful checks as well a failed ones in output.")
 
-if __name__ == '__main__':
-        args, opts = parse_cmdline ()
-        main (args, opts)
+        p.add_argument ("-d", "--database", default="pg:///jmdict",
+            help="URI for database to open.  The general form is: \n"
+                " pg://[user[:password]@][netloc][:port][/dbname][?param1=value1&...] \n"
+                "Examples: \n"
+                " jmnew \n"
+                " pg://remotehost/jmdict \n"
+                " pg://user:mypassword@/jmtest \n"
+                " pg://remotehost.somewhere.org:8866 \n"
+                "For more details see \"Connection URIs\" in the \"Connections Strings\" "
+                "section of the Postgresql \"libq\" documentation. ")
 
+        args = p.parse_args()
+        return args
+
+if __name__ == '__main__': main()
