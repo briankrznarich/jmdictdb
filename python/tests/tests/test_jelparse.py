@@ -1,22 +1,22 @@
-#----- REMINDER ------------------------------------------------------
-# To make any changes to the jelparse code, edit jelparse.y.  Then
-# run 'make' in the lib dir to regenerate jelparse.py from jelparse.y.
-#---------------------------------------------------------------------
-#----- CAUTION -------------------------------------------------------
-# These tests rely on the correct functioning of the fmtjel.py module.
-# The tests in class Roundtrip use data from database 'jmdict' which
-#  may change from time to time.
-#---------------------------------------------------------------------
-#----- CAUTION -------------------------------------------------------
-# The "jmtest01" database used herein is shared between all tests,
-# test classes and tests in other modules.  It is not reloaded,
-# even between different invocations of the test runner program.
-# Tests should be very careful to not to make any changes that
-# could affect other tests.
-# To force reloading a clean copy of the test database, delete it
-# (eg, with 'dropdb'); it will be recreated freshly the next time
-# the test program is run.
-#---------------------------------------------------------------------
+# Tests for the JEL parser implemented in lib/jelparse.y
+#
+# Reminder: The lib/jelparse.py code, which is what is imported and tested
+# here, is auto-generated.  To make changes, edit lib/jelparse.y and run
+# 'make' in the lib/ directory to regenerate it.
+#
+# Note: These tests rely on the correct functioning of the fmtjel.py
+# module.
+#
+# Caution: The "jmtest01" database used by these tests is shared between
+# all tests, test classes and tests in other modules.  It is not reloaded,
+# even between different invocations of the test runner program.  Tests
+# should be very careful to not to make any changes to the data in the
+# database that could affect other tests.  To force reloading a clean copy
+# of the test database, delete it (eg, with 'dropdb'); it will be recreated
+# freshly the next time the test program is run.
+#
+# Note: Some tests formerly in this module have been moved to separate
+# modules: test_jel_restr.py
 
 import sys, os, unittest, signal, pdb
 if '../lib' not in sys.path: sys.path.append ('../lib')
@@ -133,31 +133,6 @@ class RTpure (unittest.TestCase):
     def test0100080(_): check(_,'0100080')  # IS-163.
     def test0200010(_): cherr(_,'0200010', jelparse.ParseError,"Syntax Error")
     def test0200020(_): cherr(_,'0200020', jelparse.ParseError,"Unknown keyword: 'z'")
-
-class Restr (unittest.TestCase):
-    def setUp (_):
-        _.data = loadData ('data/jelparse/restr.txt', r'# ([0-9]{7}[a-zA-Z0-9_]+)')
-    def test0300010(_): check2(_,'0300010')
-    # def test0300011(_): check2(_,'0300011')   Dotted pair w/o quotes fails. (Supposed to?)
-    def test0300020(_): check2(_,'0300020')
-    def test0300030(_): check2(_,'0300030')
-    def test0300040(_): check2(_,'0300040')
-    def test0300050(_): check2(_,'0300050')
-    def test0300110(_): check2(_,'0300110')
-    def test0300120(_): check2(_,'0300120')
-    def test0300130(_): check2(_,'0300130')
-    def test0300140(_): check2(_,'0300140')
-    def test0300150(_): check2(_,'0300150')
-    def test0300170(_): check2(_,'0300170')
-    def test0300210(_): check2(_,'0300210')
-    def test0300220(_): check2(_,'0300220')
-    def test0300230(_): check2(_,'0300230')
-    def test0300240(_): check2(_,'0300240')
-    def test0300250(_): check2(_,'0300250')
-    def test0300270(_): check2(_,'0300270')
-    def test0300280(_): check2(_,'0300280')
-    def test0300290(_): check2(_,'0300290')
-    def test9000010(_): check_err(_,'9000010', "Reading 1 has 'nokanji' tag but entry has no kanji")
 
 class Xref (unittest.TestCase):
     def setUp (_):
