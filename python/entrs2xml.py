@@ -199,7 +199,8 @@ def main (args, opts):
             lastsrc = entrs[-1].src;  lastseq = entrs[-1].seq;  lastid = entrs[-1].id + 1
             if count is not None: count -= blksize
             done += len (entrs)
-            if not Debug: sys.stderr.write ('.')
+            if not Debug:
+                sys.stderr.write ('.');  sys.stderr.flush()
             else: print ("%d entries written" % done, file=sys.stderr)
         if not opts.nodtd: outf.writelines ('</%s>\n' % opts.root)
         if not Debug: sys.stderr.write ('\n')
