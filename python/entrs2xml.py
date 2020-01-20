@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #######################################################################
 #  This file is part of JMdictDB.
-#  Copyright (c) 2008-2014 Stuart McGraw
+#  Copyright (c) 2008-2020 Stuart McGraw
 #
 #  JMdictDB is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published
@@ -32,8 +32,6 @@ import jdb, fmt, fmtxml
 def main (args, opts):
         global Debug
         Debug = opts.debug
-          # Open the database.  jdb.dbopts() extracts the db-related
-          # options from the command line options in 'opts'.
         cur = jdb.dbOpen (None, **jdb.parse_pguri(opts.dburi))
 
           # If no "--root" option was supplied, choose a default based
@@ -41,81 +39,48 @@ def main (args, opts):
         if not opts.root:
             if opts.compat in ('jmnedict','jmneold'): opts.root = 'JMnedict'
             else: opts.root = 'JMdict'
-
-        outf = None
-        if not opts.nodtd:
-              # Choose a dtd to use based on the "--compat" option.
-              # The dtd file is expected to be located somewhere in the
-              # pythonpath (sys.path) directories.
-            if   opts.compat == 'jmdict':     dtd = "dtd-jmdict.xml"
-            elif opts.compat == 'jmdicthist': dtd = "dtd-jmdict.xml"
-            elif opts.compat == 'jmnedict':   dtd = "dtd-jmnedict.xml"
-            elif opts.compat == 'jmneold':    dtd = "dtd-jmneold.xml"
-            else:                             dtd = "dtd-jmdict-ex.xml"
-            dir = jdb.find_in_syspath (dtd)
-            dtdfn = dir + "/" + dtd             # Fully qualified dtd file name.
-
-              # jdb.get_dtd() reads the dtd text and replaces the root
-              # element name name.
-            dtdtxt= jdb.get_dtd (dtdfn, opts.root)
-            if len (args) == 0: outf = sys.stdout
-            else: outf = open (args[0], "w")
-            outf.write (dtdtxt)
-
         if opts.seqfile:
-            if opts.seqfile == '-': f = sys.stdin
-            else:
-                f = open (opts.seqfile)
-                entrlist = []
-                for lnnum, ln in enumerate (f):
-                    lnnum += 1
-                    ln = re.sub (r'\s*#.*', '', ln)
-                    if not ln: continue
-                    try: entrlist.extend ([int(x) for x in ln.split()])
-                    except ValueError as e:
-                        print ("Bad value in %s at line %s:\n  %s"
-                               % (opts.seqfile, lnnum, str(e)), file=sys.stderr)
-            if f != sys.stdin: f.close()
+            entrlist = read_seqfile (opts.seqfile)
+        else: entrlist = []
 
-            # If the output file was not opened in the dtd section
-            # above, open it now.  We postpose opening it until the
-            # last possible moment to avoid creating it and then
-            # bombing because there was a typo in the input or dtd
-            # filename, etc.
-            # FIXME: Should do a "write" function that opens the
-            #  file just before writing.
-        if not outf:
-            if len (args) == 0: outf = sys.stdout
-            else: outf = open (args[0], "w")
+          # Get a sql statement that will select all the entries to be
+          # extracted, or in the case of a seq# file, the pool of entries
+          # containing the seq#s.
+        sql_base = select_entries (opts)
 
-        corpid = opts.corpus
-        if corpid.isdigit(): corpid = int (corpid)
-        corpid = jdb.KW.SRC[corpid].id
-        whr_act = " AND src=%s" % corpid
-        if opts.compat:
-            whr_act += " AND NOT unap AND stat="+str(jdb.KW.STAT['A'].id)
-        lastsrc, lastseq, lastid = corpid, opts.begin or 0, 0
+          # Open the output file (which also writes the DTD to it if needed).
+          # We wait as late as possible to do this to avoid creating the
+          # file if there is some error in the command line arguments that
+          # can be detected above.
+        outname = args[0] if args else None
+        outf = open_output (outname, opts.nodtd, opts.compat, opts.root)
 
-          # Add an enclosing root element only if we are also including
-          # a DTD (ie, producing a full XML file).  Otherwise, the file
-          # generated will just be a list of <entr> elements.
-        if not opts.nodtd:
-            if opts.compat:  # Add a date comment...
-                today = time.strftime ("%Y-%m-%d", time.localtime())
-                outf.write ("<!-- %s created: %s -->\n" % (opts.root, today))
-            outf.write ('<%s>\n' % opts.root)
+          # Read the entries in blocks of 'opts.blocksize', format them
+          # as XML, and write them to the output file.
+        done = 0
+        for entries,raw in read_entries (cur, sql_base, entrlist,
+                                         opts.count, opts.blocksize):
+            done += len(entries)
+            write_entrs (cur, entries, raw, [], opts.compat, outf)
 
-        entrlist_loc = 0
-        count = opts.count; done = 0; blksize = opts.blocksize; corpora = set()
+        if not opts.nodtd: outf.writelines ('</%s>\n' % opts.root)
+        if not Debug: sys.stderr.write ('\n')
+        print ("Wrote %d entries" % done, file=sys.stderr)
+
+def read_entries (cur, sql_base, entrlist, count, blksize):
+    # This is a generator that reads and yields successive blocks of entries.
+        entrlist_loc = 0;  corpora = set()
+        lastsrc, lastseq, lastid = 0, 0, 0
 
         while count is None or count > 0:
-
-            if opts.seqfile:
+            if entrlist:
                 seqnums = tuple (entrlist[entrlist_loc : entrlist_loc+blksize])
                 if not seqnums: break
                 entrlist_loc += blksize
                   #FIXME: need detection of non-existent seq#s.
-                sql = "SELECT id FROM entr e WHERE seq IN %s" + whr_act
+                sql = "SELECT id FROM (%s) AS s "\
+                      "WHERE seq IN %%s ORDER BY src,seq,id LIMIT %d"\
+                      % (sql_base, blksize)
                 sql_args = [seqnums]
                 if Debug: print (sql, sql_args, file=sys.stderr)
                 start = time.time()
@@ -130,14 +95,12 @@ def main (args, opts):
                   #           OR e.src>lastsrc)
                   # and (lastsrc, lastseq, lastid) are from the last entry in
                   # the last block read.
-
-                whr = "WHERE ((e.src=%%s AND e.seq=%%s AND e.id>=%%s) " \
-                              "OR (e.src=%%s AND e.seq>%%s) " \
-                              "OR e.src>%%s) %s" % (whr_act,)
-                sql = "SELECT e.id FROM entr e" \
-                      " %s ORDER BY src,seq,id LIMIT %d" \
-                       % (whr, blksize if count is None else min (blksize, count))
-
+                sql = "SELECT id FROM (%s) AS e "\
+                      "WHERE ((e.src=%%s AND e.seq=%%s AND e.id>=%%s) "\
+                              "OR (e.src=%%s AND e.seq>%%s) "\
+                              "OR e.src>%%s)"\
+                      "ORDER BY src,seq,id LIMIT %d"\
+                      % (sql_base, blksize)
                   # The following args will be substituted for the "%%s" in
                   # the sql above, in jbd.findEntr().
                 sql_args = [lastsrc, lastseq, lastid, lastsrc, lastseq, lastsrc]
@@ -149,34 +112,60 @@ def main (args, opts):
                 start = time.time()
                 tmptbl = jdb.entrFind (cur, sql, sql_args)
             mid = time.time()
-            entrs, raw = jdb.entrList (cur, tmptbl, None, ord="src,seq,id", ret_tuple=True)
+            entrs, raw = jdb.entrList (cur, tmptbl, None,
+                                       ord="src,seq,id", ret_tuple=True)
             end = time.time()
             if Debug: print ("read %d entries" % len(entrs), file=sys.stderr)
-            if Debug: print ("Time: %s (entrFind), %s (entrList)" % (mid-start, end-mid), file=sys.stderr)
+            if Debug: print ("Time: %s (entrFind), %s (entrList)"
+                             % (mid-start, end-mid), file=sys.stderr)
             if not entrs : break
-            write_entrs (cur, entrs, raw, corpora, opts, outf)
-
+            yield entrs, raw
               # Update the 'last*' variables for the next time through
               # the loop.  Also, decrement 'count', if we are counting.
-            lastsrc = entrs[-1].src;  lastseq = entrs[-1].seq;  lastid = entrs[-1].id + 1
+            lastsrc, lastseq, lastid \
+                = entrs[-1].src, entrs[-1].seq, entrs[-1].id + 1
             if count is not None: count -= blksize
-            done += len (entrs)
             if not Debug:
                 sys.stderr.write ('.');  sys.stderr.flush()
             else: print ("%d entries written" % done, file=sys.stderr)
-        if not opts.nodtd: outf.writelines ('</%s>\n' % opts.root)
-        if not Debug: sys.stderr.write ('\n')
-        print ("Wrote %d entries" % done, file=sys.stderr)
 
-def write_entrs (cur, entrs, raw, corpora, opts, outf):
+def select_entries (opts):
+    # Based on the entry selection criteria given on the command line
+    # (and available here in 'opts'), create a SQL statement that will
+    # select the entire set of entries that we will extract from the
+    # database.  In the case of a seq# file, the sql will select the
+    # pool of entries containing the sequence numbers.
+    # Ordering and retrieving these entries in blocks will be done
+    # later using the sql generated here as a subselect.
+
+        corpid = opts.corpus
+        if corpid.isdigit(): corpid = int (corpid)
+        corpid = jdb.KW.SRC[corpid].id
+
+        whr_terms = ["src=%s" % corpid]
+        if opts.compat:
+            whr_terms.append ("NOT unap")
+            whr_terms.append ("stat=%s" % str(jdb.KW.STAT['A'].id))
+        if opts.begin:
+            whr_terms.append ("seq>=%s" % opts.begin)
+        sql_base = "SELECT id,seq,src FROM entr WHERE %s"\
+                   % " AND ".join (whr_terms)
+        if opts.count:
+              # If LIMIT is used, we also require an ORDER BY to
+              # make sure the desired subset of entries is selected
+              # rather than an arbitrary subset.
+            sql_base += " ORDER BY src,seq,id"
+            sql_base += " LIMIT %s" % int (opts.count)
+        return sql_base
+
+def write_entrs (cur, entrs, raw, corpora, compat, outf):
           # To format xrefs in xml, they must be augmented so that the
           # the target reading and kanji text will be available.
         jdb.augment_xrefs (cur, raw['xref'])
-
           # Generate xml for each entry and write it to the output file.
         start = time.time()
         for e in entrs:
-            if not opts.compat:
+            if not compat:
                 if e.src not in corpora:
                     txt = '\n'.join (fmtxml.corpus ([e.src]))
                     outf.write (txt + "\n")
@@ -188,9 +177,58 @@ def write_entrs (cur, entrs, raw, corpora, opts, outf):
                         gob.written = True
                         txt = '\n'.join (fmtxml.grpdef (gob))
                         outf.write (txt + "\n")
-            txt = fmtxml.entr (e, compat=opts.compat, genhists=True)
+            txt = fmtxml.entr (e, compat=compat, genhists=True)
             outf.write (txt + "\n")
-        if Debug: print ("Time: %s (fmt)" % (time.time()-start), file=sys.stderr)
+        if Debug: print ("Time: %s (fmt)"%(time.time()-start),file=sys.stderr)
+
+def open_output (filename, nodtd, compat, root):
+    # Create and open the output file and write the DTD to it if requested.
+        if not filename: outf = sys.stdout
+        else: outf = open (filename, "w")
+        if not opts.nodtd: write_dtd (outf, compat, root)
+          # Add an enclosing root element only if we are also including
+          # a DTD (ie, producing a full XML file).  Otherwise, the file
+          # generated will just be a list of <entr> elements.
+        if not nodtd:
+            if compat:  # Add a date comment...
+                today = time.strftime ("%Y-%m-%d", time.localtime())
+                outf.write ("<!-- %s created: %s -->\n" % (root, today))
+            outf.write ('<%s>\n' % root)
+        return outf
+
+def write_dtd (outf, compat, root):
+          # Choose a dtd to use based on the "--compat" option.
+          # The dtd file is expected to be located somewhere in the
+          # pythonpath (sys.path) directories.
+        if   compat == 'jmdict':     dtd = "dtd-jmdict.xml"
+        elif compat == 'jmdicthist': dtd = "dtd-jmdict.xml"
+        elif compat == 'jmnedict':   dtd = "dtd-jmnedict.xml"
+        elif compat == 'jmneold':    dtd = "dtd-jmneold.xml"
+        else:                        dtd = "dtd-jmdict-ex.xml"
+        dir = jdb.find_in_syspath (dtd)
+        dtdfn = dir + "/" + dtd             # Fully qualified dtd file name.
+          # jdb.get_dtd() reads the dtd text and replaces the root
+          # element name name.
+        dtdtxt= jdb.get_dtd (dtdfn, root)
+        outf.write (dtdtxt)
+        return outf
+
+def read_seqfile (seqfilename):
+        if seqfilename == '-': f = sys.stdin
+        else:
+            f = open (seqfilename)
+        entrlist = []
+        for lnnum, ln in enumerate (f):
+            lnnum += 1
+            ln = re.sub (r'\s*#.*', '', ln)
+            if not ln: continue
+            try: entrlist.extend ([int(x) for x in ln.split()])
+            except ValueError as e:
+                print ("Bad value in %s at line %s:\n  %s"
+                       % (seqfilename, lnnum, str(e)), file=sys.stderr)
+        if f != sys.stdin: f.close()
+        return entrlist
+
 
 from optparse import OptionParser, OptionGroup
 from pylib.optparse_formatters import IndentedHelpFormatterWithNL
@@ -220,18 +258,18 @@ Arguments:
                 jmdict: generate XML that uses the standard
                   JMdict DTD (rev 1.09).  DTD changes from rev 1.07
                   include: 1.08: drop the <info> element entirely;
-                  1.09: add "g_type" attribute to the <gloss> element. 
+                  1.09: add "g_type" attribute to the <gloss> element.
 
                 jmdicthist: generate XML that uses the standard
                   JMdict DTD (rev 1.09) but includes an <info> element
                   with the entry's full history.
 
                 jmnedict: generate XML that uses the standard
-                  (post 2014-10) JMnedict DTD that include seq 
+                  (post 2014-10) JMnedict DTD that include seq
                   numbers and xrefs.
 
                 jmneold: generate XML that uses the old-style
-                  (pre 2014-10) JMnedict DTD that does not include 
+                  (pre 2014-10) JMnedict DTD that does not include
                   seq numbers and xrefs.
 
                 If not given: generate XML that completely
