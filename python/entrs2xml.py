@@ -27,6 +27,7 @@ _ = os.path.join (os.path.dirname(_), 'python', 'lib')
 if _ not in sys.path: sys.path.insert(0, _)
 
 import time, re
+import pylib.progress_bar
 import jdb, fmt, fmtxml
 
 def main (args, opts):
@@ -40,13 +41,19 @@ def main (args, opts):
             if opts.compat in ('jmnedict','jmneold'): opts.root = 'JMnedict'
             else: opts.root = 'JMdict'
         if opts.seqfile:
-            entrlist = read_seqfile (opts.seqfile)
-        else: entrlist = []
+            seqlist = read_seqfile (opts.seqfile)
+        else: seqlist = []
 
           # Get a sql statement that will select all the entries to be
           # extracted, or in the case of a seq# file, the pool of entries
           # containing the seq#s.
         sql_base = select_entries (opts)
+
+          # Following sets 'pbar' to None if no progress indicator wanted,
+          #  to "" if 'blocks (aka dots) wanted, or to a progress_bar object
+          #  for "percent" (the default).
+        if Debug: pbar = None
+        else: pbar = setup_progbar (cur, opts.progress, sql_base, seqlist)
 
           # Open the output file (which also writes the DTD to it if needed).
           # We wait as late as possible to do this to avoid creating the
@@ -58,25 +65,28 @@ def main (args, opts):
           # Read the entries in blocks of 'opts.blocksize', format them
           # as XML, and write them to the output file.
         done = 0
-        for entries,raw in read_entries (cur, sql_base, entrlist,
+        for entries,raw in read_entries (cur, sql_base, seqlist,
                                          opts.count, opts.blocksize):
             done += len(entries)
             write_entrs (cur, entries, raw, [], opts.compat, outf)
+            if pbar: pbar (done)
+            elif pbar == '': sys.stderr.write ('.');  sys.stderr.flush()
+            if Debug: print ("%d entries written" % done, file=sys.stderr)
 
         if not opts.nodtd: outf.writelines ('</%s>\n' % opts.root)
         if not Debug: sys.stderr.write ('\n')
         print ("Wrote %d entries" % done, file=sys.stderr)
 
-def read_entries (cur, sql_base, entrlist, count, blksize):
+def read_entries (cur, sql_base, seqlist, count, blksize):
     # This is a generator that reads and yields successive blocks of entries.
-        entrlist_loc = 0;  corpora = set()
+        seqlist_loc = 0;  corpora = set()
         lastsrc, lastseq, lastid = 0, 0, 0
 
         while count is None or count > 0:
-            if entrlist:
-                seqnums = tuple (entrlist[entrlist_loc : entrlist_loc+blksize])
+            if seqlist:
+                seqnums = tuple (seqlist[seqlist_loc : seqlist_loc+blksize])
                 if not seqnums: break
-                entrlist_loc += blksize
+                seqlist_loc += blksize
                   #FIXME: need detection of non-existent seq#s.
                 sql = "SELECT id FROM (%s) AS s "\
                       "WHERE seq IN %%s ORDER BY src,seq,id LIMIT %d"\
@@ -125,9 +135,6 @@ def read_entries (cur, sql_base, entrlist, count, blksize):
             lastsrc, lastseq, lastid \
                 = entrs[-1].src, entrs[-1].seq, entrs[-1].id + 1
             if count is not None: count -= blksize
-            if not Debug:
-                sys.stderr.write ('.');  sys.stderr.flush()
-            else: print ("%d entries written" % done, file=sys.stderr)
 
 def select_entries (opts):
     # Based on the entry selection criteria given on the command line
@@ -217,18 +224,44 @@ def read_seqfile (seqfilename):
         if seqfilename == '-': f = sys.stdin
         else:
             f = open (seqfilename)
-        entrlist = []
+        seqlist = []
         for lnnum, ln in enumerate (f):
             lnnum += 1
             ln = re.sub (r'\s*#.*', '', ln)
             if not ln: continue
-            try: entrlist.extend ([int(x) for x in ln.split()])
+            try: seqlist.extend ([int(x) for x in ln.split()])
             except ValueError as e:
                 print ("Bad value in %s at line %s:\n  %s"
                        % (seqfilename, lnnum, str(e)), file=sys.stderr)
         if f != sys.stdin: f.close()
-        return entrlist
+        return seqlist
 
+def setup_progbar (cur, prog_type, sql_base, seqlist):
+    # Return a value that will be used when displaying a progress indicator:
+    #   None: no progress indication wanted.
+    #   "":  use "blocks" (print one "." per block) indicator.
+    #   progress_bar instance:  use a "percent" indicator.
+
+        if not prog_type or prog_type == 'none': return None
+        if prog_type == 'blocks': return ''
+          # For the "percent" progress indicator we need an estimate
+          # of the total number of entries we'll be processing.
+        if seqlist:
+              # This estimate may not be accurate since there may be
+              # seq#'s in 'seqlist' that are not in the database or
+              # duplicates that will produce only one actual entry.
+              # But it is about the best we can do conveniently and
+              # should at worst overestimate the number of results.
+            estimate = len (seqfile)
+        else:
+              # Get a count of the number of entries that will be
+              # retrieved.
+            sql = "SELECT COUNT(*) FROM (%s) AS s" % sql_base
+            estimate = jdb.dbread (cur, sql)[0][0]
+
+        pbar = pylib.progress_bar.InitBar (
+                title="", size=estimate, offset=2)
+        return pbar
 
 from optparse import OptionParser, OptionGroup
 from pylib.optparse_formatters import IndentedHelpFormatterWithNL
@@ -312,6 +345,20 @@ Arguments:
             help="Read and write entries in blocks of NUM entries.  "
                 "Default is 1000.")
 
+        p.add_option ("--progress", default="percent",
+            help="""Show progress while running.  Choices are:
+
+                      none: no progress indicator.
+
+                      percent (default): show a percentage progress bar.
+
+                      blocks: print a dot for each block of entries.
+
+                    Progress bar output is written to stderr.
+                    Note the when --seqfile is given, the program may
+                    finish before the progress bar indicates it will
+                    since not all entries listed in the file may exist.""")
+
         p.add_option ("-d", "--dburi", default="jmdict",
             help="URI of the database to use.  Default is \"jmdict\".")
 
@@ -329,6 +376,9 @@ Arguments:
                 ('jmdict','jmdicthist','jmnedict','jmneold'):
             p.error ('--compat option must be one of: "jmdict", '
                      '"jmdicthist", "jmnedict" or "jmneold".')
+        if opts.progress not in ("none", "percent", "blocks"):
+            p.error ('--progress option must be one of: '
+                     '"none", "percent" or "blocks".')
         if  opts.seqfile and (opts.begin or opts.count):
             p.error ('--begin or --count option is incompatible with --seqfile')
         return args, opts
