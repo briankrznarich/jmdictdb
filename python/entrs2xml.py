@@ -41,9 +41,13 @@ def main():
         if not opts.root:
             if opts.compat in ('jmnedict','jmneold'): opts.root = 'JMnedict'
             else: opts.root = 'JMdict'
+
+        seqlist = []
+          # opts.seqnums and opts.seqfile won't both be true (although
+          # both may be false); prohibited in parse_cmdline().
+        if opts.seqnums: seqlist = opts.seqnums
         if opts.seqfile:
             seqlist = read_seqfile (opts.seqfile)
-        else: seqlist = []
 
           # Get a sql statement that will select all the entries to be
           # extracted, or in the case of a seq# file, the pool of entries
@@ -60,7 +64,7 @@ def main():
           # We wait as late as possible to do this to avoid creating the
           # file if there is some error in the command line arguments that
           # can be detected above.
-        outname = opts.filename if opts.filename else None
+        outname = opts.output if opts.output else None
         outf = open_output (outname, opts.nodtd, opts.compat, opts.root)
 
           # Read the entries in blocks of 'opts.blocksize', format them
@@ -253,7 +257,7 @@ def setup_progbar (cur, prog_type, sql_base, seqlist):
               # duplicates that will produce only one actual entry.
               # But it is about the best we can do conveniently and
               # should at worst overestimate the number of results.
-            estimate = len (seqfile)
+            estimate = len (seqlist)
         else:
               # Get a count of the number of entries that will be
               # retrieved.
@@ -273,7 +277,19 @@ def parse_cmdline ():
             "write them in XML form to a file.",
             formatter_class=FlexiFormatter)
 
-        p.add_argument ("filename", default=None,
+        p.add_argument ("seqnums", nargs='*', type=int,
+            help="Sequence numbers of entries (in the corpus specified "
+                "by --corpus) to be written to the XML output file.  "
+                "Entries are written to the output file in the same order "
+                "as given.  "
+                "No notification is currently given for sequence numbers "
+                "with non-existent entries, they are effectively ignored.  "
+                "If no arguments are given (nor the --seqfile option), "
+                "all the entries in the corpus will be written.  "
+                "Sequence numbers may be given on the command line "
+                "or in the file specified by --seqfile but not both.")
+
+        p.add_argument ("-o", "--output", default=None,
             help="Filename to write XML to.  If not given, output will "
                 "be to stdout.")
 
@@ -283,16 +299,14 @@ def parse_cmdline ():
                 "\"jmdict\".")
 
         p.add_argument ("--compat", default=None,
-            choices=['jmdict','jmnedit','jmneold','jmdicthist'],
+            choices=['jmdict','jmnedict','jmneold','jmdicthist'],
             help="""If given, COMPAT must have one of the following values:
 
                 * jmdict: generate XML that uses the standard
-                  JMdict DTD (rev 1.09).  DTD changes from rev 1.07
-                  include: 1.08: drop the <info> element entirely;
-                  1.09: add "g_type" attribute to the <gloss> element.
+                  JMdict DTD (rev 1.09).
 
                 * jmnedict: generate XML that uses the standard
-                  (post 2014-10) JMnedict DTD that include seq
+                  (post 2014-10) JMnedict DTD that includes seq
                   numbers and xrefs.
 
                 * jmneold: generate XML that uses the old-style
@@ -308,28 +322,35 @@ def parse_cmdline ():
                  of the jmdict DTD."""\
                 .replace("\n"+(" "*16),''))   # See Note-1 below.
 
-        p.add_argument ("-b", "--begin", default=0,
+        p.add_argument ("--begin", "-b", default=0,
             type=int, metavar="SEQNUM",
             help="Sequence number of first entry to process.  If not "
                 "given or 0, processing will start with the entry "
                 "with the smallest sequence number in the requested "
-                "corpus.  Mutually exclusive with the --seqfile option.")
+                "corpus.  Mutually exclusive with the --seqfile option "
+                "or sequence number arguments.")
 
-        p.add_argument ("-c", "--count", default=None,
+        p.add_argument ("--count", "-c", default=None,
             type=int, metavar="NUM",
             help="Number of entries to process.  If not given, all "
                 "entries in the requested corpus will be processed.  "
-                "Mutually exclusive with the --seqfile option.  ")
+                "Mutually exclusive with the --seqfile option "
+                "or sequence number arguments.")
 
         p.add_argument ("--seqfile", default=None,
             help="Name of a file that contains a sequence numbers "
                 "to be processed.  A line may contain multiple sequence "
                 "numbers separated by spaces.  A # character indicates a "
                 "comment and it and any text to the end of line will be "
-                "ignored, as will blank lines.  Mutually exclusive with "
-                "the --begin or --count options.")
+                "ignored, as will blank lines.  "
+                "Entries are written to the output file in the same order "
+                "as given.  "
+                "No notification is currently given for sequence numbers "
+                "with non-existent entries, they are effectively ignored.  "
+                "Mutually exclusive with sequence numbers arguments "
+                "and the --begin and --count options.")
 
-        p.add_argument ("-r", "--root",
+        p.add_argument ("--root", "-r",
             help="Name to use as the root element in the output XML file.  "
                 "It is normally chosen automatically based "
                 "on --compat but can be overridden with this option." )
@@ -339,7 +360,7 @@ def parse_cmdline ():
             help="Do not write a DTD or root element. If this option "
                 "is given, --root is ignored.")
 
-        p.add_argument ("-B", "--blocksize", default=1000,
+        p.add_argument ("--blocksize", "-B", default=1000,
             type=int, metavar="NUM",
             help="Read and write entries in blocks of NUM entries.  "
                 "Default is 1000.")
@@ -354,14 +375,15 @@ def parse_cmdline ():
                 * blocks: print a dot for each block of entries.
 
                 Progress bar output is written to stderr.
-                 Note the when --seqfile is given, the program may
-                 finish before the progress bar indicates it will
-                 since not all entries listed in the file may exist."""\
+                 Note when sequence number arguments or --seqfile is
+                 given, the program may finish before the progress
+                 bar indicates it will since not all entries requested
+                 may exist."""\
                 .replace("\n"+(" "*16),''))  # See Note-1 below.
 
         p.add_argument ("-d", "--dburi", default="jmdict",
             help="URI of the database to use.  If the database is local "
-                "(on the same machine) and no additional conection "
+                "(on the same machine) and no additional connection "
                 "information (username, etc) is needed, this can be "
                 "simply the database name.  Default is \"jmdict\".")
 
@@ -378,8 +400,12 @@ def parse_cmdline ():
           # being appended to the last word on the preceeding line.
 
         args = p.parse_args ()
-        if  args.seqfile and (args.begin or args.count):
-            p.error ("--begin or --count option is incompatible with --seqfile")
+        if  (args.seqfile or args.seqnums) and (args.begin or args.count):
+            p.error ("--begin or --count option is incompatible "
+                     "with sequence number arguments or --seqfile.")
+        if  args.seqfile and args.seqnums:
+            p.error ("Sequence number arguments are incompatible "
+                     "with --seqfile")
         return args
 
 if __name__ == '__main__': main()
