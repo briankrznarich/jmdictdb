@@ -73,7 +73,7 @@ def main():
         for entries,raw in read_entries (cur, sql_base, seqlist,
                                          opts.count, opts.blocksize):
             done += len(entries)
-            write_entrs (cur, entries, raw, [], opts.compat, outf)
+            write_entrs (cur, outf, entries, raw, opts.compat)
             if pbar: pbar (done)
             elif pbar == '': sys.stderr.write ('.');  sys.stderr.flush()
             if Debug: print ("%d entries written" % done, file=sys.stderr)
@@ -170,7 +170,7 @@ def select_entries (opts):
             sql_base += " LIMIT %s" % int (opts.count)
         return sql_base
 
-def write_entrs (cur, entrs, raw, corpora, compat, outf):
+def write_entrs (cur, outf, entrs, raw, compat, corpora=set()):
           # To format xrefs in xml, they must be augmented so that the
           # the target reading and kanji text will be available.
         jdb.augment_xrefs (cur, raw['xref'])
