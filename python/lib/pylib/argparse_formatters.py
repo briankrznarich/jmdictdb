@@ -1,23 +1,24 @@
-# http://bugs.python.org/issue12806, http://bugs.python.org/file22977/argparse_formatter.py
+# Help formatters for Python's argparse module.
+# Contents:
+#   ParagraphFormatter (Stuart McGraw)
+#   ParagraphFormatterML (Stuart McGraw)
+#   FlexiFormatter (David Steele)
 
-import argparse
-import re
-import textwrap
+#=============================================================================
+# See also: http://bugs.python.org/issue12806,
+#  http://bugs.python.org/file22977/argparse_formatter.py
 
+import argparse, re, textwrap
 class ParagraphFormatter(argparse.HelpFormatter):
-
     def _split_lines(self, text, width):
         return _para_reformat(self, text, width, multiline=False)
-
     def _fill_text(self, text, width, indent):
         lines =_para_reformat(self, text, width, indent, False)
         return '\n'.join(lines)
 
 class ParagraphFormatterML(argparse.HelpFormatter):
-
     def _split_lines(self, text, width):
         return _para_reformat(self, text, width, multiline=True)
-
     def _fill_text(self, text, width, indent):
         lines = _para_reformat(self, text, width, indent, True)
         return '\n'.join(lines)
@@ -25,7 +26,6 @@ class ParagraphFormatterML(argparse.HelpFormatter):
 def _para_reformat(self, text, width, indent='', multiline=False):
         new_lines = list()
         main_indent = len(re.match(r'( *)',text).group(1))
-
         def blocker (text):
             '''On each call yields 2-tuple consisting of a boolean
             and the next block of text from 'text'.  A block is
@@ -45,16 +45,18 @@ def _para_reformat(self, text, width, indent='', multiline=False):
                 isindented = line_indent - main_indent > 0
                 isblank = re.match(r'\s*$', line)
                 if isblank or isindented:       # A no-wrap line.
-                    if block:                       # Yield previously accumulated block .
-                        yield True, ''.join(block)  #  of text if any, for wrapping.
+                    if block:
+                          # Yield previously accumulated block
+                          #  of text if any, for wrapping.
+                        yield True, ''.join(block)
                         block = list()
-                    yield False, line               # And now yield our no-wrap line.
-                else:                           # We have a regular text line.
-                    if multiline:                   # In multiline mode accumulate it.
+                    yield False, line     # And now yield our no-wrap line.
+                else:                     # We have a regular text line.
+                    if multiline:         # In multiline mode accumulate it.
                         block.append(line)
-                    else:                           # Not in multiline mode, yield it
-                        yield True, line            #  for wrapping.
-            if block:                           # Yield any text block left over.
+                    else:                 # Not in multiline mode, yield it
+                        yield True, line  #  for wrapping.
+            if block:                     # Yield any text block left over.
                 yield (True, ''.join(block))
 
         for wrap, line in blocker(text):
@@ -74,70 +76,92 @@ def _para_reformat(self, text, width, indent='', multiline=False):
 
         return new_lines
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(formatter_class=ParagraphFormatter,
-                                     description='''\
-        This description help text will have this first long line wrapped to\
-        fit the target window size so that your text remains flexible.
+#=============================================================================
+# From https://pypi.org/project/argparse-formatter/
+# 2020-01-20
+# Mionor reformatting applied.
+# See also ParagraphFormatter at the above URL,
+#
+# FlexiFormatter is
+# Copyright (c) 2019 David Steele <dsteele@gmail.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
+# License-Filename: LICENSE
 
-            1. But lines such as
-            2. this that that are indented beyond the first line's indent,
-            3. are reproduced verbatim, with no wrapping.
-               or other formatting applied.
+import argparse, re, textwrap
+class FlexiFormatter(argparse.RawTextHelpFormatter):
+    """FlexiFormatter which respects new line formatting and wraps the rest
 
-        You must use backslashes at the end of lines to indicate that you\
-        want the text to wrap instead of preserving the newline. '''
-        'Alternatively you can avoid using backslashes by using the '
-        'fact that Python concatenates adjacent string literals as '
-        'we are doing now.\n\n'
-        ''
-        'As with docstrings, the leading space to the text block is ignored.')
-    parser.add_argument('--example', help='''\
-        This argument's help text will have this first long line wrapped to\
-        fit the target window size so that your text remains flexible.
+    Example:
+        >>> parser = argparse.ArgumentParser(formatter_class=FlexiFormatter)
+        >>> parser.add_argument('--example', help='''\
+        ...     This argument's help text will have this first long line\
+        ...     wrapped to fit the target window size so that your text\
+        ...     remains flexible.
+        ...
+        ...         1. This option list
+        ...         2. is still persisted
+        ...         3. and the option strings get wrapped like this with an\
+        ...            indent for readability.
+        ...
+        ...     You must use backslashes at the end of lines to indicate that\
+        ...     you want the text to wrap instead of preserving the newline.
+        ...
+        ...     As with docstrings, the leading space to the text block is\
+        ...     ignored.
+        ... ''')
+        >>> parser.parse_args(['-h'])
+        usage: argparse_formatter.py [-h] [--example EXAMPLE]
 
-            1. But lines such as
-            2. this that that are indented beyond the first line's indent,
-            3. are reproduced verbatim, with no wrapping.
-               or other formatting applied.
+        optional arguments:
+          -h, --help         show this help message and exit
+          --example EXAMPLE  This argument's help text will have this first
+                             long line wrapped to fit the target window size
+                             so that your text remains flexible.
 
-        You must use backslashes at the end of lines to indicate that you\
-        want the text to wrap instead of preserving the newline. '''
-        'Alternatively you can avoid using backslashes by using the '
-        'fact that Python concatenates adjacent string literals as '
-        'we are doing now.\n\n'
-        ''
-        'As with docstrings, the leading space to the text block is ignored.')
-    parser.print_help()
+                                 1. This option list
+                                 2. is still persisted
+                                 3. and the option strings get wrapped like
+                                    this with an indent for readability.
 
-    parser = argparse.ArgumentParser(formatter_class=ParagraphFormatterML,
-                                     description='''\
-        This description help text will have this first long line wrapped to
-        fit the target window size so that your text remains flexible.
+                             You must use backslashes at the end of lines to
+                             indicate that you want the text to wrap instead
+                             of preserving the newline.
 
-            1. But lines such as
-            2. this that that are indented beyond the first line's indent,
-            3. are reproduced verbatim, with no wrapping.
-               or other formatting applied.
+                             As with docstrings, the leading space to the
+                             text block is ignored.
 
-        The ParagraphFormatterML class will treat consecutive lines of
-        text as a single block to rewrap.  So there is no need to end lines
-        with backslashes to create a single long logical line.
+    Only the name of this class is considered a public API. All the methods
+    provided by the class are considered an implementation detail.
+    """
 
-        As with docstrings, the leading space to the text block is ignored.''')
+    def _split_lines(self, text, width):
+        return self._para_reformat(text, width)
 
-    parser.add_argument('--example', help='''\
-        This argument's help text will have this first long line wrapped to
-        fit the target window size so that your text remains flexible.
+    def _fill_text(self, text, width, indent):
+        lines = self._para_reformat(text, width)
+        return "\n".join(lines)
 
-            1. But lines such as
-            2. this that that are indented beyond the first line's indent,
-            3. are reproduced verbatim, with no wrapping.
-               or other formatting applied.
-
-        The ParagraphFormatterML class will treat consecutive lines of
-        text as a single block to rewrap.  So there is no need to end lines
-        with backslashes to create a single long logical line.
-
-        As with docstrings, the leading space to the text block is ignored.''')
-    parser.print_help()
+    def _para_reformat(self, text, width):
+        text = textwrap.dedent(text).strip()
+        lines = list()
+        main_indent = len(re.match(r"( *)", text).group(1))
+          # Wrap each line individually to allow for partial formatting
+        for line in text.splitlines():
+              # Get this line's indent and figure out what indent to use
+              # if the line wraps. Account for lists of small variety.
+            indent = len(re.match(r"( *)", line).group(1))
+            list_match = re.match(r"( *)(([*-+>]+|\w+\)|\w+\.) +)", line)
+            if list_match:
+                sub_indent = indent + len(list_match.group(2))
+            else:
+                sub_indent = indent
+              # Textwrap will do all the hard work for us
+            line = self._whitespace_matcher.sub(" ", line).strip()
+            new_lines = textwrap.wrap(
+                text=line,
+                width=width,
+                initial_indent=" " * (indent - main_indent),
+                subsequent_indent=" " * (sub_indent - main_indent), )
+              # Blank lines get eaten by textwrap, put it back with [' ']
+            lines.extend(new_lines or [" "])
+        return lines

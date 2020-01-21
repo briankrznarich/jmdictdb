@@ -30,8 +30,9 @@ import time, re
 import pylib.progress_bar
 import jdb, fmt, fmtxml
 
-def main (args, opts):
+def main():
         global Debug
+        opts = parse_cmdline()
         Debug = opts.debug
         cur = jdb.dbOpen (None, **jdb.parse_pguri(opts.dburi))
 
@@ -59,7 +60,7 @@ def main (args, opts):
           # We wait as late as possible to do this to avoid creating the
           # file if there is some error in the command line arguments that
           # can be detected above.
-        outname = args[0] if args else None
+        outname = opts.filename if opts.filename else None
         outf = open_output (outname, opts.nodtd, opts.compat, opts.root)
 
           # Read the entries in blocks of 'opts.blocksize', format them
@@ -192,7 +193,7 @@ def open_output (filename, nodtd, compat, root):
     # Create and open the output file and write the DTD to it if requested.
         if not filename: outf = sys.stdout
         else: outf = open (filename, "w")
-        if not opts.nodtd: write_dtd (outf, compat, root)
+        if not nodtd: write_dtd (outf, compat, root)
           # Add an enclosing root element only if we are also including
           # a DTD (ie, producing a full XML file).  Otherwise, the file
           # generated will just be a list of <entr> elements.
@@ -263,66 +264,64 @@ def setup_progbar (cur, prog_type, sql_base, seqlist):
                 title="", size=estimate, offset=2)
         return pbar
 
-from optparse import OptionParser, OptionGroup
-from pylib.optparse_formatters import IndentedHelpFormatterWithNL
+import argparse
+from pylib.argparse_formatters import FlexiFormatter
 
 def parse_cmdline ():
-        u = \
-"""\n\t%prog [options] [outfile]
+        p = argparse.ArgumentParser (description=
+            "%(prog)s will read entries from a JMdictDB database and "
+            "write them in XML form to a file.",
+            formatter_class=FlexiFormatter)
 
-%prog will read entries from a jmdictdb database and write them
-in XML form to a file.
+        p.add_argument ("filename", default=None,
+            help="Filename to write XML to.  If not given, output will "
+                "be to stdout.")
 
-Arguments:
-        outfile -- Name of the output XML file.  If not given output
-                is written to stdout."""
-
-        p = OptionParser (usage=u, add_help_option=False,
-                formatter=IndentedHelpFormatterWithNL())
-
-        p.add_option ("-s", "--corpus", default="jmdict",
+        p.add_argument ("-s", "--corpus", default="jmdict",
             help="Extract entries belonging to this corpus.  May be "
                 "given as either a corpus name or id number.  Default is "
                 "\"jmdict\".")
 
-        p.add_option ("--compat", default=None,
+        p.add_argument ("--compat", default=None,
+            choices=['jmdict','jmnedit','jmneold','jmdicthist'],
             help="""If given, COMPAT must have one of the following values:
 
-                jmdict: generate XML that uses the standard
+                * jmdict: generate XML that uses the standard
                   JMdict DTD (rev 1.09).  DTD changes from rev 1.07
                   include: 1.08: drop the <info> element entirely;
                   1.09: add "g_type" attribute to the <gloss> element.
 
-                jmdicthist: generate XML that uses the standard
-                  JMdict DTD (rev 1.09) but includes an <info> element
-                  with the entry's full history.
-
-                jmnedict: generate XML that uses the standard
+                * jmnedict: generate XML that uses the standard
                   (post 2014-10) JMnedict DTD that include seq
                   numbers and xrefs.
 
-                jmneold: generate XML that uses the old-style
+                * jmneold: generate XML that uses the old-style
                   (pre 2014-10) JMnedict DTD that does not include
                   seq numbers and xrefs.
 
-                If not given: generate XML that completely
-                  describes the entry using an enhanced version
-                  of the jmdict DTD.""")
+                * jmdicthist: generate XML that uses the standard
+                  JMdict DTD (rev 1.09) but includes an <info> element
+                  with the entry's full history.
 
-        p.add_option ("-b", "--begin", default=0,
-            type="int", metavar="SEQNUM",
+                If not given: generate XML that completely
+                 describes the entry using an enhanced version
+                 of the jmdict DTD."""\
+                .replace("\n"+(" "*16),''))   # See Note-1 below.
+
+        p.add_argument ("-b", "--begin", default=0,
+            type=int, metavar="SEQNUM",
             help="Sequence number of first entry to process.  If not "
                 "given or 0, processing will start with the entry "
                 "with the smallest sequence number in the requested "
                 "corpus.  Mutually exclusive with the --seqfile option.")
 
-        p.add_option ("-c", "--count", default=None,
-            type="int", metavar="NUM",
+        p.add_argument ("-c", "--count", default=None,
+            type=int, metavar="NUM",
             help="Number of entries to process.  If not given, all "
                 "entries in the requested corpus will be processed.  "
                 "Mutually exclusive with the --seqfile option.  ")
 
-        p.add_option ("--seqfile", default=None,
+        p.add_argument ("--seqfile", default=None,
             help="Name of a file that contains a sequence numbers "
                 "to be processed.  A line may contain multiple sequence "
                 "numbers separated by spaces.  A # character indicates a "
@@ -330,59 +329,57 @@ Arguments:
                 "ignored, as will blank lines.  Mutually exclusive with "
                 "the --begin or --count options.")
 
-        p.add_option ("-r", "--root",
-            help="""Name to use as the root element in the output XML file.
-                If 'compat' is None or "jmdict", default is "JMdict",
-                otherwise ('compat' is "jmnedict") default is "JMnedict".""")
+        p.add_argument ("-r", "--root",
+            help="Name to use as the root element in the output XML file.  "
+                "It is normally chosen automatically based "
+                "on --compat but can be overridden with this option." )
 
-        p.add_option ("--nodtd", default=None,
+        p.add_argument ("--nodtd", default=None,
             action="store_true",
             help="Do not write a DTD or root element. If this option "
                 "is given, --root is ignored.")
 
-        p.add_option ("-B", "--blocksize", default=1000,
-            type="int", metavar="NUM",
+        p.add_argument ("-B", "--blocksize", default=1000,
+            type=int, metavar="NUM",
             help="Read and write entries in blocks of NUM entries.  "
                 "Default is 1000.")
 
-        p.add_option ("--progress", default="percent",
+        p.add_argument ("--progress", default="percent",
             help="""Show progress while running.  Choices are:
 
-                      none: no progress indicator.
+                * none: no progress indicator.
 
-                      percent (default): show a percentage progress bar.
+                * percent (default): show a percentage progress bar.
 
-                      blocks: print a dot for each block of entries.
+                * blocks: print a dot for each block of entries.
 
-                    Progress bar output is written to stderr.
-                    Note the when --seqfile is given, the program may
-                    finish before the progress bar indicates it will
-                    since not all entries listed in the file may exist.""")
+                Progress bar output is written to stderr.
+                 Note the when --seqfile is given, the program may
+                 finish before the progress bar indicates it will
+                 since not all entries listed in the file may exist."""\
+                .replace("\n"+(" "*16),''))  # See Note-1 below.
 
-        p.add_option ("-d", "--dburi", default="jmdict",
-            help="URI of the database to use.  Default is \"jmdict\".")
+        p.add_argument ("-d", "--dburi", default="jmdict",
+            help="URI of the database to use.  If the database is local "
+                "(on the same machine) and no additional conection "
+                "information (username, etc) is needed, this can be "
+                "simply the database name.  Default is \"jmdict\".")
 
-        p.add_option ("--help",
-            action="help", help="Print this help message.")
-
-        p.add_option ("-D", "--debug", default="0",
-            dest="debug", type="int",
+        p.add_argument ("-D", "--debug", default="0",
+            dest="debug", type=int,
             help="If given a value greater than 0, print debugging information "
                 "while executing.  See source code for details.")
 
-        opts, args = p.parse_args ()
-        if len (args) > 1: p.error ("%d arguments given, expected at most one.")
-        if opts.compat and opts.compat not in \
-                ('jmdict','jmdicthist','jmnedict','jmneold'):
-            p.error ('--compat option must be one of: "jmdict", '
-                     '"jmdicthist", "jmnedict" or "jmneold".')
-        if opts.progress not in ("none", "percent", "blocks"):
-            p.error ('--progress option must be one of: '
-                     '"none", "percent" or "blocks".')
-        if  opts.seqfile and (opts.begin or opts.count):
-            p.error ('--begin or --count option is incompatible with --seqfile')
-        return args, opts
+          # Note-1: Help text in triple quotes contains the embedded
+          # leading space characters.  These are removed with the
+          # '.replace("\n"+" "*16)' method call applied to the string.
+          # Lines of text that will be reflowed by the help formatter
+          # need to be indented an extra space to prevent them from
+          # being appended to the last word on the preceeding line.
 
-if __name__ == '__main__':
-        args, opts = parse_cmdline()
-        main (args, opts)
+        args = p.parse_args ()
+        if  args.seqfile and (args.begin or args.count):
+            p.error ("--begin or --count option is incompatible with --seqfile")
+        return args
+
+if __name__ == '__main__': main()
