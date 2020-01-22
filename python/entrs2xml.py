@@ -36,12 +36,6 @@ def main():
         Debug = opts.debug
         cur = jdb.dbOpen (None, **jdb.parse_pguri(opts.dburi))
 
-          # If no "--root" option was supplied, choose a default based
-          # on the value of the "--compat" option.
-        if not opts.root:
-            if opts.compat in ('jmnedict','jmneold'): opts.root = 'JMnedict'
-            else: opts.root = 'JMdict'
-
         seqlist = []
           # opts.seqnums and opts.seqfile won't both be true (although
           # both may be false); prohibited in parse_cmdline().
@@ -49,10 +43,20 @@ def main():
         if opts.seqfile:
             seqlist = read_seqfile (opts.seqfile)
 
+          # Get compatibility info based on user request and corpus type.
+        corpid, dtd_fn, compat, dtd_root, dtd_date, appr, warn \
+            = compat_info (opts.corpus, opts.compat)
+        if warn and not opts.force: sys.exit (
+            "The --compat option you requested (%s) incompatible with "\
+            "the requested --corpus (%s).  To continue anyway, use the "\
+            "--force option." % (opts.compat, opts.corpus))
+        if dtd_fn is None: opts.nodtd = True
+        if not opts.root: opts.root = dtd_root
+
           # Get a sql statement that will select all the entries to be
           # extracted, or in the case of a seq# file, the pool of entries
           # containing the seq#s.
-        sql_base = select_entries (opts)
+        sql_base = select_entries (corpid, opts.begin, opts.count, appr)
 
           # Following sets 'pbar' to None if no progress indicator wanted,
           #  to "" if 'blocks (aka dots) wanted, or to a progress_bar object
@@ -60,12 +64,12 @@ def main():
         if Debug: pbar = None
         else: pbar = setup_progbar (cur, opts.progress, sql_base, seqlist)
 
-          # Open the output file (which also writes the DTD to it if needed).
+          # Open the output file and also write the DTD to it if needed.
           # We wait as late as possible to do this to avoid creating the
           # file if there is some error in the command line arguments that
           # can be detected above.
         outname = opts.output if opts.output else None
-        outf = open_output (outname, opts.nodtd, opts.compat, opts.root)
+        outf = open_output (outname, dtd_fn, opts.root, dtd_date)
 
           # Read the entries in blocks of 'opts.blocksize', format them
           # as XML, and write them to the output file.
@@ -73,7 +77,7 @@ def main():
         for entries,raw in read_entries (cur, sql_base, seqlist,
                                          opts.count, opts.blocksize):
             done += len(entries)
-            write_entrs (cur, outf, entries, raw, opts.compat)
+            write_entrs (cur, outf, entries, raw, compat)
             if pbar: pbar (done)
             elif pbar == '': sys.stderr.write ('.');  sys.stderr.flush()
             if Debug: print ("%d entries written" % done, file=sys.stderr)
@@ -84,9 +88,13 @@ def main():
 
 def read_entries (cur, sql_base, seqlist, count, blksize):
     # This is a generator that reads and yields successive blocks of entries.
-        seqlist_loc = 0;  corpora = set()
-        lastsrc, lastseq, lastid = 0, 0, 0
+    # Prior to rev 200120-0c649f6 this program allowed extracting entries
+    # in different corpora together.  In the aforementioned revision that
+    # feature was removed, but primarily from the UI; this function retains
+    # the ability to process entries with different 'src' (corpora) values
+    # should the desire to restore that ability reappear.
 
+        seqlist_loc, lastsrc, lastseq, lastid = 0, 0, 0, 0
         while count is None or count > 0:
             if seqlist:
                 seqnums = tuple (seqlist[seqlist_loc : seqlist_loc+blksize])
@@ -141,7 +149,7 @@ def read_entries (cur, sql_base, seqlist, count, blksize):
                 = entrs[-1].src, entrs[-1].seq, entrs[-1].id + 1
             if count is not None: count -= blksize
 
-def select_entries (opts):
+def select_entries (corpid, begin, count, appr):
     # Based on the entry selection criteria given on the command line
     # (and available here in 'opts'), create a SQL statement that will
     # select the entire set of entries that we will extract from the
@@ -150,24 +158,20 @@ def select_entries (opts):
     # Ordering and retrieving these entries in blocks will be done
     # later using the sql generated here as a subselect.
 
-        corpid = opts.corpus
-        if corpid.isdigit(): corpid = int (corpid)
-        corpid = jdb.KW.SRC[corpid].id
-
         whr_terms = ["src=%s" % corpid]
-        if opts.compat:
+        if appr:
             whr_terms.append ("NOT unap")
             whr_terms.append ("stat=%s" % str(jdb.KW.STAT['A'].id))
-        if opts.begin:
-            whr_terms.append ("seq>=%s" % opts.begin)
+        if begin:
+            whr_terms.append ("seq>=%s" % begin)
         sql_base = "SELECT id,seq,src FROM entr WHERE %s"\
                    % " AND ".join (whr_terms)
-        if opts.count:
+        if count:
               # If LIMIT is used, we also require an ORDER BY to
               # make sure the desired subset of entries is selected
               # rather than an arbitrary subset.
             sql_base += " ORDER BY src,seq,id"
-            sql_base += " LIMIT %s" % int (opts.count)
+            sql_base += " LIMIT %s" % int (count)
         return sql_base
 
 def write_entrs (cur, outf, entrs, raw, compat, corpora=set()):
@@ -193,35 +197,30 @@ def write_entrs (cur, outf, entrs, raw, compat, corpora=set()):
             outf.write (txt + "\n")
         if Debug: print ("Time: %s (fmt)"%(time.time()-start),file=sys.stderr)
 
-def open_output (filename, nodtd, compat, root):
-    # Create and open the output file and write the DTD to it if requested.
+def open_output (filename, dtd_fn, dtd_root, dtd_date):
+    # Create and open the output file and write the DTD to it if
+    # 'dtd_fn' (the name of the dtd template file) has a non-false
+    # str value.
         if not filename: outf = sys.stdout
         else: outf = open (filename, "w")
-        if not nodtd: write_dtd (outf, compat, root)
-          # Add an enclosing root element only if we are also including
-          # a DTD (ie, producing a full XML file).  Otherwise, the file
-          # generated will just be a list of <entr> elements.
-        if not nodtd:
-            if compat:  # Add a date comment...
+          # Write the dtd if requested (via a 'dtd_fn' value with the name
+          # of the dtd template file to use.  If 'dtd_fn' is false, skip the
+          # dtd; the output file will be list <entry> and maybe <corpus>
+          # elements.
+        if dtd_fn:
+            write_dtd (outf, dtd_fn, dtd_root)
+            if dtd_date:
                 today = time.strftime ("%Y-%m-%d", time.localtime())
-                outf.write ("<!-- %s created: %s -->\n" % (root, today))
-            outf.write ('<%s>\n' % root)
+                outf.write ("<!-- %s created: %s -->\n" % (dtd_root, today))
+            outf.write ('<%s>\n' % dtd_root)
         return outf
 
-def write_dtd (outf, compat, root):
-          # Choose a dtd to use based on the "--compat" option.
-          # The dtd file is expected to be located somewhere in the
-          # pythonpath (sys.path) directories.
-        if   compat == 'jmdict':     dtd = "dtd-jmdict.xml"
-        elif compat == 'jmdicthist': dtd = "dtd-jmdict.xml"
-        elif compat == 'jmnedict':   dtd = "dtd-jmnedict.xml"
-        elif compat == 'jmneold':    dtd = "dtd-jmneold.xml"
-        else:                        dtd = "dtd-jmdict-ex.xml"
-        dir = jdb.find_in_syspath (dtd)
-        dtdfn = dir + "/" + dtd             # Fully qualified dtd file name.
+def write_dtd (outf, dtd_fn, dtd_root):
+        dir = jdb.find_in_syspath (dtd_fn)
+        dtdpath = dir + "/" + dtd_fn             # Fully qualified dtd file name.
           # jdb.get_dtd() reads the dtd text and replaces the root
           # element name name.
-        dtdtxt= jdb.get_dtd (dtdfn, root)
+        dtdtxt= jdb.get_dtd (dtdpath, dtd_root)
         outf.write (dtdtxt)
         return outf
 
@@ -240,6 +239,43 @@ def read_seqfile (seqfilename):
                        % (seqfilename, lnnum, str(e)), file=sys.stderr)
         if f != sys.stdin: f.close()
         return seqlist
+
+def compat_info (corpus, compat):
+        data = {
+          # Values:
+          #   0 dtd filename:  Name of the DTD template file to use.
+          #   1 fmtxml-compat:  Value of 'compat' to pass to fmtxml.entr().
+          #   2 root:  Text to use in the XML root element.
+          #   3 date: (bool) Include a "created" timestamp in the XML.
+          #   4 appr: (bool) Included only active approved entries.
+          #   5 srcts: List of compatible corpus types.
+          #
+          #   dtd filename        fmtxml-compat  root      date  appr,  srct's
+          #   0                     1            2         3     4       5
+            'jmdict':
+              ["dtd-jmdict.xml",   'jmdict',    'JMdict',  True, True, ['jmdict']],
+            'jmdicthist':
+              ["dtd-jmdict.xml",   'jmdicthist','JMdict',  True, True, ['jmdict']],
+            'jmnedict':
+              ["dtd-jmnedict.xml", 'jmnedict',  'JMnedict',True, True, ['jmnedict']],
+            'jmneold':
+              ["dtd-jmneold.xml",  'jmneold',   'JMnedict',True, True, ['jmnedict']],
+            'jmex':
+              ["dtd-jmdict-ex.xml", None,       'JMdict',  False,False,['jmdict','jmnedict']],
+            }
+          # Note: when adding/changing/deleting compat entries above, be
+          # sure to reflect any key changes in the --compat option choices
+          # in parse_cmdline().
+          # Note: dtd-filename of "None" will suppress dtd like --nodtd.
+
+        corpid = corpus
+        if corpid.isdigit(): corpid = int (corpid)
+        corpid = jdb.KW.SRC[corpid].id
+        srct = jdb.KW.SRC[corpid].srct
+        srctkw = jdb.KW.SRCT[srct].kw
+        if not compat: compat = srctkw
+        warn = srctkw not in data[compat][5]
+        return [corpid] + data[compat][:5] + [warn]
 
 def setup_progbar (cur, prog_type, sql_base, seqlist):
     # Return a value that will be used when displaying a progress indicator:
@@ -289,25 +325,32 @@ def parse_cmdline ():
                 "Sequence numbers may be given on the command line "
                 "or in the file specified by --seqfile but not both.")
 
+        p.add_argument ("-s", "--corpus", required=True,
+            help="Extract entries belonging to this corpus.  May be "
+                "given as either a corpus name or id number.  This "
+                "option is REQUIRED.")
+
         p.add_argument ("-o", "--output", default=None,
             help="Filename to write XML to.  If not given, output will "
                 "be to stdout.")
 
-        p.add_argument ("-s", "--corpus", default="jmdict",
-            help="Extract entries belonging to this corpus.  May be "
-                "given as either a corpus name or id number.  Default is "
-                "\"jmdict\".")
-
         p.add_argument ("--compat", default=None,
-            choices=['jmdict','jmnedict','jmneold','jmdicthist'],
-            help="""If given, COMPAT must have one of the following values:
+            choices=['jmdict','jmnedict','jmneold','jmdicthist', 'jmex'],
+            help="""If not given, an appropriate compat value is
+                 chosen automatically based on the corpus type.
+                 You only need to use this option to generate
+                 specalized XML output.
+
+                If given, COMPAT must have one of the following values:
 
                 * jmdict: generate XML that uses the standard
-                  JMdict DTD (rev 1.09).
+                  JMdict DTD (rev 1.09).  This is the standard
+                  JMdict XML and usually need not be specified.
 
                 * jmnedict: generate XML that uses the standard
                   (post 2014-10) JMnedict DTD that includes seq
-                  numbers and xrefs.
+                  numbers and xrefs.  This is the standard JMnedict
+                  XML and usually need not be specified.
 
                 * jmneold: generate XML that uses the old-style
                   (pre 2014-10) JMnedict DTD that does not include
@@ -317,10 +360,14 @@ def parse_cmdline ():
                   JMdict DTD (rev 1.09) but includes an <info> element
                   with the entry's full history.
 
-                If not given: generate XML that completely
-                 describes the entry using an enhanced version
-                 of the jmdict DTD."""\
+                * jmex: extended form of XML that can represent
+                  multiple corpora including both "jmdict" and
+                  "jmnedict"."""\
                 .replace("\n"+(" "*16),''))   # See Note-1 below.
+
+        p.add_argument ("--force", action='store_true', default=False,
+            help="Continue even if the --compat option chosen is "
+                "incompatible with corpus being processed.")
 
         p.add_argument ("--begin", "-b", default=0,
             type=int, metavar="SEQNUM",
@@ -353,12 +400,12 @@ def parse_cmdline ():
         p.add_argument ("--root", "-r",
             help="Name to use as the root element in the output XML file.  "
                 "It is normally chosen automatically based "
-                "on --compat but can be overridden with this option." )
+                "on --compat but can be overridden with this option.  "
+                "Will have no effect obviously if --nodtd is given.")
 
         p.add_argument ("--nodtd", default=None,
             action="store_true",
-            help="Do not write a DTD or root element. If this option "
-                "is given, --root is ignored.")
+            help="Do not write a DTD.")
 
         p.add_argument ("--blocksize", "-B", default=1000,
             type=int, metavar="NUM",
