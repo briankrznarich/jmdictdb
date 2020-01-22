@@ -308,16 +308,26 @@ import argparse
 from pylib.argparse_formatters import FlexiFormatter
 
 def parse_cmdline ():
-        p = argparse.ArgumentParser (description=
-            "%(prog)s will read entries from a JMdictDB database and "
-            "write them in XML form to a file.",
-            formatter_class=FlexiFormatter)
+        p = argparse.ArgumentParser (formatter_class=FlexiFormatter,
+            description=\
+                """%(prog)s will read entries from a JMdictDB database and
+                write them in XML form to a file.\n
+
+                All entries come from a single corpus given by -s/--corpus.
+                 All active, approved entries in that corpus are output
+                 (but see --compat=jmex) unless a subset are selected by
+                 sequence number in the command's arguments, in a file
+                 with --seqfile, or with the -b/--begin and -c/--count
+                 options.  Entries are written out in sequence number
+                 order with duplicates eliminated.
+                 The particular XML format and DTD used is automatically
+                 chosen based on --corpus but may be overridden with
+                 --compat."""\
+                .replace("\n"+(" "*16),''))   # See Note-1 below.
 
         p.add_argument ("seqnums", nargs='*', type=int,
             help="Sequence numbers of entries (in the corpus specified "
                 "by --corpus) to be written to the XML output file.  "
-                "Entries are written to the output file in the same order "
-                "as given.  "
                 "No notification is currently given for sequence numbers "
                 "with non-existent entries, they are effectively ignored.  "
                 "If no arguments are given (nor the --seqfile option), "
@@ -331,8 +341,8 @@ def parse_cmdline ():
                 "option is REQUIRED.")
 
         p.add_argument ("-o", "--output", default=None,
-            help="Filename to write XML to.  If not given, output will "
-                "be to stdout.")
+            help="Filename to write XML to.  If not given, output is "
+                "to stdout.")
 
         p.add_argument ("--compat", default=None,
             choices=['jmdict','jmnedict','jmneold','jmdicthist', 'jmex'],
@@ -348,12 +358,12 @@ def parse_cmdline ():
                   JMdict XML and usually need not be specified.
 
                 * jmnedict: generate XML that uses the standard
-                  (post 2014-10) JMnedict DTD that includes seq
+                  (post Oct.2014) JMnedict DTD that includes seq
                   numbers and xrefs.  This is the standard JMnedict
                   XML and usually need not be specified.
 
                 * jmneold: generate XML that uses the old-style
-                  (pre 2014-10) JMnedict DTD that does not include
+                  (pre Oct.2014) JMnedict DTD that does not include
                   seq numbers and xrefs.
 
                 * jmdicthist: generate XML that uses the standard
@@ -362,7 +372,8 @@ def parse_cmdline ():
 
                 * jmex: extended form of XML that can represent
                   multiple corpora including both "jmdict" and
-                  "jmnedict"."""\
+                  "jmnedict".  In this mode deleted and rejected
+                  and unapproved entries are included in the output."""\
                 .replace("\n"+(" "*16),''))   # See Note-1 below.
 
         p.add_argument ("--force", action='store_true', default=False,
@@ -390,8 +401,6 @@ def parse_cmdline ():
                 "numbers separated by spaces.  A # character indicates a "
                 "comment and it and any text to the end of line will be "
                 "ignored, as will blank lines.  "
-                "Entries are written to the output file in the same order "
-                "as given.  "
                 "No notification is currently given for sequence numbers "
                 "with non-existent entries, they are effectively ignored.  "
                 "Mutually exclusive with sequence numbers arguments "
@@ -410,17 +419,14 @@ def parse_cmdline ():
         p.add_argument ("--blocksize", "-B", default=1000,
             type=int, metavar="NUM",
             help="Read and write entries in blocks of NUM entries.  "
-                "Default is 1000.")
+                "A larger blocksize will speed up processing substantially "
+                "but require more memory.  Default is 1000.")
 
         p.add_argument ("--progress", default="percent",
-            help="""Show progress while running.  Choices are:
-
-                * none: no progress indicator.
-
-                * percent (default): show a percentage progress bar.
-
-                * blocks: print a dot for each block of entries.
-
+            help="""Show progress while running.  Choices are:\n
+                * none: no progress indicator.\n
+                * percent (default): show a percentage progress bar.\n
+                * blocks: print a dot for each block of entries.\n
                 Progress bar output is written to stderr.
                  Note when sequence number arguments or --seqfile is
                  given, the program may finish before the progress
