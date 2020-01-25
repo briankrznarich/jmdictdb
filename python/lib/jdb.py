@@ -1280,6 +1280,8 @@ def build_search_sql (condlist, disjunct=False, allow_empty=False):
         if disjunct: conj = ' OR '
         else: conj = ' AND '
         where = conj.join ([x for x in wclauses if x])
+          # If 'condlist' was empty, 'where' will be empty.
+        if not where: where = "True"
 
         # Create the sql we need to find the entr.id numbers from
         # the tables and where conditions given in the @$condlist.

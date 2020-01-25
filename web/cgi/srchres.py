@@ -102,8 +102,8 @@ def main( args, opts ):
               #  appearing in results.  Obviously hardwiring id=4 is a hack.
             else:
                 #condlist.append (('entr e', 'e.src!=4', []))
-                sql, sql_args = jdb.build_search_sql (condlist)
-
+                sql, sql_args = jdb.build_search_sql (condlist,
+                                                      allow_empty=True)
         if errs: jmcgi.err_page (errs)
 
         srch_timeout = cfg_srch.SEARCH_TIMEOUT
