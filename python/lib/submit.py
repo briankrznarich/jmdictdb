@@ -226,7 +226,8 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
         merge_rev = False       #   nuke any id number.
         if not entr.dfrm:       # This is a submission of a new entry.
             entr.stat = KW.STAT['A'].id
-            entr.seq = None     # Force addentr() to assign seq number.
+            if not is_editor:
+                entr.seq = None # Force addentr() to assign seq number.
             pentr = None        # No parent entr.
             edtree = None
         else:   # Modification of existing entry.
