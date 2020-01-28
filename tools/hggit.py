@@ -34,7 +34,8 @@ def main (cmdln_args):
             except KeyError:
                 print ("not found: %s" % (rev,), file=sys.stderr)
             else:
-                print ("%s: %s (%s)" % revx)
+                if args.long: print ("%s: %s (%s)" % revx)
+                else: print ("%s-%s" % (revx[2], revx[1][:7]))
 
 def revs_map (dir='.git', use_prefixes=False,
               marks_fn='hg2git-marks', mapping_fn='hg2git-mapping'):
@@ -127,9 +128,11 @@ def parse_cmdline (cmdln_args):
             description="Lookup hg or git equivalent revision numbers.")
         p.add_argument ("revs", nargs='*',
             help="Zero or more revision numbers to lookup.")
-        p.add_argument ("-d", "--dir", default=".git",
-            help="Directory to look for mapping files in.  Default "
-                "is ./.git")
+        p.add_argument ("-l", "--long", default=False,
+            action="store_true",
+            help="Print full hashes for both the requested hash and "
+                "found hash.  If not given a short hash is printed "
+                "for only the found hash.")
         p.add_argument ("-j", "--json", default="hg2git.json",
             help="Filename of JSON mappping file to read (or write "
                 "if --write is given).  Default is \"hg2git.json\".  "
@@ -144,6 +147,9 @@ def parse_cmdline (cmdln_args):
         p.add_argument ("-v", "--verbose", default=False,
             action="store_true",
             help="Print info about reading/writing mapping files.")
+        p.add_argument ("-d", "--dir", default="../doc/hg2git",
+            help="Directory to look for mapping files in.  Default "
+                "is ../doc/hg2git")
         args = p.parse_args (cmdln_args[1:])
         return args
 
