@@ -37,6 +37,12 @@ def main (args, opts):
                 args.append ((filename[:-3]).replace('/', '.'))
 
         for testset in args:
+            if '/' in testset:
+                testset = testset.replace('./', '')
+                testset = testset.replace('/', '.')
+                if testset.endswith ('.py'): testset = testset[:-3]
+            elif not testset.startswith ('tests.'):
+                testset = 'tests.'+testset
             s = unittest.defaultTestLoader.loadTestsFromName (testset)
             s.name = testset
             suites.append (s)
@@ -104,9 +110,16 @@ Arguments:
                 module[.class[.method]].  If "method" is not given,
                 all the tests in the class will be run.  If "class"
                 is not not given, all the tests in all the classes
-                in the module will be run.  If the tests are in a
-                subdirectory, e.g., "tests", include it:
-                   tests.my_test_module.testcase1.test001
+                in the module will be run.  Tests are assumed to be
+                located in subdirectory "tests/", e.g.,
+                   test_jelparser.Xrefs.test011
+                will run Xref.test011 from tests/test_jelparser.py.
+                To run tests located somewhere other than tests/
+                include a path containing a "/" character:
+                   ./xtest_jmparse
+                The filename may optionally include a ".py" suffix
+                but in that case an individual class and test cannot
+                be given.
 
                 If no arguments are given, all tests in modules with
                 names matching the pattern, "tests.test_*" (i.e. python

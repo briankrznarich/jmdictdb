@@ -25,22 +25,32 @@ module does (or did, when runtests.py was written.)
 
 The command (run in python/tests/):
 
-  ./runtests.py 
+  ./runtests.py
 
 will run all tests.  To run a specific test or set of tests, specify
-them as 'module name' (always prefixed with "tests."), 'class' and
-'test',  Examples:
+them as 'module name', 'class' and 'test'.  Tests are looked for in
+the "tests/" subdirectory of python/tests/. Examples:
 
-  ./runtests.py tests.test_jelparse
-  ./runtests.py tests.test_jelparse.Roundtrip
-  ./runtests.py tests.test_jelparse.Roundtrip.test1000290
+  ./runtests.py test_jelparse
+  ./runtests.py test_jelparse.Roundtrip
+  ./runtests.py test_jelparse.Roundtrip.test1000290
+
+Tests can also be specified by path by including a "/" character in
+the test argument and this is required when specifying tests not in
+python/tests/tests:
+
+  ./runtests.py ./newtest_dbload.py
+
+Leave off the ".py" when adding a test class or test method"
+
+  ./runtests.py ./newtest_dbload.MySql.test_0018
 
 Multiple test arguments can be given.  To debug test failures:
 
   python3 -mpdb runtests.py -d [tests...]
 
 This will start the test under the Python debugger (type 'c' to start
-running) and will stop at the first error or failure allowing the use 
+running) and will stop at the first error or failure allowing the use
 of pdb to diagnose the problem.
 
 For more details on argument syntax: ./runtest.py --help
@@ -96,8 +106,8 @@ and extracting them from a recent jmdict XML file, loading them into a
 new, empty JMdictDB database, from which a loadable copy was produced
 using Postgresql's pg_dump tool.  The process was:
 
-    # Extact the entries listed in jmtest01.seq from a full jmdict XML file.
-    #  and save them as jmtest01.xml in the tests/ directory.
+    # Extact the entries listed in jmtest01.seq from a full jmdict XML
+    #  file and save them as jmtest01.xml in the tests/ directory.
   $ tools/jmextract.py data/jmdict-190430.xml \
      -s python/tests/data/jmtest01.seq >python/tests/data/jmtest01.xml
   $ cp python/tests/data/jmdict.xml data/jmdict.xml
@@ -115,5 +125,26 @@ using Postgresql's pg_dump tool.  The process was:
     # the test database from the new jmtest01.sql file.
   $ cd python/tests && python3 runtests.py
 
-python/tests/data/data/jmtest01.seq is the list of entry sequence numbers
-that was determined to be needed be the test codes.
+python/tests/data/data/jmtest01.seq is the list of entry sequence
+numbers that was determined to be needed be the test codes.
+
+Loading a test database in test code
+====================================
+Test code should load a test database by importing DBmanager from module
+jmdb.py and calling DBmanager.use(DBNAME,DBFILE) where DBNAME is the name
+of a database to create in the Postgresql server and DBFILE is the name
+of a file containing a Postgresql database dump that are the contents of
+the data to load.
+
+The first time the dump file is loaded by jmdb.DBmanager.use(), a hash
+of the dump file is calculated and saved in the database.  When tests
+are run again later, the database hash is checked against hash of the
+request dump file and if the former does not match or does not exist,
+the database is reloaded from the dump file.  If there is a match,
+the correct database is already loaded and can be used without a time
+consuming reload.  This of course presumes that tests do not make any
+modifications to the database that would invalidate it for subsequent
+tests.  If that is not the case the test should invalidate the database
+hash to force a reload the next times tests are run.  This can be done
+by dropping table testsrc; deleting the row(s) in testsrc; or by updating
+testsrc.hash to ''.
