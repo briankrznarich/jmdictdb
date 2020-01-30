@@ -138,9 +138,34 @@ class Xrefs (unittest.TestCase):
           # Todo: xrefs to deleted/rejected fail (is-203),
           #  ambiguous lookups to non-first kanji/reading,
         ]
-    # Test methods are dynamically added to this class by the 
+    # Test methods are dynamically added to this class by the
     # generate_tests() call below.
 
+class Issues (unittest.TestCase):
+      # IS-203/Can add xref to rejected entry.
+      # IS-245/Edited entry has resolvable xref shown as unresolved
+    def test0010(_):    
+        jel = '\fＸ\f[1] test [see=2833900]'
+          # Xrefs should be generated to the A and two A* entries in q2833900
+          # but not to the D* (id=107) or R (id=109) entries.
+        check (_, jel, [X(3,None,None,104,1,k=1,r=1),
+                        X(3,None,None,105,1,k=1,r=1),
+                        X(3,None,None,106,1,k=1,r=1)], [])
+    def test0020(_):
+        jel = '\fＸ\f[1] test [see=2833910]'
+          #FIXME? q2833910 is a single deleted entry, correctly no xrefs
+          # are generated but an unresolved xref is -- without any kanji
+          # or reading, since none were given.  Is this behavior useful?
+        check (_, jel, [], [V(3,None,None)])
+    def test0030(_):
+        jel = '\fＸ\f[1] test [see=2833920]'
+          #FIXME? same as test0020 above but with rejected rather than
+          # deleted entry.
+        check (_, jel, [], [V(3,None,None)])
+
+#===== Create dynamically added tests ========================================
+
+  # Template for test methods to add to class Xrefs.
 def test_tmpl (_, jelref, xrefs_ex, vrefs_ex):
         # Template function for creating test methods for class Xrefs.
           # Add the xref tag given in 'jelref' to a dummy JEL entry.
@@ -153,8 +178,7 @@ def test_tmpl (_, jelref, xrefs_ex, vrefs_ex):
           # 'vrefs_ex'.
         #print ('%s: %s' % (jelref, len(xrefs_ex)), file=sys.stderr)
         check (_, jeltext, xrefs_ex, vrefs_ex)
-
-  # Dynamically add tests to class Xrefs.
+  # Dynamically add test methods to class Xrefs.
 generate_tests (Xrefs, test_tmpl, Xrefs.Tests)
 
 #===== Support functions =====================================================
@@ -179,7 +203,7 @@ def chkok (_, jeltext, xrefs_ex, vrefs_ex):
                             % (len (xrefs_ex), len (xrefs)))
         if len (vrefs) != len (vrefs_ex):
             len_err.append ("expected %s Vrslv objects but got %s"
-                            % (len (xrefs_ex), len (xrefs)))
+                            % (len (vrefs_ex), len (vrefs)))
         if len_err: _.fail (("\n"+' '*16).join (len_err))
           # Compare the xrefs/vrefs to the reference ones.
         for x,e in zip (xrefs, xrefs_ex): cmp (_, x, e)
@@ -212,7 +236,10 @@ def cmp (_, test, expect):
             else:
                 v = getattr (test, k)
                 if v != ve: results[k] = (v, ve)
-        _.assertFalse (results)
+        _.assertFalse (results,
+                       msg="\n  Each key is an attribute name whose value "
+                           "was not what was expected.\n  Each value is a "
+                           "tuple  of (actual-value, expected-value).")
 
   # Temporary adjustment for different behavior in git branches.
 VERSION = "master"

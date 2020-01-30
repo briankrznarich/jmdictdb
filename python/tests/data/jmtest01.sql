@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.7 (Ubuntu 10.7-0ubuntu0.18.04.1)
--- Dumped by pg_dump version 10.7 (Ubuntu 10.7-0ubuntu0.18.04.1)
+-- Dumped from database version 10.10 (Ubuntu 10.10-0ubuntu0.18.04.1)
+-- Dumped by pg_dump version 10.10 (Ubuntu 10.10-0ubuntu0.18.04.1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -12,6 +12,7 @@ SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
 SET check_function_bodies = false;
+SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
@@ -1627,6 +1628,20 @@ CREATE SEQUENCE public.seq_jmdict
 ALTER TABLE public.seq_jmdict OWNER TO jmdictdb;
 
 --
+-- Name: seq_jmnedict; Type: SEQUENCE; Schema: public; Owner: jmdictdb
+--
+
+CREATE SEQUENCE public.seq_jmnedict
+    START WITH 1000000
+    INCREMENT BY 10
+    MINVALUE 1000000
+    MAXVALUE 8999999
+    CACHE 1;
+
+
+ALTER TABLE public.seq_jmnedict OWNER TO jmdictdb;
+
+--
 -- Name: seq_test; Type: SEQUENCE; Schema: public; Owner: jmdictdb
 --
 
@@ -1820,6 +1835,19 @@ CREATE VIEW public.sr_valid AS
 
 
 ALTER TABLE public.sr_valid OWNER TO jmdictdb;
+
+--
+-- Name: testsrc; Type: TABLE; Schema: public; Owner: jmdictdb
+--
+
+CREATE TABLE public.testsrc (
+    filename text,
+    method text,
+    hash text
+);
+
+
+ALTER TABLE public.testsrc OWNER TO jmdictdb;
 
 --
 -- Name: vconj; Type: VIEW; Schema: public; Owner: jmdictdb
@@ -3989,6 +4017,15 @@ COPY public.entr (id, src, stat, seq, dfrm, unap, srcnote, notes) FROM stdin;
 76	1	2	2518550	\N	f	\N	\N
 77	1	2	2636250	\N	f	\N	\N
 78	1	2	2833860	\N	f	\N	\N
+104	1	2	2833900	\N	f		
+105	1	2	2833900	104	t		
+106	1	2	2833900	105	t		
+107	1	4	2833900	104	t		
+109	1	6	2833900	\N	f		
+115	2	2	5655279	\N	f		
+116	1	2	1526080	\N	f		
+120	1	4	2833910	\N	f		
+121	1	6	2833920	\N	f		
 \.
 
 
@@ -4153,6 +4190,12 @@ COPY public.freq (entr, rdng, kanj, kw, value) FROM stdin;
 63	\N	1	5	5
 73	1	\N	1	1
 73	\N	1	1	1
+116	\N	1	1	1
+116	\N	1	7	1
+116	\N	1	5	23
+116	1	\N	1	1
+116	1	\N	7	1
+116	1	\N	5	23
 \.
 
 
@@ -4410,6 +4453,16 @@ COPY public.gloss (entr, sens, gloss, lang, ginf, txt) FROM stdin;
 77	1	1	1	1	sea-run variety of red-spotted masu trout (subspecies of cherry salmon, Oncorhynchus masou ishikawae)
 77	1	2	1	1	red-spotted masu salmon
 78	1	1	1	1	layered colors in garments, resembling autumn colors
+104	1	1	1	1	test entry
+105	1	1	1	1	test entry
+106	1	1	1	1	test entry
+107	1	1	1	1	test entry
+109	1	1	1	1	test entry
+115	1	1	1	1	Panji
+116	1	1	1	1	all
+116	1	2	1	1	everything
+120	1	1	1	1	deleted entry
+121	1	1	1	1	rejected entry
 \.
 
 
@@ -4426,6 +4479,22 @@ COPY public.grp (entr, kw, ord, notes) FROM stdin;
 --
 
 COPY public.hist (entr, hist, stat, unap, dt, userid, name, email, diff, refs, notes) FROM stdin;
+104	1	2	f	2020-01-26 21:56:59	smg			\N		
+105	1	2	f	2020-01-26 21:56:59	smg			\N		
+105	2	2	t	2020-01-26 21:59:28	smg					edit #1
+106	1	2	f	2020-01-26 21:56:59	smg			\N		
+106	2	2	t	2020-01-26 21:59:28	smg					edit #1
+106	3	2	t	2020-01-26 21:59:44	smg					edit #2
+107	1	2	f	2020-01-26 21:56:59	smg			\N		
+107	2	4	t	2020-01-26 22:00:22	smg					for delete
+109	1	2	f	2020-01-26 21:56:59	smg			\N		
+109	2	2	t	2020-01-26 22:01:48	smg					for reject
+109	3	6	f	2020-01-26 22:02:24	smg					reject
+115	1	2	f	2020-01-27 02:02:11	smg			\N		
+116	1	2	f	2020-01-27 23:53:16	smg			\N		
+120	1	2	t	2020-01-30 01:55:29	smg			\N		
+120	2	4	f	2020-01-30 01:55:54	smg					
+121	1	6	f	2020-01-30 01:56:52	smg			\N		
 \.
 
 
@@ -4535,6 +4604,13 @@ COPY public.kanj (entr, kanj, txt) FROM stdin;
 76	2	アジア・太平洋戦争
 77	1	皐月鱒
 78	1	紅葉襲
+104	1	亜亜
+105	1	亜亜
+106	1	亜亜
+107	1	亜亜
+109	1	亜亜
+115	1	万事
+116	1	万事
 \.
 
 
@@ -5388,6 +5464,7 @@ COPY public.kwrinf (id, kw, descr) FROM stdin;
 COPY public.kwsrc (id, kw, descr, dt, notes, seq, sinc, smin, smax, srct) FROM stdin;
 99	test	Corpus for testing and experimentation	\N	\N	seq_test	\N	\N	\N	1
 1	jmdict	\N	\N	\N	seq_jmdict	10	1000000	8999999	1
+2	jmnedict	\N	\N	\N	seq_jmnedict	10	1000000	8999999	2
 \.
 
 
@@ -5515,6 +5592,7 @@ COPY public.misc (entr, sens, ord, kw) FROM stdin;
 75	1	2	22
 75	2	1	22
 77	1	1	22
+115	1	1	181
 \.
 
 
@@ -5696,6 +5774,14 @@ COPY public.pos (entr, sens, ord, kw) FROM stdin;
 76	1	1	17
 77	1	1	17
 78	1	1	17
+104	1	1	17
+105	1	1	17
+106	1	1	17
+107	1	1	17
+109	1	1	17
+116	1	1	17
+120	1	1	17
+121	1	1	17
 \.
 
 
@@ -6205,6 +6291,15 @@ COPY public.rdng (entr, rdng, txt) FROM stdin;
 77	1	さつきます
 77	2	サツキマス
 78	1	もみじがさね
+104	1	ああ
+105	1	ああ
+106	1	ああ
+107	1	ああ
+109	1	ああ
+115	1	ぱんじ
+116	1	ばんじ
+120	1	あゑあ
+121	1	あゑい
 \.
 
 
@@ -6427,6 +6522,15 @@ COPY public.sens (entr, sens, notes) FROM stdin;
 76	1	\N
 77	1	\N
 78	1	\N
+104	1	\N
+105	1	\N
+106	1	\N
+107	1	\N
+109	1	\N
+115	1	\N
+116	1	\N
+120	1	\N
+121	1	\N
 \.
 
 
@@ -6581,7 +6685,7 @@ SELECT pg_catalog.setval('imp.entr_id_seq', 1, false);
 -- Name: entr_id_seq; Type: SEQUENCE SET; Schema: public; Owner: jmdictdb
 --
 
-SELECT pg_catalog.setval('public.entr_id_seq', 78, true);
+SELECT pg_catalog.setval('public.entr_id_seq', 121, true);
 
 
 --
@@ -6595,14 +6699,21 @@ SELECT pg_catalog.setval('public.kwgrp_id_seq', 1, false);
 -- Name: seq_jmdict; Type: SEQUENCE SET; Schema: public; Owner: jmdictdb
 --
 
-SELECT pg_catalog.setval('public.seq_jmdict', 2833860, true);
+SELECT pg_catalog.setval('public.seq_jmdict', 2833920, true);
+
+
+--
+-- Name: seq_jmnedict; Type: SEQUENCE SET; Schema: public; Owner: jmdictdb
+--
+
+SELECT pg_catalog.setval('public.seq_jmnedict', 1000030, true);
 
 
 --
 -- Name: seq_test; Type: SEQUENCE SET; Schema: public; Owner: jmdictdb
 --
 
-SELECT pg_catalog.setval('public.seq_test', 1, true);
+SELECT pg_catalog.setval('public.seq_test', 13, true);
 
 
 --
