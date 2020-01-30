@@ -21,12 +21,8 @@
 # This runs some checks on the data in a jmdictdb database.
 # Run 'python3 dbcheck.py --help' for details.
 
-import sys, os, inspect, pdb
-_ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
-_ = os.path.join (os.path.dirname(_), 'python', 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
-
-import re, textwrap
+import sys, os, re, textwrap, pdb
+sys.path.insert (0, os.path.join(os.path.dirname(__file__),'lib'))
 import jdb
 
 CHECKS = [
@@ -190,8 +186,8 @@ CHECKS = [
 
     (16, "Deleted or rejected without history",
       "Deleted or rejected entries with no history will not be "
-        " expunged by the usual maintenance scripts because with no history, "
-        " they have no \"age\".",
+        " expunged by the usual maintenance scripts because with no "
+        " history they have no \"age\".",
       "SELECT e.id FROM entr e WHERE stat IN (4,6)"
           "AND NOT EXISTS (SELECT 1 FROM hist h WHERE h.entr=e.id) "
           "ORDER by e.id"),
@@ -217,6 +213,74 @@ CHECKS = [
           "JOIN xref x ON x.entr=s.entr AND x.sens=s.sens "
           "WHERE x.nosens AND x.xsens!=1 "
           "ORDER by e.id"),
+
+    (19, "Seq#s with both deleted and active entries.",
+      "When an entry is deleted, all non-rejected versions should be "
+        "replaced with a single version marked as deleted.  It is ok "
+        "to have coexisting rejected entries after an entry is deleted "
+        "but there should be no coexisting active entries.  Results show "
+        "seq#s with both an active and deleted entry (deleted-entry-id, "
+        "corpus-id, seq-number).",
+      "SELECT e.src,e.seq,e1.id "
+        "FROM (SELECT id,src,seq FROM entr WHERE stat=4 AND not unap) AS e "
+        "JOIN entr e1 ON e1.src=e.src AND e1.seq=e.seq AND e1.id!=e.id "
+        "WHERE e1.stat=2 ORDER BY e1.id,src,e.seq"),
+
+    (20, "Seq#s with multiple deleted entries.",
+      "When an entry is deleted, all non-rejected versions should be "
+        "replaced with a single version marked as deleted.  It is ok "
+        "to have coexisting rejected entries after an entry is deleted "
+        "but there should be only one deleted version.  Results are "
+        "reported as (deleted-entry-id, corpus-id, seq-number).",
+      "SELECT e1.id,e.src,e.seq "
+        "FROM (SELECT id,src,seq FROM entr WHERE stat=4 AND not unap) AS e "
+        "JOIN entr e1 ON e1.src=e.src AND e1.seq=e.seq AND e1.id!=e.id "
+        "WHERE e1.stat=4 ORDER BY e1.id,src,e.seq"),
+
+    (21, "Postgresql counter value less than seq#s in corpus.",
+      "Entry sequence numbers are automatically assigned on submission "
+        "using Postgresql counters confusingly also called sequences.  "
+        "These (one for each corpus) will generally have a value that is "
+        "the same as the last entry seq# assigned to an entry in the "
+        "corpus (since it was from the PG sequence that the entry's seq# "
+        "came from).  If there are entries with a seq# greater than the "
+        "PG sequence, a duplicate key error will occur when the PG "
+        "sequence eventually reaches that value and gives a new entry "
+        "the same seq# as the existing entry.  Results are: "
+        "(corpus-name, max-entry-seq#, pgseq-value).  'pgseq-value' "
+        "should have the same value as 'max-entry-seq#'.",
+          # Note: the following checks only for a pgseq value that is less
+          # than the corpus' max seq#.  It could also easily check for a
+          # pgseq value excessively larger than the max corpus seq# on the
+          # grounds that such a condition will produce an undesireably
+          # large gap in the entry seq#s and may be the result of an error
+          # when manually resetting the pgseq.  But such a condition will
+          # last only until a new entry is created.  Since this check
+          # program will run periodically, perhaps once a day, it is very
+          # likely to miss the short interval when the gap between pgseq
+          # and max seq# exists.  So we don't check for it here.
+          #FIXME? no column returning an entr.id number...we bad?
+      "SELECT kw,seq,last_value AS pg_seq "
+        "FROM (SELECT kw,MAX(e1.seq) AS seq "
+          "FROM entr e1 JOIN kwsrc k ON k.id=e1.src "
+          "GROUP BY kw) AS e "
+        "JOIN pg_sequences s ON s.sequencename='seq_'||kw "
+        "WHERE seq>last_value"),
+
+    (22, "Large gaps in entry sequence numbers.",
+      "It is normal to have small gaps in entry sequence numbers as "
+        "entries are removed for various reasons but a large gap may "
+        "indicate a problem with automatic seq# assignments or an error "
+        "when manually assigning a seq#.  Results are shown as: "
+        "(gap, corpus-id, seq#, previous-seq#).",
+          #FIXME? no column returning an entr.id number...we bad?
+      "SELECT seq-previous AS gap, * "
+        "FROM ("
+          "SELECT src,seq,"
+            "lag(seq) OVER (PARTITION BY src ORDER BY src,seq) AS previous "
+          "FROM entr) AS e "
+        "WHERE seq-previous >= 150 "
+        "ORDER BY src,seq"),
       ]
 
 def main():
@@ -229,7 +293,8 @@ def main():
             chknum, descr, msg, sql = check
             skip = (chknum not in args.chknum) != args.exclude
             if args.chknum and skip: continue
-            bad = run_check (cur, check, args.limit, args.corpus, args.verbose)
+            bad = run_check (cur, check, args.limit, args.corpus,
+                             args.verbose)
             if bad: errs += 1
             else: ok += 1
         if args.verbose: print ("%d ok" % ok)
@@ -250,7 +315,8 @@ def run_check (cur, check, limit, corpus, verbose):
             print ("\nFailed: %s\n--------" % name, file=sys.stderr)
             print (textwrap.fill(msg), file=sys.stderr)
             print (', '.join ([str(r) for r in rs]
-                             + ['more...' if len(rs) >= limit else '']), file=sys.stderr)
+                             + ['more...' if len(rs) >= limit else '']),
+                   file=sys.stderr)
             return 1
         if verbose:
             print ("\nPassed: %s" % name, file=sys.stderr)
