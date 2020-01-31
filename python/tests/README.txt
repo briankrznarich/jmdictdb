@@ -148,3 +148,65 @@ tests.  If that is not the case the test should invalidate the database
 hash to force a reload the next times tests are run.  This can be done
 by dropping table testsrc; deleting the row(s) in testsrc; or by updating
 testsrc.hash to ''.
+
+python/tests/data/data/jmtest01.seq is the list of entry sequence
+numbers that was determined to be needed be the test codes.
+
+Loading a test database in test code
+====================================
+Test code should load a test database by importing DBmanager from module
+jmdb.py and calling DBmanager.use(DBNAME,DBFILE) where DBNAME is the name
+of a database to create in the Postgresql server and DBFILE is the name
+of a file containing a Postgresql database dump that are the contents of
+the data to load.
+
+The first time the dump file is loaded by jmdb.DBmanager.use(), a hash
+of the dump file is calculated and saved in the database.  When tests
+are run again later, the database hash is checked against hash of the
+request dump file and if the former does not match or does not exist,
+the database is reloaded from the dump file.  If there is a match,
+the correct database is already loaded and can be used without a time
+consuming reload.  This of course presumes that tests do not make any
+modifications to the database that would invalidate it for subsequent
+tests.   If that is not the case the test should invalidate the database
+hash to force a reload the next times tests are run.  This can be done
+by dropping table testsrc; deleting the row(s) in testsrc; or by updating
+testsrc.hash to ''.
+
+Updating test databases
+=======================
+When new tests are added it is sometimes necessary to add new test
+entries to the test database(s).  Additionally, if the JMdictDB
+database schema is updated to a new version, the test database must
+be updated to match.
+
+Maintenance on the test database can be performed by loading into
+Postgresql and using the JMdictDB web or commandline tools or using
+the usual Postgresql tools (e.g. psql).  If using the web pages to
+edit/add/delete entries you'll need to add a "service" section to
+the active config.ini (or config_pvt.ini) file to make the test
+database accessible via the svc=..." url parameter.
+
+To load a test database into Postgresql you can use the load-testdb.py 
+commandline tool (for safety reasons the database name must start with
+"jmtest"):
+
+  $ cd python/tests/
+    # Load into database named "jmtest01": 
+  $ ./load-testdb.py data/jmtest01.py
+    # Load into database named "jmtestxx":
+  $ ./load-testdb.py -d jmtestxx data/jmtest01.py
+
+or the Postgresql tools (database name can be anything):
+
+  $ dropdb --if-exists jmtemp
+  $ createdb -O jmdictdb jmtemp
+  $ psql -d jmtemp -f python/tests/data/test01.sql
+
+To update the test database to the current JMdictDB database version:
+
+  $ psql -d jmtemp -f patches/nnn-xxxxxx.sql
+
+And when all changes are complete, save it:
+
+  $ pg_dump -d jmtemp > python/tests/data/test01.sql

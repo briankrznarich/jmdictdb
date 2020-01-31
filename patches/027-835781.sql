@@ -22,7 +22,7 @@ UPDATE db SET active=FALSE WHERE id!=x:dbversion::INT;
 
 CREATE OR REPLACE VIEW dbx AS (
     SELECT LPAD(TO_HEX(id),6,'0') AS id, active, ts, id AS idd
-    FROM db 
+    FROM db
     ORDER BY ts DESC);
 
 DROP TABLE IF EXISTS freq_tmp;

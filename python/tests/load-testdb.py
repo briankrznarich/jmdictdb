@@ -2,7 +2,7 @@
 # Tool to manually load a test database.
 
 import sys, os, re, unittest, signal, pdb
-if '../lib' not in sys.path: sys.path.append ('../lib')
+sys.path.insert (0, os.path.join(os.path.dirname(__file__),'../lib'))
 import jdb
 from jmdb import DBmanager
 
