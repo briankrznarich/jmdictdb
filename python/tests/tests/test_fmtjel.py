@@ -139,7 +139,8 @@ def check (_, seq):
           # Add the annotations needed for dislaying xrefs in condensed form.
         jdb.augment_xrefs (DBcursor, data['xref'])
         jdb.augment_xrefs (DBcursor, data['xrer'], rev=True)
-        fmtjel.markup_xrefs (DBcursor, data['xref'])
+        jdb.add_xsens_lists (data['xref'])  # Is this is needed?
+        jdb.mark_seq_xrefs (DBcursor, data['xref'])
           # Test fmtjel by having it convert the entry to JEL.
         resulttxt = fmtjel.entr (entrs[0]).splitlines(True)
           # Confirm that the received text matched the expected text.

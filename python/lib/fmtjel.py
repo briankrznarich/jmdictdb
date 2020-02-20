@@ -43,9 +43,9 @@ def escgloss (txt):
 
 def entr (entr, nohdr=False):
         # Create a JEL text representation of 'entr'.
-        # We assume that the caller has called jelfmt::markup_xrefs()
-        # on entr before calling fmt_entr() (because jel_xref() uses
-        # the info added by add_xrefsums()).
+        # We assume that the caller has called jdb.add_xsens_lists()
+        # and jdb.mark_seq_xrefs() on entr before calling fmt_entr()
+        # because xref() uses the info added by those functions.
         #
         # Caution: The JEL text entry returned by this function can not
         # be used directly as input to the JEL parser because the latter
@@ -132,15 +132,16 @@ def sens (sens, kanjs, rdngs, nsens):
 
         _xrslv = ['[' + xrslv (x) + ']' for x in getattr (sens, '_xrslv', [])]
 
-        kwds  = iif (pos,  '[' + ','.join (pos)  + ']', '')
-        kwds += iif (misc, '[' + ','.join (misc) + ']', '')
-        kwds += iif (fld,  '[' + ','.join (fld)  + ']', '')
-        dial  = iif (dial, '[' + ','.join(dial)  + ']', '')
+        kwds  = '[' + ','.join (pos)  + ']' if pos else ''
+        if misc: kwds += '[' + ','.join (misc) + ']'
+        if fld:  kwds += '[' + ','.join (fld)  + ']'
+        dial  = '[' + ','.join(dial)  + ']' if dial else ''
         restr = stagk + stagr
           # Join restrs with "," if they are alone, but with
           # ";" if in a list prefixed with "restr=".
-        restr = iif (restr, '[restr=' + '; '.join (qtxt(x) for x in restr) + ']', '')
-        _lsrc = iif (_lsrc, '[' + ','.join (_lsrc) + ']', '')
+        restr = '[restr=' + '; '.join (qtxt(x) for x in restr) + ']'\
+                if restr else ''
+        _lsrc = '[' + ','.join (_lsrc) + ']' if _lsrc else ''
         note  = ''
         if getattr(sens,'notes',None): note = '[note=' + qtxt(sens.notes) + ']'
 
@@ -261,26 +262,13 @@ def grp (grp):
         ord = '' if grp.ord is None else ("." + str (grp.ord))
         return KW.GRP[grp.kw].kw + ord
 
-def markup_entr_xrefs (cur, entries):
-        all_xrefs = []
-        for e in entries:
-            for s in e._sens: all_xrefs.extend (s._xref)
-        markto_xrefs (cur, )
-
-def markup_xrefs (cur, xrefs):
-        jdb.add_xsens_lists (xrefs)
-        jdb.mark_seq_xrefs (cur, xrefs)
-
-def iif (c, a, b):
-    if c: return a
-    return b
-
 def main():
         cur = jdb.dbOpen ('jmnew')
         entrs, data = jdb.entrList (cur, [542], ret_tuple=True)
         jdb.augment_xrefs (cur, data['xref'])
         jdb.augment_xrefs (cur, data['xref'], rev=1)
-        markup_xrefs (cur, data['xref'])
+        jdb.add_xsens_lists (xrefs)
+        jdb.mark_seq_xrefs (cur, xrefs)
         for e in entrs:
             txt = entr (e)
             print (txt)
