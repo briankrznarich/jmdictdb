@@ -12,7 +12,8 @@
 import sys, os, re, unittest, signal, pdb
 if '../lib' not in sys.path: sys.path.append ('../lib')
 import jdb; from objects import *
-__unittest = 1
+from jelparse import ParseError
+import jmdb     # For JelParser
 
   # Functions for defining expected restriction results concisely.
   # If the second argument is not given, the corresponding Restr (or
@@ -29,7 +30,6 @@ def SR(r, s=None): return {'rdng':r, 'sens':s};
 # When adding new tests check the fmtjel tests to see if a similar test
 # is also appropriate there.
 
-from jelparse import ParseError
 #=============================================================================
 class KRrestrs (unittest.TestCase):
   # When adding tests here, consider adding them to SKrestrs and SRrestrs
@@ -208,7 +208,7 @@ class Issues (unittest.TestCase):
 
     # See IS-248; the "nokanji" tag without kanji in entry should
     #  produce a parse error.
-  def test9000010(_): rkf(_, '', 'アルバイト[nokanji]', jelparse.ParseError,
+  def test9000010(_): rkf(_, '', 'アルバイト[nokanji]', ParseError,
                           "Reading 1 has 'nokanji' tag but entry has no kanji")
 
 #=============================================================================
@@ -290,51 +290,11 @@ def cmp (_, restrs, expect):
                     if v != ve: results[k] = (v, ve)
         _.assertFalse (results)
 
-  # Following borrowed from the not-yet-merged xrslv branch and modified
-  # to use the pre-xrslv-branch xref resolver, jelparse.resolv_xrefs()
-  # rather than the xrslv-branch version, jdb.xresolv().
-import jellex, jelparse
-class JelParser:
-        def __init__(self, dbcursor=None,
-                           src=None, stat=None, unap=None,
-                           debug=False):
-              # 'dbcursor' is an open JMdictDB cursor such as returned
-              # by jdb.dbOpen() and used when resolving any xrefs in the
-              # parsed entry.  It is not required if .parse() wil be
-              # called with 'resolve' set to false.
-              # 'src', 'stat' and 'unap' are defaults value to use in
-              # the Entr objects if values weren't supplid in the JEL
-              # text.
-              # NOTE: while 'dbcursor' is optional here, jdb.dbOpen()
-              # *must* be called prior to executing .parse() since the
-              # latter requires the jdb.KW structure to be initialized,
-              # which jdb.dbOpen() does.
-
-            self.lexer, tokens = jellex.create_lexer ()
-            self.parser = jelparse.create_parser (self.lexer, tokens)
-            self.dbcursor, self.src, self.stat, self.unap, self.debug \
-              = dbcursor, src, stat, unap, debug
-        def parse (self, jeltext, resolve=True, dbcursor=None,
-                   src=None, stat=None, unap=None):
-            jellex.lexreset (self.lexer, jeltext)
-              #FIXME? why do we give the jeltext to both the lexer
-              # and the parser?  One of the other should be sufficient.
-            entr = self.parser.parse (debug=self.debug)
-            if not entr.src: entr.src = src or self.src
-            if not entr.stat: entr.stat = stat or self.stat
-            if not entr.unap: entr.unap = unap or self.unap
-            if resolve:
-                if not dbcursor: dbcursor = self.dbcursor
-                if not dbcursor: raise RuntimeError (
-                    "Xref resolution requested but no database available")
-                jelparse.resolv_xrefs (dbcursor, entr)
-            return entr
-
 JELparser = None
 
 def setUpModule():
         global JELparser
-        JELparser = JelParser()
+        JELparser = jmdb.JelParser()
           # We don't need access to a database but the JEL parser needs
           # access to a populated KW object, so we create and initialize
           # it directly from the data csv files.  The given path to them

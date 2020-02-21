@@ -9,10 +9,11 @@ import sys, os, re, unittest, signal, pdb
 if '../lib' not in sys.path: sys.path.append ('../lib')
 import jdb; from objects import *
 import jmdb
-from jmdb import DBmanager
-__unittest = 1
-
+from jmdb import DBmanager, JelParser
 from jelparse import ParseError
+
+  # Database name and load file for tests.
+DBNAME, DBFILE = "jmtest01", "data/jmtest01.sql"
 
 def generate_tests (cls, func, data):
     # Add test case methods to the class 'cls' dynamically, one for
@@ -241,52 +242,6 @@ def cmp (_, test, expect):
                            "was not what was expected.\n  Each value is a "
                            "tuple  of (actual-value, expected-value).")
 
-  # Temporary adjustment for different behavior in git branches.
-VERSION = "master"
-#VERSION = "xrslv"
-  # Following borrowed from the not-yet-merged xrslv branch and modified
-  # to use the pre-xrslv-branch xref resolver, jelparse.resolv_xrefs()
-  # rather than the xrslv-branch version, jdb.xresolv().
-import jellex, jelparse
-class JelParser:
-        def __init__(self, dbcursor=None,
-                           src=None, stat=None, unap=None,
-                           debug=False):
-              # 'dbcursor' is an open JMdictDB cursor such as returned
-              # by jdb.dbOpen() and used when resolving any xrefs in the
-              # parsed entry.  It is not required if .parse() wil be
-              # called with 'resolve' set to false.
-              # 'src', 'stat' and 'unap' are defaults value to use in
-              # the Entr objects if values weren't supplid in the JEL
-              # text.
-              # NOTE: while 'dbcursor' is optional here, jdb.dbOpen()
-              # *must* be called prior to executing .parse() since the
-              # latter requires the jdb.KW structure to be initialized,
-              # which jdb.dbOpen() does.
-
-            self.lexer, tokens = jellex.create_lexer ()
-            self.parser = jelparse.create_parser (self.lexer, tokens)
-            self.dbcursor, self.src, self.stat, self.unap, self.debug \
-              = dbcursor, src, stat, unap, debug
-        def parse (self, jeltext, resolve=True, dbcursor=None,
-                   src=None, stat=None, unap=None):
-            jellex.lexreset (self.lexer, jeltext)
-              #FIXME? why do we give the jeltext to both the lexer
-              # and the parser?  One of the other should be sufficient.
-            entr = self.parser.parse (debug=self.debug)
-            if not entr.src: entr.src = src or self.src
-            if not entr.stat: entr.stat = stat or self.stat
-            if not entr.unap: entr.unap = unap or self.unap
-            if resolve:
-                if not dbcursor: dbcursor = self.dbcursor
-                if not dbcursor: raise RuntimeError (
-                    "Xref resolution requested but no database available")
-                if VERSION == "xrslv":    jdb.xresolv (dbcursor, entr)
-                elif VERSION == "master": jelparse.resolv_xrefs (dbcursor, entr)
-            return entr
-
-  # Database name and load file for tests.
-DBNAME, DBFILE = "jmtest01", "data/jmtest01.sql"
   # Global variables.
 DBcursor = JELparser = None
 

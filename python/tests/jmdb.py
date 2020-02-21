@@ -1,7 +1,12 @@
 import sys, os, subprocess, hashlib, re, pdb
 import jdb, db
 
-# This module defines a _DBmanager class and creates a single
+# This module provides support for JMdictDB tests in two forms:
+# - A _DBmanager class for loading tests databases.
+# - A JEL parser for conveniently constructing Entr objects.
+
+#-----------------------------------------------------------------------------
+# Define a _DBmanager class and create a single
 # global instance of it that test modules may import and use in
 # order to share a common database(s) without reloading it for
 # each test.  This matters because the "jmtest01" database takes
@@ -124,3 +129,67 @@ class _DBmanager():
   # This allows any database(s) loaded to be reused by all tests,
   # regardless of the test class or module they are in.
 DBmanager = _DBmanager()
+
+#-----------------------------------------------------------------------------
+# This is a JEL parser for use in creating Entr objects for
+# tests.  Creating them using JEL is more convenient and concise
+# then constructing them from the base objects by hand.
+
+import jellex, jelparse
+class JelParser:
+    def __init__(self, dbcursor=None,
+                       src=None, stat=None, unap=None, dfrm=None,
+                       debug=False):
+          # 'dbcursor' is an open JMdictDB cursor such as returned
+          # by jdb.dbOpen() and used when resolving any xrefs in the
+          # parsed entry.  It is not required if .parse() wil be
+          # called with 'resolve' set to false.
+          # 'src', 'stat' and 'unap' are defaults value to use in
+          # the Entr objects if values weren't supplid in the JEL
+          # text.
+          # NOTE: while 'dbcursor' is optional here, jdb.dbOpen()
+          # *must* be called prior to executing .parse() since the
+          # latter requires the jdb.KW structure to be initialized,
+          # which jdb.dbOpen() does.
+
+        self.lexer, tokens = jellex.create_lexer ()
+        self.parser = jelparse.create_parser (self.lexer, tokens)
+        self.dbcursor,self.src,self.stat,self.unap,self.dfrm,self.debug\
+           = dbcursor, src, stat, unap, dfrm, debug
+    def parse (self, jeltext, resolve=True, augment=True, dbcursor=None,
+               src=None, stat=None, unap=None, dfrm=None):
+        jellex.lexreset (self.lexer, jeltext)
+          #FIXME? why do we give the jeltext to both the lexer
+          # and the parser?  One of the other should be sufficient.
+        entr = self.parser.parse (debug=self.debug)
+        if not entr.src: entr.src = src or self.src
+        if not entr.stat: entr.stat = stat or self.stat
+        if entr.unap is None:   # 'unap' may be False
+            entr.unap = unap if unap is not None else self.unap
+        if not entr.dfrm: entr.dfrm = dfrm or self.dfrm
+        if resolve:
+            if not dbcursor: dbcursor = self.dbcursor
+            if not dbcursor: raise RuntimeError (
+                "Xref resolution requested but no database available")
+            #FIXME: temporary adjustment for different branches:
+              # Use following line for branch 'xrslv".
+            #jdb.xresolv (dbcursor, entr)
+              # Use following line for branch "master".
+            jelparse.resolv_xrefs (dbcursor, entr)
+            if augment:     # Augment the xrefs...
+                  # These calls attach additional info to the xrefs that
+                  # is needed when when displaying them.  Without it some
+                  # information like the target kanji/reading texts is not
+                  # available.  Note that since 'entr' was created from
+                  # JEL text it is not in the database and consequently
+                  # cannot have any reverse xrefs yet; the reverse xref
+                  # related calls that are usually used after reading an
+                  # entry from the database are commented out for that
+                  # reason.
+                xrefs = jdb.collect_xrefs (entr)
+                #xrers = jdb.collect_xrefs (entr, rev=True)
+                jdb.augment_xrefs (dbcursor, xrefs)
+                #jdb.augment_xrefs (dbcursor, xrers, rev=True)
+                jdb.add_xsens_lists (xrefs)
+                jdb.mark_seq_xrefs (dbcursor, xrefs)
+        return entr
