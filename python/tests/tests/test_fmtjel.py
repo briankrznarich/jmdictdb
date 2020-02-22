@@ -1,10 +1,8 @@
 import sys, unittest, os.path, pdb
 if '../lib' not in sys.path: sys.path.append ('../lib')
-import jdb, fmtjel, jmxml, xmlkw, jelparse, jellex
+import jdb, fmtjel, jmxml, xmlkw, jelparse
 from objects import *
-import unittest_extensions
-from jmdb import DBmanager
-__unittest = 1
+import unittest_extensions, jmdb
 
 def main(): unittest.main()
 
@@ -26,13 +24,12 @@ DBNAME, DBFILE = "jmtest01", "data/jmtest01.sql"
   # For background on this test architecture see README.txt.
 
   # Global variables.
-DBcursor = JELparser = JELlexer = JMparser = None
+DBcursor = JELparser = None
 
 def setUpModule():
-        global DBcursor, JELparser, JELlexer, JMparser
-        DBcursor = DBmanager.use (DBNAME, DBFILE)
-        JELlexer, tokens = jellex.create_lexer ()
-        JELparser = jelparse.create_parser (JELlexer, tokens)
+        global DBcursor, JELparser, JMparser
+        DBcursor = jmdb.DBmanager.use (DBNAME, DBFILE)
+        JELparser = jmdb.JelParser (DBcursor)
         JMparser = jmxml.Jmparser (jdb.KW)
 
 class General (unittest.TestCase):
@@ -132,11 +129,11 @@ def check (_, seq):
         if expected[0] == '\ufeff': expected = expected[1:]
           # Read the entry from the database.  Be sure to get from the right
           # corpus and get only the currently active entry.  Assert that we
-          # received excatly one entry.
+          # received exactly one entry.
         sql = "SELECT id FROM entr WHERE src=1 AND seq=%s AND stat=2 AND NOT unap"
         entrs,data = jdb.entrList (DBcursor, sql, (seq,), ret_tuple=True)
         _.assertEqual (1, len (entrs))
-          # Add the annotations needed for dislaying xrefs in condensed form.
+          # Add the annotations needed for displaying xrefs in condensed form.
         jdb.augment_xrefs (DBcursor, data['xref'])
         jdb.augment_xrefs (DBcursor, data['xrer'], rev=True)
         jdb.add_xsens_lists (data['xref'])  # Is this is needed?
@@ -153,12 +150,12 @@ def check2 (_, test, exp=None):
         intxt = _.data[test + '_data']
         try: exptxt = (_.data[test + '_expect']).strip('\n')
         except KeyError: exptxt = intxt.strip('\n')
-        outtxt = roundtrip (intxt, JELlexer, JELparser, DBcursor).strip('\n')
+        outtxt = roundtrip (intxt, JELparser, DBcursor).strip('\n')
         _.assertTrue (8 <= len (outtxt))    # Sanity check for non-empty entry.
         msg = "\nExpected:\n%s\nGot:\n%s" % (exptxt, outtxt)
         _.assertEqual (outtxt, exptxt, msg)
 
-def roundtrip (intxt, lexer, jelparser, dbcursor):
+def roundtrip (intxt, jelparser, dbcursor):
           # Since hg-180523-6b1a12 we use '\f' to separate the kanji, reading
           # and senses sections in JEL text used as input to jelparse()
           # rather than '\n' which was previously used.  To avoid changing
@@ -166,13 +163,7 @@ def roundtrip (intxt, lexer, jelparser, dbcursor):
           # replace the first two '\n's in the test data with '\f's to make
           # suitable for parsing.
         intxt = secsepfix (intxt)
-        jellex.lexreset (lexer, intxt)
-        entr = jelparser.parse (intxt, lexer=lexer)
-        entr.src = 1
-        jelparse.resolv_xrefs (dbcursor, entr)
-        for s in entr._sens: jdb.augment_xrefs (dbcursor, getattr (s, '_xref', []))
-        for s in entr._sens: jdb.add_xsens_lists (getattr (s, '_xref', []))
-        for s in entr._sens: jdb.mark_seq_xrefs (dbcursor, getattr (s, '_xref', []))
+        entr = JELparser.parse (intxt, src=1)
         outtxt = fmtjel.entr (entr, nohdr=True)
         return outtxt
 
