@@ -118,6 +118,19 @@ class Base (unittest.TestCase):
     def test0000030(_): check2(_,'0000030')     # lsrc wasei,partial
     def test0000040(_): check2(_,'0000040')     # lsrc wasei,partial
 
+class Issues (unittest.TestCase):
+    @unittest.expectedFailure
+    def test_is203(_):
+          # IS-203: _Can add xref to rejected entry_
+          # Create an entry with an xref to an entry (specified by seq#)
+          # that is rejected.  When the created entry is then formatted
+          # by fmtjel invalid xref text is produced that has no target:
+          # "[see=]"
+        jel = "\fあ\f[1]text [see=2833920]"
+        e = JELparser.parse (jel, src=1)
+        got = fmtjel.entr (e, nohdr=True)
+        _.assertEqual (jel, got)
+
 #=============================================================================
 # Support functions
 
