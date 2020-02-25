@@ -2,7 +2,8 @@
 # Compare db updates required by code with updates in database.
 
 import sys, os, re, unittest, signal, pdb
-sys.path.insert (0, os.path.join(os.path.dirname(__file__),'./lib'))
+import os.path as p; sys.path.insert (0,
+  p.normpath(p.join(p.dirname(p.abspath(__file__)),'../python/lib')))
 import jdb, db, dbver
 
 def main():
