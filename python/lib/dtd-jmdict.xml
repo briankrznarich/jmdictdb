@@ -253,7 +253,7 @@ various information fields.
 <!ENTITY col "colloquialism">
 <!ENTITY comp "computer terminology">
 <!ENTITY conj "conjunction">
-<!ENTITY cop-da "copula">
+<!ENTITY cop "copula">
 <!ENTITY ctr "counter">
 <!ENTITY derog "derogatory">
 <!ENTITY eK "exclusively kanji">
@@ -403,4 +403,19 @@ various information fields.
 <!ENTITY zool "zoology term">
 <!ENTITY joc "jocular, humorous term">
 <!ENTITY anat "anatomical term">
+<!ENTITY Christn "Christian term">
+<!ENTITY net-sl "Internet slang">
+<!ENTITY dated "dated term">
+<!ENTITY hist "historical term">
+<!ENTITY litf "literary or formal term">
+<!ENTITY surname "family or surname">
+<!ENTITY place "place name">
+<!ENTITY unclass "unclassified name">
+<!ENTITY company "company name">
+<!ENTITY product "product name">
+<!ENTITY work "work of art, literature, music, etc. name">
+<!ENTITY person "full name of a particular person">
+<!ENTITY given "given name or forename, gender not specified">
+<!ENTITY station "railway station">
+<!ENTITY organization "organization name">
 ]>
