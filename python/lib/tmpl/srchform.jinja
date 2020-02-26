@@ -240,7 +240,7 @@
                   {%- for r in kinf %}
                     <tr>
                     {%- for c in r %}
-                      <td title="{{c.descr}}">
+                      <td title="{{c and c.descr}}">
                       {%- if c %}
                         <input type="checkbox" name="kinf" value="{{c.id}}">{{c.kw}}
                         {%-endif-%}
@@ -317,7 +317,7 @@
                   {%- for r in fld %}
                     <tr>
                     {%- for c in r %}
-                      <td title="{{c.descr}}">
+                      <td title="{{c and c.descr}}">
                       {%- if c %}
                         <input type="checkbox" name="fld" value="{{c.id}}">{{c.kw}}
                         {%-endif-%}
@@ -337,7 +337,7 @@
                   {%- for r in dial %}
                     <tr>
                     {%- for c in r %}
-                      <td title="{{c.descr}}">
+                      <td title="{{c and c.descr}}">
                       {%- if c %}
                         <input type="checkbox" name="dial" value="{{c.id}}">{{c.kw}}
                         {%-endif-%}
