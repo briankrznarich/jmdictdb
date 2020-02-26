@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.9 (Ubuntu 10.9-0ubuntu0.18.04.1)
--- Dumped by pg_dump version 10.9 (Ubuntu 10.9-0ubuntu0.18.04.1)
+-- Dumped from database version 10.10 (Ubuntu 10.10-0ubuntu0.18.04.1)
+-- Dumped by pg_dump version 10.10 (Ubuntu 10.10-0ubuntu0.18.04.1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -4680,6 +4680,7 @@ COPY public.kwfld (id, kw, descr) FROM stdin;
 28	anat	anatomical term
 29	mahj	mahjong term
 30	shogi	shogi term
+31	Christn	Christian term
 \.
 
 
@@ -5266,6 +5267,10 @@ COPY public.kwmisc (id, kw, descr) FROM stdin;
 190	station	railway station
 191	organization	organization name
 192	work	work of art, literature, music, etc. name
+85	net-sl	Internet slang
+86	dated	dated term
+87	hist	historical term
+88	litf	literary or formal term
 \.
 
 
@@ -5288,7 +5293,6 @@ COPY public.kwpos (id, kw, descr) FROM stdin;
 12	conj	conjunction
 13	exp	Expressions (phrases, clauses, etc.)
 14	int	interjection (kandoushi)
-15	cop-da	copula
 17	n	noun (common) (futsuumeishi)
 18	n-adv	adverbial noun (fukushitekimeishi)
 19	n-suf	noun, used as a suffix
@@ -5366,6 +5370,7 @@ COPY public.kwpos (id, kw, descr) FROM stdin;
 96	v2r-s	Nidan verb (lower class) with `ru' ending (archaic)
 97	v2w-s	Nidan verb (lower class) with `u' ending and `we' conjugation (archaic)
 98	unc	unclassified
+15	cop	copula
 \.
 
 
@@ -6591,7 +6596,7 @@ SELECT pg_catalog.setval('imp.entr_id_seq', 1, false);
 -- Name: entr_id_seq; Type: SEQUENCE SET; Schema: public; Owner: jmdictdb
 --
 
-SELECT pg_catalog.setval('public.entr_id_seq', 78, true);
+SELECT pg_catalog.setval('public.entr_id_seq', 79, true);
 
 
 --
@@ -6612,7 +6617,7 @@ SELECT pg_catalog.setval('public.seq_jmdict', 2833860, true);
 -- Name: seq_test; Type: SEQUENCE SET; Schema: public; Owner: jmdictdb
 --
 
-SELECT pg_catalog.setval('public.seq_test', 1, true);
+SELECT pg_catalog.setval('public.seq_test', 2, true);
 
 
 --

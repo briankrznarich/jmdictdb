@@ -18,7 +18,7 @@ BEGIN;
 -- Add a decimal id column to view dbx.
 
 \set dbversion  '''a921f4'''  -- Update version applied by this update.
-\set require    '''1ef804'''  -- Database must be at this version in
+\set require    '''7256aa'''  -- Database must be at this version in
                               --  order to apply this update.
 \qecho Checking database version...
 SELECT CASE WHEN (EXISTS (SELECT 1 FROM db WHERE id=x:require::INT)) THEN NULL
