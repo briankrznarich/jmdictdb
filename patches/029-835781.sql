@@ -8,7 +8,7 @@ BEGIN;
 --  xresolv.py.
 
 \set dbversion  '''835781'''  -- Update version applied by this update.
-\set require    '''1ef804'''  -- Database must be at this version in
+\set require    '''7256aa'''  -- Database must be at this version in
                               --  order to apply this update.
 
 \qecho Checking database version...

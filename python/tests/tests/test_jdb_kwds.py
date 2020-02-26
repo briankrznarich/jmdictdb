@@ -267,9 +267,13 @@ Current_kwds = [
         ('250', 'POS', 98, 'unc'),
         ('251', 'MISC', 84, 'yoji'),
         ('252', 'POS', 7, 'adj-ix'),
-        ('253', 'POS', 15, 'cop-da'),
+        ('253', 'POS', 15, 'cop'),
         ('254', 'POS', 29, 'v1-s'),
         ('255', 'MISC', 192, 'work'),
+        ('256', 'MISC', 85, 'net-sl'),
+        ('257', 'MISC', 86, 'dated'),
+        ('258', 'MISC', 87, 'hist'),
+        ('259', 'MISC', 88, 'litf'),
         ]
 
 class Empty (unittest.TestCase):
