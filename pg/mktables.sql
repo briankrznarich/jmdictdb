@@ -21,10 +21,6 @@
 -- JMdict schema for Postgresql
 -- This script is normally executed by schema.sql.
 
-\unset ON_ERROR_STOP 
-CREATE LANGUAGE 'plpgsql';
-\set ON_ERROR_STOP 
-
 -- Objects for identifying database version.
 ---------------------------------------------------------------------------
 -- Database version identifier; use a new number whenever a change is
