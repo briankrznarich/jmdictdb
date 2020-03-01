@@ -1567,6 +1567,8 @@ class Kwds:
         # latter, from the directory's csv files.
         # You may find function jdb.std_csv_dir() useful for
         # providing a path to call this method with.
+        # As a convenience, using an empty string ("") for
+        # 'cursor_or_dirname' is equivalent to std_csv_dir().
 
           # Add a set of standard attributes to this instance and
           # initialize each to an empty dict.
@@ -1615,7 +1617,7 @@ class Kwds:
         # If 'dirname' is not supplied or is None, it will default
         # to "../../pg/data/" relative to the location of this module.
 
-        if dirname is None: dirname = std_csv_dir ()
+        if not dirname: dirname = std_csv_dir ()
         if tables is None: tables = self.Tables
         if dirname[-1] != '/' and dirname[-1] != '\\' and len(dirname) > 1:
             dirname += '/'
