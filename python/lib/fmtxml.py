@@ -41,15 +41,9 @@ def entr (entr, compat=None, genhists=False, genxrefs=True, wantlist=False,
                 "jmdict": generate XML that uses the most recent 
                   version of the standard JMdictDTD (currently
                   rev 1.09).
-                "jmdicthist": generate XML that uses the standard
-                  JMdict DTD but adds an <info> element with the
-                  entry's full history.
                 "jmnedict": generate XML that uses the standard
                   (post 2014-10) JMnedict DTD that include seq 
                   numbers and xrefs.
-                "jmneold": generate XML that uses the old-style
-                  (pre 2014-10) JMnedict DTD that does not include 
-                  seq numbers and xrefs.
           genhists -- If true, <info> and <audit> elements will 
                 be generated in the XML according to the value of
                 'compat'.   If false they will not be generated 
@@ -93,11 +87,8 @@ def entr (entr, compat=None, genhists=False, genxrefs=True, wantlist=False,
         rdngs = getattr (entr, '_rdng', [])
         for r in rdngs: fmt.extend (rdng (r, kanjs, compat))
 
-        if compat == 'jmdicthist':
-            fmt.extend (info (entr, compat, genhists, last_imported=last_imported))
-
         senss = getattr (entr, '_sens', [])
-        if compat in ('jmnedict', 'jmneold'):
+        if compat in ('jmnedict',):
             for x in senss: fmt.extend (trans (x, compat, entr.src, genxrefs))
         else:
             last_pos = [] if implicit_pos else None
@@ -281,7 +272,6 @@ def lsrc (x):
 
 def sens_xrefs (sens, src, compat):
         # Format xrefs and unresolved xrefs for a specific sense.
-        if compat == 'jmneold': return []
         xr = []
         xrfs = getattr (sens, '_xref', None)
         if xrfs:
@@ -479,7 +469,7 @@ def audit (h, compat=None, force_created=False):
         fmt = []
         fmt.append ('<audit>')
         fmt.append ('<upd_date>%s</upd_date>' % h.dt.date().isoformat())
-        if not compat or compat=='jmdicthist':
+        if not compat:
             if getattr (h, 'notes', None): fmt.append ('<upd_detl>%s</upd_detl>'   % esc(h.notes))
             if getattr (h, 'stat', None):  fmt.append ('<upd_stat>%s</upd_stat>'   % XKW.STAT[h.stat].kw)
             if getattr (h, 'unap', None):  fmt.append ('<upd_unap/>')
@@ -540,7 +530,7 @@ def entrhdr (entr, compat=None):
             dfrmattr = (' dfrm="%d"' % entr.dfrm) if dfrm else ""
             fmt = ["<entry%s%s%s%s>" % (idattr, statattr, apprattr, dfrmattr)]
         else: fmt = ['<entry>']
-        if getattr (entr, 'seq', None) and compat != 'jmneold':
+        if getattr (entr, 'seq', None):
             fmt.append ('<ent_seq>%d</ent_seq>' % entr.seq)
         if getattr (entr, 'src', None) and not compat:
             src = jdb.KW.SRC[entr.src].kw

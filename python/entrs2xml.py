@@ -254,12 +254,8 @@ def compat_info (corpus, compat):
           #   0                     1            2         3     4       5
             'jmdict':
               ["dtd-jmdict.xml",   'jmdict',    'JMdict',  True, True, ['jmdict']],
-            'jmdicthist':
-              ["dtd-jmdict.xml",   'jmdicthist','JMdict',  True, True, ['jmdict']],
             'jmnedict':
               ["dtd-jmnedict.xml", 'jmnedict',  'JMnedict',True, True, ['jmnedict']],
-            'jmneold':
-              ["dtd-jmneold.xml",  'jmneold',   'JMnedict',True, True, ['jmnedict']],
             'jmex':
               ["dtd-jmdict-ex.xml", None,       'JMdict',  False,False,['jmdict','jmnedict']],
             }
@@ -345,7 +341,7 @@ def parse_cmdline ():
                 "to stdout.")
 
         p.add_argument ("--compat", default=None,
-            choices=['jmdict','jmnedict','jmneold','jmdicthist', 'jmex'],
+            choices=['jmdict','jmnedict','jmex'],
             help="""If not given, an appropriate compat value is
                  chosen automatically based on the corpus type.
                  You only need to use this option to generate
@@ -361,14 +357,6 @@ def parse_cmdline ():
                   (post Oct.2014) JMnedict DTD that includes seq
                   numbers and xrefs.  This is the standard JMnedict
                   XML and usually need not be specified.
-
-                * jmneold: generate XML that uses the old-style
-                  (pre Oct.2014) JMnedict DTD that does not include
-                  seq numbers and xrefs.
-
-                * jmdicthist: generate XML that uses the standard
-                  JMdict DTD (rev 1.09) but includes an <info> element
-                  with the entry's full history.
 
                 * jmex: extended form of XML that can represent
                   multiple corpora including both "jmdict" and
