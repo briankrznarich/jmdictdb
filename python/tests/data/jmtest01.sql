@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.10 (Ubuntu 10.10-0ubuntu0.18.04.1)
--- Dumped by pg_dump version 10.10 (Ubuntu 10.10-0ubuntu0.18.04.1)
+-- Dumped from database version 10.12 (Ubuntu 10.12-0ubuntu0.18.04.1)
+-- Dumped by pg_dump version 10.12 (Ubuntu 10.12-0ubuntu0.18.04.1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1836,6 +1836,18 @@ CREATE VIEW public.sr_valid AS
 
 ALTER TABLE public.sr_valid OWNER TO jmdictdb;
 
+--
+-- Name: testsrc; Type: TABLE; Schema: public; Owner: stuart
+--
+
+CREATE TABLE public.testsrc (
+    filename text,
+    method text,
+    hash text
+);
+
+
+ALTER TABLE public.testsrc OWNER TO stuart;
 
 --
 -- Name: vconj; Type: VIEW; Schema: public; Owner: jmdictdb
@@ -2672,7 +2684,6 @@ COPY public.conjo (pos, conj, neg, fml, onum, stem, okuri, euphr, euphk, pos2) F
 28	1	f	f	1	1	る	\N	\N	\N
 28	1	f	t	1	1	ます	\N	\N	\N
 28	1	t	f	1	1	ない	\N	\N	\N
-28	1	t	t	1	1	ました	\N	\N	\N
 28	2	f	f	1	1	た	\N	\N	\N
 28	2	f	t	1	1	ました	\N	\N	\N
 28	2	t	f	1	1	なかった	\N	\N	\N
@@ -2732,7 +2743,6 @@ COPY public.conjo (pos, conj, neg, fml, onum, stem, okuri, euphr, euphk, pos2) F
 29	1	f	f	1	1	る	\N	\N	\N
 29	1	f	t	1	1	ます	\N	\N	\N
 29	1	t	f	1	1	ない	\N	\N	\N
-29	1	t	t	1	1	ました	\N	\N	\N
 29	2	f	f	1	1	た	\N	\N	\N
 29	2	f	t	1	1	ました	\N	\N	\N
 29	2	t	f	1	1	なかった	\N	\N	\N
@@ -3741,6 +3751,8 @@ COPY public.conjo (pos, conj, neg, fml, onum, stem, okuri, euphr, euphk, pos2) F
 48	12	t	f	1	1	なかったり	し	\N	\N
 48	12	t	t	1	1	ませんでしたり	し	\N	\N
 48	13	f	f	1	1		し	\N	\N
+28	1	t	t	1	1	ません	\N	\N	\N
+29	1	t	t	1	1	ません	\N	\N	\N
 \.
 
 
@@ -4675,7 +4687,6 @@ COPY public.kwcinf (id, kw, descr) FROM stdin;
 38	heisig6	"Remembering The Kanji, Sixth Ed." by  James Heisig.
 39	vietnam	Vietnamese reading.
 40	sh_kk2	"Kanji and Kana" by Spahn and Hadamitzky (2011 edition).
-101	gahoh	Filename of Quicktime animation.
 \.
 
 
@@ -5345,7 +5356,6 @@ COPY public.kwpos (id, kw, descr) FROM stdin;
 10	aux-adj	auxiliary adjective
 11	aux-v	auxiliary verb
 12	conj	conjunction
-13	exp	Expressions (phrases, clauses, etc.)
 14	int	interjection (kandoushi)
 17	n	noun (common) (futsuumeishi)
 18	n-adv	adverbial noun (fukushitekimeishi)
@@ -5376,7 +5386,6 @@ COPY public.kwpos (id, kw, descr) FROM stdin;
 45	vk	Kuru verb - special class
 46	vs	noun or participle which takes the aux. verb suru
 47	vs-s	suru verb - special class
-48	vs-i	suru verb - irregular
 49	vz	Ichidan verb - zuru verb (alternative form of -jiru verbs)
 50	vt	transitive verb
 51	ctr	counter
@@ -5425,6 +5434,8 @@ COPY public.kwpos (id, kw, descr) FROM stdin;
 97	v2w-s	Nidan verb (lower class) with `u' ending and `we' conjugation (archaic)
 98	unc	unclassified
 15	cop	copula
+13	exp	expressions (phrases, clauses, etc.)
+48	vs-i	suru verb - included
 \.
 
 
@@ -6593,6 +6604,15 @@ COPY public.stagr (entr, sens, rdng) FROM stdin;
 
 
 --
+-- Data for Name: testsrc; Type: TABLE DATA; Schema: public; Owner: stuart
+--
+
+COPY public.testsrc (filename, method, hash) FROM stdin;
+/home/stuart/devel/jdb/jb/python/tests/data/jmtest01.sql	sha1	3e8e70fe96d302f9f482a320dbf51efa0bc37c23
+\.
+
+
+--
 -- Data for Name: xref; Type: TABLE DATA; Schema: public; Owner: jmdictdb
 --
 
@@ -6678,7 +6698,7 @@ SELECT pg_catalog.setval('imp.entr_id_seq', 1, false);
 -- Name: entr_id_seq; Type: SEQUENCE SET; Schema: public; Owner: jmdictdb
 --
 
-SELECT pg_catalog.setval('public.entr_id_seq', 130, true);
+SELECT pg_catalog.setval('public.entr_id_seq', 148, true);
 
 
 --
@@ -6706,7 +6726,7 @@ SELECT pg_catalog.setval('public.seq_jmnedict', 1000030, true);
 -- Name: seq_test; Type: SEQUENCE SET; Schema: public; Owner: jmdictdb
 --
 
-SELECT pg_catalog.setval('public.seq_test', 22, true);
+SELECT pg_catalog.setval('public.seq_test', 40, true);
 
 
 --
