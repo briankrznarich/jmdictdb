@@ -18,7 +18,7 @@
 #  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 #######################################################################
 
-import sys, os, os.path, random, re, datetime, operator
+import sys, os, os.path, random, re, datetime, operator, csv
 from time import time
 from collections import defaultdict
 import fmtxml
@@ -1622,26 +1622,25 @@ class Kwds:
         if dirname[-1] != '/' and dirname[-1] != '\\' and len(dirname) > 1:
             dirname += '/'
         failed = []
+        dialect = {'delimiter':'\t', 'doublequote':True}
         for attr,table in list(tables.items()):
             fname = dirname + table + ".csv"
-            try: f = open (fname, encoding='utf-8')
+            try: f = open (fname)
             except IOError:
-                failed.append (table); continue
-            first_line = True
-            for ln in f:
-                if re.match (r'\s*(#.*)?$', ln): continue
-                fields = ln.rstrip('\n\r').split ("\t")
-                fields = [x if x!='' else None for x in fields]
-                try: fields[0] = int (fields[0])
-                except ValueError:
-                      # A ValueError on the first line of the file we
-                      # take to mean that the csv file has a header line
-                      # which we'll ignore.
-                    if first_line: continue
-                    else: raise
-                self.add (attr, fields)
-                first_line = False
-            f.close()
+                f = None;  failed.append (table);  continue
+            else:
+                csvrdr = csv.reader (f, **dialect)
+                for n, (id, kw, descr, *rest) in enumerate (csvrdr):
+                      # Convert the id field to an int.  If not able to
+                      # and this is the first line, assume it a header
+                      # line and skip it.
+                    try: id = int (id)
+                    except ValueError:
+                        if n == 0: continue
+                        else: raise
+                    self.add (attr, (id, kw, descr or None))
+            finally:
+                if f: f.close()
         return failed
 
     def add( self, attr, row ):
@@ -2276,4 +2275,3 @@ def reset_encoding (file, encoding='utf-8'):
         file.__init__(file.detach(),
                       line_buffering=file.line_buffering,
                       encoding=encoding)
-

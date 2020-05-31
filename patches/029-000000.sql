@@ -1,10 +1,12 @@
 \set ON_ERROR_STOP
 BEGIN;
 
--- is-255: fix conjugation tables for v1, v1-s verbs.
--- We also correct two 'descr' values in table kwpos to match the
--- descriptions used in the JMdict XML DTD and remove an unused
--- item from table kwcinf.
+-- Fixes to pg/data csv files:
+-- * IS-255: fix conjugation tables for v1, v1-s verbs.
+-- * Correct two 'descr' values in table kwpos to match the
+--   descriptions used in the JMdict XML DTD.
+-- * Fix missing quotes in a kwfreq 'descr' value.
+-- * Remove an unused item from table kwcinf.
 -- This update is idempotent and can be applied to any database
 -- version.  It does not update the database version number.
 
@@ -26,6 +28,9 @@ UPDATE kwpos SET descr='expressions (phrases, clauses, etc.)'
   WHERE kw='exp' AND descr LIKE 'Expressions (phrases, clauses, etc.)';
 UPDATE kwpos SET descr='suru verb - included'
   WHERE kw='vs-i' AND descr='suru verb - irregular';
+
+UPDATE kwfreq SET descr='Ranking from "Ichimango goi bunruishuu", 1-2.'
+  WHERE id=1 AND descr='Ranking from Ichimango goi bunruishuu, 1-2.';
 
 DELETE FROM kwcinf WHERE KW='gahoh';  -- Not used anymore
 
