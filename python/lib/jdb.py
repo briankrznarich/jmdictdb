@@ -1587,8 +1587,7 @@ class Kwds:
 
         if len (failed) >= len (self.Tables):
               # Raise error if no tables were loaded.
-            raise IOError ("Failed to load kw tables: %s"
-                           % ','.join(failed))
+            raise IOError ("Unable to load any tags")
 
           # Otherwise 'cursor_or_dirname' is None, and we won't
           # load anything, just return the empty instance.
@@ -1677,6 +1676,13 @@ class Kwds:
         # corresponding .csv file of table was missing or empty.)
 
         return sorted([x for x in list(self.Tables.keys()) if getattr(self, x)])
+
+    def attrsall( self ):
+        # Like .attrs() but returns all the attr name strings, whether
+        # the value is empty or not.
+        #FIXME: need a rethink on both .attr() and this method and what
+        # they should return.
+        return set ([x for x in list(self.Tables.keys())])
 
     def recs( self, attr ):
         # Return a list of DbRow objects representing the rows on the
