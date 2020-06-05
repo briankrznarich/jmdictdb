@@ -772,6 +772,38 @@ def mark_seq_xrefs (cur, xrefs):
                 else:
                     marked[key1][key2][key3] = x.SEQ = True
 
+def xresolv (dbh, entr):
+        # Try to resolve any unresolved xrefs (in the ._xrslv list for each
+        # sense) in Entr object 'entr'.  Those that can be resolved will be
+        # removed from the ._xrslv list and corresponding xrefs added to the
+        # ._xref list on the same sense.
+
+        errs = []
+        for ns, s in enumerate (entr._sens, start=1):
+            unsuccessful = []
+            for nx, xr in enumerate (s._xrslv):
+                slist = None if not xr.tsens else [xr.tsens]
+                seq = xr.vseq
+                corpid = xr.vsrc
+                  # 'corpid' may be a corpus name, corpus id number,
+                  #  or None (resolve to an entry in the same corpus).
+                if corpid is None: corpid = entr.src
+                elif corpid != None:
+                    try: corpid = int(corpid)
+                    except ValueError: corpid = KW.SRC[corpid].id
+                try:
+                    xrefs = resolv_xref (dbh, xr.typ, xr.rtxt, xr.ktxt, slist,
+                                         seq, corpid)
+                except ValueError as e:
+                   #print("jdb.xresolv: %s[%s][%s]: %s"%(entr.seq, ns, nx, e),
+                   #      file=sys.stderr)
+                    unsuccessful.append (xr)
+                    errs.append ((ns, nx, str(e)))
+                else:
+                    s._xref.extend (xrefs)
+            s._xrslv = unsuccessful
+        return errs
+
 def resolv_xref (dbh, typ, rtxt, ktxt, slist=None, enum=None, corpid=None,
                  one_entr_only=True, one_sens_only=False, krdetect=False):
 
@@ -1112,7 +1144,7 @@ def addentr (cur, entr):
             for x in s._xrer:  dbinsert (cur, "xref",  ['entr','sens','xref','typ','xentr',
                                                         'xsens','rdng','kanj','notes'], x)
             for x in s._xrslv: dbinsert (cur,"xresolv",['entr','sens','typ','ord','rtxt','ktxt',
-                                                        'tsens','notes','prio'], x)
+                                                        'tsens','vsrc','vseq','notes','prio'], x)
         for x in entr._snd:    dbinsert (cur, "entrsnd", ['entr','ord','snd'], x)
         for x in entr._grp:    dbinsert (cur, "grp",     ['entr','kw','ord'], x)
         if entr.chr:

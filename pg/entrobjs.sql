@@ -247,12 +247,14 @@ CREATE TABLE xresolv (
     entr INT NOT NULL,		-- Entry xref occurs in.
     sens SMALLINT NOT NULL,	-- Sense number xref occurs in.
       FOREIGN KEY (entr,sens) REFERENCES sens(entr,sens) ON DELETE CASCADE ON UPDATE CASCADE,
+    ord SMALLINT NOT NULL,	-- Order of xref in sense.
     typ SMALLINT NOT NULL 	-- Type of xref (table kwxref).
       REFERENCES kwxref(id),
-    ord SMALLINT NOT NULL,	-- Order of xref in sense.
     rtxt VARCHAR(250),		-- Reading text of target given in xref.
     ktxt VARCHAR(250),		-- Kanji text of target given in xref.
     tsens SMALLINT,		-- Target sense number.
+    vsrc SMALLINT,              -- Target corpus restriction.
+    vseq BIGINT,                -- Target sequence number.
     notes VARCHAR(250),		-- Notes.
     prio BOOLEAN DEFAULT FALSE,	-- True if this is a Tanaka corpus exemplar.
     PRIMARY KEY (entr,sens,typ,ord),

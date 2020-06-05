@@ -63,7 +63,7 @@ INSERT INTO rinf    (SELECT entr+:maxid,rdng,ord,kw                  FROM imp.ri
 INSERT INTO restr   (SELECT entr+:maxid,rdng,kanj                    FROM imp.restr);
 INSERT INTO stagr   (SELECT entr+:maxid,sens,rdng                    FROM imp.stagr);
 INSERT INTO stagk   (SELECT entr+:maxid,sens,kanj                    FROM imp.stagk);
-INSERT INTO xresolv (SELECT entr+:maxid,sens,typ,ord,rtxt,ktxt,tsens,notes,prio FROM imp.xresolv);
+INSERT INTO xresolv (SELECT entr+:maxid,sens,ord,typ,rtxt,ktxt,tsens,vsrc,vseq,notes,prio FROM imp.xresolv);
 INSERT INTO chr     (SELECT entr+:maxid,chr,bushu,strokes,freq,grade,jlpt FROM imp.chr);
 INSERT INTO cinf    (SELECT entr+:maxid,kw,value,mctype              FROM imp.cinf);
 INSERT INTO kresolv (SELECT entr+:maxid,kw,value                     FROM imp.kresolv);

@@ -14,7 +14,6 @@ def setUpModule():
 KwdsAttrs = set (('DIAL','FLD','FREQ','GINF','KINF','LANG','MISC','POS',
                   'RINF','SRC','SRCT','STAT','XREF','CINF','GRP', 'COPOS'))
 
-
 class Empty (unittest.TestCase):
     def setUp (_):
         _.o = jdb.Kwds()

@@ -31,7 +31,8 @@ UPDATE kwpos SET descr='suru verb - included'
 
 UPDATE kwfreq SET descr='Ranking from "Ichimango goi bunruishuu", 1-2.'
   WHERE id=1 AND descr='Ranking from Ichimango goi bunruishuu, 1-2.';
+DELETE FROM kwfreq WHERE kw='gA';     -- Not used anymore.
 
-DELETE FROM kwcinf WHERE KW='gahoh';  -- Not used anymore
+DELETE FROM kwcinf WHERE kw='gahoh';  -- Not used anymore.
 
 COMMIT;

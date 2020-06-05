@@ -54,15 +54,6 @@ def p_entr_1(p):
     if hasattr (e, '_sens') and hasattr (e, '_rdng'):
         err = mk_restrs ("_STAGR", e._sens, e._rdng)
         if err: perror (p, err, loc=False)
-      # Note that the entry object returned may have an _XREF list
-      # on its senses but the supplied xref records are not
-      # complete.  We do not assume database access is available
-      # when parsing so we cannot look up the xrefs to find the
-      # the target entry id numbers, validate that the kanji
-      # reading (if given) are unique, or the target senses exist,
-      # etc.  It is expected that the caller will do this resolution
-      # on the xrefs using something like jdb.resolv_xref() prior
-      # to using the object.
     p[0] = e
 
 def p_preentr_1(p):
@@ -263,6 +254,13 @@ def p_tagitem_10(p):
     tag = p[1];  taglist = [];  tagtype = 'XREF';  KW = jdb.KW
     for jref in p[3]:
         dotlist, slist, seq, corpus = jref
+        if corpus:
+              # Convert corpus name to id number here (rather than
+              # than later in say, x2xrslv()), so that any error
+              # will point to position close to the corpus text in
+              # the input.
+            try: corpus = KW.SRC[corpus].id
+            except KeyError: perror (p, "Unknown corpus: %s" % corpus)
         if tag in [x.kw for x in KW.recs('XREF')]:
               # FIXME: instead of using XREF kw''s directly, do we want to
               #  change to an lsrc syntax like, "xref=cf:..."
@@ -284,7 +282,7 @@ def p_tagitem_10(p):
         if seq or corpus or slist:
             perror ("Seq number, corpus, or a sense list can only be given with xref tags")
           # Xrefs are also the only contruct that uses the middot character
-          # syntactically.  Since we don''t have an xref, then the midots are
+          # syntactically.  Since we don''t have an xref, then the middots are
           # just characters in the text, so put the original text string back
           # together.
         txt = u'\u30FB'.join (dotlist)
@@ -328,7 +326,11 @@ def p_jref_3(p):
 
 def p_jref_4(p):
     '''jref : jitem'''
-    p[0] = p[1] + [None,'']
+    p[0] = p[1] + [None,None]
+
+def p_jref_5(p):
+    '''jref : jitem TEXT'''
+    p[0] = p[1] + [None, p[2]]
 
 def p_jitem_1(p):
     '''jitem : dotlist'''
@@ -360,11 +362,11 @@ def p_jtext_3(p):
 
 def p_xrefnum_1(p):
     '''xrefnum : NUMBER'''
-    p[0] = [toint(p[1]), '']
+    p[0] = [toint(p[1]), None]
 
 def p_xrefnum_2(p):
     '''xrefnum : NUMBER HASH'''
-    p[0] = [toint(p[1]), None]
+    p[0] = [-toint(p[1]), None]
 
 def p_xrefnum_3(p):
     '''xrefnum : NUMBER TEXT'''
@@ -562,7 +564,7 @@ def sens_tags (sens, gloss, tags):
               # Each tag, t, is a list where t[0] is the tag type (aka
               # domain) as a string, or None if it is unknown.  There
               # will be one or more additional items in the list, the
-              # numner depending on what type of tag it is.
+              # number depending on what type of tag it is.
             vals = None
             typ = t.pop(0)      # Get the item type.
 
@@ -640,7 +642,7 @@ def sens_tags (sens, gloss, tags):
             elif typ == 'XREF':
                 kw = KW.XREF[t[0]].id
                 t[0] = kw
-                append (sens, '_XREF', t)
+                sens._xrslv.extend (x2xrslv (t))
 
             elif typ == 'GINF':
                 t = t[0]        # GINF tags have only one value, the ginf code.
@@ -793,63 +795,34 @@ def mk_restrs (listkey, rdngs, kanjs):
                             "' not in the entry's %s" % not_found_in)
         return "\n".join (errs)
 
-def resolv_xrefs (
-    cur,         # An open DBAPI cursor to the current JMdictDB database.
-    entr         # An entry with ._XREF tuples.
-    ):
-        """\
-        Convert any jelparser generated _XREF lists that are attached
-        to any of the senses in 'entr' to a normal augmented xref list.
-        An _XREF list is a list of 6-tuples:
-          [0] -- The type of xref per id number in table kwxref.
-          [1] -- Reading text of the xref target entry or None.
-          [2] -- Kanji text of the target xref or None.
-          [3] -- A list of ints specifying the target senses in
-                 in the target entry.
-          [4] -- None or a number, either seq or entry id.
-          [5] -- None, '', or a corpus name.  None means 'number'
-                 is a entry id, '' means it is a seq number in the
-                 corpus 'entr.src', otherwise it is the name or id
-                 number of a corpus in which to try resolving the
-                 xref.
-        At least one of [1], [2], or [4] must be non-None.\
-        """
-        errs = []
-        for s in getattr (entr, '_sens', []):
-            if not hasattr (s, '_XREF'): continue
-            xrefs = []; xunrs = []
-            for typ, rtxt, ktxt, slist, seq, corp in s._XREF:
-                if corp == '': corp = entr.src
-                xrf, xunr = find_xref (cur, typ, rtxt, ktxt, slist, seq, corp)
-                if xrf: xrefs.extend (xrf)
-                else:
-                    xunrs.append (xunr)
-                    errs.append (xunr.msg)
-            if xrefs: s._xref = xrefs
-            if xunrs: s._xrslv = xunrs
-            del s._XREF
+def x2xrslv (t):
+        # The parsed xrefs are turned into unresolved xrefs; we
+        # don't try to resolve them here since we don't want JEL
+        # parsing to be dependent on having access to a populated
+        # database.  This is similar to how jmparse (the XML parser)
+        # does it, the unresolved xrefs can be resolved in a later
+        # step when the database is accessible.
+          # 't' is the info for a JEL XREF tag, specifically:
+          #   [0] -- xref type already mapped to KW.XREF id number.
+          #   [1] -- Target reading text or None.
+          #   [2] -- Target kanji text or None.
+          #   [3] -- List of target senses, may be None.
+          #   [4] -- Target sequence number (if positive) or target
+          #          entry id number (if negative) or None.
+          #   [5] -- Target corpus id number or None (=resolve against
+          #          the entry's '.src' corpus.)  See yacc rule
+          #          "tagitem|TEXT EQL jrefs", also rules "xrefnum"
+          #          and "jref".
+        results = []
+        for s in t[3] or [None]:
+            x = Xrslv (typ=t[0], rtxt=t[1], ktxt=t[2], tsens=s,
+                       vsrc=t[5], vseq=t[4])
+            results.append (x)
+        return results
+
+def resolv_xrefs (cur, entr):  #FIXME: Temp shim for back compatibility.
+        errs = jdb.xresolv (cur, entr)
         return errs
-
-def find_xref (cur, typ, rtxt, ktxt, slist, seq, corp,
-                corpcache={}, clearcache=False):
-
-        xrfs = [];  xunrs = None;  msg = ''
-        if clearcache: corpcache.clear()
-        if isinstance (corp, str):
-            if corpcache.get (corp, None): corpid = corpcache[corp]
-            else:
-                rs = jdb.dbread (cur, "SELECT id FROM kwsrc WHERE kw=%s", [corp])
-                if len(rs) != 1: raise ValueError ("Invalid corpus name: '%s'" % corp)
-                corpid = corpcache[corp] = rs[0][0]
-        else: corpid = corp
-
-        try:
-            xrfs = jdb.resolv_xref (cur, typ, rtxt, ktxt, slist, seq, corpid)
-        except ValueError as e:
-            msg = e.args[0]
-            xunrs = jdb.Xrslv (typ=typ, ktxt=ktxt, rtxt=rtxt,tsens=None)
-            xunrs.msg = msg
-        return xrfs, xunrs
 
 def append (sens, key, item):
     # Append $item to the list, @{$sens->{$key}}, creating

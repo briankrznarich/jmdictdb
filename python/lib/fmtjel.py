@@ -57,7 +57,7 @@ def entr (entr, nohdr=False):
         # parsable by jelparse().
 
         sects = []
-        if not nohdr: sects.append (fmt.entrhdr (entr))
+        if not nohdr: sects.append (entrhdr (entr))
         k = getattr (entr, '_kanj', [])
         r = getattr (entr, '_rdng', [])
         s = getattr (entr, '_sens', [])
@@ -261,6 +261,20 @@ def grp (grp):
           # FIXME: Handle grp.notes which is currently ignored.
         ord = '' if grp.ord is None else ("." + str (grp.ord))
         return KW.GRP[grp.kw].kw + ord
+
+def entrhdr (entr):
+        if not (entr.seq or entr.src or entr.stat or entr.unap): return ""
+        a = [str(entr.seq) if entr.seq else "0"]
+        if entr.src: a.append (jdb.KW.SRC[entr.src].kw)
+        statt = jdb.KW.STAT[entr.stat].kw if entr.stat else ""
+        if entr.unap: statt += "*"
+        if statt: a.append (statt)
+        extra = []
+        for x in ('id', 'dfrm'):
+            if getattr (entr, x): extra.append("%s=%r" % (x,getattr(entr,x)))
+        if extra: a.append ("[" + "; ".join(extra) + "]")
+        hdr = " ".join (a)
+        return hdr
 
 def main():
         cur = jdb.dbOpen ('jmnew')

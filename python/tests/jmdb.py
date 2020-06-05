@@ -30,21 +30,11 @@ import jdb, db
 #      Postgresql's 'pg_dump' command on a prototype test database.
 #
 # When .use() is called it will check if the database 'dbname' is
-# already loaded in the Postgresql server by:
-# 1) Checking whether a database named 'dbname' was loaded from
-#    file 'filename' previously in this invocation of the test
-#    program.
-# 2) If (1) is not true, it will check if as database named 'dbname'
-#    exists on the server, and if so, if it has a table, created by
-#    DBmanager, that contains that name of 'filename'.
-# If (1) and (2) are both true, .use() assumes the existing 'dbname'
-# database is the desired one and will return a jdb.dbOpen() cursor
-# to it.  If either (1) or (2) is false, .use() will drop any existing
-# 'dbname' database and create it by restoring from 'filename' (which
-# should be a "plain" sql dump produced by 'pg_dump' of the virgin
-# test database.)
-# Check (2) allows a database to be reused between invocations of the
-# test program.
+# already loaded in the Postgresql server by checking a hash value
+# stored in the database when it was first loaded into the database
+# server; it's value must match the hash of the filename we want to
+# load here.  If it doesn't match we presume the database was loaded
+# from some other file, drop the database and reload from our file.
 # A failure when loading will result in an exception.
 
 HASH_METHOD = 'sha1'
@@ -65,18 +55,25 @@ class _DBmanager():
             dbconn = db.connect (dbname)
             rs = db.query (dbconn, "SELECT * FROM testsrc;")
         except db.Error as e:
-            if not re.search ('(relation|database) \S+ does not exist',
-                              str(e)):
-                print ("jmdb: database error: %s" % e, file=sys.stderr)
-            print ("jmdb: no signature table found", file=sys.stderr)
-            return False
+            if re.search ('database \S+ does not exist', str(e)):
+                print ("jmdb: test database %s not found" % dbname,
+                       file=sys.stderr)
+                return False
+            if re.search ('relation \S+ does not exist', str(e)):
+                print ("jmdb: no signature table found", file=sys.stderr)
+                return False
+              # If there is some other error it will probabably reoccur
+              # so re-raise it; since we were probably called from a
+              # unittest setUpModule() method, the exception will pre-
+              # emptively cancel any tests in that module.
+            raise
         if len(rs) != 1 or len(rs[0]) != 3:
             print ("jmdb: unexpected signature data", file=sys.stderr)
             return False
-        # Code below is commented out in order to ignore the testdb filename
-        # and rely only on the hash to identify the expected test database.
-        # The motivation is that tests are often run from repository clones
-        # causing the filename difference to result in an unnecessary reload.
+          # Code below is commented out in order to ignore the testdb filename
+          # and rely only on the hash to identify the expected test database.
+          # The motivation is that tests are often run from repository clones
+          # causing the filename difference to result in an unnecessary reload.
         #if rs[0][0] != os.path.abspath (filename):
         #    print ("jmdb: filename mismatch", file=sys.stderr)
         #    return False
@@ -86,16 +83,21 @@ class _DBmanager():
         return True
     def load (self, dbname, filename):
           # Reload a fresh copy of a test database into the postgresql
-          # database server.
+          # database server.  After loading the database we store the
+          # a hash of the load file's contents in a table, "testsrc",
+          # in the database.  Subsequent requests to use the database
+          # will call .is_loaded() to check the stored hash against the
+          # actual file hash to confirm that the requested database is
+          # already loaded and need not be reloaded.
           # For safely (to avoid accidently blowing away a production
-          #  database) we require the test database name to start with
-          #  "jmtest".
+          # database) we require the test database name to start with
+          # "jmtest".
           # The user running this must:
           #  - have "create database" permission on the server.
           #  - have a suitable .pgpass set up that allows access to the
           #    server without needing to interactively supply a password.
         if not dbname.startswith ("jmtest"):
-            raise RuntimeError ('reloaddb: dbname must start with "jmtest"')
+            raise RuntimeError ('jmdb: dbname must start with "jmtest"')
         absfn = os.path.abspath (filename)
         hash = self.hash (HASH_METHOD, filename)
         def run (cmd):
