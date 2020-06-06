@@ -185,11 +185,11 @@ class Chr (DbRow):
         s._cinf = _cinf or []
 
 class Xrslv (DbRow):
-    def __init__ (s, entr=None, sens=None, typ=None, ord=None,
+    def __init__ (s, entr=None, sens=None, ord=None, typ=None,
                   rtxt=None, ktxt=None, tsens=None,
                   vsrc=None, vseq=None, notes=None, prio=None):
-        DbRow.__init__(s, ( entr,  sens,  typ,  ord,  rtxt,  ktxt,  tsens,  vsrc,  vseq,  notes,  prio),
-                          ('entr','sens','typ','ord','rtxt','ktxt','tsens','vsrc','vseq','notes','prio'))
+        DbRow.__init__(s, ( entr,  sens,  ord,  typ,  rtxt,  ktxt,  tsens,  vsrc,  vseq,  notes,  prio),
+                          ('entr','sens','ord','typ','rtxt','ktxt','tsens','vsrc','vseq','notes','prio'))
 
 class Kreslv (DbRow):
     def __init__ (s, entr=None, kw=None, value=None):
