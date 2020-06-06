@@ -8,6 +8,9 @@ import submit   # Module to test
   # Database name and load file for tests.
 DBNAME, DBFILE = "jmtest01", "data/jmtest01.sql"
 
+  # These tests are not intended to be comprehensive but test a few 
+  # common cases in the context of a complete submission.
+
   # These tests create entries in the "test" corpus (src=99) in
   # order not to change any of the entries in other corpora which
   # would invalidate the database for further tests.  All "test"
@@ -22,9 +25,7 @@ class General (unittest.TestCase):
                     _rdng=[Rdng(txt='ゴミ')], _kanj=[],
                     _sens=[Sens(_gloss=[Gloss(txt="trash",lang=1,ginf=1)])],
                     _hist=[Hist()])
-        errs = []
         eid,seq,src = submit_ (inp, disp='')
-        _.assertFalse (errs)
         for t in eid,seq,src: _.assertTrue(t)
         DBcursor.connection.commit()
           # An index exception on next line indicates the new entry
@@ -35,17 +36,54 @@ class General (unittest.TestCase):
           #  and thus it should exactly match 'out'.
         _.assertEqual (inp, out)
 
-class Xrefs (unittest.TestCase):  #! name "Xref" conflicts with objects.Xref!
+class Xrefs (unittest.TestCase):   # Named with plural form because "Xref"
+    @classmethod                   #  conflicts with objects.Xref.
+    def setUpClass(cls):
+          # Create some entries to use as xref targets.  These are created
+          # in the test corpus (c=99) since all entries in that corpus are
+          # removed by the tearDownModule() function when all tests are
+          # finished.
+        cls.t1 = addentr ('猫\fねこ\f[1]cat', q=20100, c=99)
+        cls.t2 = addentr ('馬\fうま\f[1]horse[2]mule', q=20110, c=99)
+
     def test0001(_):
           # Create a single, simple xref.
-        et = addentr ('猫\fねこ\f[1]cat', q=20100, c=99)
         e0 = mkentr ('犬\fいぬ\f[1]dog [see=猫]', c=99, h=[Hist()])
+        id,seq,src = submit_ (e0, disp='')
+        e1 = jdb.entrList (DBcursor, None, [id])[0]
+        expect = [Xref (id,1,1,3,_.t1.id,1,None,1,None,False,False)]
+        _.assertEqual (expect, e1._sens[0]._xref)
+        _.assertEqual ([],     e1._sens[0]._xrslv)
+
+    def test0002(_):
+          # Xref to kanji and sense #1.
+        e0 = mkentr ('犬\fいぬ\f[1]dog [see=馬[2]]', c=99, h=[Hist()])
+        id,seq,src = submit_ (e0, disp='')
+        e1 = jdb.entrList (DBcursor, None, [id])[0]
+        expect = [Xref (id,1,1,3,_.t2.id,2,None,1,None,False,False)]
+        _.assertEqual (expect, e1._sens[0]._xref)
+        _.assertEqual ([],     e1._sens[0]._xrslv)
+
+    def test0003(_):
+          # Xref to reading and sense #1.
+        e0 = mkentr ('子犬\fこいぬ\f[1]puppy [see=うま[2]]', c=99, h=[Hist()])
+        id,seq,src = submit_ (e0, disp='')
+        e1 = jdb.entrList (DBcursor, None, [id])[0]
+        expect = [Xref (id,1,1,3,_.t2.id,2,1,None,None,False,False)]
+        _.assertEqual (expect, e1._sens[0]._xref)
+        _.assertEqual ([],     e1._sens[0]._xrslv)
+
+class Xrslvs (unittest.TestCase):  # Named with plural form because "Xrslv"
+    def test0001(_):               #  conflicts objects.Xrslv.
+          # An xref to a non-existant target will generate an Xrslv object.
+        e0 = mkentr ('犬\fいぬ\f[1]dog[see=猫猫]', c=99, h=[Hist()])
         errs = []
         id,seq,src = submit_ (e0, disp='')
         e1 = jdb.entrList (DBcursor, None, [id])[0]
-        expect = [Xref (id,1,1,3,et.id,1,None,1,None,False,False)]
-        _.assertEqual (expect, e1._sens[0]._xref)
-        _.assertEqual ([],     e1._sens[0]._xrslv)
+        expect = [Xrslv (id,1,1,3,None,'猫猫',None,None,None,None,None)]
+        _.assertEqual (expect, e1._sens[0]._xrslv)
+        _.assertEqual ([],     e1._sens[0]._xref)
+
 
 #=============================================================================
 # Support functions
