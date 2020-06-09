@@ -59,8 +59,8 @@ def main( args, opts ):
              # values (the "1", "2", in "ichi1" etc), we create the expanded
              # values here.  We also supply the "descr" value which will provide
              # tool tips on web page.
-           if x.kw!='nf' and x.kw!='gA': freq.extend ([Kwfreq(x.kw+'1', x.descr),
-                                                       Kwfreq(x.kw+'2', x.descr)])
+           if x.kw!='nf': freq.extend ([Kwfreq(x.kw+'1', x.descr),
+                                        Kwfreq(x.kw+'2', x.descr)])
 
         jmcgi.jinja_page ("srchform.jinja", KW=jdb.KW,
                         pos=pos, misc=misc, stat=stat, src=corp, freq=freq,

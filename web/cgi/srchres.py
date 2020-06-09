@@ -58,10 +58,6 @@ def main( args, opts ):
             so.grp   = grpsparse (fv('grp'))
             so.src   = fl('src');   so.stat  = fl('stat');  so.unap = fl('appr')
             so.nfval = fv('nfval'); so.nfcmp = fv('nfcmp')
-              # Search using gA freq criterion no longer supported.  See 
-              # the comments in jmcgi._freqcond() but code left here for
-              # reference.
-            so.gaval = fv('gaval'); so.gacmp = fv('gacmp')
               # Sense notes criteria.
             so.snote = (fv('snote') or ''), fvi('snotem')
               # Next 5 items are History criteria...
