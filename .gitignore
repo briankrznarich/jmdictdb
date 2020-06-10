@@ -4,7 +4,10 @@ __pycache__/
 \#*
 .#*
 *.log
+.nobackup
 /data/
+/dist/
+/jmdictdb.egg-info/
 /python/tests/tmp/
 /python/lib/config.ini
 /python/lib/config-pvt.ini
