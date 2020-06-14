@@ -19,11 +19,9 @@
 #######################################################################
 
 import sys, cgi, datetime
-sys.path.extend (['../lib','../../python/lib','../python/lib'])
-import logger; from logger import L
-import jdb, jmcgi
-import fmtxml, fmtjel, xslfmt
-import logger; from logger import L
+sys.path[0:0]=[(sys.path[0]+'/' if sys.path[0] else '')+'../..']
+from jmdictdb import logger; from jmdictdb.logger import L
+from jmdictdb import jdb, jmcgi, fmtxml, fmtjel, xslfmt
 
 def main (args, opts):
         logger.enable()

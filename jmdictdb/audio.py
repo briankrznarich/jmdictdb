@@ -21,7 +21,7 @@
 from lrucache import LRUCache
 import time, os.path, pdb
 
-import mci; from mci.constants import *;
+from . import mci; from mci.constants import *;
   # We import mciError to make it available from this module to
   # users of Audio, CD since any of those can raise it.
 from mci import mciError

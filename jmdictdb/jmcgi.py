@@ -19,9 +19,9 @@
 
 import sys, re, cgi, urllib.request, urllib.parse, urllib.error, os, os.path
 import random, time, http.cookies, datetime, time, copy
-import jdb, config, fmt
-import jinja; from markupsafe import Markup, escape as Escape
-import logger; from logger import L
+from . import jdb, config, fmt
+from . import jinja; from markupsafe import Markup, escape as Escape
+from . import logger; from .logger import L
 
 def initcgi (cfgfilename, authfilename=None):
         """

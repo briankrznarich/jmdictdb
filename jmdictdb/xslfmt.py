@@ -26,7 +26,7 @@ formmated version of an entry.
 import sys, re, lxml
 from io import StringIO
 from lxml import etree
-import jdb, fmtxml
+from . import jdb, fmtxml
 
 def entr (entr, xslfile=None, xslt=[], want_utf8=False):
         # A slow but simple way to get an Edict2 formatted text for an entry.

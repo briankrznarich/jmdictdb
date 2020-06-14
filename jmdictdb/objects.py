@@ -18,7 +18,7 @@
 #######################################################################
 
 import sys, pdb
-from db import DbRow, Obj
+from .db import DbRow, Obj
 
 #  NOTE:
 #  When adding/deleting/modifying the classes below, be sure to

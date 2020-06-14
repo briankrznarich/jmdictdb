@@ -19,9 +19,9 @@
 #######################################################################
 
 import sys, cgi
-sys.path.extend (['../lib','../../python/lib','../python/lib'])
-import logger; from logger import L
-import jdb, jmcgi
+sys.path[0:0]=[(sys.path[0]+'/' if sys.path[0] else '')+'../..']
+from jmdictdb import logger; from jmdictdb.logger import L
+from jmdictdb import jdb, jmcgi
 
 class Kwfreq (object):
     def __init__ (self, kw, descr):

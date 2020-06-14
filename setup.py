@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import setuptools
 
 with open ("README.md", "r") as fh:
@@ -14,10 +15,12 @@ setuptools.setup (
         long_description_content_type="text/markdown",
         url="https://gitlab.com/yamagoya/jmdictdb",
         packages=setuptools.find_packages(),
+        package_data={'jmdictdb': ['tmpl/*.jinja', 'data/*.csv']},
+        zip_safe = False,
         classifiers=[
             "Programming Language :: Python :: 3",
-            "License :: OSI Approved :: GPL2",
-            "Operating System :: OS Independent", ],
+            "Programming Language :: SQL",
+            "License :: OSI Approved :: GPL-2.0-or-later",
+            "Operating System :: POSIX", ],
         python_requires='>=3.6',
-
-        install_requires = ['jinja', 'lxml', 'ply', 'psycopg2'], )
+        install_requires = ['jinja2', 'lxml', 'ply', 'psycopg2'], )

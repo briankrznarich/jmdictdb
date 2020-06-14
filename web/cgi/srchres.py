@@ -19,10 +19,10 @@
 #######################################################################
 
 import sys, cgi, copy, time
-sys.path.extend (['../lib','../../python/lib','../python/lib'])
-import logger; from logger import L
-import jdb, jmcgi, serialize, db   # db is imported only for
-                                   #  access to dbapi exceptions.
+sys.path[0:0]=[(sys.path[0]+'/' if sys.path[0] else '')+'../..']
+from jmdictdb import logger; from jmdictdb.logger import L
+from jmdictdb import jdb, jmcgi, serialize, db  # db is imported only for
+                                                #  access to dbapi exceptions.
 def main( args, opts ):
         logger.enable()
         jdb.reset_encoding (sys.stdout, 'utf-8')

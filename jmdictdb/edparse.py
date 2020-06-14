@@ -47,9 +47,9 @@
 
 import sys, re, collections, pdb
 import jdb
-from objects import *
-from jelparse import lookup_tag, ParseError
-from iso639maps import iso639_1_to_2
+from .objects import *
+from .jelparse import lookup_tag, ParseError
+from .iso639maps import iso639_1_to_2
 
 def entr (text, simple=False):
          #krtxt, x, stxt = text.partition ('/')

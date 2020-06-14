@@ -18,7 +18,7 @@
 #######################################################################
 
 import sys, os, os.path, configparser
-import jdb
+from . import jdb
 
   # The following supplies default values for any config.ini
   # values not present in the config.ini file read by cfgOpen().
@@ -46,6 +46,12 @@ DEFAULTS = {
         'SEARCH_TIMEOUT': 3000, },
         }
 
+  # If the 'cfgname' or 'pvtname' filename arguments to cfgRead()
+  # below are relative paths, they will be looked for in the
+  # LOCATION directory which in turn is relative to the directory
+  # of the running script (which normally will be the cgi directory.)
+LOCATION = '../lib'
+
 def cfgRead (cfgname, pvtname):
         # Open and parse a config file and optional pvt config
         # file returning the results as a config.Config() object.
@@ -61,9 +67,9 @@ def cfgRead (cfgname, pvtname):
         # convention that we expect the 'pvtname' file to be used
         # for the "db_*" sections.
 
-          # findfile() will raise IOError if unable to find file.
-        cfg_files = [findfile (cfgname)]
-        try: pvtfn = findfile (pvtname)
+          # find_config_file() will raise IOError if unable to find.
+        cfg_files = [find_config_file (cfgname, LOCATION)]
+        try: pvtfn = find_config_file (pvtname, LOCATION)
         except IOError: pass
         else: cfg_files.append (pvtfn)
         cfg = configparser.ConfigParser (interpolation=None)
@@ -82,12 +88,22 @@ def cfgRead (cfgname, pvtname):
           # the logging facility.)
         return cfg
 
-def findfile (name):
-        if '\\' in name or '/' in name:
-            fname = name
-        else:
-            d = jdb.find_in_syspath (name)
-            if not d:
-                raise IOError (2, 'File not found on sys.path', name)
-            fname = os.path.join (d, name)
+def find_config_file (name, location):
+        ''' Look for and return the absolute path of a file named 'name'
+            in a directory, 'location', which is a path relative to the
+            the location of the calling script.
+
+            Example: if the calling script is:
+              ~user/public_html/cgi/script.py
+            'location' is "../lib" and 'name' is "config.ini", this
+            function will look for a file:
+              ~user/public_html/lib/config.ini
+            and either return the absolute filename if it exists and is
+            readable or raise an IOError exception if not. '''
+
+        script = os.path.abspath (sys.argv[0])
+        d = os.path.dirname (script)
+        fname = os.path.normpath (os.path.join (d, location, name))
+        if not os.access (fname, os.R_OK):
+            raise IOError (2, "File not found", fname)
         return fname

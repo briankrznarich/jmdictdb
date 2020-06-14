@@ -21,7 +21,7 @@
 Module: Functions for writing Postgres "COPY" data to ".pgi" files.
 """
 import sys, os, operator, datetime
-import jdb
+from . import jdb
 
 def wrentr (e, workfiles):
         _wrrow (e, workfiles['entr'])

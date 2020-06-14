@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-       # non-ascii used in comments only.
+# -*- coding: utf-8 -*-       # non-ascii used in comments only.
 #######################################################################
 #  This file is part of JMdictDB.
 #  Copyright (c) 2009 Stuart McGraw
@@ -20,8 +20,8 @@
 
 
 import sys, pdb
-import jdb, fmt
-from objects import *
+from . import jdb, fmt
+from .objects import *
 
 def entr (e):
         _kanjs = getattr (e, '_kanj', [])

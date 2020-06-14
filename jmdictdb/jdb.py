@@ -21,10 +21,10 @@
 import sys, os, os.path, random, re, datetime, operator, csv
 from time import time
 from collections import defaultdict
-import fmtxml
-import logger; from logger import L
-from objects import *
-from restr import *
+from . import fmtxml
+from . import logger; from .logger import L
+from .objects import *
+from .restr import *
 
   # Get the database version id number(s) required by this version
   # of the JMdictDB API.  When dbOpen() is called it will check that

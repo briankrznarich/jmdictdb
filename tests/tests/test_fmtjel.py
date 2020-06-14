@@ -1,7 +1,7 @@
 import sys, unittest, os.path, pdb
 if '../lib' not in sys.path: sys.path.append ('../lib')
-import jdb, fmtjel, jmxml, xmlkw, jelparse
-from objects import *
+from jmdictdb import jdb, fmtjel, jmxml, xmlkw, jelparse
+from jmdictdb.objects import *
 import unittest_extensions, jmdb
 
 def main(): unittest.main()

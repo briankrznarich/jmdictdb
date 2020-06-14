@@ -1,9 +1,8 @@
 import sys, re, unittest, pdb
 import unittest_extensions
-if '../lib' not in sys.path: sys.path.append ('../lib')
-import jdb, fmtxml
-from objects import *
-import edparse
+from jmdictdb import jdb, fmtxml
+from from jmdictdb.objects import *
+from jmdictdb import edparse
 
 Loaded = Test_indata = Test_expdata = None
 

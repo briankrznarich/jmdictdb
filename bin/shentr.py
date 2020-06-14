@@ -4,13 +4,10 @@
 # Simple command line tool to find and display entries
 # in the JMdict database.
 
-import sys, os, inspect, pdb
-_ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
-_ = os.path.join (os.path.dirname(_), 'python', 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
-
-import re
-import jdb, fmt, fmtjel
+import sys, os, re, pdb
+sys.path[0:0]=[(sys.path[0]+'/' if sys.path[0] else '')+'..']
+from jmdictdb import jdb, fmt, fmtjel
+from jmdictdb import logger; from jmdictdb.logger import L
 
 global KW
 

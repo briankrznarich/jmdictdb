@@ -17,10 +17,9 @@
 #  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #######################################################################
 
-import zlib, base64, urllib.request, urllib.parse, urllib.error, datetime, time
-try: import json
-except ImportError: import simplejson as json
-import jdb
+import zlib, base64, datetime, time, json, \
+       urllib.request, urllib.parse, urllib.error
+from . import jdb
 
 def serialize (obj):
         s = jencode (obj)

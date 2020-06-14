@@ -1,8 +1,7 @@
 import sys, re, unittest, pdb
 import unittest_extensions
-if '../lib' not in sys.path: sys.path.append ('../lib')
-import jdb; from objects import *
-import xslfmt
+from jmdictdb import jdb; from jmdictdb.objects import *
+from jmdictdb import xslfmt
 
 Test_xmlcmp_xmldata = Test_xmlcmp_edictdata = None
 

@@ -19,7 +19,7 @@
 
 import cgi, os.path, pdb
 import jinja2
-import jdb
+from . import jdb
 
 def add_filters (env):
           # Load the database keyword tables object which we use to

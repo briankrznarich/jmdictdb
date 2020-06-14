@@ -1,5 +1,5 @@
 import sys, os, subprocess, hashlib, re, pdb
-import jdb, db
+from jmdictdb import jdb, db
 
 # This module provides support for JMdictDB tests in two forms:
 # - A _DBmanager class for loading tests databases.

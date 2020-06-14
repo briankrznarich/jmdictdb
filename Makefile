@@ -1,15 +1,15 @@
 # This makefile simplifies some of the tasks needed when installing
-# or updating the jmdictdb files.  It can be used on both Unix/Linux 
+# or updating the jmdictdb files.  It can be used on both Unix/Linux
 # and Windows systems, although on the latter you will need to install
 # GNU Make, either a native port or from Cygwin.  (The Cywin Make can
 # be run directly from a CMD.EXE window -- it is not necessary to run
-# it from a Cygwin bash shell.)  On Windows you will likely want to 
+# it from a Cygwin bash shell.)  On Windows you will likely want to
 # change the definition of WEBROOT below.
 #
 # "make all" will print a summary of targets.
 #
 # The following items should be adjusted based on your needs...
-# Alternatively, they can be overridden when "make" is run as in 
+# Alternatively, they can be overridden when "make" is run as in
 # the following example:
 #
 #    make JMDICTFILE=JMdict "LANGOPT=-g fre"
@@ -18,13 +18,13 @@
 # JMdictDB code no longer runs under Python2.
 PYTHON = python3
 
-# The JMdict file to download.  Choice is usually between JMdict 
+# The JMdict file to download.  Choice is usually between JMdict
 # which contains multi-lingual glosses, and JMdict_e that contains
 # only English glosses but is 25% smaller and parses faster.
 JMDICTFILE = JMdict_e
 #JMDICTFILE = JMdict
 
-# Parse out only glosses of the specified language.  If not 
+# Parse out only glosses of the specified language.  If not
 # supplied, all glosses will be parsed, regardless of language.
 # Language specified using ISO-639-2 3-letter abbreviation.
 #LANGOPT = -g eng
@@ -61,17 +61,28 @@ PG_SUPER = postgres
 # If blank, localhost will be used.
 HOST =
 
-# The following specify where the cgi scripts, the python modules they
-# use, and the .css file, respectively, go.  The location and names
-# can be changed, but (currently) their relative positions must remain
-# the same: the cgi and lib dirs must be siblings and the css file goes
-# in their common parent directory.
+# Install locations...
+# If running as root, install will be system wide.  Otherwise it
+# will be for the current user only.
+# CMDSDIR specified where the command line scripts will be installed.
+# WEBROOT specifies where the cgi scripts, static html and css
+# files go.  The location and names can be changed, but (currently)
+# their relative positions must remain the same: the cgi and lib
+# dirs must be siblings and the css file goes in their common parent
+# directory.
 # On Windows "~" expansion doesn't seem to work, so you will likely
-# want to change the definition of WEBROOT below.  Alternatively, you 
-# can configure your web server to serve the cgi files directly from 
-# the development working directory and not use the "web" target in 
+# want to change the definition of WEBROOT below.  Alternatively, you
+# can configure your web server to serve the cgi files directly from
+# the development working directory and not use the "web" target in
 # this makefile (which installs the cgi files to WEBROOT).
+
+ifeq (0, $(shell id -u))   # If running as root, do system install.
+CMDS_DIR = /usr/local/bin
+WEBROOT = /var/www/jmdictdb
+else                         # Otherwise install for user only.
+CMDS_DIR = $(wildcard ~/.local/bin)
 WEBROOT = $(wildcard ~/public_html)
+endif
 CGI_DIR = $(WEBROOT)/cgi-bin
 LIB_DIR = $(WEBROOT)/lib
 CSS_DIR = $(WEBROOT)
@@ -87,10 +98,18 @@ PG_HOST = -h $(HOST)
 JM_HOST = -r $(HOST)
 endif
 
+# CAUTION: Be careful in the file lists below to make sure that the
+#  last item is NOT followed by a backslash.  If it is the rules that
+#  use the list will not work but there will be no error messages.
+
 CSS_FILES = jmdict.css \
 	status_maint.html \
 	status_load.html
 WEB_CSS = $(addprefix $(CSS_DIR)/,$(CSS_FILES))
+
+LIB_FILES = .htaccess \
+	config-sample.ini \
+WEB_LIB = $(addprefix $(LIB_DIR)/,$(LIB_FILES))
 
 CGI_FILES = conj.py \
 	entr.py \
@@ -107,55 +126,39 @@ CGI_FILES = conj.py \
 	user.py \
 	users.py \
 	userupd.py
-WEB_CGI	= $(addprefix $(CGI_DIR)/,$(CGI_FILES))
+WEB_CGI = $(addprefix $(CGI_DIR)/,$(CGI_FILES))
 
-LIB_FILES = .htaccess \
-	config.py \
-	db.py \
-	dbver.py \
-	edict2.xsl \
-	edparse.py \
-	fmt.py \
-	fmtjel.py \
-	fmtxml.py \
-	iso639maps.py \
-	jdb.py \
-	jellex.py \
-	jelparse.py \
-	jelparse_tab.py \
-	jinja.py \
-	jmcgi.py \
-	logger.py \
-	objects.py \
-	restr.py \
-	serialize.py \
-	submit.py \
-	xmlkw.py \
-	xslfmt.py
-WEB_LIB	= $(addprefix $(LIB_DIR)/,$(LIB_FILES))
+CMD_FILES = bulkupd.py \
+	dbcheck.py \
+	dbreaper.py \
+	entrs2xml.py \
+	exparse.py \
+	jelload.py \
+	jmparse.py \
+	kdparse.py \
+	resetpw.py \
+	shentr.py \
+	xresolv.py
+CMDS = $(addprefix $(CMDS_DIR)/,$(CMD_FILES))
 
-TMPL_FILES = conj.jinja \
-	edconf.jinja \
-	edform.jinja \
-	edhelp.jinja \
-	edhelpq.jinja \
-	entr.jinja \
-	error.jinja \
-	groups.jinja \
-	layout.jinja \
-	srchform.jinja \
-	srchformq.jinja \
-	srchres.jinja \
-	srchsql.jinja \
-	submitted.jinja \
-	updates.jinja \
-	user.jinja \
-	users.jinja
-WEB_TMPL = $(addprefix $(LIB_DIR)/tmpl/,$(TMPL_FILES))
+#====== Rules ==========================================================
 
 all:
-	@echo 'You must supply an explicit target with this makefile:'
+	@echo 'You must supply an explicit target with this makefile.'
 	@echo
+	@echo 'Targets are in two groups, one for targets related to installing the'
+	@echo 'JMdictDB software, the other for loading a JMdictDB database from'
+	@echo 'various sources.'
+	@echo
+	@echo 'Software install targets.  These should be executed as root if'
+	@echo 'if installing into system directories.'
+	@echo '  install -- Install the jmdictdb package, the web cgi scripts,'
+	@echo '    and the command line tools.'
+	@echo '  package -- Install the JMdictdb packge (library modules).'
+	@echo '  web -- Install cgi and other web files to the appropriate places.'
+	@echo '  commands -- Install the command line tools.'
+	@echo
+	@echo 'Database loading targets:'
 	@echo '  newdb -- Create an empty database named "jmnew".'
 	@echo '  jmnew -- Create a database named "jmnew" with jmdictdb tables and '
 	@echo '    jmdictdb objects created but no data loaded.'
@@ -178,14 +181,11 @@ all:
 	@echo '   * WARNING: kanjidic2 support is usable but incomplete.'
 	@echo
 	@echo '  loadall -- Initialize database "jmnew" and load jmdict, jmnedict'
-	@echo '     and examples.'
-	@echo 
+	@echo '    and examples.'
 	@echo '  activate -- Rename the "jmnew" database to "jmdict".'
-	@echo '  web -- Install cgi and other web files to the appropriate places.'
-	@echo '  dist -- Make development snapshot distribution file.'
-	@echo 
+	@echo
 	@echo '  * NOTE: "make loadall" will do all needed database initialization.'
-	@echo '  To load a subset of loadall (eg only loadjm and loadne), you should' 
+	@echo '  To load a subset of loadall (eg only loadjm and loadne), you should'
 	@echo '  do "make jmnew", then "make loadjm", "make loadne", etc as desired,'
 	@echo '  then the last step should be "make postload".'
 
@@ -194,13 +194,13 @@ all:
     # Run this target only once when creating a jmdictdb server
     # installation.  Creates a jmsess database and two dedicated
     # users that the jmdictdb app will use to access the database.
- 
-init: 
-	# Assume any errors from 'createuser' are due to the user 
-	# already existing and ignore them. 
+
+init:
+	# Assume any errors from 'createuser' are due to the user
+	# already existing and ignore them.
 	-createuser $(PG_HOST) -U $(PG_SUPER) -SDRP $(USER)
 	-createuser $(PG_HOST) -U $(PG_SUPER) -SDRP $(RO_USER)
-	# Don't automatically drop old session database due to risk 
+	# Don't automatically drop old session database due to risk
 	# of unintentionally loosing user logins and passwords.  If
 	# it exists, the subsequent CREATE  DATABASE command will
 	# fail and require the user to manually drop the session
@@ -209,12 +209,12 @@ init:
 	psql $(PG_HOST) -U $(PG_SUPER) -d postgres -c 'create database jmsess'
 	psql $(PG_HOST) -U $(PG_SUPER) -d jmsess -c "CREATE EXTENSION IF NOT EXISTS pgcrypto"
 	cd pg && psql $(PG_HOST) -U $(USER) -d jmsess -f mksess.sql
-	@echo 'Remember to add jmdictdb editors to the jmsess "users" table.' 
+	@echo 'Remember to add jmdictdb editors to the jmsess "users" table.'
 
 #------ Create a blank jmnew database ----------------------------------
-# 
+#
 # This may be useful when loading a dump of a jmdictdb database, e.g:
-#   make newdb                       # Create blank jmnew database 
+#   make newdb                       # Create blank jmnew database
 #   pg_restore -O jmdictdb -d jmnew  # Restore the dump into jmnew.
 #   make activate                    # Rename jmnew to jmdict.
 
@@ -253,7 +253,7 @@ postload:
 
 #------ Load JMdict -----------------------------------------------------
 
-data/jmdict.xml: 
+data/jmdict.xml:
 	rm -f $(JMDICTFILE).gz
 	wget ftp://ftp.monash.edu.au/pub/nihongo/$(JMDICTFILE).gz
 	gzip -d $(JMDICTFILE).gz
@@ -289,13 +289,13 @@ loadne: data/jmnedict.pgi
 
 #------ Load examples ---------------------------------------------------
 
-data/examples.txt: 
+data/examples.txt:
 	rm -f examples.utf.gz
 	wget ftp://ftp.monash.edu.au/pub/nihongo/examples.utf.gz
 	gzip -d examples.utf.gz
 	mv examples.utf data/examples.txt
 
-data/examples.pgi: data/examples.txt 
+data/examples.pgi: data/examples.txt
 	cd python && $(PYTHON) exparse.py -o ../data/examples.pgi -l ../data/examples.log ../data/examples.txt
 
 loadex: data/examples.pgi
@@ -306,14 +306,14 @@ loadex: data/examples.pgi
 
 #------ Load kanjidic2.xml ---------------------------------------------------
 
-data/kanjidic2.xml: 
+data/kanjidic2.xml:
 	rm -f kanjidic2.xml.gz
 	wget ftp://ftp.monash.edu.au/pub/nihongo/kanjidic2.xml.gz
 	gzip -d kanjidic2.xml.gz
 	mv kanjidic2.xml data/kanjidic2.xml
 
-data/kanjidic2.pgi: data/kanjidic2.xml 
-	cd python && $(PYTHON) kdparse.py -g en -o ../data/kanjidic2.pgi -l ../data/kanjidic2.log ../data/kanjidic2.xml 
+data/kanjidic2.pgi: data/kanjidic2.xml
+	cd python && $(PYTHON) kdparse.py -g en -o ../data/kanjidic2.pgi -l ../data/kanjidic2.log ../data/kanjidic2.xml
 
 loadkd: data/kanjidic2.pgi
 	rm -f data/kanjidic2_xresolv.log
@@ -335,9 +335,24 @@ loadclean:
           examples.pgi examples.log examples_xresolv.log \
           kanjdic2.pgi kanjdic2.log
 
-#------ Move cgi files to web server location --------------------------
+#------ Install everything ---------------------------------------------
+install: install-pkg install-web install-cmds
 
-web:	webcgi weblib webtmpl webcss
+#------ Install the jmdictdb Python library ----------------------------
+#       If this target is run as root, the jmdictdb package will be
+#       installed in the system-wide python libraries.  If run as a
+#       normal user it will be installed only for that user, typically
+#       in ~/.local/lib/.
+install-pkg:
+	$(PYTHON) -m pip install --upgrade --no-deps .
+
+#------ Install command scripts to a bin/ location ---------------------
+install-cmds: $(CMDS)
+$(CMDS): $(CMDS_DIR)/%: bin/%
+	@echo install -pm 755 $? $@
+
+#------ Install cgi files to web server location -----------------------
+install-web:	webcgi webcss weblib
 
 webcss: $(WEB_CSS)
 $(WEB_CSS): $(CSS_DIR)/%: web/%
@@ -348,12 +363,16 @@ $(WEB_CGI): $(CGI_DIR)/%: web/cgi/%
 	install -p -m 755 $? $@
 
 weblib: $(WEB_LIB)
-$(WEB_LIB): $(LIB_DIR)/%: python/lib/%
-	install -pm 644 $? $@
+$(WEB_LIB): $(LIB_DIR)/%: web/lib/%
+	install -p -m 644 $? $@
 
-webtmpl: $(WEB_TMPL)
-$(WEB_TMPL): $(LIB_DIR)/%: python/lib/%
-	install -pm 644 $? $@
+#------ Uninstall things -----------------------------------------------
+uninstall: uninstall-pkg uninstall-web uninstall-cmds
+uninstall-pkg:
+	$(PYTHON) -m pip uninstall jmdictdb
+uninstall-web:
+uninstall-cmds:
+	rm $(CMDS)
 
 #------ Other ----------------------------------------------------------
 
@@ -370,4 +389,3 @@ clean:
 	find -name '*.tmp' -type f -print0 | xargs -0 /bin/rm -f
 	find -name '\#*' -type f -print0 | xargs -0 /bin/rm -f
 	find -name '\.*' -type f -print0 | xargs -0 /bin/rm -f
-

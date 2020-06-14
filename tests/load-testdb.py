@@ -3,7 +3,7 @@
 
 import sys, os, re, unittest, signal, pdb
 sys.path.insert (0, os.path.join(os.path.dirname(__file__),'../lib'))
-import jdb
+from jmdictdb import jdb
 from jmdb import DBmanager
 
 def main():

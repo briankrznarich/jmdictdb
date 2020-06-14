@@ -1,6 +1,5 @@
-﻿import sys, re, copy, collections, unittest, pdb
-if '../lib' not in sys.path: sys.path.append ('../lib')
-import jdb, jmxml, xmlkw
+import sys, re, copy, collections, unittest, pdb
+from jmdictdb import jdb, jmxml, xmlkw
 from objects import *
 
 # Module under test...

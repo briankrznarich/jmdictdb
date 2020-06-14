@@ -19,7 +19,7 @@
 
 
 from collections import defaultdict
-import jdb
+from . import jdb
 
 def entr (entr, wantlist=False):
         fmt = entrrec (entr)

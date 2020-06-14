@@ -18,7 +18,7 @@
 #######################################################################
 
 import ply.lex, re
-import jdb, fmtjel
+from . import jdb, fmtjel
 
 class LexSpec:
 

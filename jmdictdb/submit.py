@@ -127,9 +127,9 @@
 import sys, pdb
 sys.path.extend (['../lib','../../python/lib','../python/lib'])
 import logger; from logger import L
-import jdb
+from . import jdb
   #FIXME: temporary hack...
-import jmcgi
+from . import jmcgi
 
 class BranchesError (ValueError): pass
 class NonLeafError (ValueError): pass

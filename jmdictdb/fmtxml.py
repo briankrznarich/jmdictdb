@@ -23,7 +23,7 @@ Functions for generating XML descriptions of entries.
 """
 import re, difflib
 from xml.sax.saxutils import escape as esc, quoteattr as esca
-import jdb, xmlkw
+from . import jdb, xmlkw
 
 global XKW, KW
 XKW = None

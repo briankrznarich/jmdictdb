@@ -18,8 +18,8 @@
 #######################################################################
 
 import re, pdb
-import jdb, fmt
 from collections import defaultdict
+from . import jdb, fmt
 
 MIDDOT = '\u30FB'
   # The following characters are recognised as special
