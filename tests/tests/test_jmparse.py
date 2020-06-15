@@ -1,5 +1,6 @@
 import sys, os, tempfile, atexit, subprocess, difflib, \
         shutil, pdb, unittest, unittest_extensions
+from jmdictdb import jdb
 
 Global_setup_done = False
 def global_setup():
@@ -14,9 +15,9 @@ class Test_ (unittest.TestCase):
 def do_test (_, name, dtdfile):
         if not Global_setup_done: global_setup()
           # Following are all relative to the working directory, Workdir.
-        jmbuild = "../../tools/jmbuild.py"
-        jmparse = "../../bin/jmparse.py"
-        dtdpath = "../../jmdictdb/%s" % dtdfile
+        jmbuild =  "../../../tools/jmbuild.py"
+        jmparse =  "../../../bin/jmparse.py"
+        dtdpath =  "%s/%s" % (jdb.std_csv_dir(), dtdfile)
         testdata = "../../data/jmparse/%s.xml" % name
 
         subprocess.call (cwd=Workdir, shell=True,
@@ -55,9 +56,7 @@ def mk_temp_dir (in_dir=".", keep=False):
         return dirname
 
 def rm_temp_dir (dirname):
-        if sys.platform == 'win32': dirname = str(dirname)
-        else: dirname = dirname.encode(sys.getfilesystemencoding())
-        print ("Removing", dirname)
+        print ("Removing temp directory:", dirname)
         shutil.rmtree (dirname)
 
 def diff_strings (a, b):

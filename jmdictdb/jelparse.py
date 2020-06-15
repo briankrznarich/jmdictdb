@@ -888,7 +888,7 @@ def create_parser (lexer, toks, **args):
           # to rebuild it, and worse, writing it like bird
           # droppings wherever we happen to be running.
 
-        if 'module'       not in args: args['module']       = sys.modules['jelparse']
+        if 'module'       not in args: args['module']       = sys.modules['jmdictdb.jelparse']
         if 'tabmodule'    not in args: args['tabmodule']    = 'jelparse_tab'
         if 'write_tables' not in args: args['write_tables'] = 1
         if 'optimize'     not in args: args['optimize']     = 1

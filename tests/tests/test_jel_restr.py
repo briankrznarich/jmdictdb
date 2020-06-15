@@ -296,9 +296,8 @@ def setUpModule():
         JELparser = jmdb.JelParser()
           # We don't need access to a database but the JEL parser needs
           # access to a populated KW object, so we create and initialize
-          # it directly from the data csv files.  The given path to them
-          # is relative to python/tests/.
-        jdb.KW = jdb.Kwds ("../../pg/data/")
+          # it directly from the data csv files.
+        jdb.KW = jdb.Kwds ('')   # Empty string says init from csv files.
 
 def main(): unittest.main()
 

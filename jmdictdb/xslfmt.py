@@ -26,7 +26,7 @@ formmated version of an entry.
 import sys, re, lxml
 from io import StringIO
 from lxml import etree
-from . import jdb, fmtxml
+from jmdictdb import jdb, fmtxml
 
 def entr (entr, xslfile=None, xslt=[], want_utf8=False):
         # A slow but simple way to get an Edict2 formatted text for an entry.
@@ -51,7 +51,7 @@ def entr (entr, xslfile=None, xslt=[], want_utf8=False):
             if not xslfile: xslfile = 'edict2.xsl'
               # Read the xsl file.
             if '/' not in xslfile and '\\' not in xslfile:
-                dir = jdb.find_in_syspath (xslfile)
+                dir = jdb.std_csv_dir()
                 xslfile = dir + '/' + xslfile
             xsldoc = lxml.etree.parse (xslfile)
               # Generate a transform, and use the default value

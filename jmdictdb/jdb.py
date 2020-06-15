@@ -977,8 +977,7 @@ def headword (entr):
         #  is no mention of "headword" in the JMdict DTD, I am not
         #  even sure what a headword is.  Code below is just a guess.
 
-        from jdb import KW
-
+        global KW
         rdngs = getattr (entr, '_rdng', [])
         kanjs = getattr (entr, '_kanj', [])
         if not rdngs and not kanjs:
