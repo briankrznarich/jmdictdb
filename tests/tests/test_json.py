@@ -1,10 +1,8 @@
-import sys, re, unittest, pdb
-import json
-if '../lib' not in sys.path: sys.path.append ('../lib')
-import jdb, fmtxml
-from objects import *
-import serialize
+import sys, re, unittest, json, pdb
 from jmdb import DBmanager
+from jmdictdb import jdb, fmtxml
+from jmdictdb.objects import *
+from jmdictdb import serialize
 
 Cursor = None
 def setUpModule():

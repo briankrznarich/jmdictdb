@@ -22,7 +22,9 @@
 # logging them to a file.
 
 import sys, datetime, pdb
-import jdb, fmtxml, edfmt
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import logger; from jmdictdb.logger import L
+from import jdb, fmtxml, edfmt
 
 def main (args, opts):
           # Open the database.  jdb.dbopts() extracts the db-related
@@ -131,7 +133,7 @@ def parse_corpus_opt (s, src_col):
         return clause
 
 from optparse import OptionParser, OptionGroup
-from pylib.optparse_formatters import IndentedHelpFormatterWithNL
+from jmdictdb.pylib.optparse_formatters import IndentedHelpFormatterWithNL
 
 def parse_cmdline ():
         u = \

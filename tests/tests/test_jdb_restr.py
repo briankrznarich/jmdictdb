@@ -1,8 +1,7 @@
 import sys, unittest, pdb
-if '../lib' not in sys.path: sys.path.append ('../lib')
-from objects import *
-import jdb
-import fmtxml
+from jmdictdb import jdb
+from jmdictdb.objects import *
+from jmdictdb import fmtxml
 
 class Test_restr2ext (unittest.TestCase):
     def test_001(_):

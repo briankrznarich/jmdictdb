@@ -1,13 +1,5 @@
-#--------------------------------------------------------------------
-# WARNING -- Some of these tests involve excuting the jmparse.py
-#   program which in turn requires PYTHONPATH be properly configured
-#   so that jmparse.py can find the jdb libraries.
-#--------------------------------------------------------------------
-
 import sys, os, tempfile, atexit, subprocess, difflib, \
         shutil, pdb, unittest, unittest_extensions
-if '../lib' not in sys.path: sys.path.append ('../lib')
-#__unittest = 1
 
 Global_setup_done = False
 def global_setup():
@@ -22,9 +14,9 @@ class Test_ (unittest.TestCase):
 def do_test (_, name, dtdfile):
         if not Global_setup_done: global_setup()
           # Following are all relative to the working directory, Workdir.
-        jmbuild = "../../../../tools/jmbuild.py"
-        jmparse = "../../../jmparse.py"
-        dtdpath = "../../../lib/%s" % dtdfile
+        jmbuild = "../../tools/jmbuild.py"
+        jmparse = "../../bin/jmparse.py"
+        dtdpath = "../../jmdictdb/%s" % dtdfile
         testdata = "../../data/jmparse/%s.xml" % name
 
         subprocess.call (cwd=Workdir, shell=True,

@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # Simple command line tool to find and display entries
 # in the JMdict database.
 
-import sys, os, re, pdb
-sys.path[0:0]=[(sys.path[0]+'/' if sys.path[0] else '')+'..']
+import sys, pdb
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
 from jmdictdb import jdb, fmt, fmtjel
-from jmdictdb import logger; from jmdictdb.logger import L
 
 global KW
 

@@ -1,9 +1,9 @@
 import sys, re, copy, collections, unittest, pdb
 from jmdictdb import jdb, jmxml, xmlkw
-from objects import *
+from jmdictdb.objects import *
 
 # Module under test...
-if '../../web/cgi' not in sys.path: sys.path.append ('../../web/cgi')
+if '../web/cgi' not in sys.path: sys.path.append ('../web/cgi')
 from edconf import realign_xrers
 
 class Test_MockDb (unittest.TestCase):

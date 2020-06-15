@@ -1,9 +1,7 @@
-import sys, os, unittest, signal, pdb
-if '../lib' not in sys.path: sys.path.append ('../lib')
-import jdb, jellex, jelparse, fmtjel
+import sys, os, unittest, pdb
 import unittest_extensions, jmdb
 from jmdb import DBmanager
-__unittest = 1
+from jmdictdb import jdb, jellex, jelparse, fmtjel
 
 def main(): unittest.main()
 

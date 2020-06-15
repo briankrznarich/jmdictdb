@@ -11,12 +11,8 @@
 # October 2, 2006 and distributed with the examples in Ply-2.3.
 
 import sys, os, inspect, pdb
-_ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
-_ = os.path.join (os.path.dirname(_), 'python', 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
-
-import sys, optparse
-import ylex, yparse
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import ylex, yparse
 from ply import *
 
 def main (args, opts):
@@ -26,6 +22,7 @@ def main (args, opts):
         instr = instr.expandtabs()
         yacc.parse(instr,debug=opts.debug)
 
+import optparse
 def parse_cmdline ():
         from optparse import OptionParser
         u = \

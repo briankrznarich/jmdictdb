@@ -1738,7 +1738,7 @@ def std_csv_dir ():
 
         our_dir, dummy = os.path.split (__file__)
         if our_dir: our_dir += '/'
-        csv_dir = os.path.normpath (our_dir + "../../pg/data")
+        csv_dir = os.path.normpath (our_dir + "data")
         return csv_dir
 
 class Tmptbl:

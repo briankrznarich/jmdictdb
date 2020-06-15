@@ -24,12 +24,9 @@
 # * Add command line args and options output encoding.
 #   dtd file selection, xml roor name, sound clips subset, etc.
 
-import sys, os, inspect, pdb
-_ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
-_ = os.path.join (os.path.dirname(_), 'python', 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
-
-import jdb, fmtxml
+import sys, pdb
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import jdb, fmtxml
 
 def main (args, opts):
         jdb.reset_encoding (sys.stdout, opts.encoding)
@@ -50,7 +47,7 @@ def main (args, opts):
 
 
 from optparse import OptionParser, OptionGroup
-from pylib.optparse_formatters import IndentedHelpFormatterWithNL
+from jmdictdb.pylib.optparse_formatters import IndentedHelpFormatterWithNL
 
 def parse_cmdline ():
         u = \

@@ -19,9 +19,9 @@
 #######################################################################
 
 import sys, cgi
-sys.path.extend (['../lib','../../python/lib','../python/lib'])
-import logger; from logger import L
-import jdb, jmcgi
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import logger; from jmdictdb.logger import L
+from jmdictdb import jdb, jmcgi
 
 def main( args, opts ):
         logger.enable()

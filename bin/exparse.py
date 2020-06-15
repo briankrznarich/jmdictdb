@@ -44,15 +44,12 @@
 # jmdict entries.  All the pseudo-xref genereated by this
 # program will have a typ=6.
 
-import sys, os, io, inspect, pdb
-_ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
-_ = os.path.join (os.path.dirname(_), 'python', 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
-
-import re, datetime
-import jdb, pgi
-from pylib import diagnum
-import pylib.progress_bar
+import sys, datetime, os, io, re, pdb
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import logger; from jmdictdb.logger import L
+from jmdictdb import jdb, pgi
+from jmdictdb.pylib import diagnum
+from jmdictdb.pylib import progress_bar
 
 Seq = None
 Lnnum = None

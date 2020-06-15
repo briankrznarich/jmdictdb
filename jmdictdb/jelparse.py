@@ -20,8 +20,8 @@
 
 import sys, ply.yacc, re, unicodedata, pdb
 from collections import defaultdict
-import jellex, jdb
-from objects import *
+from . import jellex, jdb
+from .objects import *
 
 class ParseError (ValueError):
     def __init__ (self, msg, loc=None, token=None):

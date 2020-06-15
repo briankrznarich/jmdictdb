@@ -20,13 +20,9 @@
 
 # This program will read a JMdict XML file and extract selected entries.
 
-import sys, os, inspect, pdb
-_ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
-_ = os.path.join (os.path.dirname(_), 'python', 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
-
-import re
-import jdb, jmxml
+import sys, os, re, pdb
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import jdb, jmxml
 
 def main (args, opts):
         if sys.stdout.encoding != opts.encoding:
@@ -69,7 +65,7 @@ def parse_seqfile (fname):
 #######################################################################
 
 from optparse import OptionParser
-from pylib.optparse_formatters import IndentedHelpFormatterWithNL
+from jmdictdb.pylib.optparse_formatters import IndentedHelpFormatterWithNL
 
 def parse_cmdline ():
         u = \

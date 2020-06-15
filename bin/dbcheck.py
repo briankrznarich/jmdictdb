@@ -22,8 +22,8 @@
 # Run 'python3 dbcheck.py --help' for details.
 
 import sys, os, re, textwrap, pdb
-sys.path.insert (0, os.path.join(os.path.dirname(__file__),'lib'))
-import jdb
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import jdb
 
 CHECKS = [
       # Each check is a 4-tuple of:
@@ -330,7 +330,7 @@ def list_checks (checks, verbose):
 
 #=====================================================================
 from argparse import ArgumentParser
-from lib.pylib.argparse_formatters import ParagraphFormatter
+from jmdictdb.pylib.argparse_formatters import ParagraphFormatter
 
 def parse_cmdline ():
         u = """\

@@ -9,11 +9,10 @@
 # for those issue and could also miss remotely possible side-effects on
 # the Entr object outside the scope the restriction lists.
 
-import sys, os, re, unittest, signal, pdb
-if '../lib' not in sys.path: sys.path.append ('../lib')
-import jdb; from objects import *
-from jelparse import ParseError
+import sys, unittest, pdb
 import jmdb     # For JelParser
+from jmdictdb import jdb; from jmdictdb.objects import *
+from jmdictdb.jelparse import ParseError
 
   # Functions for defining expected restriction results concisely.
   # If the second argument is not given, the corresponding Restr (or

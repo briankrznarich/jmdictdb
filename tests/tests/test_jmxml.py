@@ -1,12 +1,8 @@
 import sys, unittest, pdb
-if '../lib' not in sys.path: sys.path.append ('../lib')
-import jdb
-from objects import *
+from jmdictdb import jdb; from jmdictdb.objects import *
+  # Module to test...
+from jmdictdb import jmxml
 
-# Module to test...
-import jmxml
-
-__unittest = 1
 KW = None
 
 class Test_parsexml (unittest.TestCase):

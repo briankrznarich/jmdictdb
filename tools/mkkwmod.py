@@ -22,12 +22,9 @@
 #
 
 import sys, os, inspect, pdb
-_ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
-_ = os.path.join (os.path.dirname(_), 'python', 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
-
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
 import re, datetime
-import jdb
+from jmdictdb import jdb
 
 def main (args, opts):
         KW = jdb.Kwds ()

@@ -18,13 +18,9 @@
 #  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 #######################################################################
 
-import sys, os, pdb
-_ = os.path.abspath(os.path.split(__file__)[0])
-_ = os.path.join (os.path.dirname (_), 'python', 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
-
-import sys, argparse, re, pdb
-import jdb, jel
+import sys, pdb
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import jdb, jel
 
 def main (cmdline=sys.argv):
         args = cmdparse (cmdline)

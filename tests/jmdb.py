@@ -137,7 +137,7 @@ DBmanager = _DBmanager()
 # tests.  Creating them using JEL is more convenient and concise
 # then constructing them from the base objects by hand.
 
-import jellex, jelparse
+from jmdictdb import jellex, jelparse
 class JelParser:
     def __init__(self, dbcursor=None,
                        src=None, stat=None, unap=None, dfrm=None,

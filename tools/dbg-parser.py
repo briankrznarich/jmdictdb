@@ -22,9 +22,9 @@
 # and print the results.
 
 import sys, pdb
-sys.path.extend (['../lib','../../python/lib','../python/lib'])
-import logger; from logger import L
-import jdb, jelparse, jellex
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import logger; from jmdictdb.logger import L
+from jmdictdb import jdb, jelparse, jellex
 
 def main():
         args = parse_cmdline()

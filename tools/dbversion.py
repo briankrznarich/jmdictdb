@@ -1,10 +1,9 @@
 #! /usr/bin/python3
 # Compare db updates required by code with updates in database.
 
-import sys, os, re, unittest, signal, pdb
-import os.path as p; sys.path.insert (0,
-  p.normpath(p.join(p.dirname(p.abspath(__file__)),'../python/lib')))
-import jdb, db, dbver
+import sys, os, re, unittest, pdb
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import jdb, db, dbver
 
 def main():
          if len(sys.argv) != 2:

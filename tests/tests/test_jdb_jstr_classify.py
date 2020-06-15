@@ -1,8 +1,7 @@
 # Tests the jdb.jstr_classify() function.
 
 import sys, pdb, unittest
-if '../lib' not in sys.path: sys.path.append ('../lib')
-import jdb
+from jmdictdb import jdb
 
 __unittest = 1
 

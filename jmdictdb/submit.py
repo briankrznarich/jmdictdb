@@ -125,11 +125,10 @@
 # be an unhandled exception and traceback.)
 
 import sys, pdb
-sys.path.extend (['../lib','../../python/lib','../python/lib'])
-import logger; from logger import L
-from . import jdb
+from jmdictdb import logger; from jmdictdb.logger import L
+from jmdictdb import jdb
   #FIXME: temporary hack...
-from . import jmcgi
+from jmdictdb import jmcgi
 
 class BranchesError (ValueError): pass
 class NonLeafError (ValueError): pass

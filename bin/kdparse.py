@@ -28,15 +28,12 @@
 # Decompose dic_ref into (numb,vol,ch,pg,other)?  Is this basis for
 #   general locator scheme that can be applied in other corpora?
 
-import sys, os, inspect, pdb
-_ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
-_ = os.path.join (os.path.dirname(_), 'python', 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
-
+import sys, os, pdb
 from xml.etree import cElementTree as ElementTree
-import jdb, pgi
-from iso639maps import iso639_1_to_2
-import pylib.progress_bar
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import jdb, pgi
+from jmdictdb.iso639maps import iso639_1_to_2
+from jmdictdb.pylib import progress_bar
 
   # The version of the kanjidic XML file that this program is known to
   # work with.  The version number is found in the "<database_version>"

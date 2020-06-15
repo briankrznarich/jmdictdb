@@ -1,10 +1,8 @@
 # Tests the jdb.Kwds class.
 
 import sys, pdb, unittest
-if '../lib' not in sys.path: sys.path.append ('../lib')
-import jdb
 from jmdb import DBmanager
-__unittest = 1
+from jmdictdb import jdb
 
 Cursor = None
 def setUpModule():

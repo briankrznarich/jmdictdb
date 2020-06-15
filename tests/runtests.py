@@ -22,12 +22,19 @@
 # Run with "--help" option for information on command line
 # arguments and options.
 
-import sys, unittest, glob
+import sys, unittest, glob, pdb
 import unittest_extensions
-
-__unittest = 1
+  # Adjust sys.path so that the parent directory of this script's
+  # directory (which contains the the jmdictdb package we want to
+  # test) appears before any system or user library directories
+  # which may also contain jmdictdb packages but which we don't
+  # want to import.)
+_ = sys.path
+if '..' not in _[0]: _[:0] = [_[0] + ('/' if _[0] else '') + '..']
 
 def main (args, opts):
+          # Following raises an exception if wrong jmdictdb pkg was imported.
+        chk_import ('jmdictdb', '..')
         suites = []
         testsdir = "tests"
         if not args:
@@ -96,6 +103,25 @@ def scantests (obj, collect):
         else:
             print ("Unexpected object found: %s" % repr (obj), file=sys.stderr)
             sys.exit (1)
+
+def chk_import (package, relpos):
+        ''' Verify that the imported 'jmdictdb' package is from a
+            sibling directory of that in which our calling script
+            (runtests.py) is located.  This assures we are testing
+            code from the development directory and not from any
+            system- or user-installed jmdictdb packages. '''
+        import os.path as p
+          # I've no idea what it means or what to do if there are
+          # zero or mutiple items the package's .__path__ which
+          # apparently there can be.
+        libpath = p.normpath (p.abspath ((__import__ (package)).__path__[0]))
+        ourpath =  p.dirname (p.abspath (globals()['__file__']))
+        libexpected = p.normpath (p.join (ourpath, relpos, 'jmdictdb'))
+        if libpath != libexpected:
+             msg = "Wrong library was imported\n" \
+                   "  expected '%s'\n"\
+                   "  got '%s'"
+             raise RuntimeError (msg % (libexpected, libpath))
 
 from optparse import OptionParser
 

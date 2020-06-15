@@ -52,14 +52,10 @@
 # xresolv table augmented with additional info from the
 # associated entry: .src, .seq, .stat, .unap.
 
-import sys, os, inspect, pdb
-_ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
-_ = os.path.join (os.path.dirname(_), 'python', 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
-
-import re, itertools, io
-import db, jdb
-import logging, logger; from logger import L
+import sys, re, itertools, io, pdb
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import logger; from jmdictdb.logger import L
+from jmdictdb import db, jdb
 
 #-----------------------------------------------------------------------
 
@@ -445,7 +441,7 @@ def loglevel (thresh):
 #-----------------------------------------------------------------------
 
 import argparse
-from pylib.argparse_formatters import ParagraphFormatterML
+from jmdictdb.pylib.argparse_formatters import ParagraphFormatterML
 def parse_cmdline (cmdln_args):
         p = argparse.ArgumentParser (prog=cmdln_args[0],
             formatter_class=ParagraphFormatterML,

@@ -5,12 +5,10 @@
 # resolution.  Until then these combined tests should pass in both xrslv
 # and non-xrslv branches.
 
-import sys, os, re, unittest, signal, pdb
-if '../lib' not in sys.path: sys.path.append ('../lib')
-import jdb; from objects import *
-import jmdb
-from jmdb import DBmanager, JelParser
-from jelparse import ParseError
+import sys, re, unittest, pdb
+import jmdb; from jmdb import DBmanager, JelParser
+from jmdictdb import jdb; from jmdictdb.objects import *
+from jmdictdb.jelparse import ParseError
 
   # Database name and load file for tests.
 DBNAME, DBFILE = "jmtest01", "data/jmtest01.sql"

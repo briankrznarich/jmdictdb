@@ -18,21 +18,18 @@
 #  51 Franklin Street, Fifth Floor, Boston, MA  02110#1301, USA
 #######################################################################.
 
-import sys, os, inspect, pdb
-_ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
-_ = os.path.join (os.path.dirname (_), 'python', 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
-import sys, re, logging, time
+import sys, os, inspect, re, time, pdb
 import psycopg2
-import jdb, logger
-from submit import submission
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import logger; from jmdictdb.logger import L
+from jmdictdb import jdb
+from jmdictdb import submit.submission
 
   # The following text will be automatically appended to the history
   # comments field of every entry updated by a bulk update operation.
   # This text should match the corresponding value in cgi/updates.py.
 BULKUPD_TAG = '-*- via bulkupd.py -*-'
 
-from logging import getLogger as L
 pgm = "bulkupd.py"
 def F(*args, **kwargs): L(pgm).critical(*args, **kwargs) or sys.exit(1)
 def E(*args, **kwargs): L(pgm).error(*args, **kwargs)
@@ -443,7 +440,7 @@ class SubmitError (UpdateError):
 #-----------------------------------------------------------------------
 
 from argparse import ArgumentParser
-from lib.pylib.argparse_formatters import ParagraphFormatter
+from jmdictdb.pylib.argparse_formatters import ParagraphFormatter
 
 def parse_cmdline (cmdargs):
         u = \

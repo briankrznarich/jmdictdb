@@ -1,7 +1,7 @@
 import sys, re, unittest, pdb
 import unittest_extensions
 from jmdictdb import jdb, fmtxml
-from from jmdictdb.objects import *
+from jmdictdb.objects import *
 from jmdictdb import edparse
 
 Loaded = Test_indata = Test_expdata = None

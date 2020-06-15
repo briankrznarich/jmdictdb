@@ -19,12 +19,9 @@
 #######################################################################
 
 import sys, os, inspect, pdb
-_ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
-_ = os.path.join (os.path.dirname(_), 'python', 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
-
-import jdb, jmxml, xmlkw, pgi, fmt
-import pylib.progress_bar
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import jdb, jmxml, xmlkw, pgi, fmt
+from jmdictdb.pylib import progress_bar
 
 def main (args, opts):
         global KW
@@ -87,7 +84,7 @@ def parse_seq_opt (s):
         return q[:2]
  
 from optparse import OptionParser, OptionGroup
-from pylib.optparse_formatters import IndentedHelpFormatterWithNL
+from jmdictdb.pylib.optparse_formatters import IndentedHelpFormatterWithNL
 
 def parse_cmdline ():
         u = \

@@ -17,7 +17,6 @@
 #  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 #######################################################################
 
-
 # Parse Edict2 text into an JMdictDB Entr object.  Note that
 # edict2 is not a serialization format: there is information
 # in an Entr that is not representable in edict2 and will
@@ -46,10 +45,10 @@
 #       Resurect old lit/trans gloss parser and apply here.
 
 import sys, re, collections, pdb
-import jdb
-from .objects import *
-from .jelparse import lookup_tag, ParseError
-from .iso639maps import iso639_1_to_2
+from jmdictdb import jdb
+from jmdictdb.objects import *
+from jmdictdb.jelparse import lookup_tag, ParseError
+from jmdictdb.iso639maps import iso639_1_to_2
 
 def entr (text, simple=False):
          #krtxt, x, stxt = text.partition ('/')

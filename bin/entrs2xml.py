@@ -21,14 +21,11 @@
 # Read entries from database and write to XML file.  Run with
 # --help option for details.
 
-import sys, os, inspect, pdb
-_ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
-_ = os.path.join (os.path.dirname(_), 'python', 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
-
-import time, re
-import pylib.progress_bar
-import jdb, fmt, fmtxml
+import sys, os, re, time, pdb
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import logger; from jmdictdb.logger import L
+from jmdictdb import jdb, fmt, fmtxml
+from jmdictdb.pylib import progress_bar
 
 def main():
         global Debug
@@ -305,7 +302,7 @@ def setup_progbar (cur, prog_type, sql_base, seqlist):
         return pbar
 
 import argparse
-from pylib.argparse_formatters import FlexiFormatter
+from jmdictdb.pylib.argparse_formatters import FlexiFormatter
 
 def parse_cmdline ():
         p = argparse.ArgumentParser (formatter_class=FlexiFormatter,

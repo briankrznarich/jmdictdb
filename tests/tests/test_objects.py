@@ -1,7 +1,6 @@
 import sys, re, unittest, pdb
-if '../lib' not in sys.path: sys.path.append ('../lib')
-import jdb
-from objects import *
+from jmdictdb import jdb
+from jmdictdb.objects import *
 
 def globalSetup (): pass
 

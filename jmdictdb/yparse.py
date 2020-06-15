@@ -11,7 +11,7 @@
 # Date  : October 2, 2006
 
 import re
-import ylex
+from jmdictdb import ylex
 tokens = ylex.tokens
 
 from ply import *

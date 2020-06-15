@@ -23,13 +23,9 @@
 # and update the strt and leng parameters of the existing
 # sounds from data in the label file.
 
-import sys, os, inspect, pdb
-_ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
-_ = os.path.join (os.path.dirname(_), 'python', 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
-
-import os.path
-import jdb
+import sys, os, pdb
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import jdb
 
 def main (args, opts):
         jdb.reset_encoding (sys.stdout, opts.encoding)
@@ -154,7 +150,7 @@ def do_noninteractive (cur, sndfilenum, update, nomatch):
         return updated, added
 
 from optparse import OptionParser, OptionGroup
-from pylib.optparse_formatters import IndentedHelpFormatterWithNL
+from jmdictdb.pylib.optparse_formatters import IndentedHelpFormatterWithNL
 
 def parse_cmdline ():
         u = \

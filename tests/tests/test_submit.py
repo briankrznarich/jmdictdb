@@ -1,9 +1,8 @@
 import sys, unittest, os.path, pdb
-if '../lib' not in sys.path: sys.path.append ('../lib')
-import jdb, db; from objects import *
 import unittest_extensions
 from jmdb import DBmanager, JelParser
-import submit   # Module to test
+from jmdictdb import jdb, db; from jmdictdb.objects import *
+from jmdictdb import submit   # Module to test
 
   # Database name and load file for tests.
 DBNAME, DBFILE = "jmtest01", "data/jmtest01.sql"

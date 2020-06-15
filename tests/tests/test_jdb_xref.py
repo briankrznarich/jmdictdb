@@ -1,7 +1,6 @@
 import sys, unittest, unittest.mock, pdb
-if '../lib' not in sys.path: sys.path.append ('../lib')
-from objects import *
-import jdb
+from jmdictdb import jdb
+from jmdictdb.objects import *
 
 class Mark_seq_xrefs (unittest.TestCase):
     @classmethod

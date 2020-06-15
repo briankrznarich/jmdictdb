@@ -1,8 +1,7 @@
-import sys, unittest, pdb
-if '../lib' not in sys.path: sys.path.append ('../lib')
-import jdb, copy
-from objects import *
-import fmtxml
+import sys, unittest, copy, pdb
+from jmdictdb import jdb
+from jmdictdb.objects import *
+from jmdictdb import fmtxml
 
 sys.path.append ("./data/fmtxml")
 import fmtxml_data as f
@@ -111,7 +110,7 @@ class Test_entr_diff (unittest.TestCase):
 
 class Test_xrefs (unittest.TestCase):
     def setUp(_):
-        import xmlkw
+        from jmdictdb import xmlkw
         jdb.KW = jdb.Kwds ('data/fmtxml/kw/')
           # XKW is a fmtxml glocal that is normally initialized inside
           # fmtxml.entr() but since we are not calling .entr() we need

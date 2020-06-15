@@ -1,7 +1,6 @@
 import sys, re, unittest, datetime, pdb
-if '../lib' not in sys.path: sys.path.append ('../lib')
-import jdb
-import serialize
+from jmdictdb import jdb
+from jmdictdb import serialize
 
   #FIXME: the output in failure cases is currently pretty worthless
   # since it is simply the repr's of the input and output objects

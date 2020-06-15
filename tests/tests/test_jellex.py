@@ -1,6 +1,7 @@
 import sys, unittest, pdb
-if '../lib' not in sys.path: sys.path.append ('../lib')
-import jdb, jellex, ply, unittest_extensions
+import ply
+import unittest_extensions
+from jmdictdb import jdb, jellex
 
 __unittest = 1
 

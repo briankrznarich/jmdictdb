@@ -1,8 +1,7 @@
-import sys, unittest, itertools, pdb
+import sys, unittest, pdb
 from copy import deepcopy
-if '../lib' not in sys.path: sys.path.append ('../lib')
-from objects import *
-import jdb
+from jmdictdb.objects import *
+from jmdictdb import jdb
 
 class Test_jdb_copy_freqs (unittest.TestCase):
     def setUp(_):

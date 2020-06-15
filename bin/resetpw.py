@@ -6,12 +6,9 @@
 # password).
 # Run with the --help option for more details.
 
-import sys, os, inspect, pdb
-_ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
-_ = os.path.join (os.path.dirname(_), 'python', 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
-
-import db
+import sys, pdb
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import db
 
 def main():
         args = parse_cmdline (sys.argv)
@@ -22,8 +19,8 @@ def main():
         dbconn.commit()
         if cur.rowcount != 1: sys.exit ('User "%s" not found' % args.user)
 
+import argparse
 def parse_cmdline (argv):
-        import argparse
         p = argparse.ArgumentParser (argv,
             description="Reset a JMdictDB user's password.  CAUTION: "
                 "This program accepts the password on the command line "
