@@ -106,7 +106,7 @@
 #       sid -- Session id number if already logged in.
 
 import sys, cgi
-_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'../..'
 from jmdictdb import logger; from jmdictdb.logger import L
 from jmdictdb import jdb, jmcgi, fmtjel, serialize, edparse
 

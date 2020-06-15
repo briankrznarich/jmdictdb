@@ -19,7 +19,7 @@
 #######################################################################
 
 import sys, cgi, copy, time
-_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'../..'
 from jmdictdb import logger; from jmdictdb.logger import L
 from jmdictdb import jdb, jmcgi, serialize, db  # db is imported only for
                                                 #  access to dbapi exceptions.
