@@ -1731,14 +1731,15 @@ class Kwds:
         return r
 
 def std_csv_dir ():
-        # Return the path to the directory containing the
-        # kw table csv data files.  We use the location of
-        # of our own module as a reference point.
+        ''' Return the path to the directory containing the
+            kw table csv data files.  We use the location of
+            of our own module as a reference point. '''
 
-        our_dir, dummy = os.path.split (__file__)
-        if our_dir: our_dir += '/'
-        csv_dir = os.path.normpath (our_dir + "data")
-        return csv_dir
+          #FIXME: should rename to data_dir() since the directory
+          # now contains more than csv files.
+        our_dir, _ = os.path.split (__file__)
+        data_dir = os.path.normpath (os.path.join (our_dir, 'data'))
+        return data_dir
 
 class Tmptbl:
     def __init__ (self, cursor, tbldef=None, temp=True):
@@ -2285,16 +2286,6 @@ def crossprod (*args):
         for arg in args:
             result = [x + [y] for x in result for y in arg]
         return result
-
-def find_in_syspath (fname):
-        # Search the directories in sys.path for the first occurance
-        # of a readable file or directory named fname, and return
-        # the sys.path directory in which it was found.
-
-        for d in sys.path:
-            if os.access (os.path.join (d, fname), os.R_OK):
-                return d or '.'
-        return None
 
 def get_dtd (filename, root="JMdict", encoding="UTF-8"):
         with open (filename, encoding=encoding) as f:

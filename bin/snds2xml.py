@@ -30,7 +30,7 @@ from jmdictdb import jdb, fmtxml
 
 def main (args, opts):
         jdb.reset_encoding (sys.stdout, opts.encoding)
-        dir = jdb.find_in_syspath ("dtd-audio.xml")
+        dir = jdb.std_csv_dir()
         dtd = jdb.get_dtd (dir + "/" + "dtd-audio.xml", "JMaudio", opts.encoding)
         print (dtd); print ("<JMaudio>")
         cur = jdb.dbOpen (opts.database, **jdb.dbopts (opts))

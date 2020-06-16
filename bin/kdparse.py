@@ -78,8 +78,8 @@ def main (args, opts):
         pbar = None
         if opts.progbar:
             total_items = opts.c \
-                    or pylib.progress_bar.count_items (args[0],'<character>')
-            pbar = pylib.progress_bar.InitBar (
+                    or progress_bar.count_items (args[0],'<character>')
+            pbar = progress_bar.InitBar (
                     title=args[0], size=total_items, offset=2, stream=sys.stdout)
 
         if not pbar: print ("Parsing...", file=sys.stderr)

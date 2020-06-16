@@ -45,12 +45,12 @@ DBOLD = jmold
 
 # Postgresql user that will be used to create the jmdictdb
 # tables and other objects.  Users defined in the
-# python/lib/config.ini file should match.
+# config.ini file should match.
 USER = jmdictdb
 
 # Postgresql user that has select-only (i.e. read-only access
 # to the database.  Used only for creating this user in target
-# 'jminit'.  Users defined in the python/lib/config.ini file
+# 'jminit'.  Users defined in the config.ini file
 # should match.
 RO_USER = jmdictdbv
 
@@ -86,6 +86,11 @@ endif
 CGI_DIR = $(WEBROOT)/cgi-bin
 LIB_DIR = $(WEBROOT)/lib
 CSS_DIR = $(WEBROOT)
+
+# Location of JMdictDB commands that will be used when loading
+# databases.  Default is the development versions but this can
+# be overridden to use the installed versions.
+BIN = bin
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # You should not need to change anything below here.
@@ -225,7 +230,7 @@ newdb:
 #------ Create a new jmnew database with empty jmdictdb objects --------
 
 jmnew: newdb
-	cd pg && psql $(PG_HOST) -U $(USER) -d $(DB) -f schema.sql
+	cd db && psql $(PG_HOST) -U $(USER) -d $(DB) -f schema.sql
 
 #------ Move installation database to active ----------------------------
 
@@ -238,16 +243,16 @@ activate:
 #------ Restore foreign key and index definitions -----------------------
 
 postload:
-	psql $(PG_HOST) -U $(PG_SUPER) -d $(DB) -f 'pg/syncseq.sql'
+	psql $(PG_HOST) -U $(PG_SUPER) -d $(DB) -f 'db/syncseq.sql'
 	  # Resolving xrefs below is lookup intensive so make sure we have good stats...
 	psql $(PG_HOST) -U $(PG_SUPER) -d $(DB) -c 'vacuum analyze'
 	  # Try to resolve unresolved xrefs.  Running these multiple times is innocuous.
-	cd python && $(PYTHON) xresolv.py -d postgres://$(USER)@$(HOST)/$(DB) -i \
-           -sjmdict   -tjmdict   -verror >../data/jmdict_xresolv.log 2>&1
-	cd python && $(PYTHON) xresolv.py -d postgres://$(USER)@$(HOST)/$(DB) -i \
-           -sjmnedict -tjmnedict -verror >../data/jmnedict_xresolv.log 2>&1
-	cd python && $(PYTHON) xresolv.py -d postgres://$(USER)@$(HOST)/$(DB) -i \
-           -sexamples -tjmdict   -verror >../data/examples_xresolv.log 2>&1
+	$(BIN)/xresolv.py -d postgres://$(USER)@$(HOST)/$(DB) -i \
+           -sjmdict   -tjmdict   -verror >data/jmdict_xresolv.log 2>&1
+	$(BIN)/xresolv.py -d postgres://$(USER)@$(HOST)/$(DB) -i \
+           -sjmnedict -tjmnedict -verror >data/jmnedict_xresolv.log 2>&1
+	$(BIN)/xresolv.py -d postgres://$(USER)@$(HOST)/$(DB) -i \
+           -sexamples -tjmdict   -verror >data/examples_xresolv.log 2>&1
 	psql $(PG_HOST) -U $(PG_SUPER) -d $(DB) -c 'vacuum analyze'
 	@echo 'Remember to check the log files for warning messages.'
 
@@ -260,13 +265,13 @@ data/jmdict.xml:
 	mv $(JMDICTFILE) data/jmdict.xml
 
 data/jmdict.pgi: data/jmdict.xml
-	cd python && $(PYTHON) jmparse.py $(LANGOPT) -l ../data/jmdict.log -o ../data/jmdict.pgi ../data/jmdict.xml
+	$(BIN)/jmparse.py $(LANGOPT) -l data/jmdict.log -o data/jmdict.pgi data/jmdict.xml
 
 loadjm: data/jmdict.pgi
 	rm -f data/jmdict_xresolv.log
 	psql $(PG_HOST) -U $(USER) -d $(DB) -c 'DELETE FROM imp.kwsrc'
 	PGOPTIONS=--search_path=imp,public psql $(PG_HOST) -U $(USER) -d $(DB) -f data/jmdict.pgi
-	psql $(PG_HOST) -U $(USER) -d $(DB) -v 'src=1' -f pg/import.sql
+	psql $(PG_HOST) -U $(USER) -d $(DB) -v 'src=1' -f db/import.sql
 
 #------ Load JMnedict ----------------------------------------------------
 
@@ -279,13 +284,13 @@ data/jmnedict.xml:
 	mv JMnedict.xml data/jmnedict.xml
 
 data/jmnedict.pgi: data/jmnedict.xml
-	cd python && $(PYTHON) jmparse.py -q5000000,1 -l ../data/jmnedict.log -o ../data/jmnedict.pgi ../data/jmnedict.xml
+	$(BIN)/jmparse.py -q5000000,1 -l data/jmnedict.log -o data/jmnedict.pgi data/jmnedict.xml
 
 loadne: data/jmnedict.pgi
 	rm -f data/jmnedict_xresolv.log
 	psql $(PG_HOST) -U $(USER) -d $(DB) -c 'DELETE FROM imp.kwsrc'
 	PGOPTIONS=--search_path=imp,public psql $(PG_HOST) -U $(USER) -d $(DB) -f data/jmnedict.pgi
-	psql $(PG_HOST) -U $(USER) -d $(DB) -v 'src=2' -f pg/import.sql
+	psql $(PG_HOST) -U $(USER) -d $(DB) -v 'src=2' -f db/import.sql
 
 #------ Load examples ---------------------------------------------------
 
@@ -296,13 +301,13 @@ data/examples.txt:
 	mv examples.utf data/examples.txt
 
 data/examples.pgi: data/examples.txt
-	cd python && $(PYTHON) exparse.py -o ../data/examples.pgi -l ../data/examples.log ../data/examples.txt
+	$(BIN)/exparse.py -o data/examples.pgi -l data/examples.log data/examples.txt
 
 loadex: data/examples.pgi
 	rm -f data/examples_xresolv.log
 	psql $(PG_HOST) -U $(USER) -d $(DB) -c 'DELETE FROM imp.kwsrc'
 	PGOPTIONS=--search_path=imp,public psql $(PG_HOST) -U $(USER) -d $(DB) -f data/examples.pgi
-	psql $(PG_HOST) -U $(USER) -d $(DB) -v 'src=3' -f pg/import.sql
+	psql $(PG_HOST) -U $(USER) -d $(DB) -v 'src=3' -f db/import.sql
 
 #------ Load kanjidic2.xml ---------------------------------------------------
 
@@ -313,13 +318,13 @@ data/kanjidic2.xml:
 	mv kanjidic2.xml data/kanjidic2.xml
 
 data/kanjidic2.pgi: data/kanjidic2.xml
-	cd python && $(PYTHON) kdparse.py -g en -o ../data/kanjidic2.pgi -l ../data/kanjidic2.log ../data/kanjidic2.xml
+	$(BIN)/kdparse.py -g en -o data/kanjidic2.pgi -l data/kanjidic2.log data/kanjidic2.xml
 
 loadkd: data/kanjidic2.pgi
 	rm -f data/kanjidic2_xresolv.log
 	psql $(PG_HOST) -U $(USER) -d $(DB) -c 'DELETE FROM imp.kwsrc'
 	PGOPTIONS=--search_path=imp,public psql $(PG_HOST) -U $(USER) -d $(DB) -f data/kanjidic2.pgi
-	psql $(PG_HOST) -U $(USER) -d $(DB) -v 'src=4' -f pg/import.sql
+	psql $(PG_HOST) -U $(USER) -d $(DB) -v 'src=4' -f db/import.sql
 
 #------ Load jmdict, jmnedict, examples -------------------------------------
 
@@ -379,8 +384,8 @@ uninstall-cmds:
 .DELETE_ON_ERROR:
 
 subdirs:
-	cd pg/ && $(MAKE)
-	cd python/lib/ && $(MAKE)
+	cd db/ && $(MAKE)
+	cd jmdictdb/ && $(MAKE)
 
 clean:
 	rm -f jmdict.tgz

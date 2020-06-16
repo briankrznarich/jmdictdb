@@ -6,7 +6,7 @@
 # difference.
 # 
 # Usage:
-#   $ cd python/tests/
+#   $ cd tests/
 #   $ tests/xml-rt.sh [-d dbname][-c][-h] <filename.xml>
 #
 # <filename.xml> is the path to a jmdict or jmnedict xml file.
@@ -18,7 +18,8 @@
 # not be use when running multiple invocations.
 # -h will print a brief help message.
 #
-# This script should be run from the JMdictDB python/tests/ directory.
+# This script should be run from the JMdictDB tests/ directory (not
+# the tests/tests/ directory where it is located.)
 # It is not run automatically by runtests.py since it takes a fairly
 # long time (several minutes) to complete.
 #
@@ -28,6 +29,10 @@
 # new Postgresql databases.
 
 set -e
+  # BIN is path to programs directory.  May be an empty string to
+  # use programs in PATH.  If not empty, must have trailing "/".
+  # If relative, it's relative to the tests/ directory.
+BIN=../bin/
 DBNAME=jmnew
 TMPDIR=./tmp
 OUTFILE=$TMPDIR/rtsh-$$.xml
@@ -57,20 +62,20 @@ shift $((OPTIND-1))
 INPFILE=$1
 
   # Remove any old temp files...
-if [ $clean = "yes" ]; then echo rm -fv $TMPDIR/rtsh-*; fi
+if [ $clean = "yes" ]; then rm -fv $TMPDIR/rtsh-*; fi
   # Following is based on the "loadjm" and "postload" targets
   #  of ../../Makefile.  Input file is data/jmdict.xml, intermediate
-  #  files are written to python/tests/tmp/ as is the output xml
-  #  file, jmdict-out.xml.
+  #  files are written to tests/tmp/ as is the output xml file,
+  #  jmdict-out.xml.
 set -ex
-../jmparse.py  -l $TMPLOG -o $TMPPGI $INPFILE
+${BIN}jmparse.py  -l $TMPLOG -o $TMPPGI $INPFILE
 psql  -U postgres -d postgres -c "drop database if exists $DBNAME"
 psql  -U postgres -d postgres -c "create database $DBNAME owner \
     jmdictdb template template0 encoding 'utf8'"
-(cd ../../pg && psql  -U jmdictdb -d $DBNAME -f schema.sql
+(cd ../db && psql  -U jmdictdb -d $DBNAME -f schema.sql
   psql -U jmdictdb -d $DBNAME -c "DELETE FROM imp.kwsrc"
   PGOPTIONS=--search_path=imp,public psql -U jmdictdb -d $DBNAME \
-     -f ../python/tests/$TMPPGI
+     -f ../tests/$TMPPGI
   psql -U jmdictdb -d $DBNAME -v "src=$SRCID" -f import.sql
   psql -U postgres -d $DBNAME -f 'syncseq.sql'
   psql -U postgres -d $DBNAME -c 'vacuum analyze' )
@@ -79,12 +84,12 @@ psql  -U postgres -d postgres -c "create database $DBNAME owner \
   # <xref> elements when written back to xml.  If resolve attempted, some
   # will succeed, some fail and order of produced <xref> tags after writing
   # back to xml will be altered causing spurious differences.
-##../xresolv.py -d postgres://jmdictdb@/$DBNAME -i \
+## ${BIN}xresolv.py -d postgres://jmdictdb@/$DBNAME -i \
 ##    -sjmdict -tjmdict -vwarning >$TMPLOG2 2>&1
 
   # dump the database back out as xml.  Use blocksize of 20K as the
   # default of 1K is pretty slow.
-../entrs2xml.py -d $DBNAME -B20000 -s$SRCID -o $OUTFILE
+${BIN}entrs2xml.py -d $DBNAME -B20000 -s$SRCID -o $OUTFILE
 
   # ...and compare to original input xml.  We filter the diff output to
   # eliminate the expected difference in the timestamps and use grep's

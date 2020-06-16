@@ -213,8 +213,8 @@ def open_output (filename, dtd_fn, dtd_root, dtd_date):
         return outf
 
 def write_dtd (outf, dtd_fn, dtd_root):
-        dir = jdb.find_in_syspath (dtd_fn)
-        dtdpath = dir + "/" + dtd_fn             # Fully qualified dtd file name.
+        dir = jdb.std_csv_dir()
+        dtdpath = dir + "/" + dtd_fn      # Fully qualified dtd file name.
           # jdb.get_dtd() reads the dtd text and replaces the root
           # element name name.
         dtdtxt= jdb.get_dtd (dtdpath, dtd_root)
@@ -297,7 +297,7 @@ def setup_progbar (cur, prog_type, sql_base, seqlist):
             sql = "SELECT COUNT(*) FROM (%s) AS s" % sql_base
             estimate = jdb.dbread (cur, sql)[0][0]
 
-        pbar = pylib.progress_bar.InitBar (
+        pbar = progress_bar.InitBar (
                 title="", size=estimate, offset=2)
         return pbar
 

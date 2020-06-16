@@ -73,8 +73,8 @@ def main (args, opts):
         pbar = None
         if opts.progbar:
             total_items = opts.count \
-                          or pylib.progress_bar.count_items (args[0]) / 2
-            pbar = pylib.progress_bar.InitBar (
+                          or progress_bar.count_items (args[0]) / 2
+            pbar = progress_bar.InitBar (
                     title=args[0], size=total_items, offset=2)
 
         fin = ABPairReader (args[0], encoding='utf-8')
