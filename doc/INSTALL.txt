@@ -1,123 +1,3 @@
-http://www.edrdg.org/~smg/
-
-The JMdictDB project is an informal project to put the contents
-of Jim Breen's [*1] JMdict Japanese-English dictionary data [*2]
-into a database, and provide a web-based maintenance system
-for it.
-
-Discussion takes place on the edict-jmdict@yahoo.com mailing
-list (http://groups.yahoo.com/group/edict-jmdict/)
-
-The software in this package is copyrighted by
-Stuart McGraw, <jmdictdb@mtneva.com>
-(except where otherwise noted)
-and licensed under the GNU General Public License version 2.
-See the file COPYING.txt for details.
-
-JMdictDB comes with ABSOLUTELY NO WARRANTY.
-
-The most recent version of this code may be downloaded at:
-  http://gitlab.com/yamagoya/jmdictdb/
-
-This package contains the following directories:
-  ./                   Package directory.
-  ./doc/               Documentation.
-  ./pg/                Database scripts.
-  ./pg/data/           Database static data.
-  ./python/            Command line apps.
-  ./python/lib/        Library modules.
-  ./python/lib/tmpl/   Web page templates.
-  ./tools/             Scripts used by Makefiles.
-  ./web/               Web related files.
-  ./web/cgi/           CGI scripts.
-
-======
-STATUS
-======
-
-This code is under development and is alpha quality.
-Everything here is subject to future change.  Python code
-is written for Python 3; Python 2 is no longer supported
-(although an older Python 2 version is available from the
-code repository, see INSTALLATION/Requirements below).  The
-web pages use Python/CGI.
-
-The JMdictDB system is currently running on Jim Breen's
-wwwjdic web sites
- (http://www.edrdg.org/cgi-bin/wwwjdic/wwwjdic?1C and mirrors)
-where it is used to accept additions and corrections to the
-wwwjdic/JMdict data from wwwjdict users.
-
-The public development repository is maintained at GitLab:
-  https://gitlab.com/yamagoya/jmdictdb/
-GitLab Issues may be used to submit bug reports, feature
-requests, etc.
-
-=============
-DOCUMENTATION
-=============
-
-Overview and general information about JMdictDB:
-  README.txt -- This file.
-
-Database schema:
-  doc/schema.odt(.pdf,.html) -- The schema is comprehensively
-        documented in schema.pdf (or schema.html).  Both were
-        produced from the Open Office Writer document schema.odt.
-
-  doc/schema.dia(.png) -- A diagram of the database tables and
-        their relationships.  schema.png was produced from
-        schema.dia by the open source Dia application.
-
-========
-PROGRAMS
-========
-
-The ./python/ directory contains a number of independent
-programs:
-
-The following tools find and display entries in the database.
-
-  shentr.py	Command line tool for searching for and
-                 displaying jmdict database entries.  It
-                 is well documented making it useful for
-                 understanding the use of the API in a real
-                 (if tiny) application.  This program is kept
-                 up-to-date.
-  srch.py, srch.tal, srch.xrc, srcht.tal, jmdbss.txt
-                GUI tool to search for and display dajmdict
-                 database entries.
-
-The following tools read an XML or text file and write a
-file that can be loaded into a Postgresql database.
-
-  exparse.py	Read examples.txt file and create loadable
-                 Postgresql dump file.
-  jmparse.py	Read JMdict or JMnedict XML file and create
-                 loadable Postgresql dump file.
-  kdparse.py	Read kanjidic2 XML file and create loadable
-                 Postgresql dump file.
-  sndparse.py	Read JMaudio XML file and create loadable
-                 Postgresql dump file.
-
-  xresolv.py	Resolve textual xrefs loaded into database
-                 from JMdict files, to real xrefs.
-
-The following tools will read information from the database and write
-an XML file that can be loaded by the tools above.
-
-  entrs2xml.py	Read entries from database and write to
-                 XML file.
-  snds2xml.py	Read Audio data from database and write
-                 JMaudio XML file.
-
-The following work with labeled audio produced by Audacity.
-
-  mklabels.py	Generate a label file from a db sndfile entry
-                 that can be imported into Audacity.
-  updsnds.py	Update existing and add new snd records from
-                 an Audacity label file.
-
 ============
 INSTALLATION
 ============
@@ -165,20 +45,16 @@ earlier or later versions, but this has not been verified.
     lxml-4.0.0 -- XML/XSLT library.  Used by xslfmt.py for doing
       xml->edict2 conversion.
     jinja2-2.9.6 -- Template engine for generating web pages.
-  Apache [2.4] (on Unix/Linux/Windows systems) or
-    IIS [5.0] (on MS Windows systems)
+  Apache [2.4] (on Unix/Linux/Windows systems)
   make -- Gnu make is required if you want to use the provided
     Makefile's to automate parts of the installation.
   wget -- Used by Makefile to download the JMdict_e.gz,
     JMnedict.gz, and examples.utf8.gz file from the Monash
     site.  If not available, you can download the needed
     files manually.
-  iconv -- Not required but very useful when dealing with
-    character encoding conversions that are frequenly required
-    when working with Japanese language text files.
 
-The principle author had Cygwin (http://cygwin.com) installed on
-his Windows development machine and used the make, wget, etc.,
+The principle developer had Cygwin (http://cygwin.com) installed
+on his Windows development machine and used the make, wget, etc.,
 programs provided by that package.  A smaller (though untested)
 alternative might be to use the programs provided by the Gnuwin32
 project: http://gnuwin32.sourceforge.net.
@@ -189,18 +65,18 @@ Any program that accesses the database needs a username
 and possibly a pasword to do so.  In a standard Postgresql
 install, local connections made with user "postgres" do
 not need a password, but your installation may require
-you to use a different username and password.
+you to use a username and password.
 
 Most command line programs supplied by Posgresql, such
 as psql, allow one to specify a user name but not a
 password; the password will either be interactively
-prompted for, or read from the user's ~/.pgpass [*3]
+prompted for, or read from the user's ~/.pgpass [*1]
 file.  Command line tools that are part of the JMdictDB
 system generally allow a "-p" option for supplying a
 password.  Using it on a multi-user machine is usually
 a bad idea since another user, using "ps" or other
 such commands, can view it.  The safest way of supplying
-passwords is to use a .pgpass file.  See [*4] for more
+passwords is to use a .pgpass file.  See [*2] for more
 info.
 
 The database is accessed by the JMdictDB system in three
@@ -225,61 +101,84 @@ from the config.ini.sample file supplied.  The usernames
 in config.ini should match the usernames used by the
 Makefile "init" target.
 Passwords for these usernames may also be supplied in the
-config.ini file, but since the file must be readable by
-the operating system user that the web server runs as,
-you will want to limit read access to the file to only
-the web server user.  Alternatively, you can install a
+config.ini or config-pvt.ini file, but since the file must
+be readable by the operating system user that the web server
+runs as, you will want to limit read access to the file to
+only the web server user.  Alternatively, you can install a
 .pgpass file in the home directory of the web server user
 to provide the passwords.
 
 Editor Authentication
 ---------------------
-The CGI scripts allow unauthenticated users to submit
+JMdictDB provides a separate, application-level authentication
+scheme for web access.  Users can login as Admin, Editor or
+access the system anonymously by not logging in.
+The CGI scripts allow anonymous users to submit
 unapproved edited or new entries, but to approve or
 reject entries, a user must be logged in as an editor.
+A user logged in as admin can additionally manage other users.
+
 The CGI scripts use a separate database named "jmsess" for
 storing editor user info and active sessions.  This database
 need only be setup once.
 
 Getting the code
 ----------------
-It will be easiest to get code updates if you clone the
-development respository:
+You can clone the development respository:
 
   git clone https://gitlab.com/yamagoya/jmdictdb.git
 
 This will produce a "jmdictdb" directory in the current
 directory.  You can also download a zip or gzip archive
-of a particular version from GitLab.
+of a particular version from GitLab:
+
+  https://gitlab.com/yamagoya/jmdictdb/
 
 Procedure
 ---------
 Note: relative file paths below (except in command
 lines) are relative to the package top level directory.
 
-A Makefile is provided that automates the loading and
-updating of JMdictDB database.  It is presumed that
+Installation involves:
+1. Download and unpacking (or cloning) the JMdictDB software
+  into a local development directory.
+2. Install (if needed) and configure the Postgresql 
+  database and Apache web servers.
+3. Use the JMdictDB tools to load the database with dictionary data.
+4. Optional: Installing the JMdictDB software per-user or
+  system-wide.  The installed version is idependent of the
+  code in the development directory allowing the latter to
+  be changed without affecting the operation od the installed version.
+
+A Makefile is provided that automates loading
+the database and installing the JMdictDB software.  It is presumed that
 there is a functioning Postgresql instance, and that
 you have access to the database "postgres" account or
 some account with enough privileges to create and drop
 databases.
 
-JMdictDB can be served by the web server directly from
-the development directories -- this is useful during
-development.  The cgi and library files can also be
-installed to a production location with the makefile
-target : 'make web'.
+JMdictDB installation can be targeted to three locations:
+1. Development: No "install" is done, the web pages are
+  served, and command line tools aavailable, directly from
+  the development directories.  No code is copied to
+  any locations outside the development directories.
+  Changes made to code
+  or web pages are accessible immediately.
+2. Per-user: cgi pages are installed in ~/public-html/,
+  the jmdictdb Python package to ~/.local/lib/python...,
+  and the command line programs to ~/.local/bin/.
+3. System-wide: cgi pages are installed to /var/www/jmdictdb/,
+  the jmdictdb Python package to the system Python libraries,
+  and command line programs to /usr/local/bin/.
+The default install directories for the per-user and system-
+wide installs can be overridden with environment veriables 
+when installing.  All three types of installs can coexist
+simultaneouly.
 
-The Makefile is usable on both *nix and Windows systems
-but the latter requires a working Gnu 'make' program.
-The Cygwin package (http://www.cygwin.com) provides a
-full unix environment under Windows, including 'make'.
-Alternatively, stand-alone native versions of Gnu 'make'
-are available (see http://unxutils.sourceforge.net/ or
-http://www.mingw.org/ for example.)
-
-By default, the currently active database is named
-"jmdict".  The makefile targets that load data do so
+By default, the main "production" database is named
+"jmdict".  (Other databases are used when loading data,
+for testing, etc.)  
+The makefile targets that load data do so
 into a database named "jmnew" so as to not destroy
 any working database in the event of a problem.  A
 make target, "activate" is provided to move the newly
@@ -291,14 +190,17 @@ loaded is by the procedures used for the loading.  Use of
 databases other than the one being loaded can continue as
 usual during loading.
 
+ 
+
+1. Install and configure
 1. Choose passswords to use for Postgreql users "jmdictdb"
    and "jmdictdbv".
 
-2. Copy the file python/lib/config.ini.sample to config.ini
+2. Copy the file jmdictdb/lib/config.ini.sample and .../config-pvt.ini
    in either the production lib/ directory (defined by macro
-   LIB_DIR in the Makefile) or development python/lib/
+   LIB_DIR in the Makefile) or development web/lib/
    directory (same directory as the config.ini.sample file),
-   depending on whether you plan on  having your web server
+   depending on whether you plan on having your web server
    serve the application from the production location or the
    development directories.
    Edit it and make any changes necessary.  Uncomment and
@@ -538,119 +440,15 @@ usual during loading.
    srchform.py and do searches for jmdict entries.  The url
    corresponding to edform.py will let you add new entries.
 
-=========
-OPERATION
-=========
-
-Web access to the JMdictDB system can be suspended temporarily
-by creating a control file in the installed CGI directory named
-"status_maint" or "status_load".  If either file exists, any
-web access to a CGI script will result in a redirect to
-"status_maint.html" or "status_load.html" which present the
-user with a message that the system is unavailable due to
-maintenance or excessive load, respectively.
-
-The directory in which the CGI scripts look for the control
-files can be set in the config.ini file.  The location of the
-html files is not customizable although you can of course
-modify their contents.
-
-It is up to you to create and and remove the control files as
-appropriate.
-
-Log Files:
-----------
-The CGI scripts log events to a log file whose name and location
-are given in the config.ini file (see python/lib/config.ini/sample
-for details.)  If no logfile is given in the config.ini file the
-default is "jmdictdb.log" in the current directory when the script
-is executed by the web server.  For Apache-2.4 this will often be
-in the CGI directory itself.  If no logfile level is given, the
-defaulr is "debug".
-
-The logfile must by manually created, the CGI scripts won't create
-it if it doesn't exist.  It must also have permissions that allow
-writing by the web server process owner.
-
-If the log file is not writable when a CGI script starts, the
-script will write a message to that effect to stderr and disable
-further logging during that scrupt's execution.  The initial
-message on most web servers will be written to the web server's
-log file and may help identify where the JMdictDB log file is.
-
-The format of JMdictDB log file messages start with a timestamp
-using the format: "YYMMDD-hhmmss".  The processes number is also
-provided in square brackets: "[pid]".  When a non-fatal error
-occurs it is logged in the log file and an error page is presented
-to the user that will have an error id number of the form:
-"YYMMDD-hhmmss-pid".  This allows its correlation to the log file
-message which may have moe information such as a Python traceback.
-
-The log file is not truncated or rotated periodically; you must
-arrange for that.
-
-Updates:
---------
-Updates occur periodically to the code and to the database.
-
-Program code updates including website scripts are generally done by:
-
-  $ cd [...]/jmdictdb
-  $ git pull
-  $ make web
-
-Database updates are generally done by:
-
-  $ cd [...]/jmdictdb
-  $ psql -d jmdict -U jmdictdb -f patches/nnn-xxxxxx.sql
-
-IMPORTANT: read the patch file contents before applying the above
-commands.  There are sometimes exceptions to the sequence shown that
-will be documented in the update file itself.
-
-See the file ./patches/README.txt for more details.
-
-User management:
-----------------
-IMPORTANT: The first time the jmsess database is created by
-running 'make init', a single user named "admin" with password
-"admin" is created.  You must at a minimum change this user's
-password before making JMdictDB accessible in other than a local
-trusted envirionment.
-
-There is not yet any tools or webpages for adding, removing
-ot updating users and these activities need to be performed
-by direct manipulation of the user data in the "jmsess" database
-using Postgresql's 'psql' command.
-
-To add a new user:
-  INSERT INTO users VALUES (
-       'jones', 'Bob Jones', 'bjones@ntt.co.jp',
-        crypt('plaintext-password', gen_salt('bf')),
-        FALSE, 'E', NULL);
-
-To disable a user (prevent him/her from logging in):
-  UPDATE users SET disabled=True WHERE userid='jones';
-
-To change a password:
-  UPDATE users SET pw=crypt('plaintext-password', gen_salt('bf'))
-    WHERE userid='jones';
-
 ======================================================================
 Notes:
 [*1]
-http://nihongo.monash.edu/Japanese.html
-
-[*2]
-http://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project
-
-[*3]
 On Windows the Postgresql password file is typically in
 "C:\Documents and Settings\<your_windows_user_name>\ -
   Application Data\Postgresql\pgpass.conf".  For brevity
 we will refer simply to "~/.pgpass" in this document.
 
-[*4]
+[*2]
 For more information on usernames, passwords, and the .pgpass
 file, see the Postgresql docs:
   31.15  Client Interfaces / libpq / The Password File
@@ -661,7 +459,3 @@ file, see the Postgresql docs:
             psql / Usage / Connecting to a Database
 Note that chapter numbers are Postgresql version dependent.
 Numbers given are for Postgres version 9.2.
-
-===
-EOF
-===

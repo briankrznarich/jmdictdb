@@ -80,8 +80,8 @@ ifeq (0, $(shell id -u))   # If running as root, do system install.
 CMDS_DIR = /usr/local/bin
 WEBROOT = /var/www/jmdictdb
 else                         # Otherwise install for user only.
-CMDS_DIR = $(wildcard ~/.local/bin)
-WEBROOT = $(wildcard ~/public_html)
+CMDS_DIR = ~/.local/bin
+WEBROOT = ~/public_html
 endif
 CGI_DIR = $(WEBROOT)/cgi-bin
 LIB_DIR = $(WEBROOT)/lib
@@ -114,9 +114,11 @@ WEB_CSS = $(addprefix $(CSS_DIR)/,$(CSS_FILES))
 
 LIB_FILES = .htaccess \
 	config-sample.ini \
+	config-pvt-sample.ini
 WEB_LIB = $(addprefix $(LIB_DIR)/,$(LIB_FILES))
 
-CGI_FILES = conj.py \
+CGI_FILES = cgiinfo.py \
+	conj.py \
 	entr.py \
 	edconf.py \
 	edform.py \
@@ -354,7 +356,7 @@ install-pkg:
 #------ Install command scripts to a bin/ location ---------------------
 install-cmds: $(CMDS)
 $(CMDS): $(CMDS_DIR)/%: bin/%
-	@echo install -pm 755 $? $@
+	install -pm 755 $? $@
 
 #------ Install cgi files to web server location -----------------------
 install-web:	webcgi webcss weblib
@@ -365,11 +367,11 @@ $(WEB_CSS): $(CSS_DIR)/%: web/%
 
 webcgi: $(WEB_CGI)
 $(WEB_CGI): $(CGI_DIR)/%: web/cgi/%
-	install -p -m 755 $? $@
+	install -pm 755 $? $@
 
 weblib: $(WEB_LIB)
 $(WEB_LIB): $(LIB_DIR)/%: web/lib/%
-	install -p -m 644 $? $@
+	install -pm 644 $? $@
 
 #------ Uninstall things -----------------------------------------------
 uninstall: uninstall-pkg uninstall-web uninstall-cmds
