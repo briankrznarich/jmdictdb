@@ -14,9 +14,10 @@
 #
 #    make JMDICTFILE=JMdict "LANGOPT=-g fre"
 #
-# Command used to run your Python interpreter.  Note that the
-# JMdictDB code no longer runs under Python2.
+# Commands used to run your Python interpreter and install commands.
+# Note that JMdictDB will not run under python2.
 PYTHON = python3
+INSTALL = tools/install.sh
 
 # The JMdict file to download.  Choice is usually between JMdict
 # which contains multi-lingual glosses, and JMdict_e that contains
@@ -77,16 +78,18 @@ HOST =
 # this makefile (which installs the cgi files to WEBROOT).
 
 ifeq (0, $(shell id -u))   # If running as root, do system install.
-CMDS_DIR = /usr/local/bin
-WEBROOT = /var/www/jmdictdb
+    CMDS_DIR = /usr/local/bin
+    WEBROOT = /var/www/jmdictdb
 else                         # Otherwise install for user only.
-CMDS_DIR = ~/.local/bin
-WEBROOT = ~/public_html
+    CMDS_DIR = ~/.local/bin
+    WEBROOT = ~/public_html
+    PKGPATH = $(shell $(PYTHON) -msite --user-site)
 endif
+
+# Locations of web server subdirectories.
 CGI_DIR = $(WEBROOT)/cgi-bin
 LIB_DIR = $(WEBROOT)/lib
 CSS_DIR = $(WEBROOT)
-
 # Location of JMdictDB commands that will be used when loading
 # databases.  Default is the development versions but this can
 # be overridden to use the installed versions.
@@ -96,26 +99,22 @@ BIN = bin
 # You should not need to change anything below here.
 
 ifeq ($(HOST),)
-PG_HOST =
-JM_HOST =
+    PG_HOST =
+    JM_HOST =
 else
-PG_HOST = -h $(HOST)
-JM_HOST = -r $(HOST)
+    PG_HOST = -h $(HOST)
+    JM_HOST = -r $(HOST)
 endif
-
-# CAUTION: Be careful in the file lists below to make sure that the
-#  last item is NOT followed by a backslash.  If it is the rules that
-#  use the list will not work but there will be no error messages.
 
 CSS_FILES = jmdict.css \
 	status_maint.html \
 	status_load.html
-WEB_CSS = $(addprefix $(CSS_DIR)/,$(CSS_FILES))
+WEB_CSS = $(addprefix web/,$(CSS_FILES))
 
 LIB_FILES = .htaccess \
 	config-sample.ini \
 	config-pvt-sample.ini
-WEB_LIB = $(addprefix $(LIB_DIR)/,$(LIB_FILES))
+WEB_LIB = $(addprefix web/lib/,$(LIB_FILES))
 
 CGI_FILES = cgiinfo.py \
 	conj.py \
@@ -133,7 +132,7 @@ CGI_FILES = cgiinfo.py \
 	user.py \
 	users.py \
 	userupd.py
-WEB_CGI = $(addprefix $(CGI_DIR)/,$(CGI_FILES))
+WEB_CGI = $(addprefix web/cgi/,$(CGI_FILES))
 
 CMD_FILES = bulkupd.py \
 	dbcheck.py \
@@ -146,7 +145,7 @@ CMD_FILES = bulkupd.py \
 	resetpw.py \
 	shentr.py \
 	xresolv.py
-CMDS = $(addprefix $(CMDS_DIR)/,$(CMD_FILES))
+CMDS = $(addprefix bin/,$(CMD_FILES))
 
 #====== Rules ==========================================================
 
@@ -353,33 +352,49 @@ install: install-pkg install-web install-cmds
 install-pkg:
 	$(PYTHON) -m pip install --upgrade --no-deps .
 
+# The following rules install the command line programs and web files
+# (css, cgi scripts, lib files).  Each target installs all the associated
+# files and does not use 'make's ability to replace only older files with
+# newer ones for two reasons:
+# - Avoiding unnecessary actions is important when compiling files
+#   which may take many minutes cummulative time; it is not important
+#   when copying a few dozen files.
+# - We want (re-)installs to work even when a different VCS branch
+#   is checked out which may contain files that are older than the
+#   installed versions from the previous branch.
+# If the install program is tools/install.py, it will only install
+# files where the source file has a different mode or contents than
+# the target file; when thr target and source files are the same,
+# install.py will skip the pair.
+
 #------ Install command scripts to a bin/ location ---------------------
-install-cmds: $(CMDS)
-$(CMDS): $(CMDS_DIR)/%: bin/%
-	install -pm 755 $? $@
+install-cmds:
+	@$(INSTALL) -m 755 -t $(CMDS_DIR) $(CMDS)
 
 #------ Install cgi files to web server location -----------------------
 install-web:	webcgi webcss weblib
 
-webcss: $(WEB_CSS)
-$(WEB_CSS): $(CSS_DIR)/%: web/%
-	install -pm 644 $? $@
+webcss:
+	@$(INSTALL) -m 644 -t $(CSS_DIR) $(WEB_CSS)
 
-webcgi: $(WEB_CGI)
-$(WEB_CGI): $(CGI_DIR)/%: web/cgi/%
-	install -pm 755 $? $@
+webcgi:
+	@$(INSTALL) -m 755 -t $(CGI_DIR) $(WEB_CGI)
+ifdef PKGPATH
+	echo "import sys; sys.path[1:1]=['$(PKGPATH)']">$(CGI_DIR)/pkgpath.py
+endif
 
 weblib: $(WEB_LIB)
-$(WEB_LIB): $(LIB_DIR)/%: web/lib/%
-	install -pm 644 $? $@
+	@$(INSTALL) -m 644 -t $(LIB_DIR) $(WEB_LIB)
 
 #------ Uninstall things -----------------------------------------------
+#FIXME: incomplete
+
 uninstall: uninstall-pkg uninstall-web uninstall-cmds
 uninstall-pkg:
 	$(PYTHON) -m pip uninstall jmdictdb
 uninstall-web:
 uninstall-cmds:
-	rm $(CMDS)
+	echo rm -v $(addprefix $(CMDS_DIR)
 
 #------ Other ----------------------------------------------------------
 

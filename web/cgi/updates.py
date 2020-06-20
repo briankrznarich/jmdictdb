@@ -46,7 +46,8 @@
 #        'sid', etc.  See python/lib/jmcgi.py.
 
 import sys, cgi, datetime
-_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'../..'
+try: import pkgpath.py  # Make jmdictdb package available on sys.path.
+except ImportError: pass
 from jmdictdb import logger; from jmdictdb.logger import L
 from jmdictdb import jdb, jmcgi
 

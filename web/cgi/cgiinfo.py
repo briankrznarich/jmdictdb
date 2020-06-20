@@ -6,7 +6,8 @@
 # environment and is useful for diagnosing library location confusions.
 
 import sys, cgi, cgitb, os
-#_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'../..'
+try: import pkgpath.py  # Make jmdictdb package available on sys.path.
+except ImportError: pass
 
 try: import jmdictdb
 except ImportError:
