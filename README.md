@@ -44,7 +44,7 @@ supported (although an older Python 2 version is available
 from the code repository.
 
 For full details on requirements and installation instructions
-see doc/INSTALLATION.txt.
+see doc/INSTALL.txt.
 
 The JMdictDB system is currently running on Jim Breen's
 wwwjdic web sites:
@@ -59,13 +59,13 @@ requests, etc.
 
 ## DOCUMENTATION
 
-This file, README.txt, provides an overview and general information
+This file, README.md, provides an overview and general information
 about JMdictDB.  More detailed information including installation
 and operation instructions can be found in the ./doc/ directory.
 
 Additional information is available at:
-- http://www.edrdg.org/~smg/  Project page of principal developer
-- ...
+- Project page of JMdictDB's principal developer: http://www.edrdg.org/~smg/
+- Jim Breen's JMdictDB project page: http://www.edrdg.org/wiki/index.php/JMdictDB_Project
 
 ## CONTENTS
 
