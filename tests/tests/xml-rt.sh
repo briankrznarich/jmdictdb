@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 # This procedure will parse a JMdict or JMnedict XML file (using
 # jmparse.py), load it into a temporary database, then dump that
-# database out (using entrs2xml.py) to a temporary XML file.  The
+# database out using entrs2xml.py to a temporary XML file.  The
 # input and output XML files are compared; there should be no
 # difference.
 # 
@@ -14,8 +14,10 @@
 # the default of "jmnew" to use for loading the parsed xml file.
 # This is useful when running multiple invocations of this script
 # simultaneously.
-# The -c (clean) option will remove old temporary files but should
-# not be use when running multiple invocations.
+# The -p (preserve) option will suppress the removal of old temporary
+# files that is normally done when starting and should be used when
+# running multiple invocations to prevent each from deleting the
+# other's files.
 # -h will print a brief help message.
 #
 # This script should be run from the JMdictDB tests/ directory (not
@@ -35,34 +37,35 @@ set -e
 BIN=../bin/
 DBNAME=jmnew
 TMPDIR=./tmp
-OUTFILE=$TMPDIR/rtsh-$$.xml
-TMPPGI=$TMPDIR/rtsh-$$.pgi
-TMPLOG=$TMPDIR/rtsh-$$a.log
-TMPLOG2=$TMPDIR/rtsh-$$b.log
+OUTFILE=$TMPDIR/xmlrt-$$.xml
+TMPPGI=$TMPDIR/xmlrt-$$.pgi
+TMPLOG=$TMPDIR/xmlrt-$$a.log
+TMPLOG2=$TMPDIR/xmlrt-$$b.log
   # We need a kwsrc.id number to use for the parsed data loaded
   # into the temporary database.  It can be arbitrary.
 SRCID=1
-clean=0
+preserve=no
 
 usage() { echo "\
 Usage: $script [-d dbname][-c] filename.xml
   dbname -- Name of scratch database to use.  Will be dropped
-    and overwritten.
-  -c -- cleanup: remove temp files from previous runs.  Dont
-    use if this script is running simultaneously in other 
-    processes." 1>&2; }
-while getopts "cd:" opt; do
+      and overwritten.
+  -p -- Preserve temp files from previous runs instead of deleting
+      them when starting.  Use this when doing simultaneous runs of
+      this script in mutiple processes to prevent processes from
+      deleting each other's results." 1>&2; }
+while getopts "pd:" opt; do
     case "$opt" in
         h|\?) usage; exit 0;;
         d)  DBNAME=$OPTARG;;
-        c)  clean=yes;;
+        p)  preserve=yes;;
         esac
     done
 shift $((OPTIND-1))
 INPFILE=$1
 
   # Remove any old temp files...
-if [ $clean = "yes" ]; then rm -fv $TMPDIR/rtsh-*; fi
+if [ $preserve = "no" ]; then rm -fv $TMPDIR/xmlrt-*; fi
   # Following is based on the "loadjm" and "postload" targets
   #  of ../../Makefile.  Input file is data/jmdict.xml, intermediate
   #  files are written to tests/tmp/ as is the output xml file,
