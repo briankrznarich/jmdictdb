@@ -38,7 +38,7 @@ DEFAULTS = {
         'MIN_ENTRIES_PER_PAGE': 1,
         'GAHOH_URL': '', },
     'logging': {
-        'LOG_FILENAME': 'jmdictdb.log',
+        'LOG_FILENAME': '../lib/jmdictdb.log',  # Relative to web/cgi/.
         'LOG_LEVEL': 'warning',
         'LOG_FILTERS': '', },
     'search': {

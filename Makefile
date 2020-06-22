@@ -63,10 +63,6 @@ endif
 CGI_DIR = $(WEBROOT)/cgi-bin
 LIB_DIR = $(WEBROOT)/lib
 CSS_DIR = $(WEBROOT)
-# Location of JMdictDB commands that will be used when loading
-# databases.  Default is the development versions but this can
-# be overridden to use the installed versions.
-BIN = bin
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # You should not need to change anything below here.
@@ -153,11 +149,13 @@ install-pkg:
 #------ Install command scripts to a bin/ location ---------------------
 install-cmds:
 	@echo "Installing jmdictdb command line programs to $(CMDS_DIR)..."
+	mkdir -p $(CMDS_DIR)
 	@$(INSTALLER) -m 755 -t $(CMDS_DIR) $(CMDS)
 
 #------ Install web files to web server location -----------------------
 install-web:
 	@echo "Installing jmdictdb web files to $(CSS_DIR)..."
+	mkdir -p $(CSS_DIR) $(CGI_DIR) $(LIB_DIR)
 	@$(INSTALLER) -m 644 -t $(CSS_DIR) $(WEB_CSS)
 	@$(INSTALLER) -m 755 -t $(CGI_DIR) $(WEB_CGI)
 ifdef PKGPATH
