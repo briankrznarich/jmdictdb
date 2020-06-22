@@ -34,7 +34,7 @@ from .restr import *
   # in hexidecimal.
   # If "dbver" is empty no version check will be done.  This allows
   # for ignoring version numbers temporarily during development.
-try: from dbver import DBVERS
+try: from jmdictdb.dbver import DBVERS
 except ImportError: DBVERS = []
 
 global KW
@@ -2045,8 +2045,8 @@ def dbrequire (dbconn, require):
           #              of db update numbers required by the calling
           #              application.
         if not require: return
-        import db    # We import inside function to avoid importing if
-                     #   this function is not called.
+        from jmdictdb import db   # We import inside function to avoid
+                                  # importing if this function is not called.
         missing = db.require (dbconn, require)
           #FIXME: include database name or URI in error message.
         if missing: raise KeyError ("Database missing required update(s): %s"
