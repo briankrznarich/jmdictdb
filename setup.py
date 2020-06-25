@@ -14,7 +14,7 @@ setuptools.setup (
         long_description=long_description,
         long_description_content_type="text/markdown",
         url="https://gitlab.com/yamagoya/jmdictdb",
-        packages=setuptools.find_packages(),
+        packages=['jmdictdb'],
         package_data={'jmdictdb': ['tmpl/*.jinja', 'data/*.csv',
                                    'data/dtd-*.xml', 'data/*.xsl']},
         zip_safe = False,

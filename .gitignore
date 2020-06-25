@@ -5,7 +5,7 @@ __pycache__/
 .#*
 *.log
 .nobackup
-/data/
+/data
 /build/
 /dist/
 /jmdictdb.egg-info/

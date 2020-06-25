@@ -117,19 +117,18 @@ all:
     # users that the jmdictdb app will use to access the database.
 
 init:
-	# Assume any errors from 'createuser' are due to the user
-	# already existing and ignore them.
+    # Assume any errors from 'createuser' are due to the user
+    # already existing and ignore them.
 	-createuser $(PG_HOST) -U $(PG_SUPER) -SDRP $(USER)
 	-createuser $(PG_HOST) -U $(PG_SUPER) -SDRP $(RO_USER)
-	# Don't automatically drop old session database due to risk
-	# of unintentionally loosing user logins and passwords.  If
-	# it exists, the subsequent CREATE  DATABASE command will
-	# fail and require the user to manually drop the session
-	# database or otherwise manually correct the situation.
-	#psql $(PG_HOST) -U $(PG_SUPER) -d postgres -c 'drop database if exists $(DBSESS)'
+    # Don't automatically drop old session database due to risk
+    # of unintentionally loosing user logins and passwords.  If
+    # it exists, the subsequent CREATE  DATABASE command will
+    # fail and require the user to manually drop the session
+    # database or otherwise manually correct the situation.
 	psql $(PG_HOST) -U $(PG_SUPER) -d postgres -c 'create database jmsess'
 	psql $(PG_HOST) -U $(PG_SUPER) -d jmsess -c "CREATE EXTENSION IF NOT EXISTS pgcrypto"
-	cd pg && psql $(PG_HOST) -U $(USER) -d jmsess -f mksess.sql
+	cd db && psql $(PG_HOST) -U $(USER) -d jmsess -f mksess.sql
 	@echo 'Remember to add jmdictdb editors to the jmsess "users" table.'
 
 #------ Create a blank jmnew database ----------------------------------
@@ -174,7 +173,7 @@ postload:
 
 #------ Load JMdict -----------------------------------------------------
 
-data/jmdict.xml:
+data/jmdict.xml: datadir
 	rm -f $(JMDICTFILE).gz
 	wget ftp://ftp.monash.edu.au/pub/nihongo/$(JMDICTFILE).gz
 	gzip -d $(JMDICTFILE).gz
@@ -193,7 +192,7 @@ loadjm: data/jmdict.pgi
 
 # Assumes the jmdict has been loaded into database already.
 
-data/jmnedict.xml:
+data/jmnedict.xml: datadir
 	rm -f JMnedict.xml.gz
 	wget ftp://ftp.monash.edu.au/pub/nihongo/JMnedict.xml.gz
 	gzip -d JMnedict.xml.gz
@@ -210,7 +209,7 @@ loadne: data/jmnedict.pgi
 
 #------ Load examples ---------------------------------------------------
 
-data/examples.txt:
+data/examples.txt: datadir
 	rm -f examples.utf.gz
 	wget ftp://ftp.monash.edu.au/pub/nihongo/examples.utf.gz
 	gzip -d examples.utf.gz
@@ -227,7 +226,7 @@ loadex: data/examples.pgi
 
 #------ Load kanjidic2.xml ---------------------------------------------------
 
-data/kanjidic2.xml:
+data/kanjidic2.xml: datadir
 	rm -f kanjidic2.xml.gz
 	wget ftp://ftp.monash.edu.au/pub/nihongo/kanjidic2.xml.gz
 	gzip -d kanjidic2.xml.gz
@@ -244,7 +243,7 @@ loadkd: data/kanjidic2.pgi
 
 #------ Load jmdict, jmnedict, examples -------------------------------------
 
-loadall: jmnew loadjm loadne loadex postload
+loadall: jmnew loadjm loadne loadkd loadex postload
 	@echo 'Remember to check the log files for warning messages.'
 
 reloadall: loadclean loadall
@@ -255,6 +254,10 @@ loadclean:
 	  jmnedict.pgi jmnedict.log jmnedict_xresolv.log \
 	  examples.pgi examples.log examples_xresolv.log \
 	  kanjdic2.pgi kanjdic2.log
+
+datadir:
+	mkdir -p data
+	touch data/.nobackup
 
 #------ Other ----------------------------------------------------------
 
