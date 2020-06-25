@@ -23,7 +23,7 @@
 
 import sys, os, inspect, pdb
 _=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
-from jmdictimport jdb
+from jmdictdb import jdb
 
 def main (args, opts):
         jdb.reset_encoding (sys.stdout, opts.encoding)

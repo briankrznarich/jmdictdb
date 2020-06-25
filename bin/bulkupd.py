@@ -23,7 +23,7 @@ import psycopg2
 _=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
 from jmdictdb import logger; from jmdictdb.logger import L
 from jmdictdb import jdb
-from jmdictdb import submit.submission
+from jmdictdb.submit import submission
 
   # The following text will be automatically appended to the history
   # comments field of every entry updated by a bulk update operation.

@@ -27,8 +27,9 @@
 # creating entries for tests.
 
 import sys, re, pdb
-from . import jdb, jellex, jelparse, logger; from logger import L
-from .objects import *
+from jmdictdb import jdb, jellex, jelparse, logger
+from jmdictdb.logger import L
+from jmdictdb.objects import *
 
 class ParseError (ValueError): pass
 
