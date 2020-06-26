@@ -1,20 +1,24 @@
-all: schema
-
-schema: schema.png schema.pdf schema.html
+all: basic schema updates
 
 .DELETE_ON_ERROR:
 
-# Following only works on *nix... (sigh)
-# DIA runs on Windows but in my tests, the output looks awful
-# (perhaps because diffent font sizes on Windows alter element 
-# positions?)  Don't have OpenOffice installed on Windows so
-# have not tested that.
+basic: index.html install.html
+index.html: src/index.asc
+	asciidoctor -a linkcss -D . $?
+install.html: src/install.asc
+	asciidoctor -a linkcss -D . $?
 
-schema.png: schema.dia
+schema: schema.png schema.pdf schema.html
+schema.png: src/schema.dia
 	dia --export $@ -s 1500x $?
+schema.pdf: src/schema.odt
+	/usr/bin/libreoffice --headless --convert-to pdf $?
+schema.html: src/schema.odt
+	/usr/bin/libreoffice --headless --convert-to html $?
 
-schema.pdf: schema.odt
-	/usr/bin/libreoffice --headless --convert-to pdf schema.odt
+updates: 2020-06-changes.html 2020-06-update.html
+2020-06-changes.html: src/2020-06-changes.asc
+	asciidoctor -a linkcss -D . $?
+2020-06-update.html: src/2020-06-update.asc
+	asciidoctor -a linkcss -D . $?
 
-schema.html: schema.odt
-	/usr/bin/libreoffice --headless --convert-to html schema.odt
