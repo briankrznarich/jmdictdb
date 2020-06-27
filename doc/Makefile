@@ -1,3 +1,19 @@
+
+INSTALLER = ../tools/install.sh
+WEBROOT = ~/public_html
+DOC_DIR = /doc            # Requires leading slash if not empty.
+
+  # List of doc files that will be installed to ~/WEBROOT/DOC_DIR/
+DOC_FILES = README.txt \
+        asciidoctor.css \
+        index.html \
+        install.html \
+        schema.html \
+        schema.pdf \
+        schema.png \
+        2020-06-changes.html \
+        2020-06-update.html
+
 all: basic schema updates
 
 .DELETE_ON_ERROR:
@@ -22,3 +38,5 @@ updates: 2020-06-changes.html 2020-06-update.html
 2020-06-update.html: src/2020-06-update.asc
 	asciidoctor -a linkcss -D . $?
 
+install:
+	$(INSTALLER) -m 644 -t $(WEBROOT)$(DOC_DIR) $(DOC_FILES)

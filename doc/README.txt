@@ -3,7 +3,7 @@ This directory contains documentation for the JMdictDB project.
 Open index.html in your web browser for a list of links to
 the JMdictDB documentation.
 
-The "product" documention in this directory is primarily
+The "published" documention in this directory is primarily
 html, pdf and for the database schema diagram, png, files.
 Those that are generated are produced from files in subdirectory
 src/, currently Open Office Writer, Asciidoc and for the schema
