@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import sys, os, os.path, configparser
-from . import jdb
+from jmdictdb import jdb
 
   # The following supplies default values for any config.ini
   # values not present in the config.ini file read by cfgOpen().

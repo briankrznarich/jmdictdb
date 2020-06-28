@@ -3,7 +3,7 @@
 
 import cgi, os.path, pdb
 import jinja2
-from . import jdb
+from jmdictdb import jdb
 
 def add_filters (env):
           # Load the database keyword tables object which we use to

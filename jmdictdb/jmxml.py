@@ -10,7 +10,7 @@ import sys, os, re, datetime
 from collections import defaultdict
 #import lxml.etree as ElementTree
 import xml.etree.cElementTree as ElementTree
-from . import jdb, xmlkw
+from jmdictdb import jdb, xmlkw
 
 class ParseError (RuntimeError): pass
 class NotFoundError (RuntimeError): pass

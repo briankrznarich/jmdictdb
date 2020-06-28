@@ -63,7 +63,7 @@
 # JMdict XML (the <re_restr>, <stagr> and <stagk> tags) and those
 # shown in display output which give the *allowed* pairings.
 
-from .objects import *
+from jmdictdb.objects import *
 
 def get_restrs (restrs, targs):
         '''

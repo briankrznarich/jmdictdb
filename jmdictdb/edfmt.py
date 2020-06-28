@@ -2,10 +2,9 @@
 # Copyright (c) 2009 Stuart McGraw
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-
 import sys, pdb
-from . import jdb, fmt
-from .objects import *
+from jmdictdb import jdb, fmt
+from jmdictdb.objects import *
 
 def entr (e):
         _kanjs = getattr (e, '_kanj', [])

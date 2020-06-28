@@ -1,6 +1,6 @@
 
 import copy
-from . import jdb
+from jmdictdb import jdb
 
 def make (kw):
         # Using a copy of 'kw', modify it for use in

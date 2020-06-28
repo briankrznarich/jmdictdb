@@ -3,9 +3,9 @@
 
 import sys, re, cgi, urllib.request, urllib.parse, urllib.error, os, os.path
 import random, time, http.cookies, datetime, time, copy
-from . import jdb, config, fmt
-from . import jinja; from markupsafe import Markup, escape as Escape
-from . import logger; from .logger import L
+from jmdictdb import jdb, config, fmt
+from jmdictdb import jinja; from markupsafe import Markup, escape as Escape
+from jmdictdb import logger; from jmdictdb.logger import L
 
 def initcgi (cfgfilename, authfilename=None):
         """

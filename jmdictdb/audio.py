@@ -1,11 +1,10 @@
 # Copyright (c) 2006,2008 Stuart McGraw
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-
 from lrucache import LRUCache
 import time, os.path, pdb
 
-from . import mci; from mci.constants import *;
+from jmdictdb import mci; from mci.constants import *;
   # We import mciError to make it available from this module to
   # users of Audio, CD since any of those can raise it.
 from mci import mciError

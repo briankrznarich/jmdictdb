@@ -1,14 +1,13 @@
-# -*- coding: utf-8 -*-  # non-ascii used in comments only.
 # Copyright (c) 2006-2014 Stuart McGraw
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import sys, os, os.path, random, re, datetime, operator, csv
 from time import time
 from collections import defaultdict
-from . import fmtxml
-from . import logger; from .logger import L
-from .objects import *
-from .restr import *
+from jmdictdb import fmtxml
+from jmdictdb import logger; from jmdictdb.logger import L
+from jmdictdb.objects import *
+from jmdictdb.restr import *
 
   # Get the database version id number(s) required by this version
   # of the JMdictDB API.  When dbOpen() is called it will check that

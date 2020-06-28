@@ -1,9 +1,8 @@
 # Copyright (c) 2008 Stuart McGraw
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-
 from collections import defaultdict
-from . import jdb
+from jmdictdb import jdb
 
 def entr (entr, wantlist=False):
         fmt = entrrec (entr)

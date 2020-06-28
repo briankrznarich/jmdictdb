@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import ply.lex, re
-from . import jdb, fmtjel
+from jmdictdb import jdb, fmtjel
 
 class LexSpec:
 

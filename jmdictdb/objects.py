@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import sys, pdb
-from .db import DbRow, Obj
+from jmdictdb.db import DbRow, Obj
 
 #  NOTE:
 #  When adding/deleting/modifying the classes below, be sure to

@@ -3,7 +3,7 @@
 
 import zlib, base64, datetime, time, json, \
        urllib.request, urllib.parse, urllib.error
-from . import jdb
+from jmdictdb import jdb
 
 def serialize (obj):
         s = jencode (obj)

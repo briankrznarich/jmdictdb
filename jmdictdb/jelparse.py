@@ -4,8 +4,8 @@
 
 import sys, ply.yacc, re, unicodedata, pdb
 from collections import defaultdict
-from . import jellex, jdb
-from .objects import *
+from jmdictdb import jellex, jdb
+from jmdictdb.objects import *
 
 class ParseError (ValueError):
     def __init__ (self, msg, loc=None, token=None):

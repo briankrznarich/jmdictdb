@@ -3,7 +3,7 @@
 
 import re, pdb
 from collections import defaultdict
-from . import jdb, fmt
+from jmdictdb import jdb, fmt
 
 MIDDOT = '\u30FB'
   # The following characters are recognised as special

@@ -13,7 +13,7 @@ from ctypes import *
 try: from ctypes.wintypes import *
 except ValueError: raise ImportError ('mci module not available')
 import exceptions
-from .constants import *
+from jmdictdb.constants import *
 
 #-------------------------------------------------------------------------------
 def Break (devid, flags=0, key=0, hwnd=0):

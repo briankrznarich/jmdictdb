@@ -1,6 +1,5 @@
 # coding: utf-8
 
-
 iso639_1_to_2 = {
         'aa': 'aar',    # Afar
         'ab': 'abk',    # Abkhazian
