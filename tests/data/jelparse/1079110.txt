@@ -1,4 +1,4 @@
-﻿
+
 ティッシュペーパー[gai1]
 [1][n]
   [note="not actual \"tissue paper\" in English"]

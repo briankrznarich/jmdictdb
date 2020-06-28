@@ -1,4 +1,4 @@
-﻿彼の[spec1]
+彼の[spec1]
 あの[spec1]；かの
 [1][adj-pn][uk]
   that (someone or something distant from both speaker and listener, or situation unfamiliar to both speaker and listener)

@@ -1,4 +1,4 @@
-﻿
+
 いらっしゃい[spec1]；いらしゃい[ik]
 [1][int][hon]
   [note="used as a polite imperative"]

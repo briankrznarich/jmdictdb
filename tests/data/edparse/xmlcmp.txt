@@ -1,4 +1,4 @@
-﻿# Basic KR/S lexical processing
+# Basic KR/S lexical processing
 b1: 漢字 [かんじ] /kanji/
 b2: 漢字 かんじ /kanji/
 b3: 漢字 [] //

@@ -1,4 +1,4 @@
-﻿
+
 いらっしゃい[spec1]；いらしゃい[ik]
 [1][int,n][hon]
   (used as a polite imperative) come; go; stay

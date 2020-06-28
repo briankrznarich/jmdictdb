@@ -1,4 +1,4 @@
-﻿q1000230: 明かん [あかん] /(int,n) (uk) (ksb:) useless/no good/hopeless/EntL1000230/
+q1000230: 明かん [あかん] /(int,n) (uk) (ksb:) useless/no good/hopeless/EntL1000230/
 q1000540: 露に;露わに [あらわに] /(adv) (uk) openly/publicly/frankly/expressly/overtly/EntL1000540/
 q1043140: ギャロップ;ガロップ /(n) (1) (ギャロップ only) gallop/(2) galop (dance)/EntL1043140X/
 q1172510: うな丼;鰻丼;うなぎ丼 [うなどん(うな丼;鰻丼);うなぎどんぶり(鰻丼;うなぎ丼)] /(n) bowl of eel and rice (donburi)/EntL1172510X/

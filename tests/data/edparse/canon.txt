@@ -1,4 +1,4 @@
-﻿b1: 漢字 [かんじ] /kanji/
+b1: 漢字 [かんじ] /kanji/
 b2: 漢字;文法 [かんじ] /kanji/
 b3: 漢字 [かんじ;ぶんぽう] /kanji/
 b4: 漢字 [かんじ] /(1) sense1/(2) sense 2/(3) sense number 3/

@@ -1,4 +1,4 @@
-﻿町[ichi1,news1,nf02]；街
+町[ichi1,news1,nf02]；街
 まち[ichi1,news1,nf02]；ちょう[町]
 [1][n]
   [note="esp. 町"]

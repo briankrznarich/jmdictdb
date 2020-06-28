@@ -1,4 +1,4 @@
-﻿紅葉[ichi1,news1,nf16]；黄葉
+紅葉[ichi1,news1,nf16]；黄葉
 こうよう[ichi1,news1,nf16]；もみじ[ichi1]
 [1][n,vs]
   autumn colours; fall colors; leaves changing color (colour)

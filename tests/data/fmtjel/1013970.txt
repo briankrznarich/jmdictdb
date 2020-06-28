@@ -1,4 +1,4 @@
-﻿
+
 アイス[gai1,ichi1]
 [1][n]
   [lsrc=eng:ice,lsrc=ger:Eis]
