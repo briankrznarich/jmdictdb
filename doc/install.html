@@ -328,17 +328,33 @@ provided to move a newly loaded database to "jmdict".</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>$ make -f Makefile.db jmnew
-$ make -f Makefile.db xxx
-  where "xxx" is one of loadjm (JMdict), loadne (JMnedict), loadkd
-  (kanjidic2), loadex (Tatoeba examples).  Repeat for as many of the
-  preceeding that you want to load.  Then as the last step:
-$ make -f Makefile.db postload</pre>
+<pre>$ make -f Makefile.db jmnew</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>As a shortcut, the target <code>loadall</code> will do the above for all four of the
-dictionaries.</p>
+<p>Repeat the following, where "loadXX" is one of loadjm (JMdict),
+loadne (JMnedict), loadkd (kanjidic2), loadex (Tatoeba examples)
+for as many of the those sources as you want to load.
+Each of the "loadXX" targets will download the appropriate source
+file to the data/ directory, parse it and load the data into the
+"jmnew" database.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ make -f Makefile.db loadXX</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then as the last step:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ make -f Makefile.db postload</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As a shortcut, the target <code>loadall</code> will do the above for all
+four of the dictionaries.</p>
 </div>
 <div class="admonitionblock caution">
 <table>
@@ -348,18 +364,16 @@ dictionaries.</p>
 </td>
 <td class="content">
 No provision is made for concurrent access while loading
-data; we assume that only the access to the database being
-loaded is by the procedures used for the loading.  However, use of
-databases <strong>other</strong> than the one being loaded (usually "jmnew") can
-continue as usual during loading.
+data; we assume that only the access to the database being loaded
+is by the procedures used for the loading.  However, use of
+databases <strong>other</strong> than the one being loaded (which is usually
+"jmnew") can continue as usual during loading.
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>The above procedure loaded everything into the database "jmnew" so that if
-something went wrong, the main production database, "jmdict", would not be
-affected.  If everything went well you can do:</p>
+<p>If everything went well you can do:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -372,7 +386,7 @@ and rename the "jmnew" database that was just loaded to "jmdict".</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_4_deploy_the_jmdictdb_software">4. Deploy the JMdictDB software</h3>
+<h3 id="deploy">4. Deploy the JMdictDB software</h3>
 <div class="paragraph">
 <p>At this point you have three ways to make make the database
 command line tools and and cgi web pages available:</p>
@@ -529,7 +543,7 @@ find the web components and at what URL to serve them.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_5_configuring_the_apache_webserver">5. Configuring the Apache webserver</h3>
+<h3 id="apache_config">5. Configuring the Apache webserver</h3>
 <div class="paragraph">
 <p>For exposition we&#8217;ll assume the JMdictDB pages will be served at
 the url http://myhost.org/jpdicts/ and that the JMdictDB web
@@ -573,36 +587,152 @@ we&#8217;ve not set up a config file yet.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_6_create_a_config_ini_file_for_cgi_settings">6. Create a config.ini file for CGI settings</h3>
+<h3 id="config_ini">6. CGI config.ini and log files</h3>
+<div class="sect3">
+<h4 id="_6_2_config_ini">6.2 config.ini</h4>
 <div class="paragraph">
-<p>The config.ini contains settings used by the CGI scripts when serving
-web pages.  At a minimum you&#8217;ll need to provide settings that describe
-each database you want to be accessible via the web.  There actually
-may be two config files: config.ini containing general settings that
-need and config-pvt.ini containing database credentials.</p>
+<p>The config.ini file contains settings used by the CGI scripts when
+serving web pages.  At a minimum you&#8217;ll need to provide settings
+that describe each database you want to be accessible via the web.</p>
 </div>
 <div class="paragraph">
-<p>The config file(s) lives in the lib/ subdirectory of the directory
-the JMdictDB web component was installed to.</p>
+<p>There must be config.ini file.  There may also be a config-pvt.ini
+file.  The latter is intended for database access credentials that
+should have access limited to the system maintainer and the webserver.
+However the database access credentials can go into config.ini if
+you wish (but be sure to protect config.ini appropriately in that
+case.)</p>
 </div>
 <div class="paragraph">
-<p>Create a config.ini file (use the config.sample file
-as a guide).  The config.ini file should go in the same directory
-as the library files: in python/lib/ if you are serving the files
-directly from the development directories, or in $(WEBROOT)/lib/
-if you are installing the web files using 'make web' (or both).
-The config.ini file should be readable by the web server process
-and not readable by world (it will contain database passwords.)</p>
+<p>Create a config.ini file (use the config-sample.ini file
+as a guide).  The config.ini file should go in $(WEBROOT)/lib/
+(the "Admin files" directory in step <a href="#deploy">4. Deploy the JMdictDB software</a>).</p>
 </div>
 <div class="paragraph">
-<p>In addition to the config.ini and xonfig-pvt.ini files, the lib/
-directory is te default location for the cgi log file.  Not</p>
+<p>The config.ini file need contain only settings where the value
+differs from the setting&#8217;s default value.  All the settings and
+their default values are described in config-sample.ini.  The
+config.ini file may be empty if no changes from the defaults
+are needed but it must be present.</p>
 </div>
 <div class="paragraph">
-<p>.
-You should now be able to go to the url corresponding to
-srchform.py and do searches for jmdict entries.  The url
-corresponding to edform.py will let you add new entries.</p>
+<p>The config-pvt.ini file should be readable by the web server
+process and not readable by world (it will contain database
+passwords.)  The same applies to config.ini if you&#8217;ve chosen
+to place the database access setting in there instead of in
+config-pvt.ini.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_6_2_log_file">6.2 Log file</h4>
+<div class="paragraph">
+<p>The $(WEBROOT)/lib/ directory is the default location for the
+cgi log file.  However both the name and location can be set in
+vonfig.ini.</p>
+</div>
+<div class="paragraph">
+<p>The log file must exist for logging to occur; it will not be
+automatically created.  It also must be writable by the web
+server process.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_6_3_verify_cgi_access">6.3 Verify CGI access</h4>
+<div class="paragraph">
+<p>You should now be able to view any of the JMdictDB web pages
+in your web browser.</p>
+</div>
+<div class="paragraph">
+<p>If you did a system install in step 4 the URL will be:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>http://localhost/&lt;VDIR&gt;/cgi-bin/srchform.py</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where &lt;VDIR&gt; is the web server virtual directory configured in
+step 5 (jpdicts in that example).</p>
+</div>
+<div class="paragraph">
+<p>If you did a user install in step 4, the URL will be:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>http://localhost/~&lt;USERNAME&gt;/cgi-bin/srchform.py</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where &lt;USERNAME&gt; is your username.</p>
+</div>
+<div class="paragraph">
+<p>The above URLs will need adjustment if you overrode any of the
+default locations when installing.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="errors">7. Common errors that may occur when accessing a web page</h3>
+<div class="qlist qanda">
+<ol>
+<li>
+<p><em>Server Error</em></p>
+<p>Check the web server&#8217;s error log.  There will often be a Python
+stack dump from the cgi script that will identify the problem.</p>
+</li>
+<li>
+<p><em>file not found: &#8230;&#8203;/config.ini</em></p>
+<p>There needs to be a lib/config.ini file, even if it is empty.</p>
+</li>
+<li>
+<p><em>postgresql authentication error / fe_sendauth: no password supplied</em></p>
+<p>Example:</p>
+<div class="literalblock">
+<div class="content">
+<pre>svc=db_foo
+postgresql authentication error
+fe_sendauth: no password supplied</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The db access section named [db_foo] is either missing
+from the config-pvt.ini or config.ini file or it is
+present but the username and/or password for the database
+server are wrong.</p>
+</div>
+</li>
+<li>
+<p><em>api requires updates xxxxxx / db has updates xxxxxx</em></p>
+<p>The version of the API (in jmdictdb/dbver.py) in different than
+the database version (in table "db" or more conveniently viewable
+in view "dbx").  If the API version is newer, you need to apply
+the appropriate updates from db/updates/.  If older, since there
+is no easy way to "downgrade" a database, you&#8217;ll need to find
+an older database of the correct version or load a database from
+source files (eg JMdict XML).</p>
+</li>
+<li>
+<p><em>No entries in jmdictdb log file</em></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Check the web server&#8217;s error log file.  If a cgi script can&#8217;t
+open the error log for writing it will write a message to that
+effect to srderr which should appear in the web server error
+log file.</p>
+</li>
+<li>
+<p>Check the config.ini file.  The default log file name and
+location is web/lib/jmdictdb.logbut can be overridden in
+the config.ini file.</p>
+</li>
+<li>
+<p>Make sure the log file is writable by the web server process.</p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
 </div>
 </div>
 <div class="sect2">
@@ -644,7 +774,7 @@ these are for Postgresql version 10.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-06-26 16:53:20 MDT
+Last updated 2020-06-28 18:02:24 MDT
 </div>
 </div>
 </body>
