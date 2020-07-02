@@ -16,15 +16,39 @@
 -- When changing updateid don't forget to change python/lib/dbver.py to
 -- tell the JMdictDB API to expect the new version.
 
-\set updateid '''a921f4'''
+\set updateid '''f62d8a'''
 
 -- This is a function for the benefit of psql scripts that can be
 -- conditionally called to generate an error in order to stop the
 -- the script's execution.  See:
 --   http://dba.stackexchange.com/questions/24518/how-to-conditionally-stop-a-psql-script-based-on-a-variable-value
+
 CREATE OR REPLACE FUNCTION err(msg TEXT) RETURNS boolean AS $body$
     BEGIN RAISE '%', msg; END;
     $body$ LANGUAGE plpgsql;
+
+-- Function to check that database has required updates active. 
+-- Parameter 'need' is a single text string containing a comma-separated
+--  list of the update values.  Any that are not active updates in the
+--  the "dbx" table will be reported as missing and an error raised.
+-- We return SETOF VOID rather than simply VOID because the former returns
+--  zero rows whereas the latter returns a single empty row; the former
+--  is less noisy.  See:
+--  https://www.depesz.com/2011/05/03/tips-n-tricks-return-nothing-from-plpgsql-function/
+--   Example: SELECT vchk ('12b5e2,7256aa')
+
+CREATE OR REPLACE FUNCTION vchk(need text) RETURNS setof VOID AS $$
+    DECLARE missing TEXT := '';
+    BEGIN
+        SELECT string_agg (need_.id, ', ') INTO STRICT missing
+          FROM unnest(string_to_array(need,',')) AS need_(id)
+          LEFT JOIN (SELECT id FROM dbx WHERE active) AS x
+             ON need_.id=x.id WHERE x.id IS NULL;
+       IF missing != '' THEN
+            RAISE 'Database is missing required update(s): %', missing;
+            END IF;
+        END;
+    $$ LANGUAGE plpgsql;
 
 -- Database updates table.
 -- Updates made subsequent to creation will add additional rows to
