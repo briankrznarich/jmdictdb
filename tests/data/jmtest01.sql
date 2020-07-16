@@ -352,6 +352,28 @@ CREATE FUNCTION public.syncseq() RETURNS void
 ALTER FUNCTION public.syncseq() OWNER TO jmdictdb;
 
 --
+-- Name: vchk(text); Type: FUNCTION; Schema: public; Owner: jmdictdb
+--
+
+CREATE FUNCTION public.vchk(need text) RETURNS SETOF void
+    LANGUAGE plpgsql
+    AS $$
+    DECLARE missing TEXT := '';
+    BEGIN
+        SELECT string_agg (need_.id, ', ') INTO STRICT missing
+          FROM unnest(string_to_array(need,',')) AS need_(id)
+          LEFT JOIN (SELECT id FROM dbx WHERE active) AS x
+             ON need_.id=x.id WHERE x.id IS NULL;
+       IF missing != '' THEN
+            RAISE 'Database is missing required update(s): %', missing;
+            END IF;
+        END;
+    $$;
+
+
+ALTER FUNCTION public.vchk(need text) OWNER TO jmdictdb;
+
+--
 -- Name: chr; Type: TABLE; Schema: imp; Owner: jmdictdb
 --
 
@@ -1836,6 +1858,18 @@ CREATE VIEW public.sr_valid AS
 
 ALTER TABLE public.sr_valid OWNER TO jmdictdb;
 
+--
+-- Name: testsrc; Type: TABLE; Schema: public; Owner: stuart
+--
+
+CREATE TABLE public.testsrc (
+    filename text,
+    method text,
+    hash text
+);
+
+
+ALTER TABLE public.testsrc OWNER TO stuart;
 
 --
 -- Name: vconj; Type: VIEW; Schema: public; Owner: jmdictdb
@@ -3917,8 +3951,10 @@ COPY public.conotes (id, txt) FROM stdin;
 --
 
 COPY public.db (id, active, ts) FROM stdin;
-11084276	t	2019-08-09 19:50:53.856433
 2029572	f	2019-05-14 10:46:08.849884
+16133514	t	2020-07-16 10:32:49.620998
+11084276	f	2019-08-09 19:50:53.856433
+11173099	t	2020-07-16 10:34:39.856739
 \.
 
 
@@ -4713,14 +4749,11 @@ COPY public.kwdial (id, kw, descr) FROM stdin;
 
 COPY public.kwfld (id, kw, descr) FROM stdin;
 1	Buddh	Buddhist term
-2	comp	computer terminology
 3	food	food term
 4	geom	geometry term
-5	ling	linguistics terminology
 6	MA	martial arts term
 7	math	mathematics
 8	mil	military
-9	physics	physics terminology
 10	chem	chemistry term
 11	archit	architecture term
 12	astron	astronomy, etc. term
@@ -4743,6 +4776,9 @@ COPY public.kwfld (id, kw, descr) FROM stdin;
 29	mahj	mahjong term
 30	shogi	shogi term
 31	Christn	Christian term
+2	comp	computer term
+5	ling	linguistics term
+9	physics	physics term
 \.
 
 
@@ -5295,7 +5331,6 @@ COPY public.kwmisc (id, kw, descr) FROM stdin;
 4	chn	children's language
 5	col	colloquialism
 6	derog	derogatory
-7	eK	exclusively kanji
 8	fam	familiar language
 9	fem	female term, language, or name
 11	hon	honorific or respectful (sonkeigo) language
@@ -5386,52 +5421,52 @@ COPY public.kwpos (id, kw, descr) FROM stdin;
 50	vt	transitive verb
 51	ctr	counter
 52	vn	irregular nu verb
-53	v4r	Yodan verb with `ru' ending (archaic)
 56	adj-f	noun or verb acting prenominally
 58	vr	irregular ru verb, plain form ends with -ri
 59	v2a-s	Nidan verb with 'u' ending (archaic)
-60	v4h	Yodan verb with `hu/fu' ending (archaic)
 61	pn	pronoun
 62	vs-c	su verb - precursor to the modern suru
-63	adj-kari	`kari' adjective (archaic)
-64	adj-ku	`ku' adjective (archaic)
-65	adj-shiku	`shiku' adjective (archaic)
 66	adj-nari	archaic/formal form of na-adjective
 67	n-pr	proper noun
 68	v-unspec	verb unspecified
-69	v4k	Yodan verb with `ku' ending (archaic)
-70	v4g	Yodan verb with `gu' ending (archaic)
-71	v4s	Yodan verb with `su' ending (archaic)
-72	v4t	Yodan verb with `tsu' ending (archaic)
-73	v4n	Yodan verb with `nu' ending (archaic)
-74	v4b	Yodan verb with `bu' ending (archaic)
-75	v4m	Yodan verb with `mu' ending (archaic)
-76	v2k-k	Nidan verb (upper class) with `ku' ending (archaic)
-77	v2g-k	Nidan verb (upper class) with `gu' ending (archaic)
-78	v2t-k	Nidan verb (upper class) with `tsu' ending (archaic)
-79	v2d-k	Nidan verb (upper class) with `dzu' ending (archaic)
-80	v2h-k	Nidan verb (upper class) with `hu/fu' ending (archaic)
-81	v2b-k	Nidan verb (upper class) with `bu' ending (archaic)
-82	v2m-k	Nidan verb (upper class) with `mu' ending (archaic)
-83	v2y-k	Nidan verb (upper class) with `yu' ending (archaic)
-84	v2r-k	Nidan verb (upper class) with `ru' ending (archaic)
-85	v2k-s	Nidan verb (lower class) with `ku' ending (archaic)
-86	v2g-s	Nidan verb (lower class) with `gu' ending (archaic)
-87	v2s-s	Nidan verb (lower class) with `su' ending (archaic)
-88	v2z-s	Nidan verb (lower class) with `zu' ending (archaic)
-89	v2t-s	Nidan verb (lower class) with `tsu' ending (archaic)
-90	v2d-s	Nidan verb (lower class) with `dzu' ending (archaic)
-91	v2n-s	Nidan verb (lower class) with `nu' ending (archaic)
-92	v2h-s	Nidan verb (lower class) with `hu/fu' ending (archaic)
-93	v2b-s	Nidan verb (lower class) with `bu' ending (archaic)
-94	v2m-s	Nidan verb (lower class) with `mu' ending (archaic)
-95	v2y-s	Nidan verb (lower class) with `yu' ending (archaic)
-96	v2r-s	Nidan verb (lower class) with `ru' ending (archaic)
-97	v2w-s	Nidan verb (lower class) with `u' ending and `we' conjugation (archaic)
 98	unc	unclassified
 15	cop	copula
 13	exp	expressions (phrases, clauses, etc.)
 48	vs-i	suru verb - included
+65	adj-shiku	`shiku' adjective (archaic)
+63	adj-kari	`kari' adjective (archaic)
+64	adj-ku	`ku' adjective (archaic)
+69	v4k	Yodan verb with `ku' ending (archaic)
+76	v2k-k	Nidan verb (upper class) with `ku' ending (archaic)
+85	v2k-s	Nidan verb (lower class) with `ku' ending (archaic)
+70	v4g	Yodan verb with `gu' ending (archaic)
+77	v2g-k	Nidan verb (upper class) with `gu' ending (archaic)
+86	v2g-s	Nidan verb (lower class) with `gu' ending (archaic)
+71	v4s	Yodan verb with `su' ending (archaic)
+87	v2s-s	Nidan verb (lower class) with `su' ending (archaic)
+72	v4t	Yodan verb with `tsu' ending (archaic)
+78	v2t-k	Nidan verb (upper class) with `tsu' ending (archaic)
+89	v2t-s	Nidan verb (lower class) with `tsu' ending (archaic)
+73	v4n	Yodan verb with `nu' ending (archaic)
+91	v2n-s	Nidan verb (lower class) with `nu' ending (archaic)
+74	v4b	Yodan verb with `bu' ending (archaic)
+81	v2b-k	Nidan verb (upper class) with `bu' ending (archaic)
+93	v2b-s	Nidan verb (lower class) with `bu' ending (archaic)
+75	v4m	Yodan verb with `mu' ending (archaic)
+82	v2m-k	Nidan verb (upper class) with `mu' ending (archaic)
+94	v2m-s	Nidan verb (lower class) with `mu' ending (archaic)
+79	v2d-k	Nidan verb (upper class) with `dzu' ending (archaic)
+90	v2d-s	Nidan verb (lower class) with `dzu' ending (archaic)
+60	v4h	Yodan verb with `hu/fu' ending (archaic)
+80	v2h-k	Nidan verb (upper class) with `hu/fu' ending (archaic)
+92	v2h-s	Nidan verb (lower class) with `hu/fu' ending (archaic)
+83	v2y-k	Nidan verb (upper class) with `yu' ending (archaic)
+95	v2y-s	Nidan verb (lower class) with `yu' ending (archaic)
+53	v4r	Yodan verb with `ru' ending (archaic)
+84	v2r-k	Nidan verb (upper class) with `ru' ending (archaic)
+96	v2r-s	Nidan verb (lower class) with `ru' ending (archaic)
+88	v2z-s	Nidan verb (lower class) with `zu' ending (archaic)
+97	v2w-s	Nidan verb (lower class) with `u' ending and `we' conjugation (archaic)
 \.
 
 
@@ -5444,7 +5479,6 @@ COPY public.kwrinf (id, kw, descr) FROM stdin;
 2	ok	out-dated or obsolete kana usage
 3	ik	word containing irregular kana usage
 4	uK	word usually written using kanji alone
-21	oik	old or irregular kana form
 103	name	reading used only in names (nanori)
 104	rad	reading used as name of radical
 105	jouyou	approved reading for jouyou kanji
@@ -6596,6 +6630,15 @@ COPY public.stagr (entr, sens, rdng) FROM stdin;
 53	5	1
 58	4	1
 58	5	1
+\.
+
+
+--
+-- Data for Name: testsrc; Type: TABLE DATA; Schema: public; Owner: stuart
+--
+
+COPY public.testsrc (filename, method, hash) FROM stdin;
+/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	2cfcff396a96ab01343688c27afd50d1162a7603
 \.
 
 

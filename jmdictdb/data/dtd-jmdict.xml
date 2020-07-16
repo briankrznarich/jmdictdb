@@ -251,13 +251,11 @@ various information fields.
 <!ENTITY chem "chemistry term">
 <!ENTITY chn "children's language">
 <!ENTITY col "colloquialism">
-<!ENTITY comp "computer terminology">
+<!ENTITY comp "computer term">
 <!ENTITY conj "conjunction">
 <!ENTITY cop "copula">
 <!ENTITY ctr "counter">
 <!ENTITY derog "derogatory">
-<!ENTITY eK "exclusively kanji">
-<!ENTITY ek "exclusively kana">
 <!ENTITY exp "expressions (phrases, clauses, etc.)">
 <!ENTITY fam "familiar language">
 <!ENTITY fem "female term or language">
@@ -271,11 +269,9 @@ various information fields.
 <!ENTITY ik "word containing irregular kana usage">
 <!ENTITY int "interjection (kandoushi)">
 <!ENTITY io "irregular okurigana usage">
-<!ENTITY iv "irregular verb">
-<!ENTITY ling "linguistics terminology">
+<!ENTITY ling "linguistics term">
 <!ENTITY m-sl "manga slang">
 <!ENTITY male "male term or language">
-<!ENTITY male-sl "male slang">
 <!ENTITY math "mathematics">
 <!ENTITY mil "military">
 <!ENTITY n "noun (common) (futsuumeishi)">
@@ -288,7 +284,6 @@ various information fields.
 <!ENTITY obs "obsolete term">
 <!ENTITY obsc "obscure term">
 <!ENTITY ok "out-dated or obsolete kana usage">
-<!ENTITY oik "old or irregular kana form">
 <!ENTITY on-mim "onomatopoeic or mimetic word">
 <!ENTITY pn "pronoun">
 <!ENTITY poet "poetical term">
@@ -296,7 +291,7 @@ various information fields.
 <!ENTITY pref "prefix">
 <!ENTITY proverb "proverb">
 <!ENTITY prt "particle">
-<!ENTITY physics "physics terminology">
+<!ENTITY physics "physics term">
 <!ENTITY quote "quotation">
 <!ENTITY rare "rare">
 <!ENTITY sens "sensitive">
