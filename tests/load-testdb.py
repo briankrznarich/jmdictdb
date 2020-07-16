@@ -2,7 +2,7 @@
 # Tool to manually load a test database.
 
 import sys, os, re, unittest, signal, pdb
-_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+_=sys.path; _[0:0]=_[0]+('/' if _[0] else '')+'..'
 from jmdictdb import jdb
 from jmdb import DBmanager
 
