@@ -79,7 +79,7 @@ Postgresql [10.3] -- Database server
 Apache [2.4] -- Web server
 make [4.1] -- Gnu make is required if you want to use the provided
   Makefile's to automate parts of the installation.
-wget -- Used by Makefile.db to download the dictionary XML files.
+wget -- Used by Makefile-db to download the dictionary XML files.
   If not available, you can download the needed files manually.</pre>
 </div>
 </div>
@@ -178,7 +178,7 @@ the operation of the installed version.</p>
 </div>
 <div class="paragraph">
 <p>A makefile is provided that automates loading the database
-(Makefile.db) and installing the JMdictDB software (Makefile).
+(Makefile-db) and installing the JMdictDB software (Makefile).
 It is presumed that there is a functioning Postgresql server
 instance, and that you have access to the database server&#8217;s
 "postgres" account or some account with enough privileges to
@@ -231,7 +231,7 @@ Clone button.)</p>
 <p>JMdictDB accesses the Postgresql database using two dedicated
 Postgresql database user accounts, by default named 'jmdictdb'
 (for read-write access) and 'jmdictdbv' (for read-only access)
-although they can be changed in Makefile.db.</p>
+although they can be changed in Makefile-db.</p>
 </div>
 <div class="paragraph">
 <p>Create a .pgpass file which will allow access to the
@@ -242,7 +242,7 @@ time a database command is run:</p>
 <p>Choose passwords for the 'jmdictdb' and 'jmdictdbv' database
 user accounts and determine the password (if one in needed)
 for the 'postgres' user (or whatever the account specified
-by PG_SUPER in Makefile.db is.)  This user is used when
+by PG_SUPER in Makefile-db is.)  This user is used when
 creating the 'jmdictdb' and 'jmdictdbv' users.</p>
 </div>
 <div class="paragraph">
@@ -281,7 +281,7 @@ the file.
 <h4 id="_2_2_create_the_jmdictdb_postgresql_users">2.2. Create the JMdictDB Postgresql users</h4>
 <div class="literalblock">
 <div class="content">
-<pre>$ make -f Makefile.db init</pre>
+<pre>$ make -f Makefile-db init</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -304,7 +304,7 @@ password this time.)</p>
 <div class="title">Important</div>
 </td>
 <td class="content">
-You need (and should) only do the 'make -fMakefile.db init'
+You need (and should) only do the 'make -fMakefile-db init'
 step once when installing JMdictDB on a machine for the first time,
 even if you install the JMdictDB software multiple times.
 </td>
@@ -328,7 +328,7 @@ provided to move a newly loaded database to "jmdict".</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>$ make -f Makefile.db jmnew</pre>
+<pre>$ make -f Makefile-db jmnew</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -341,7 +341,7 @@ file to the data/ directory, parse it and load the data into the
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>$ make -f Makefile.db loadXX</pre>
+<pre>$ make -f Makefile-db loadXX</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -349,7 +349,7 @@ file to the data/ directory, parse it and load the data into the
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>$ make -f Makefile.db postload</pre>
+<pre>$ make -f Makefile-db postload</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -377,7 +377,7 @@ databases <strong>other</strong> than the one being loaded (which is usually
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>$ make -f Makefile.db activate</pre>
+<pre>$ make -f Makefile-db activate</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -774,7 +774,7 @@ these are for Postgresql version 10.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-06-28 18:02:24 MDT
+Last updated 2020-07-15 22:53:36 MDT
 </div>
 </div>
 </body>
