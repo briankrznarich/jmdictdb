@@ -6,7 +6,7 @@ import sys, cgi
 try: import pkgpath.py  # Make jmdictdb package available on sys.path.
 except ImportError: pass
 from jmdictdb import logger; from jmdictdb.logger import L
-from jumdictdb import jdb, jmcgi
+from jmdictdb import jdb, jmcgi
 
 def main (args, opts):
         logger.enable()
