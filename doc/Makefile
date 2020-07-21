@@ -12,6 +12,7 @@ DOC_FILES = README.txt \
         schema.html \
         schema.pdf \
         schema.png \
+        tags.html \
         2020-06-changes.html \
         2020-06-update.html
 
@@ -22,10 +23,11 @@ all: basic schema updates
 %.html : src/%.asc
 	asciidoctor -a linkcss -D . $?
 
-basic: index.html dev.html install.html
+basic: index.html dev.html install.html tags.html
 index.html: src/index.asc
 install.html: src/install.asc
 dev.html: src/dev.asc
+tags.html: src/tags.asc
 
 schema: schema.png schema.pdf schema.html
 schema.png: src/schema.dia
