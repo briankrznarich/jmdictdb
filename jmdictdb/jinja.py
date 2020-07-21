@@ -126,9 +126,11 @@ def add_filters (env):
         def today (arg):
             return datetime.date.today().isoformat()
         @                                                      add_filter (env)
-          # Return a datetime as string truncated to minute resolution.
-        def min (dt):
-            return None if dt is None else str(dt)[:16] 
+          # Return a datetime as string truncated to minute or
+          # second resolution.
+        def min (dt, secs=False):
+            cut = 19 if secs else 16
+            return None if dt is None else str(dt)[:cut] 
         #@                                                      add_filter (env)
         #WARNING: following for development only!!
         #def py (s, expression):

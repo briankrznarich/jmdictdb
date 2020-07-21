@@ -341,7 +341,7 @@
               <td>{{h.hist|d}}.</td>  {#- h.hist may not exist on a new entry. #}
               <td class="hhdr" colspan="2">
                 {{h.stat|TALabbrtxt('STAT')|safe}}{{'*' if h.unap else ''}} {# -#}
-                {{h.dt}}&nbsp;  {# -#}
+                {{h.dt|min(secs=true)}}&nbsp;  {# -#}
                 <span class="submitter_name">{{h.name}}</span>  {# -#}
                 {{email|d}}
                 </td>
