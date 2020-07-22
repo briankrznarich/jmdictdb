@@ -1635,7 +1635,7 @@ class Kwds:
         if dirname[-1] != '/' and dirname[-1] != '\\' and len(dirname) > 1:
             dirname += '/'
         failed = []
-        dialect = {'delimiter':'\t', 'doublequote':True}
+        dialect = {'delimiter':'\t', 'quoting':csv.QUOTE_NONE}
         for attr,table in list(tables.items()):
             fname = dirname + table + ".csv"
             try: f = open (fname)

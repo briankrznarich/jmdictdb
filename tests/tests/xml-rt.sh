@@ -7,13 +7,13 @@
 # 
 # Usage:
 #   $ cd tests/
-#   $ tests/xml-rt.sh [-d dbname][-c][-h] <filename.xml>
+#   $ tests/xml-rt.sh [-d dbname][-p][-h] <filename.xml>
 #
 # <filename.xml> is the path to a jmdict or jmnedict xml file.
 # The -d option can be used to specify a database other than
 # the default of "jmnew" to use for loading the parsed xml file.
-# This is useful when running multiple invocations of this script
-# simultaneously.
+# This is useful when running multiple simultaneous invocations
+# of this script.
 # The -p (preserve) option will suppress the removal of old temporary
 # files that is normally done when starting and should be used when
 # running multiple invocations to prevent each from deleting the
@@ -47,9 +47,9 @@ SRCID=1
 preserve=no
 
 usage() { echo "\
-Usage: $script [-d dbname][-c] filename.xml
-  dbname -- Name of scratch database to use.  Will be dropped
-      and overwritten.
+Usage: $script [-d dbname][-p] filename.xml
+  dbname -- Name of scratch database to use.  Any existing database
+      with this name will be dropped and its data lost.
   -p -- Preserve temp files from previous runs instead of deleting
       them when starting.  Use this when doing simultaneous runs of
       this script in mutiple processes to prevent processes from

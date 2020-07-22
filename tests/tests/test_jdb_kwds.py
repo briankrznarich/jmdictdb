@@ -64,16 +64,12 @@ class Loadcsv (unittest.TestCase):
         validate_rec (_, _.o, 'GINF', 3, 'fig',  'figuratively')
         validate_rec (_, _.o, 'GINF', 4, 'expl', 'explanatory')
           # Check handling of double-quotes in descr fields.
-          # The 'descr' fields in .csv file may, but usually need not, be
-          #   enclosed in double-quotes.  If a double-quote character is
-          #   needed as part of the descr text however, the entire field
-          #   must be enclosed in double-quotes and any embedded double-
-          #   quote characters must be doubled.  This requirement is imposed
-          #   by the CSV configuration used by Postgresql when it loads the
-          #   .csv files.
+          # The quotes in text fields of a .csv file are not treated
+          # differently than any other character after a commit circa
+          # 2020-07-21.  Previously they would be stripped. 
         validate_rec (_, _.o, 'CINF', 1, 'kw1',  'unquoted descr')
-        validate_rec (_, _.o, 'CINF', 2, 'kw2',  'quoted descr')
-        validate_rec (_, _.o, 'CINF', 3, 'kw3',  '"embedded quotes" unquoted part')
+        validate_rec (_, _.o, 'CINF', 2, 'kw2',  '"quoted descr"')
+        validate_rec (_, _.o, 'CINF', 3, 'kw3',  '"""embedded quotes"" unquoted part"')
 
     def test002 (_):
         _.assertEqual (_.o.attrs(), ['CINF', 'GINF', 'KINF'])
