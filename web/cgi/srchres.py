@@ -1,28 +1,13 @@
 #!/usr/bin/env python3
-#######################################################################
-#  This file is part of JMdictDB.
-#  Copyright (c) 2006-2012 Stuart McGraw
-#
-#  JMdictDB is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published
-#  by the Free Software Foundation; either version 2 of the License,
-#  or (at your option) any later version.
-#
-#  JMdictDB is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with JMdictDB; if not, write to the Free Software Foundation,
-#  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-#######################################################################
+# Copyright (c) 2006-2012 Stuart McGraw
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 import sys, cgi, copy, time
-sys.path.extend (['../lib','../../python/lib','../python/lib'])
-import logger; from logger import L
-import jdb, jmcgi, serialize, db   # db is imported only for
-                                   #  access to dbapi exceptions.
+try: import pkgpath.py  # Make jmdictdb package available on sys.path.
+except ImportError: pass
+from jmdictdb import logger; from jmdictdb.logger import L
+from jmdictdb import jdb, jmcgi, serialize, db  # db is imported only for
+                                                #  access to dbapi exceptions.
 def main( args, opts ):
         logger.enable()
         jdb.reset_encoding (sys.stdout, 'utf-8')
@@ -58,10 +43,6 @@ def main( args, opts ):
             so.grp   = grpsparse (fv('grp'))
             so.src   = fl('src');   so.stat  = fl('stat');  so.unap = fl('appr')
             so.nfval = fv('nfval'); so.nfcmp = fv('nfcmp')
-              # Search using gA freq criterion no longer supported.  See 
-              # the comments in jmcgi._freqcond() but code left here for
-              # reference.
-            so.gaval = fv('gaval'); so.gacmp = fv('gacmp')
               # Sense notes criteria.
             so.snote = (fv('snote') or ''), fvi('snotem')
               # Next 5 items are History criteria...

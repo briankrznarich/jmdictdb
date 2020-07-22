@@ -1,0 +1,132 @@
+========
+PROGRAMS
+========
+
+The ./bin/ directory contains a number of independent
+programs:
+
+The following tools find and display entries in the database.
+
+  shentr.py	Command line tool for searching for and
+                 displaying jmdict database entries.  It
+                 is well documented making it useful for
+                 understanding the use of the API in a real
+                 (if tiny) application.  This program is kept
+                 up-to-date.
+
+The following tools read an XML or text file and write a
+file that can be loaded into a Postgresql database.
+
+  exparse.py	Read examples.txt file and create loadable
+                 Postgresql dump file.
+  jmparse.py	Read JMdict or JMnedict XML file and create
+                 loadable Postgresql dump file.
+  kdparse.py	Read kanjidic2 XML file and create loadable
+                 Postgresql dump file.
+  sndparse.py	Read JMaudio XML file and create loadable
+                 Postgresql dump file.
+
+  xresolv.py	Resolve textual xrefs loaded into database
+                 from JMdict files, to real xrefs.
+
+The following tools will read information from the database and write
+an XML file that can be loaded by the tools above.
+
+  entrs2xml.py	Read entries from database and write to
+                 XML file.
+
+=========
+OPERATION
+=========
+
+Web access to the JMdictDB system can be suspended temporarily
+by creating a control file in the installed CGI directory named
+"status_maint" or "status_load".  If either file exists, any
+web access to a CGI script will result in a redirect to
+"status_maint.html" or "status_load.html" which present the
+user with a message that the system is unavailable due to
+maintenance or excessive load, respectively.
+
+The directory in which the CGI scripts look for the control
+files can be set in the config.ini file.  The location of the
+html files is not customizable although you can of course
+modify their contents.
+
+It is up to you to create and and remove the control files as
+appropriate.
+
+Log Files:
+----------
+The CGI scripts log events to a log file whose name and location
+are given in the config.ini file (see python/lib/config.ini/sample
+for details.)  If no logfile is given in the config.ini file the
+default is "jmdictdb.log" in the current directory when the script
+is executed by the web server.  For Apache-2.4 this will often be
+in the CGI directory itself.  If no logfile level is given, the
+defaulr is "debug".
+
+The logfile must by manually created, the CGI scripts won't create
+it if it doesn't exist.  It must also have permissions that allow
+writing by the web server process owner.
+
+If the log file is not writable when a CGI script starts, the
+script will write a message to that effect to stderr and disable
+further logging during that scrupt's execution.  The initial
+message on most web servers will be written to the web server's
+log file and may help identify where the JMdictDB log file is.
+
+The format of JMdictDB log file messages start with a timestamp
+using the format: "YYMMDD-hhmmss".  The processes number is also
+provided in square brackets: "[pid]".  When a non-fatal error
+occurs it is logged in the log file and an error page is presented
+to the user that will have an error id number of the form:
+"YYMMDD-hhmmss-pid".  This allows its correlation to the log file
+message which may have moe information such as a Python traceback.
+
+The log file is not truncated or rotated periodically; you must
+arrange for that.
+
+Updates:
+--------
+Updates occur periodically to the code and to the database.
+
+Program code updates including website scripts are generally done by:
+
+  $ cd [...]   # The JMdictDB software directory.
+  $ git pull
+  $ make install
+
+Database updates are generally done by:
+
+  $ cd [...]   # The JMdictDB software directory.
+  $ psql -d jmdict -U jmdictdb -f db/updates/nnn-xxxxxx.sql
+
+IMPORTANT: read the ipdate file contents before applying the above
+commands.  There are sometimes exceptions to the sequence shown that
+will be documented in the update file itself.
+
+See the file ./db/updates/README.txt for more details.
+
+User management:
+----------------
+A User Settings page is available to logged in users by clicking
+the userid (a link) next to the logout button.  Pages for adding
+new users and listing current users are also available from this
+page.
+
+There are three levels of user privilege:
+  Admin -- Full access including managing users.
+  Editor -- Can approve/reject/delete entries but cannot manage
+    other users.
+  User -- This category is not currently in use but is intended 
+    for regular users who can submit edits and new entries for
+    Editor approval.  It has the same abilities as current 
+    "anonymous" users but isn't anonymous. :-)
+
+Users can be temporarily disabled on the User Settings page.
+
+IMPORTANT: The first time the jmsess database is created by
+running 'make init', a single user named "admin" with password
+"admin" is created.  You must at a minimum change this user's
+password before making JMdictDB accessible in other than a local
+trusted envirionment.

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.5">
+<title>Summary of significant changes to JMdictDB since revision 190401-69c9857.</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+</head>
+<body class="article">
+<div id="header">
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_summary_of_significant_changes_to_jmdictdb_since_revision_190401_69c9857">Summary of significant changes to JMdictDB since revision 190401-69c9857.</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_code_reorganization">Code reorganization</h3>
+<div class="paragraph">
+<p>The directory structure was reorganized in order to make the library code
+formerly in python/lib into an installable Python package (in jmdictdb/).
+The changes are summarized in this table:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>python/*.py           moved to    bin/
+python/tests/         renamed to  tests/
+python/lib/           renamed to  jmdictdb/
+pg/                   renamed to  db/
+patches/*             moved to    db/updates/
+pg/data/*.csv         moved to    jmdictdb/data/
+python/lib/dtd-*.xml  moved to    jmdictdb/data/</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This change supports the installation changes noted in the next item.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_installation_and_makefiles_reworked">Installation and Makefiles reworked</h3>
+<div class="paragraph">
+<p>The makefile targets for database loading were extracted unchanged to
+Makefile-db and Makefile now contains only targets for installing the
+JMdictDB software.</p>
+</div>
+<div class="paragraph">
+<p>There are three install modes supported:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>No install: web services and command line programs are provided
+directly from a development directory checked out from Git.
+Makefile is not relevant to this install mode.</p>
+</li>
+<li>
+<p>User install: A 'make install-user' will install the web and cgi
+files to ~/.public_html/ by default, the command line programs and
+the supporting jmdictdb library files to ~/.local/.</p>
+</li>
+<li>
+<p>System-wide install: A 'make install-sys' will install the web
+and cgi files to /var/www/jmdictdb/ by default (my be overridden
+with the WEBROOT makefile variable), the command line programs to
+/usr/local/bin and the jmdictdb library package to Python&#8217;s system-
+wide library location.  This must be done as a root user due to
+the permissions on the installed-to directories.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Each of the above installations is independent and their contents can
+be changed without affecting the others.</p>
+</div>
+<div class="paragraph">
+<p>There are now uninstall targets corresponding to the install ones,
+e.g.: "uninstall-sys", "uninstall-user", etc.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_bulkupd_py">bulkupd.py</h3>
+<div class="paragraph">
+<p>The bulkupd.py command received the following enhancements:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Added --delay option: pause between update operations to lighten
+load on server.</p>
+</li>
+<li>
+<p>Added --loglevel option: controls detail of logging messages.</p>
+</li>
+<li>
+<p>Added abilty to apply a single set of directives to multiple entries.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Full details are available in 'bulkupd.py --help'</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>190625-a9bb464 | bulkup.py: Use logger module for messages, add --loglevel option
+190623-a70a49a | bulkupd.py: add ability to perform same edit to multiple entries
+190618-5a885e7 | bulkupd.py: add --delay option, change log level to INFO</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configuration_and_logging">Configuration and logging</h3>
+<div class="paragraph">
+<p>A set of default configuration settings are now provided and documented
+in web/lib/config-sample.ini, thus the only settings that need to be
+provided in the site config.ini file are those that differ from the
+default values.  Commonly this is sufficient for the entire file:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>[web]
+  CONTACT_EMAIL = me@mysite.com</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The configuration file (config.ini) can now be split into two
+files: config.ini and config-pvt.ini.  Although any config settings
+can go into either file, the intent is to allow general settings to
+go into world-readable config.ini and private settings such as database
+passwords to go into config-pvt.ini which can be given more restrictive
+permissions.</p>
+</div>
+<div class="paragraph">
+<p>The default logfile location has been changed.  It was formerly
+./jmdictdb.log relative to the cgi directory (that is, located in
+the cgi directory); it is now ../lib/jmdictb.log (located in the
+sibling lib/ directory).  This is a default value and can be
+overridden by specifying it explicitly in config.ini.</p>
+</div>
+<div class="paragraph">
+<p>There have been some new settings added and some removed.
+web/lib/config-sample.ini should be consulted for the currently
+active settings and their default values.</p>
+</div>
+<div class="paragraph">
+<p>The logging and log filtering settings have been expanded as well
+as the number of log messages produced in the JMdictDB code.
+web/lib/config-sample.ini has full details.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>190402-69c9857 | Add new config.py module that includes default settings
+190420-d420429 | Split config.ini into a public file and a private file
+190624-572fbe6 | logger.py: redefine CRITICAL-&gt;FATAL, remove preexisting handlers</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_database_api_version_compatibility_checks">Database/API version compatibility checks</h3>
+<div class="paragraph">
+<p>When a database connection is opened by the JMdictDDB library
+code (specifically jdb.dbOpen()), the database version (stored
+in the table 'db') is read and checked for compatibility with
+the current version of the API and an error raised when the two
+are incompatible.</p>
+</div>
+<div class="paragraph">
+<p>This is intended to prevent often obsure problems that can occur
+when the API accesses a version of the database it does not fully
+understand.</p>
+</div>
+<div class="paragraph">
+<p>See also the "Tools" section of this document for a script that
+checks API/DB version compatibility.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>190514-0f51e18 | Activate database version check in api</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_entr2xml_py">entr2xml.py</h3>
+<div class="paragraph">
+<p>The command line arguments and options of entr2xml.py have changed.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The output file now specified with -o option rather than a command
+line argument.  If no -o option given, output is to stdout.</p>
+</li>
+<li>
+<p>The --compat=jmdict (or =jmnedict) option is usually no longer needed,
+the "compat" value is automatically determined based on the corpus
+being read.  If the entries are jmdict type, --compat=jmdict is used.
+If jmnedict type, --compat=jmnedict used, etc.  --compat is now only
+needed to override the default or to specify a compatibility value
+not available as a default.</p>
+</li>
+<li>
+<p>Formerly entrs2xml.py would accept multiple --corpus (aka -s) options
+and include entries from those corpora in the xml output.  It now
+accepts only one.</p>
+</li>
+<li>
+<p>entrs2xml.py now prints a progress bar by default.  To disable it
+when running from a script use --progress=none.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>To update scripts that run entrs2xml.py one might change:
+  entrs2xml.py -sjmdict --compat=jmdict jmdict.xml
+to:
+  entrs2xml.py --progress=none -sjmdict -o jmdict.xml</p>
+</div>
+<div class="paragraph">
+<p>Full details are available in 'entrs2xml.py --help'.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>200119-0c649f6 | entrs2xml.py: Remove multiple corpus capability
+200120-2d0d242 | entrs2xml.py: major code reorganization
+200120-0399f76 | entrs2xml.py: add progress bar
+200121-ea86012 | entrs2xml.py: require -o for output file
+200122-dcbfae7 | entrs2xml.py: --compat option no longer required (usually)</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_freq_tags">Freq tags</h3>
+<div class="paragraph">
+<p>The original JMdictDB database design treated frequency tags as
+applying to kanji-reading pairs rather than to individual kanji
+and readings.  However there was no means of accessing this pairing
+info: in entry displays, XML, etc, the frequency tag was listed
+with the reading or kanji element it applied to; there was no way
+to distinguish between an nf03 tag applied to the pair 一度・いちど
+and two separate nf03 tags applied individually to 一度 and いちど.</p>
+</div>
+<div class="paragraph">
+<p>There was significant complexity involved in maintaining pairing
+info that was never accessible.  Nor was the pairing information
+reliable&#8201;&#8212;&#8201;pairings were assigned hueristically.  Consequently
+the pairing info was dropped and the current implementation treats
+all frequency tags as un-paired.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>190429-ecd5374 Treat rdng and kanj "freq" tags as independent (db-835781)</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_new_submit_module">New submit module</h3>
+<div class="paragraph">
+<p>The submission code that was formerly in the submit.py CGI script
+was extracted into a separate module making it usable from other
+places.  In particular it can now be used by test functions to test
+submit behavior.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>190501-6419738 | submit: Extract code from cgi/edsubmit.py into lib/submit.py</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_restriction_tags_restr_stagr_stagk">Restriction tags (restr, stagr, stagk)</h3>
+<div class="paragraph">
+<p>Internal handling of restr, stagr and stagk restrictions was
+significantly simplified.</p>
+</div>
+<div class="paragraph">
+<p>Formerly restrictions were represented in Python code internally
+as objects linked from both of the items they applied to.  For
+example a kanji-reading restriction was represented as an object
+that appeared in restriction lists of both the reading object and
+the kanji object.  This was awkward since given a reading object
+one could find the corresponding restricted kanji object only
+by scanning the restriction lists of all the kanji in the entry,
+looking for an item that pointed to the same restriction object
+that was in the reading&#8217;s restriction list.</p>
+</div>
+<div class="paragraph">
+<p>In the current implementation, that restriction object appears
+only in the restriction list on the reading element and contains
+a pointer (in the form of an index number) directly to the
+associated kanji object.  Kanji objects no longer have a restriction
+list.</p>
+</div>
+<div class="paragraph">
+<p>The same change applies similarly to stagr and stagk restrictions.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>190608-620303c | Restrictions revamp</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tests">Tests</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Static test database</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Previously tests attempted to use data from the active jmdict database
+as reference data but that turned out to be infeasible due to frequent
+changes to entries.
+We now maintain a dedicated, version controlled, test database (with
+capability for multiple ones) to run tests against.  A new test support
+module will automatically reload the database after it has been changed.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>190508-02d9fdb | Static database for running tests against
+190509-b029770 | Static tests db: test_jelparse converted to use
+190511-23b8fa9 | Static tests db: use setUpModule() to get database, other fixtures</pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Removal of keyword check test</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Formerly one of the tests (test_jdb_kwds.py) contained a list of
+all the keywords (aka tags) in the csv files and checked that the
+csv files and/or database tables were consistent with its internal
+list.  This required updating the test whenever tags were added or
+changed.  This test has been removed so there is no more need to
+update it for tag changes.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>200601-0abdd80 | test_jdb_kwds.py: remove kw tests, add quote tests</pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>xml-rt.sh</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Round-trip test of xml parsing and formatting: parses a
+jmdict xml file, loads it into a database, exports the database
+as an xml file and compares to the original xml file.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tools">Tools</h3>
+<div class="paragraph">
+<p>The following new tool scripts were added:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>tools/dbversion.py&#8201;&#8212;&#8201;Check compatibility between the API and a
+specified database. It will print the version numbers of the API and the
+database given as an argument, and whether or not they are compatible.</p>
+</li>
+<li>
+<p>tools/dbg-parser.py&#8201;&#8212;&#8201;Tool to examine or debug the JEL lexer or parser
+by running them standalone on JEL text given on the command line.</p>
+</li>
+<li>
+<p>tools/hggit.py&#8201;&#8212;&#8201;Converts between old Mercurial (hg) commit id numbers
+and current Git commit is numbers.  Useful for finding commits identified
+by their hg numbers mentioned in historical documentation (emails, other
+commits, etc) in the current Git repository.</p>
+<div class="literalblock">
+<div class="content">
+<pre>200217-b1515f2 | dbversion.py: check compatibility between jmdictdb libs and database
+200127-7f2674e | hggit.py: add --long option, better --dir default
+200112-655af12 | dbg_parser.py: tool for viewing behavior of JEL lexer/parser
+190514-286faed | Add hggit.py: converts between hg and git revision commit numbers</pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2020-07-15 22:52:55 MDT
+</div>
+</div>
+</body>
+</html>

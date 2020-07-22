@@ -1,8 +1,0 @@
-﻿缶[ateji,ichi1,news1,nf06]；罐[ateji,oK]；鑵[ateji,oK]
-かん[ichi1,news1,nf06]；カン[nokanji]
-[1][n]
-  [lsrc=dut:kan,lsrc=eng:can]
-  can; tin
-[2][n][abbr]
-  canned food
-  [see=1214560・缶詰[1]]

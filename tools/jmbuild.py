@@ -1,22 +1,6 @@
 #!/usr/bin/env python3
-#######################################################################
-#  This file is part of JMdictDB.
-#  Copyright (c) 2008-2012 Stuart McGraw
-#
-#  JMdictDB is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published
-#  by the Free Software Foundation; either version 2 of the License,
-#  or (at your option) any later version.
-#
-#  JMdictDB is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with JMdictDB; if not, write to the Free Software Foundation,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
-#######################################################################
+# Copyright (c) 2008-2012 Stuart McGraw
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # WARNING --  this file has only been partially converted to Python3.
 
@@ -27,10 +11,8 @@
 # See also: jmextract.py -- Pulls subset of elements out of
 #   a jmdict or jmnedict file.
 
-import sys, os, inspect, pdb
-_ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
-_ = os.path.join (os.path.dirname(_), 'python', 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
+import sys, pdb
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
 
 def main (args, opts):
         if sys.stdout.encoding != opts.encoding:
@@ -75,7 +57,7 @@ def get_dtd (dtdfname, origroot, newroot, newenc):
         return dtd
 
 from optparse import OptionParser, OptionGroup
-from pylib.optparse_formatters import IndentedHelpFormatterWithNL
+from jmdictdb.pylib.optparse_formatters import IndentedHelpFormatterWithNL
 
 def parse_cmdline ():
         u = \

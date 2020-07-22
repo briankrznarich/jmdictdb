@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.5">
+<title>Procedure to add or modify JMdictDB tags</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
+</head>
+<body class="article">
+<div id="header">
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_procedure_to_add_or_modify_jmdictdb_tags">Procedure to add or modify JMdictDB tags</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This document describes the procedure for implementing a "glocal"
+change to the JMdictDB tags&#8201;&#8212;&#8201;that is, a change that will be
+incorporated in the JMdictDB distribution and distributed to
+all users of the JMdictDB software (both of them.)  This is in
+contrast to a local tag change that can be made in the database
+tables at a particular site.</p>
+</div>
+<div class="paragraph">
+<p>There are three places that need changes:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>the kw*.csv file(s) that define the tags values (section <a href="#sec3">3. Edit the appropriate csv file(s)</a>),</p>
+</li>
+<li>
+<p>the DTD template files (section <a href="#sec4">4. Update the DTD template files</a>)</p>
+</li>
+<li>
+<p>a SQL database update script to propagate the changes to any
+existent databases (section <a href="#sec5">5. Write a database update file to update existent databases</a>).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>We assume you&#8217;ve set up a development environment per
+<a href="dev.html">Development Environment</a>.</p>
+</div>
+<div class="sect2">
+<h3 id="_1_create_a_git_branch_for_the_tag_changes_work">1. Create a git branch for the tag changes work</h3>
+<div class="literalblock">
+<div class="content">
+<pre>$ cd &lt;your development directory&gt;
+$ git status</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Git should say "working directory clean" or list only "untracked
+files".</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ git checkout master
+$ git checkout -b newtags</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can replace "newtags" with any branch name you want.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_run_the_tests">2. Run the tests.</h3>
+<div class="literalblock">
+<div class="content">
+<pre>$ cd tests
+$ ./runtests.py</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If there are errors they should be fixed before continuing.
+This will prevent confusing preexisting errors with errors
+resulting from your tag changes.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sec3">3. Edit the appropriate csv file(s)</h3>
+<div class="paragraph">
+<p>The kw*.csv files in jmdictdb/data/ are the canonical source
+of static tag information in JMdictDB.</p>
+</div>
+<div class="paragraph">
+<p>If you are adding a new tag, add a line defining the new tag to
+the appropriate .csv file in jmdictdb/data/.  Each line consists
+of three tab-separated fields:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>id -- The next sequential number [*]
+kw -- A short abbreviation for the tag.
+descr -- A longer (but one line) description of the tag.  If the
+  text contains any double-quote characters (") the entire descr
+  text should be enclosed in double-quotes and each embedded
+  double-quote should be doubled (ie, each " changed to "").
+TODO -- examine conflicts with same kw value in other domains.</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>[*] In some of the csv files there are there are groupings of id numbers.
+In kwmisc.csv for example id numbers above 180 are used for JMnedict
+tags.  In such cases use the next sequential number in the group you
+are adding the tag to.</p>
+</div>
+<div class="paragraph">
+<p>If you are changing an existing tag, edit the appropriate
+line.  Caution: in general the "descr" can be changed arbitrarily
+but you should be cautious about changing the "kw" field
+value as it may be referenced in the code and need corresponding
+changes there are well.  A grep through all the .py
+files for the text "XXX['kkk']" or "XXX_kkk" (where XXX is the
+tag type, eg FREQ, POS, etc, and kw is the short abbreviation of
+the tag (the value you want to change) may (but is not guaranteed to)
+turn up such cases.</p>
+</div>
+<div class="paragraph">
+<p>In particular the following tags are known to be referenced in the
+jmdictdb code:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>FREQ (all), GINF ('eql','lit'), LANG ('eng'), MISC ('male','fem'),
+STAT (all), SRCT (all), XREF('see','ant')</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>There may be others.</p>
+</div>
+<div class="paragraph">
+<p>Note too that if the tag will be used as an entity in a DTD, the
+tag name should be the same as the entity name and the description
+should be the same as he entity value.</p>
+</div>
+<div class="paragraph">
+<p>Be careful that your editor is set to preserve tabs (including
+trailing ones) when saving rather than replacing them with spaces.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sec4">4. Update the DTD template files</h3>
+<div class="paragraph">
+<p>If the tag is also used as an XML entity in either of the JMdict
+or JMnedict DTDs the corresponding entity should be updated in the
+DTD template files (jmdictdb/data/dtd-jmdict.xml,
+jmdictdb/data/dtd-jmnedict.xml).</p>
+</div>
+<div class="paragraph">
+<p>The tag name and entity name should be the same, as should the tag
+description and entity value.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sec5">5. Write a database update file to update existent databases</h3>
+<div class="paragraph">
+<p>The csv files contain the canonical tag definitions and are
+loaded into a jmdictdb database when it is first created but changes
+made to the csv files afterwards are not automatically propagated
+to existing databases&#8201;&#8212;&#8201;that is done by the script you write here.</p>
+</div>
+<div class="paragraph">
+<p>Generally, adding a new tag or changing a tag&#8217;s description text is
+simple.  Changing a tag&#8217;s name (aka keyword) or deleting a tag is
+more complicated because a history record needs to be created for
+any entries that use the tag.  Were that not done, someone looking
+at an entry&#8217;s history in the future could be confused by the absence
+of a tag that was shown as added in the past, or presence of a tag
+with no earlier history showing its addition.
+The cause may be obvious in the case of a single tag change but with
+multiple changes over time it could be impossible to determine the
+entry&#8217;s history accurately.
+Even if it is known that a particular database doesn&#8217;t have any
+entries using the tag, the update script has to be usable on <strong>any</strong>
+database.</p>
+</div>
+<div class="paragraph">
+<p>After the database has been updated the tag changes will automatically
+appear in the Search and Help pages.</p>
+</div>
+<div class="paragraph">
+<p>This procedure applies only to the change of tag changes that don&#8217;t
+require any change to the database schema or jmdictdb code.  If that
+is not true, additional steps are required that are beyond the scope]
+of these instructions.</p>
+</div>
+<div class="sect3">
+<h4 id="_5_1_procedure">5.1 Procedure</h4>
+<div class="paragraph">
+<p>Create a new database update file in db/updates/ named:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>nnn-xxxxxx.sql</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where nnn is a sequential 3-digit decimal number (use the next highest
+number from the update files already in db/updates/) and "xxxxxx" is
+a random 6-digit hexadecimal number.  On way of generating it is to
+use the command:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>python -c 'import random;print("%06.6x"%random.randint(0,16777215))'</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Use this template for the contents of the new update file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sql" data-lang="sql">\set ON_ERROR_STOP
+BEGIN;
+
+-- Comment summarizing the update
+-- Additional comments providing more detail if needed.
+-- [...]
+
+\set dbversion  '''xxxxxx'''  -- Update version applied by this update.
+INSERT INTO db(id) VALUES(x:dbversion::INT);
+
+-- Do the update...
+
+[sql statements to implement the update, as described below in
+the following sections and Appendix A, go here.]
+
+COMMIT;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Replace "xxxxxx" in the template with same "xxxxxx" you generated
+above for the filename.  Replace the "[sql statements&#8230;&#8203;]" lines
+with the SQL statements needed to implement the changes.  See the
+following sections for more details on that.</p>
+</div>
+<div class="paragraph">
+<p>Note that the tag changes are done inside a transaction: if there
+is an error when you run the script the database is left unchanged
+so you can simply correct the error and rerun&#8201;&#8212;&#8201;no need to undo
+a partially applied update.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_5_2_add_a_new_tag">5.2. Add a new tag</h4>
+<div class="paragraph">
+<p>For adding new tags use a simple INSERT statement:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>INSERT INTO &lt;table-name&gt; VALUES (&lt;id-number&gt;, '&lt;tag-name&gt;', '&lt;description&gt;');</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>&lt;table-name&gt; is the same as the kw*.csv filename sans the ".csv"
+extension.
+&lt;id-number&gt; is the id number of the new tag, &lt;tag-name&gt; is the short
+tag name, and &lt;description&gt; is a single line longer description.  All
+three values should be the same as in the csv file (sans quotes as
+mentioned next).</p>
+</div>
+<div class="paragraph">
+<p>Both &lt;tag-name&gt; and &lt;description&gt; must be enclosed in single quotes.
+If there is a single quote (') in the text it should be doubled ('').
+If you copied the text from the csv file un-double any doubled double
+quotes ("" &#8594; ").</p>
+</div>
+<div class="paragraph">
+<p>If the tag will be an entity in the JMdict or JMnedict XML DTDs,
+&lt;tag-name&gt; must be the same as the entity name and &lt;description&gt;
+the same as the entity value.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_5_3_tag_description_change">5.3. Tag description change</h4>
+<div class="paragraph">
+<p>Change a tag&#8217;s description text using a SQL UPDATE statement:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>UPDATE kwpos SET descr='&lt;new description&gt;'
+  WHERE kw='&lt;tag-name&gt;' AND descr='&lt;old description&gt;'</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that if a single-quote (') occurs within the description
+text it needs to be doubled ('').</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_5_4_tag_name_change_or_tag_deletion">5.4 Tag name change or tag deletion</h4>
+<div class="paragraph">
+<p>The SQL for these cases is a little more complicated due to the
+aforementioned need to create a history record.  Please refer
+to Appendix A for the appropriate SQL.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_6_test_on_a_copy_of_the_production_database">6. Test on a copy of the production database:</h3>
+<div class="paragraph">
+<p>Make copy of the production database and apply the update to it:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ dropdb &lt;dev-database-name&gt;
+$ createdb -Ojmdictdb &lt;dev-database-name&gt;
+   # Following statement assumes production database is named "jmdict".
+$ pg_dump jmdict | psql -d &lt;dev-database-name&gt;
+$ psql -d &lt;dev-database-name&gt; -Ujmdictdb -f patches/nnn-xxxxxx.sql</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Do any ad hoc testing needed to confirm the changes are as expected,
+(eg generate the jmdict and jmnedict XML files, use the web interface
+to edit some entries with the new/changed tags, etc.)</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_7_apply_the_database_update_to_the_test_database">7. Apply the database update to the test database:</h3>
+<div class="literalblock">
+<div class="content">
+<pre>$ cd tests
+$ ./load-testdb.py data/jmtest01.sql
+$ psql -d jmtest01 -Ujmdictdb -f ../db/updates/nnn-xxxxxx.sql</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Run the tests again:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ ./runtests</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Errors here from test_kwds like indicate that the changes made by
+database update are not consistent with the .csv files.  If there
+were any errors, restore the original test database file:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ git checkout -- data/jmtest01.sql</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Repeat the above steps until the update applies cleanly and all the
+tests pass.  Then, save the updated jmtest01 database:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ pg_dump jmtest01 &gt;python/tests/data/jmtest01.sql</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_8_commit_the_changes">8. Commit the changes:</h3>
+<div class="literalblock">
+<div class="content">
+<pre>$ git status</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>should list as modified any of the kw*.csv and ddtd-*.xml files
+that were modified and the jmtest01.sql file.  It should also list
+the new nnn-xxxxxx.sql file as "untracked".
+Assuming there are no unexpected files listed:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ git add db/updates/nnn-xxxxxx.sql
+$ git add -u    # Adds the modified files
+$ git commit
+[enter the commit message in the editor]</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_9_update_production_code_and_database">9. Update production code and database</h3>
+<div class="paragraph">
+<p>After the I&#8217;ve pulled the changes I&#8217;ll update the edrdg branch on
+GitLab and the production database can be updated:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ cd &lt;dev directory&gt;
+$ git checkout edrdg
+$ git pull edrdg    # This gets the current version, including your
+                    # changes from Gitlab
+  # Update the production database
+$ psql -d jmdict -Ujmdictdb -f patches/nnn-xxxxxx.sql
+(as root) # make ... web
+$ git branch -d newtags   # You can delete your branch since your
+                          # changes are now in the main edrdg branch.</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="appendix_a">Appendix A&#8201;&#8212;&#8201;SQL to change or delete tags</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In order to minimize the complexity of the SQL used to change or
+delete tags, we use statements that are not "safe" in the presence
+of other simultaneous transactions affecting the same entries or tags.
+It is safest to run these  SQL statements in a quiescent database
+without other concurrent activity.</p>
+</div>
+<div class="paragraph">
+<p>In the SQL snippets callouts indicate lines containing parameters in
+angle brackets that need to be replaced with actual values:</p>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>&lt;id&gt;&#8201;&#8212;&#8201;Id number of the tag to be updated or deleted.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>&lt;new-tag-name&gt;&#8201;&#8212;&#8201;New name the tag is to be given.</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_dial_tag">DIAL tag</h3>
+<div class="sect3">
+<h4 id="_change_tag_name">Change tag name</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sql" data-lang="sql">INSERT INTO hist(entr,hist,stat,unap,name,notes)
+   (SELECT h.entr,hist,stat,unap,'dbmaint',
+       'In situ change of DIAL tag '''||kw
+          ||''' to ''&lt;new-tag-name&gt;''.'                           <i class="conum" data-value="2"></i><b>(2)</b>
+    FROM
+       (SELECT DISTINCT entr, k.kw AS kw
+        FROM dial t
+        JOIN kwdial k ON k.id=t.kw
+        WHERE k.id=&lt;id&gt; GROUP BY entr,k.kw) AS a                <i class="conum" data-value="1"></i><b>(1)</b>
+    JOIN
+       (SELECT entr,1+MAX(COALESCE(hist,0)) AS hist
+        FROM hist GROUP BY entr) AS h ON h.entr=a.entr
+    JOIN entr e ON e.id=h.entr);
+UPDATE kwdial SET kw='&lt;new-tag-name&gt;' WHERE id=&lt;id&gt;;         <i class="conum" data-value="2"></i><b>(2)</b><i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_delete_tag">Delete tag</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sql" data-lang="sql">INSERT INTO hist(entr,hist,stat,unap,name,notes)
+   (SELECT h.entr,hist,stat,unap,'dbmaint',
+       'In situ deletion of DIAL tag '''||kw
+          ||''' from sens(s) #'||senss||'.'
+    FROM
+       (SELECT entr, k.kw AS kw,
+            string_agg(sens::TEXT,',' ORDER BY sens) AS senss
+        FROM dial t
+        JOIN kwdial k ON k.id=t.kw
+        WHERE k.id=&lt;id&gt; GROUP BY entr,k.kw) AS a                <i class="conum" data-value="1"></i><b>(1)</b>
+    JOIN
+       (SELECT entr,1+MAX(COALESCE(hist,0)) AS hist
+        FROM hist GROUP BY entr) AS h ON h.entr=a.entr
+    JOIN entr e ON e.id=h.entr);
+DELETE FROM dial WHERE kw=&lt;id&gt;;                                 <i class="conum" data-value="1"></i><b>(1)</b>
+DELETE FROM kwdial WHERE id=&lt;id&gt;;                               <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_fld_tag">FLD tag</h3>
+<div class="sect3">
+<h4 id="_change_tag_name_2">Change tag name</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sql" data-lang="sql">INSERT INTO hist(entr,hist,stat,unap,name,notes)
+   (SELECT h.entr,hist,stat,unap,'dbmaint',
+       'In situ change of FLD tag '''||kw
+          ||''' to ''&lt;new-tag-name&gt;''.'                           <i class="conum" data-value="2"></i><b>(2)</b>
+    FROM
+       (SELECT DISTINCT entr, k.kw AS kw
+        FROM fld t
+        JOIN kwfld k ON k.id=t.kw
+        WHERE k.id=&lt;id&gt; GROUP BY entr,k.kw) AS a                <i class="conum" data-value="1"></i><b>(1)</b>
+    JOIN
+       (SELECT entr,1+MAX(COALESCE(hist,0)) AS hist
+        FROM hist GROUP BY entr) AS h ON h.entr=a.entr
+    JOIN entr e ON e.id=h.entr);
+UPDATE kwfld SET kw='&lt;new-tag-name&gt;' WHERE id=&lt;id&gt;;          <i class="conum" data-value="2"></i><b>(2)</b><i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_delete_tag_2">Delete tag</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sql" data-lang="sql">INSERT INTO hist(entr,hist,stat,unap,name,notes)
+   (SELECT h.entr,hist,stat,unap,'dbmaint',
+       'In situ deletion of FLD tag '''||kw
+          ||''' from sens(s) #'||senss||'.'
+    FROM
+       (SELECT entr, k.kw AS kw,
+            string_agg(sens::TEXT,',' ORDER BY sens) AS senss
+        FROM fld t
+        JOIN kwfld k ON k.id=t.kw
+        WHERE k.id=&lt;id&gt; GROUP BY entr,k.kw) AS a                <i class="conum" data-value="1"></i><b>(1)</b>
+    JOIN
+       (SELECT entr,1+MAX(COALESCE(hist,0)) AS hist
+        FROM hist GROUP BY entr) AS h ON h.entr=a.entr
+    JOIN entr e ON e.id=h.entr);
+DELETE FROM fld WHERE id=&lt;id&gt;;                                  <i class="conum" data-value="1"></i><b>(1)</b>
+DELETE FROM kwfld WHERE id=&lt;id&gt;;                                <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_freq_tag">FREQ tag</h3>
+<div class="paragraph">
+<p>The FREQ tag values are referenced from the jmdictdb code
+and in some SQL views in conjunction with determining the 'P'
+(popular) attribute for an entry.  Changing or deleting
+existing FREQ tags is more involved than the simple recipes
+this section provide for.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_ginf_tag">GINF tag</h3>
+<div class="sect3">
+<h4 id="_change_tag_name_3">Change tag name</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sql" data-lang="sql">INSERT INTO hist(entr,hist,stat,unap,name,notes)
+   (SELECT h.entr,hist,stat,unap,'dbmaint',
+       'In situ change of GINF tag '''||kw
+          ||''' to ''&lt;new-tag-name&gt;''.'                           <i class="conum" data-value="2"></i><b>(2)</b>
+    FROM
+       (SELECT DISTINCT entr, k.kw AS kw
+        FROM gloss t
+        JOIN kwginf k ON k.id=t.ginf
+        WHERE k.id=&lt;id&gt; GROUP BY entr,k.kw) AS a                <i class="conum" data-value="1"></i><b>(1)</b>
+    JOIN
+       (SELECT entr,1+MAX(COALESCE(hist,0)) AS hist
+        FROM hist GROUP BY entr) AS h ON h.entr=a.entr
+    JOIN entr e ON e.id=h.entr);
+UPDATE kwginf SET kw='&lt;new-tag-name&gt;' WHERE id=&lt;id&gt;;          <i class="conum" data-value="2"></i><b>(2)</b><i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_delete_tag_3">Delete tag</h4>
+<div class="paragraph">
+<p>GINF tags unlike most of the others are mutually exclusive:
+only one GINF tag can apply to any gloss and every gloss must
+have a tag.  Thus it is not possible provide a universally
+applicable delete script because we can&#8217;t in general know
+if any existing target glosses should be deleted or assigned
+some other (and which) GINF tag.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_kinf_tag">KINF tag</h3>
+<div class="sect3">
+<h4 id="_change_tag_name_4">Change tag name</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sql" data-lang="sql">INSERT INTO hist(entr,hist,stat,unap,name,notes)
+   (SELECT h.entr,hist,stat,unap,'dbmaint',
+       'In situ change of KINF tag '''||kw
+          ||''' to ''&lt;new-tag-name&gt;''.'                           <i class="conum" data-value="2"></i><b>(2)</b>
+    FROM
+       (SELECT entr, k.kw AS kw
+        FROM kinf t
+        JOIN kwkinf k ON k.id=t.kw
+        WHERE k.id=&lt;id&gt; GROUP BY entr,k.kw) AS a                <i class="conum" data-value="1"></i><b>(1)</b>
+    JOIN
+       (SELECT entr,1+MAX(COALESCE(hist,0)) AS hist
+        FROM hist GROUP BY entr) AS h ON h.entr=a.entr
+    JOIN entr e ON e.id=h.entr);
+UPDATE kwkinf SET kw='&lt;new-tag-name&gt;' WHERE id=&lt;id&gt;;         <i class="conum" data-value="2"></i><b>(2)</b><i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_delete_tag_4">Delete tag</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sql" data-lang="sql">INSERT INTO hist(entr,hist,stat,unap,name,notes)
+   (SELECT h.entr,hist,stat,unap,'dbmaint',
+       'In situ deletion of KINF tag '''||kw
+          ||''' from kanj(s) #'||rdngs||'.'
+    FROM
+       (SELECT entr, k.kw AS kw,
+            string_agg(kanj::TEXT,',' ORDER BY kanj) AS kanjs
+        FROM kinf t
+        JOIN kwkinf k ON k.id=t.kw
+        WHERE k.id=&lt;id&gt; GROUP BY entr,k.kw) AS a                <i class="conum" data-value="1"></i><b>(1)</b>
+    JOIN
+       (SELECT entr,1+MAX(COALESCE(hist,0)) AS hist
+        FROM hist GROUP BY entr) AS h ON h.entr=a.entr
+    JOIN entr e ON e.id=h.entr);
+DELETE FROM kinf WHERE id=&lt;id&gt;;                                 <i class="conum" data-value="1"></i><b>(1)</b>
+DELETE FROM kwkinf WHERE id=&lt;id&gt;;                               <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_lang_tag">LANG tag</h3>
+<div class="paragraph">
+<p>LANG tags are based on the
+<a href="https://www.loc.gov/standards/iso639-2/php/code_list.php">ISO-639-2</a>
+specification and other than additions they should require no changes.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_misc_tag">MISC tag</h3>
+<div class="sect3">
+<h4 id="_change_tag_name_5">Change tag name</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sql" data-lang="sql">INSERT INTO hist(entr,hist,stat,unap,name,notes)
+   (SELECT h.entr,hist,stat,unap,'dbmaint',
+       'In situ change of MISC tag '''||kw
+          ||''' to ''&lt;new-tag-name&gt;''.'                           <i class="conum" data-value="2"></i><b>(2)</b>
+    FROM
+       (SELECT DISTINCT entr, k.kw AS kw
+        FROM misc t
+        JOIN kwmisc k ON k.id=t.kw
+        WHERE k.id=&lt;id&gt; GROUP BY entr,k.kw) AS a                <i class="conum" data-value="1"></i><b>(1)</b>
+    JOIN
+       (SELECT entr,1+MAX(COALESCE(hist,0)) AS hist
+        FROM hist GROUP BY entr) AS h ON h.entr=a.entr
+    JOIN entr e ON e.id=h.entr);
+UPDATE kwmisc SET kw='&lt;new-tag-name&gt;' WHERE id=&lt;id&gt;;          <i class="conum" data-value="2"></i><b>(2)</b><i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_delete_tag_5">Delete tag</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sql" data-lang="sql">INSERT INTO hist(entr,hist,stat,unap,name,notes)
+   (SELECT h.entr,hist,stat,unap,'dbmaint',
+       'In situ deletion of MISC tag '''||kw
+          ||''' from sens(s) #'||senss||'.'
+    FROM
+       (SELECT entr, k.kw AS kw,
+            string_agg(sens::TEXT,',' ORDER BY sens) AS senss
+        FROM misc t
+        JOIN kwmisc k ON k.id=t.kw
+        WHERE k.id=&lt;id&gt; GROUP BY entr,k.kw) AS a                <i class="conum" data-value="1"></i><b>(1)</b>
+    JOIN
+       (SELECT entr,1+MAX(COALESCE(hist,0)) AS hist
+        FROM hist GROUP BY entr) AS h ON h.entr=a.entr
+    JOIN entr e ON e.id=h.entr);
+DELETE FROM misc WHERE id=&lt;id&gt;;                                  <i class="conum" data-value="1"></i><b>(1)</b>
+DELETE FROM kwmisc WHERE id=&lt;id&gt;;                                <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_pos_tag">POS tag</h3>
+<div class="sect3">
+<h4 id="_change_tag_name_6">Change tag name</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sql" data-lang="sql">INSERT INTO hist(entr,hist,stat,unap,name,notes)
+   (SELECT h.entr,hist,stat,unap,'dbmaint',
+       'In situ change of POS tag '''||kw
+          ||''' to ''&lt;new-tag-name&gt;''.'                           <i class="conum" data-value="2"></i><b>(2)</b>
+    FROM
+       (SELECT DISTINCT entr, k.kw AS kw
+        FROM pos t
+        JOIN kwpos k ON k.id=t.kw
+        WHERE k.id=&lt;id&gt; GROUP BY entr,k.kw) AS a                <i class="conum" data-value="1"></i><b>(1)</b>
+    JOIN
+       (SELECT entr,1+MAX(COALESCE(hist,0)) AS hist
+        FROM hist GROUP BY entr) AS h ON h.entr=a.entr
+    JOIN entr e ON e.id=h.entr);
+UPDATE kwpos SET kw='&lt;new-tag-name&gt;' WHERE id=&lt;id&gt;;          <i class="conum" data-value="2"></i><b>(2)</b><i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_delete_tag_6">Delete tag</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sql" data-lang="sql">INSERT INTO hist(entr,hist,stat,unap,name,notes)
+   (SELECT h.entr,hist,stat,unap,'dbmaint',
+       'In situ deletion POS tag '''||kw
+          ||''' from sens(s) #'||senss||'.'
+    FROM
+       (SELECT entr, k.kw AS kw,
+            string_agg(sens::TEXT,',' ORDER BY sens) AS senss
+        FROM pos t
+        JOIN kwpos k ON k.id=t.kw
+        WHERE k.id=&lt;id&gt; GROUP BY entr,k.kw) AS a                <i class="conum" data-value="1"></i><b>(1)</b>
+    JOIN
+       (SELECT entr,1+MAX(COALESCE(hist,0)) AS hist
+        FROM hist GROUP BY entr) AS h ON h.entr=a.entr
+    JOIN entr e ON e.id=h.entr);
+DELETE FROM pos WHERE id=&lt;id&gt;;                                  <i class="conum" data-value="1"></i><b>(1)</b>
+DELETE FROM kwpos WHERE id=&lt;id&gt;;                                <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_rinf_tag">RINF tag</h3>
+<div class="sect3">
+<h4 id="_change_tag_name_7">Change tag name</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sql" data-lang="sql">INSERT INTO hist(entr,hist,stat,unap,name,notes)
+   (SELECT h.entr,hist,stat,unap,'dbmaint',
+       'In situ change of RINF tag '''||kw
+          ||''' to ''&lt;new-tag-name&gt;''.'                           <i class="conum" data-value="2"></i><b>(2)</b>
+    FROM
+       (SELECT entr, k.kw AS kw
+        FROM rinf t
+        JOIN kwrinf k ON k.id=t.kw
+        WHERE k.id=&lt;id&gt; GROUP BY entr,k.kw) AS a                <i class="conum" data-value="1"></i><b>(1)</b>
+    JOIN
+       (SELECT entr,1+MAX(COALESCE(hist,0)) AS hist
+        FROM hist GROUP BY entr) AS h ON h.entr=a.entr
+    JOIN entr e ON e.id=h.entr);
+UPDATE kwrinf SET kw='&lt;new-tag-name&gt;' WHERE id=&lt;id&gt;;         <i class="conum" data-value="2"></i><b>(2)</b><i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_delete_tag_7">Delete tag</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sql" data-lang="sql">INSERT INTO hist(entr,hist,stat,unap,name,notes)
+   (SELECT h.entr,hist,stat,unap,'dbmaint',
+       'In situ deletion of RINF tag '''||kw
+          ||''' from rdng(s) #'||rdngs||'.'
+    FROM
+       (SELECT entr, k.kw AS kw,
+            string_agg(rdng::TEXT,',' ORDER BY rdng) AS rdngs
+        FROM rinf t
+        JOIN kwrinf k ON k.id=t.kw
+        WHERE k.id=&lt;id&gt; GROUP BY entr,k.kw) AS a                <i class="conum" data-value="1"></i><b>(1)</b>
+    JOIN
+       (SELECT entr,1+MAX(COALESCE(hist,0)) AS hist
+        FROM hist GROUP BY entr) AS h ON h.entr=a.entr
+    JOIN entr e ON e.id=h.entr);
+DELETE FROM rinf WHERE id=&lt;id&gt;;                                 <i class="conum" data-value="1"></i><b>(1)</b>
+DELETE FROM kwrinf WHERE id=&lt;id&gt;;                               <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_srct_tag">SRCT tag</h3>
+<div class="paragraph">
+<p>SRCT tags identify the particular corpus an entry belongs to
+("jmdict", "jmnedict", etc.)
+They are referenced extensively throughout the JMdictDB code base
+and code changes are required in addtition to database changes to
+modify them.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_stat_tag">STAT tag</h3>
+<div class="paragraph">
+<p>STAT tags describe the "status" of an entry (active, rejected,
+deleted).
+They are referenced extensively throughout the JMdictDB code base
+and code changes are required in addtition to database changes to
+modify them.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_xref_tag">XREF tag</h3>
+<div class="paragraph">
+<p>XREF tags are used to classify particular types of cross-references.
+Two ("see" and "ant") are used in the "jmdict" and "jmnedict"
+corpora although others are defined in kwxref.csv.
+They are referenced extensively throughout the JMdictDB code base
+and code changes are required in addtition to database changes to
+modify them.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2020-07-21 00:24:55 MDT
+</div>
+</div>
+</body>
+</html>

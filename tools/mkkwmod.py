@@ -1,33 +1,14 @@
 #!/usr/bin/env python3
-#######################################################################
-#  This file is part of JMdictDB.
-#  Copyright (c) 2007,2008 Stuart McGraw
-#
-#  JMdictDB is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published
-#  by the Free Software Foundation; either version 2 of the License,
-#  or (at your option) any later version.
-#
-#  JMdictDB is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with JMdictDB; if not, write to the Free Software Foundation,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
-#######################################################################
+# Copyright (c) 2007,2008 Stuart McGraw
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
 # Generate a static keywords module from database kw tables or csv files.
 #
 
 import sys, os, inspect, pdb
-_ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
-_ = os.path.join (os.path.dirname(_), 'python', 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
-
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
 import re, datetime
-import jdb
+from jmdictdb import jdb
 
 def main (args, opts):
         KW = jdb.Kwds ()
