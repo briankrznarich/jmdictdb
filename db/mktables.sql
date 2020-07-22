@@ -16,7 +16,7 @@
 -- When changing updateid don't forget to change python/lib/dbver.py to
 -- tell the JMdictDB API to expect the new version.
 
-\set updateid '''f62d8a'''
+\set updateid '''042c98'''
 
 -- This is a function for the benefit of psql scripts that can be
 -- conditionally called to generate an error in order to stop the
@@ -83,7 +83,8 @@ CREATE OR REPLACE VIEW dbx AS (
 CREATE TABLE kwdial (
     id SMALLINT PRIMARY KEY,
     kw VARCHAR(20) NOT NULL UNIQUE,
-    descr VARCHAR(255));
+    descr VARCHAR(255),
+    ents JSONB);
 
 CREATE TABLE kwfreq (
     id SMALLINT PRIMARY KEY,
@@ -93,7 +94,8 @@ CREATE TABLE kwfreq (
 CREATE TABLE kwfld (
     id SMALLINT PRIMARY KEY,
     kw VARCHAR(20) NOT NULL UNIQUE,
-    descr VARCHAR(255));
+    descr VARCHAR(255),
+    ents JSONB);
 
 CREATE TABLE kwginf (
     id SMALLINT PRIMARY KEY,
@@ -103,7 +105,8 @@ CREATE TABLE kwginf (
 CREATE TABLE kwkinf (
     id SMALLINT PRIMARY KEY,
     kw VARCHAR(20) NOT NULL,
-    descr VARCHAR(255));
+    descr VARCHAR(255),
+    ents JSONB);
 
 CREATE TABLE kwlang (
     id SMALLINT PRIMARY KEY,
@@ -113,17 +116,20 @@ CREATE TABLE kwlang (
 CREATE TABLE kwmisc (
     id SMALLINT PRIMARY KEY,
     kw VARCHAR(20) NOT NULL,
-    descr VARCHAR(255));
+    descr VARCHAR(255),
+    ents JSONB);
 
 CREATE TABLE kwpos (
     id SMALLINT PRIMARY KEY,
     kw VARCHAR(20) NOT NULL UNIQUE,
-    descr VARCHAR(255));
+    descr VARCHAR(255),
+    ents JSONB);
 
 CREATE TABLE kwrinf (
     id SMALLINT PRIMARY KEY,
     kw VARCHAR(20) NOT NULL UNIQUE,
-    descr VARCHAR(255));
+    descr VARCHAR(255),
+    ents JSONB);
 
 CREATE TABLE kwstat (
     id SMALLINT PRIMARY KEY,

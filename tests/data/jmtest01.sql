@@ -1262,7 +1262,8 @@ ALTER TABLE public.kwcinf OWNER TO jmdictdb;
 CREATE TABLE public.kwdial (
     id smallint NOT NULL,
     kw character varying(20) NOT NULL,
-    descr character varying(255)
+    descr character varying(255),
+    ents jsonb
 );
 
 
@@ -1275,7 +1276,8 @@ ALTER TABLE public.kwdial OWNER TO jmdictdb;
 CREATE TABLE public.kwfld (
     id smallint NOT NULL,
     kw character varying(20) NOT NULL,
-    descr character varying(255)
+    descr character varying(255),
+    ents jsonb
 );
 
 
@@ -1349,7 +1351,8 @@ ALTER SEQUENCE public.kwgrp_id_seq OWNED BY public.kwgrp.id;
 CREATE TABLE public.kwkinf (
     id smallint NOT NULL,
     kw character varying(20) NOT NULL,
-    descr character varying(255)
+    descr character varying(255),
+    ents jsonb
 );
 
 
@@ -1375,7 +1378,8 @@ ALTER TABLE public.kwlang OWNER TO jmdictdb;
 CREATE TABLE public.kwmisc (
     id smallint NOT NULL,
     kw character varying(20) NOT NULL,
-    descr character varying(255)
+    descr character varying(255),
+    ents jsonb
 );
 
 
@@ -1388,7 +1392,8 @@ ALTER TABLE public.kwmisc OWNER TO jmdictdb;
 CREATE TABLE public.kwpos (
     id smallint NOT NULL,
     kw character varying(20) NOT NULL,
-    descr character varying(255)
+    descr character varying(255),
+    ents jsonb
 );
 
 
@@ -1401,7 +1406,8 @@ ALTER TABLE public.kwpos OWNER TO jmdictdb;
 CREATE TABLE public.kwrinf (
     id smallint NOT NULL,
     kw character varying(20) NOT NULL,
-    descr character varying(255)
+    descr character varying(255),
+    ents jsonb
 );
 
 
@@ -3952,9 +3958,10 @@ COPY public.conotes (id, txt) FROM stdin;
 
 COPY public.db (id, active, ts) FROM stdin;
 2029572	f	2019-05-14 10:46:08.849884
-16133514	t	2020-07-16 10:32:49.620998
 11084276	f	2019-08-09 19:50:53.856433
-11173099	t	2020-07-16 10:34:39.856739
+273560	t	2020-07-22 16:44:35.85915
+16133514	f	2020-07-16 10:32:49.620998
+11173099	f	2020-07-16 10:34:39.856739
 \.
 
 
@@ -4727,19 +4734,19 @@ COPY public.kwcinf (id, kw, descr) FROM stdin;
 -- Data for Name: kwdial; Type: TABLE DATA; Schema: public; Owner: jmdictdb
 --
 
-COPY public.kwdial (id, kw, descr) FROM stdin;
-1	std	Tokyo-ben (std)
-2	ksb	Kansai-ben
-3	ktb	Kantou-ben
-4	kyb	Kyoto-ben
-5	osb	Osaka-ben
-6	tsb	Tosa-ben
-7	thb	Touhoku-ben
-8	tsug	Tsugaru-ben
-9	kyu	Kyuushuu-ben
-10	rkb	Ryuukyuu-ben
-11	nab	Nagano-ben
-12	hob	Hokkaido-ben
+COPY public.kwdial (id, kw, descr, ents) FROM stdin;
+2	ksb	Kansai-ben	\N
+3	ktb	Kantou-ben	\N
+4	kyb	Kyoto-ben	\N
+5	osb	Osaka-ben	\N
+6	tsb	Tosa-ben	\N
+7	thb	Touhoku-ben	\N
+8	tsug	Tsugaru-ben	\N
+9	kyu	Kyuushuu-ben	\N
+10	rkb	Ryuukyuu-ben	\N
+11	nab	Nagano-ben	\N
+12	hob	Hokkaido-ben	\N
+1	std	Tokyo-ben (std)	{"jmdict": 0}
 \.
 
 
@@ -4747,38 +4754,38 @@ COPY public.kwdial (id, kw, descr) FROM stdin;
 -- Data for Name: kwfld; Type: TABLE DATA; Schema: public; Owner: jmdictdb
 --
 
-COPY public.kwfld (id, kw, descr) FROM stdin;
-1	Buddh	Buddhist term
-3	food	food term
-4	geom	geometry term
-6	MA	martial arts term
-7	math	mathematics
-8	mil	military
-10	chem	chemistry term
-11	archit	architecture term
-12	astron	astronomy, etc. term
-13	baseb	baseball term
-14	biol	biology term
-15	bot	botany term
-16	bus	business term
-17	econ	economics term
-18	engr	engineering term
-19	finc	finance term
-20	geol	geology, etc. term
-21	law	law, etc. term
-22	med	medicine, etc. term
-23	music	music term
-24	Shinto	Shinto term
-25	sports	sports term
-26	sumo	sumo term
-27	zool	zoology term
-28	anat	anatomical term
-29	mahj	mahjong term
-30	shogi	shogi term
-31	Christn	Christian term
-2	comp	computer term
-5	ling	linguistics term
-9	physics	physics term
+COPY public.kwfld (id, kw, descr, ents) FROM stdin;
+1	Buddh	Buddhist term	\N
+3	food	food term	\N
+4	geom	geometry term	\N
+6	MA	martial arts term	\N
+7	math	mathematics	\N
+8	mil	military	\N
+10	chem	chemistry term	\N
+11	archit	architecture term	\N
+12	astron	astronomy, etc. term	\N
+13	baseb	baseball term	\N
+14	biol	biology term	\N
+15	bot	botany term	\N
+16	bus	business term	\N
+17	econ	economics term	\N
+18	engr	engineering term	\N
+19	finc	finance term	\N
+20	geol	geology, etc. term	\N
+21	law	law, etc. term	\N
+22	med	medicine, etc. term	\N
+23	music	music term	\N
+24	Shinto	Shinto term	\N
+25	sports	sports term	\N
+26	sumo	sumo term	\N
+27	zool	zoology term	\N
+28	anat	anatomical term	\N
+29	mahj	mahjong term	\N
+30	shogi	shogi term	\N
+31	Christn	Christian term	\N
+2	comp	computer term	\N
+5	ling	linguistics term	\N
+9	physics	physics term	\N
 \.
 
 
@@ -4819,12 +4826,12 @@ COPY public.kwgrp (id, kw, descr) FROM stdin;
 -- Data for Name: kwkinf; Type: TABLE DATA; Schema: public; Owner: jmdictdb
 --
 
-COPY public.kwkinf (id, kw, descr) FROM stdin;
-1	iK	word containing irregular kanji usage
-2	io	irregular okurigana usage
-3	oK	word containing out-dated kanji
-4	ik	word containing irregular kana usage
-5	ateji	ateji (phonetic) reading
+COPY public.kwkinf (id, kw, descr, ents) FROM stdin;
+1	iK	word containing irregular kanji usage	\N
+2	io	irregular okurigana usage	\N
+3	oK	word containing out-dated kanji	\N
+4	ik	word containing irregular kana usage	\N
+5	ateji	ateji (phonetic) reading	\N
 \.
 
 
@@ -5324,49 +5331,49 @@ COPY public.kwlang (id, kw, descr) FROM stdin;
 -- Data for Name: kwmisc; Type: TABLE DATA; Schema: public; Owner: jmdictdb
 --
 
-COPY public.kwmisc (id, kw, descr) FROM stdin;
-1	X	rude or X-rated term (not displayed in educational software)
-2	abbr	abbreviation
-3	arch	archaism
-4	chn	children's language
-5	col	colloquialism
-6	derog	derogatory
-8	fam	familiar language
-9	fem	female term, language, or name
-11	hon	honorific or respectful (sonkeigo) language
-12	hum	humble (kenjougo) language
-13	id	idiomatic expression
-14	m-sl	manga slang
-15	male	male term, language, or name
-17	obs	obsolete term
-18	obsc	obscure term
-19	pol	polite (teineigo) language
-20	rare	rare
-21	sl	slang
-22	uk	word usually written using kana alone
-24	vulg	vulgar expression or word
-25	sens	sensitive
-26	poet	poetical term
-27	on-mim	onomatopoeic or mimetic word
-28	joc	jocular, humorous term
-81	proverb	proverb
-82	aphorism	aphorism (pithy saying)
-83	quote	quotation
-84	yoji	yojijukugo
-181	surname	family or surname
-182	place	place name
-183	unclass	unclassified name
-184	company	company name
-185	product	product name
-188	person	full name of a particular person
-189	given	given name or forename, gender not specified
-190	station	railway station
-191	organization	organization name
-192	work	work of art, literature, music, etc. name
-85	net-sl	Internet slang
-86	dated	dated term
-87	hist	historical term
-88	litf	literary or formal term
+COPY public.kwmisc (id, kw, descr, ents) FROM stdin;
+1	X	rude or X-rated term (not displayed in educational software)	\N
+2	abbr	abbreviation	\N
+3	arch	archaism	\N
+4	chn	children's language	\N
+5	col	colloquialism	\N
+6	derog	derogatory	\N
+8	fam	familiar language	\N
+11	hon	honorific or respectful (sonkeigo) language	\N
+12	hum	humble (kenjougo) language	\N
+13	id	idiomatic expression	\N
+14	m-sl	manga slang	\N
+17	obs	obsolete term	\N
+18	obsc	obscure term	\N
+19	pol	polite (teineigo) language	\N
+20	rare	rare	\N
+21	sl	slang	\N
+22	uk	word usually written using kana alone	\N
+24	vulg	vulgar expression or word	\N
+25	sens	sensitive	\N
+26	poet	poetical term	\N
+27	on-mim	onomatopoeic or mimetic word	\N
+28	joc	jocular, humorous term	\N
+81	proverb	proverb	\N
+83	quote	quotation	\N
+84	yoji	yojijukugo	\N
+85	net-sl	Internet slang	\N
+86	dated	dated term	\N
+87	hist	historical term	\N
+88	litf	literary or formal term	\N
+9	fem	female term, language, or name	{"jmdict": {"v": "female term or language"}, "jmnedict": {"v": "female given name or forename"}}
+15	male	male term, language, or name	{"jmdict": {"v": "male term or language"}, "jmnedict": {"e": "masc", "v": "male given name or forename"}}
+82	aphorism	aphorism (pithy saying)	{"jmdict": 0}
+181	surname	family or surname	{"jmnedict": 1}
+182	place	place name	{"jmnedict": 1}
+183	unclass	unclassified name	{"jmnedict": 1}
+184	company	company name	{"jmnedict": 1}
+185	product	product name	{"jmnedict": 1}
+188	person	full name of a particular person	{"jmnedict": 1}
+189	given	given name or forename, gender not specified	{"jmnedict": 1}
+190	station	railway station	{"jmnedict": 1}
+191	organization	organization name	{"jmnedict": 1}
+192	work	work of art, literature, music, etc. name	{"jmnedict": 1}
 \.
 
 
@@ -5374,99 +5381,99 @@ COPY public.kwmisc (id, kw, descr) FROM stdin;
 -- Data for Name: kwpos; Type: TABLE DATA; Schema: public; Owner: jmdictdb
 --
 
-COPY public.kwpos (id, kw, descr) FROM stdin;
-1	adj-i	adjective (keiyoushi)
-2	adj-na	adjectival nouns or quasi-adjectives (keiyodoshi)
-3	adj-no	nouns which may take the genitive case particle `no'
-4	adj-pn	pre-noun adjectival (rentaishi)
-5	adj-t	`taru' adjective
-6	adv	adverb (fukushi)
-7	adj-ix	adjective (keiyoushi) - yoi/ii class
-8	adv-to	adverb taking the `to' particle
-9	aux	auxiliary
-10	aux-adj	auxiliary adjective
-11	aux-v	auxiliary verb
-12	conj	conjunction
-14	int	interjection (kandoushi)
-17	n	noun (common) (futsuumeishi)
-18	n-adv	adverbial noun (fukushitekimeishi)
-19	n-suf	noun, used as a suffix
-20	n-pref	noun, used as a prefix
-21	n-t	noun (temporal) (jisoumeishi)
-24	num	numeric
-25	pref	prefix
-26	prt	particle
-27	suf	suffix
-28	v1	Ichidan verb
-29	v1-s	Ichidan verb - kureru special class
-30	v5aru	Godan verb - -aru special class
-31	v5b	Godan verb with `bu' ending
-32	v5g	Godan verb with `gu' ending
-33	v5k	Godan verb with `ku' ending
-34	v5k-s	Godan verb - Iku/Yuku special class
-35	v5m	Godan verb with `mu' ending
-36	v5n	Godan verb with `nu' ending
-37	v5r	Godan verb with `ru' ending
-38	v5r-i	Godan verb with `ru' ending (irregular verb)
-39	v5s	Godan verb with `su' ending
-40	v5t	Godan verb with `tsu' ending
-41	v5u	Godan verb with `u' ending
-42	v5u-s	Godan verb with `u' ending (special class)
-43	v5uru	Godan verb - Uru old class verb (old form of Eru)
-44	vi	intransitive verb
-45	vk	Kuru verb - special class
-46	vs	noun or participle which takes the aux. verb suru
-47	vs-s	suru verb - special class
-49	vz	Ichidan verb - zuru verb (alternative form of -jiru verbs)
-50	vt	transitive verb
-51	ctr	counter
-52	vn	irregular nu verb
-56	adj-f	noun or verb acting prenominally
-58	vr	irregular ru verb, plain form ends with -ri
-59	v2a-s	Nidan verb with 'u' ending (archaic)
-61	pn	pronoun
-62	vs-c	su verb - precursor to the modern suru
-66	adj-nari	archaic/formal form of na-adjective
-67	n-pr	proper noun
-68	v-unspec	verb unspecified
-98	unc	unclassified
-15	cop	copula
-13	exp	expressions (phrases, clauses, etc.)
-48	vs-i	suru verb - included
-65	adj-shiku	`shiku' adjective (archaic)
-63	adj-kari	`kari' adjective (archaic)
-64	adj-ku	`ku' adjective (archaic)
-69	v4k	Yodan verb with `ku' ending (archaic)
-76	v2k-k	Nidan verb (upper class) with `ku' ending (archaic)
-85	v2k-s	Nidan verb (lower class) with `ku' ending (archaic)
-70	v4g	Yodan verb with `gu' ending (archaic)
-77	v2g-k	Nidan verb (upper class) with `gu' ending (archaic)
-86	v2g-s	Nidan verb (lower class) with `gu' ending (archaic)
-71	v4s	Yodan verb with `su' ending (archaic)
-87	v2s-s	Nidan verb (lower class) with `su' ending (archaic)
-72	v4t	Yodan verb with `tsu' ending (archaic)
-78	v2t-k	Nidan verb (upper class) with `tsu' ending (archaic)
-89	v2t-s	Nidan verb (lower class) with `tsu' ending (archaic)
-73	v4n	Yodan verb with `nu' ending (archaic)
-91	v2n-s	Nidan verb (lower class) with `nu' ending (archaic)
-74	v4b	Yodan verb with `bu' ending (archaic)
-81	v2b-k	Nidan verb (upper class) with `bu' ending (archaic)
-93	v2b-s	Nidan verb (lower class) with `bu' ending (archaic)
-75	v4m	Yodan verb with `mu' ending (archaic)
-82	v2m-k	Nidan verb (upper class) with `mu' ending (archaic)
-94	v2m-s	Nidan verb (lower class) with `mu' ending (archaic)
-79	v2d-k	Nidan verb (upper class) with `dzu' ending (archaic)
-90	v2d-s	Nidan verb (lower class) with `dzu' ending (archaic)
-60	v4h	Yodan verb with `hu/fu' ending (archaic)
-80	v2h-k	Nidan verb (upper class) with `hu/fu' ending (archaic)
-92	v2h-s	Nidan verb (lower class) with `hu/fu' ending (archaic)
-83	v2y-k	Nidan verb (upper class) with `yu' ending (archaic)
-95	v2y-s	Nidan verb (lower class) with `yu' ending (archaic)
-53	v4r	Yodan verb with `ru' ending (archaic)
-84	v2r-k	Nidan verb (upper class) with `ru' ending (archaic)
-96	v2r-s	Nidan verb (lower class) with `ru' ending (archaic)
-88	v2z-s	Nidan verb (lower class) with `zu' ending (archaic)
-97	v2w-s	Nidan verb (lower class) with `u' ending and `we' conjugation (archaic)
+COPY public.kwpos (id, kw, descr, ents) FROM stdin;
+1	adj-i	adjective (keiyoushi)	\N
+2	adj-na	adjectival nouns or quasi-adjectives (keiyodoshi)	\N
+3	adj-no	nouns which may take the genitive case particle `no'	\N
+4	adj-pn	pre-noun adjectival (rentaishi)	\N
+5	adj-t	`taru' adjective	\N
+6	adv	adverb (fukushi)	\N
+7	adj-ix	adjective (keiyoushi) - yoi/ii class	\N
+8	adv-to	adverb taking the `to' particle	\N
+9	aux	auxiliary	\N
+10	aux-adj	auxiliary adjective	\N
+11	aux-v	auxiliary verb	\N
+12	conj	conjunction	\N
+14	int	interjection (kandoushi)	\N
+17	n	noun (common) (futsuumeishi)	\N
+18	n-adv	adverbial noun (fukushitekimeishi)	\N
+19	n-suf	noun, used as a suffix	\N
+20	n-pref	noun, used as a prefix	\N
+21	n-t	noun (temporal) (jisoumeishi)	\N
+24	num	numeric	\N
+25	pref	prefix	\N
+26	prt	particle	\N
+27	suf	suffix	\N
+28	v1	Ichidan verb	\N
+29	v1-s	Ichidan verb - kureru special class	\N
+30	v5aru	Godan verb - -aru special class	\N
+31	v5b	Godan verb with `bu' ending	\N
+32	v5g	Godan verb with `gu' ending	\N
+33	v5k	Godan verb with `ku' ending	\N
+34	v5k-s	Godan verb - Iku/Yuku special class	\N
+35	v5m	Godan verb with `mu' ending	\N
+36	v5n	Godan verb with `nu' ending	\N
+37	v5r	Godan verb with `ru' ending	\N
+38	v5r-i	Godan verb with `ru' ending (irregular verb)	\N
+39	v5s	Godan verb with `su' ending	\N
+40	v5t	Godan verb with `tsu' ending	\N
+41	v5u	Godan verb with `u' ending	\N
+42	v5u-s	Godan verb with `u' ending (special class)	\N
+43	v5uru	Godan verb - Uru old class verb (old form of Eru)	\N
+44	vi	intransitive verb	\N
+45	vk	Kuru verb - special class	\N
+46	vs	noun or participle which takes the aux. verb suru	\N
+47	vs-s	suru verb - special class	\N
+49	vz	Ichidan verb - zuru verb (alternative form of -jiru verbs)	\N
+50	vt	transitive verb	\N
+51	ctr	counter	\N
+52	vn	irregular nu verb	\N
+56	adj-f	noun or verb acting prenominally	\N
+58	vr	irregular ru verb, plain form ends with -ri	\N
+59	v2a-s	Nidan verb with 'u' ending (archaic)	\N
+61	pn	pronoun	\N
+62	vs-c	su verb - precursor to the modern suru	\N
+66	adj-nari	archaic/formal form of na-adjective	\N
+67	n-pr	proper noun	\N
+68	v-unspec	verb unspecified	\N
+98	unc	unclassified	\N
+15	cop	copula	\N
+13	exp	expressions (phrases, clauses, etc.)	\N
+48	vs-i	suru verb - included	\N
+65	adj-shiku	`shiku' adjective (archaic)	\N
+63	adj-kari	`kari' adjective (archaic)	\N
+64	adj-ku	`ku' adjective (archaic)	\N
+69	v4k	Yodan verb with `ku' ending (archaic)	\N
+76	v2k-k	Nidan verb (upper class) with `ku' ending (archaic)	\N
+85	v2k-s	Nidan verb (lower class) with `ku' ending (archaic)	\N
+70	v4g	Yodan verb with `gu' ending (archaic)	\N
+77	v2g-k	Nidan verb (upper class) with `gu' ending (archaic)	\N
+86	v2g-s	Nidan verb (lower class) with `gu' ending (archaic)	\N
+71	v4s	Yodan verb with `su' ending (archaic)	\N
+87	v2s-s	Nidan verb (lower class) with `su' ending (archaic)	\N
+72	v4t	Yodan verb with `tsu' ending (archaic)	\N
+78	v2t-k	Nidan verb (upper class) with `tsu' ending (archaic)	\N
+89	v2t-s	Nidan verb (lower class) with `tsu' ending (archaic)	\N
+73	v4n	Yodan verb with `nu' ending (archaic)	\N
+91	v2n-s	Nidan verb (lower class) with `nu' ending (archaic)	\N
+74	v4b	Yodan verb with `bu' ending (archaic)	\N
+81	v2b-k	Nidan verb (upper class) with `bu' ending (archaic)	\N
+93	v2b-s	Nidan verb (lower class) with `bu' ending (archaic)	\N
+75	v4m	Yodan verb with `mu' ending (archaic)	\N
+82	v2m-k	Nidan verb (upper class) with `mu' ending (archaic)	\N
+94	v2m-s	Nidan verb (lower class) with `mu' ending (archaic)	\N
+79	v2d-k	Nidan verb (upper class) with `dzu' ending (archaic)	\N
+90	v2d-s	Nidan verb (lower class) with `dzu' ending (archaic)	\N
+60	v4h	Yodan verb with `hu/fu' ending (archaic)	\N
+80	v2h-k	Nidan verb (upper class) with `hu/fu' ending (archaic)	\N
+92	v2h-s	Nidan verb (lower class) with `hu/fu' ending (archaic)	\N
+83	v2y-k	Nidan verb (upper class) with `yu' ending (archaic)	\N
+95	v2y-s	Nidan verb (lower class) with `yu' ending (archaic)	\N
+53	v4r	Yodan verb with `ru' ending (archaic)	\N
+84	v2r-k	Nidan verb (upper class) with `ru' ending (archaic)	\N
+96	v2r-s	Nidan verb (lower class) with `ru' ending (archaic)	\N
+88	v2z-s	Nidan verb (lower class) with `zu' ending (archaic)	\N
+97	v2w-s	Nidan verb (lower class) with `u' ending and `we' conjugation (archaic)	\N
 \.
 
 
@@ -5474,20 +5481,20 @@ COPY public.kwpos (id, kw, descr) FROM stdin;
 -- Data for Name: kwrinf; Type: TABLE DATA; Schema: public; Owner: jmdictdb
 --
 
-COPY public.kwrinf (id, kw, descr) FROM stdin;
-1	gikun	gikun (meaning as reading) or jukujikun (special kanji reading)
-2	ok	out-dated or obsolete kana usage
-3	ik	word containing irregular kana usage
-4	uK	word usually written using kanji alone
-103	name	reading used only in names (nanori)
-104	rad	reading used as name of radical
-105	jouyou	approved reading for jouyou kanji
-106	kun	kun-yomi
-128	on	on-yomi
-129	kan	on-yomi, kan
-130	go	on-yomi, go
-131	tou	on-yomi, tou
-132	kanyou	on-yomi, kan\\'you
+COPY public.kwrinf (id, kw, descr, ents) FROM stdin;
+1	gikun	gikun (meaning as reading) or jukujikun (special kanji reading)	\N
+2	ok	out-dated or obsolete kana usage	\N
+3	ik	word containing irregular kana usage	\N
+4	uK	word usually written using kanji alone	\N
+103	name	reading used only in names (nanori)	{"jmdict": 0}
+104	rad	reading used as name of radical	{"jmdict": 0}
+105	jouyou	approved reading for jouyou kanji	{"jmdict": 0}
+106	kun	kun-yomi	{"jmdict": 0}
+128	on	on-yomi	{"jmdict": 0}
+129	kan	on-yomi, kan	{"jmdict": 0}
+130	go	on-yomi, go	{"jmdict": 0}
+131	tou	on-yomi, tou	{"jmdict": 0}
+132	kanyou	on-yomi, kan\\'you	{"jmdict": 0}
 \.
 
 
@@ -6638,7 +6645,7 @@ COPY public.stagr (entr, sens, rdng) FROM stdin;
 --
 
 COPY public.testsrc (filename, method, hash) FROM stdin;
-/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	2cfcff396a96ab01343688c27afd50d1162a7603
+/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	ab94a399dddba37b991fe2f8eceed9e5232b3548
 \.
 
 
