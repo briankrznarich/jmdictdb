@@ -12,28 +12,22 @@ from jmdictdb import jdb, xmlkw
 global XKW, KW
 XKW = None
 
-def entr (entr, compat=None, genhists=False, genxrefs=True, wantlist=False,
-                implicit_pos=True, last_imported=None):
+def entr (entr, compat='jmex', genhists=False, genxrefs=True,
+                wantlist=False, last_imported=None):
         '''
         Generate an XML description of entry 'entr'.
         Parameters:
           entr -- An entry object (such as return by entrList()).
           compat -- 
-                None: generate XML that completely
+                "jmex" or None: generate XML that completely
                   describes the entry using an enhanced version
                   of the jmdict DTD.  Otherwise:
                 "jmdict": generate XML that uses the most recent 
                   version of the standard JMdictDTD (currently
                   rev 1.09).
-                "jmdicthist": generate XML that uses the standard
-                  JMdict DTD but adds an <info> element with the
-                  entry's full history.
                 "jmnedict": generate XML that uses the standard
                   (post 2014-10) JMnedict DTD that include seq 
                   numbers and xrefs.
-                "jmneold": generate XML that uses the old-style
-                  (pre 2014-10) JMnedict DTD that does not include 
-                  seq numbers and xrefs.
           genhists -- If true, <info> and <audit> elements will 
                 be generated in the XML according to the value of
                 'compat'.   If false they will not be generated 
@@ -48,13 +42,6 @@ def entr (entr, compat=None, genhists=False, genxrefs=True, wantlist=False,
                 with embedded newline characters.  If true, return a
                 list of strings, one line per string, with no embedded
                 newlines.
-          implicit_pos -- Boolean: if true, a sense's <pos>
-                elements will not be added to sense if they exactly
-                match (in number, values, and order) the previous
-                sense's <pos> elements.  Does not extend across
-                entry boundries.  This is the rule used in the
-                Monash JMdict XML file.  If false, each sense will
-                be generated with <pos> elements explictly expressed.
           last_imported -- This parameter is ignored unless 'compat'
                 is non-None.  In that case, 'last_imported' gives the
                 sequence number of the last entry imported from a
@@ -69,6 +56,7 @@ def entr (entr, compat=None, genhists=False, genxrefs=True, wantlist=False,
         global XKW, KW; KW = jdb.KW;
         if not XKW: XKW = xmlkw.make (KW)
 
+        if compat == 'jmex': compat = None
         fmt= entrhdr (entr, compat)
 
         kanjs = getattr (entr, '_kanj', [])
@@ -77,16 +65,12 @@ def entr (entr, compat=None, genhists=False, genxrefs=True, wantlist=False,
         rdngs = getattr (entr, '_rdng', [])
         for r in rdngs: fmt.extend (rdng (r, kanjs, compat))
 
-        if compat == 'jmdicthist':
-            fmt.extend (info (entr, compat, genhists, last_imported=last_imported))
-
         senss = getattr (entr, '_sens', [])
-        if compat in ('jmnedict', 'jmneold'):
+        if compat in ('jmnedict',):
             for x in senss: fmt.extend (trans (x, compat, entr.src, genxrefs))
         else:
-            last_pos = [] if implicit_pos else None
             for x in senss:
-                fmt.extend (sens (x, kanjs, rdngs, compat, entr.src, genxrefs, last_pos))
+                fmt.extend (sens (x, kanjs, rdngs, compat, entr.src, genxrefs))
 
         if not compat: fmt.extend (audio (entr))
         if not compat: fmt.extend (grps (entr))
@@ -140,7 +124,7 @@ def restrs (rdng, kanjs, attr='_restr'):
             fmt.extend (['<%s>%s</%s>' % (tag, x.txt, tag) for x in invdkanjs])
         return fmt
 
-def sens (s, kanj, rdng, compat, src, genxrefs=True, prev_pos=None):
+def sens (s, kanj, rdng, compat, src, genxrefs=True):
         """
         Format a sense.
         fmt -- A list to which formatted text lines will be appended.
@@ -158,16 +142,6 @@ def sens (s, kanj, rdng, compat, src, genxrefs=True, prev_pos=None):
         genxrefs -- If false, do not attempt to format xrefs.  This
             will prevent an exception if the entry has only ordinary
             xrefs rather than augmented xrefs.
-        prev_pos -- If not None, should be set to the pos list of
-            the previous sense, or an empty list if this is the
-            first sense of an entry.  This function will mutate
-            'prev_pos' (if not None) to the current pos list before
-            returning so that usually, sens() will be called with
-            with an empty list on the first sense of an entry, and
-            te same list on subsequent calls.  It is used to suppress
-            pos values when they are the same as in the prevuious
-            sense per the JMdict DTD.
-            If None, an explict pos will be generated in each sense.
         """
         fmt = []
         fmt.append ('<sense>')
@@ -175,10 +149,7 @@ def sens (s, kanj, rdng, compat, src, genxrefs=True, prev_pos=None):
         fmt.extend (restrs (s, kanj, '_stagk'))
         fmt.extend (restrs (s, rdng, '_stagr'))
 
-        this_pos = [x.kw for x in getattr (s, '_pos', [])]
-        if not prev_pos or prev_pos != this_pos:
-            fmt.extend (kwds (s, '_pos', 'POS', 'pos'))
-            if prev_pos is not None: prev_pos[:] = this_pos
+        fmt.extend (kwds (s, '_pos', 'POS', 'pos'))
 
         xr = sens_xrefs (s, src, compat)
         fmt.extend (xr)
@@ -262,10 +233,8 @@ def lsrc (x):
         else: fmt.append ('<lsource%s>%s</lsource>' % (attr, esc(x.txt)))
         return fmt
 
-
 def sens_xrefs (sens, src, compat):
         # Format xrefs and unresolved xrefs for a specific sense.
-        if compat == 'jmneold': return []
         xr = []
         xrfs = getattr (sens, '_xref', None)
         if xrfs:
@@ -463,7 +432,7 @@ def audit (h, compat=None, force_created=False):
         fmt = []
         fmt.append ('<audit>')
         fmt.append ('<upd_date>%s</upd_date>' % h.dt.date().isoformat())
-        if not compat or compat=='jmdicthist':
+        if not compat:
             if getattr (h, 'notes', None): fmt.append ('<upd_detl>%s</upd_detl>'   % esc(h.notes))
             if getattr (h, 'stat', None):  fmt.append ('<upd_stat>%s</upd_stat>'   % XKW.STAT[h.stat].kw)
             if getattr (h, 'unap', None):  fmt.append ('<upd_unap/>')
@@ -524,7 +493,7 @@ def entrhdr (entr, compat=None):
             dfrmattr = (' dfrm="%d"' % entr.dfrm) if dfrm else ""
             fmt = ["<entry%s%s%s%s>" % (idattr, statattr, apprattr, dfrmattr)]
         else: fmt = ['<entry>']
-        if getattr (entr, 'seq', None) and compat != 'jmneold':
+        if getattr (entr, 'seq', None):
             fmt.append ('<ent_seq>%d</ent_seq>' % entr.seq)
         if getattr (entr, 'src', None) and not compat:
             src = jdb.KW.SRC[entr.src].kw
@@ -599,9 +568,9 @@ def entr_diff (eold, enew, n=2):
         # (equivalent to the 'n' value in the unix command, "diff -Un ...".
 
         if isinstance (eold, str): eoldxml = eold.splitlines(False)
-        else: eoldxml = entr (eold, wantlist=1, implicit_pos=0)
+        else: eoldxml = entr (eold, wantlist=1)
         if isinstance (enew, str): enewxml = enew.splitlines(False)
-        else: enewxml = entr (enew, wantlist=1, implicit_pos=0)
+        else: enewxml = entr (enew, wantlist=1)
           # Generate diff and remove trailing whitespace, including newlines.
           # Also, skip the <entry> line since they will always differ.
         rawdiff = difflib.unified_diff (eoldxml, enewxml, n=n)
@@ -612,7 +581,7 @@ def entr_diff (eold, enew, n=2):
         diffstr = '\n'.join (diffs)
         return diffstr
 
-def _main (args, opts):
+def _main():
         cur = jdb.dbOpen ('jmdict')
         while True:
             try: id = input ("Id number? ")
@@ -626,5 +595,4 @@ def _main (args, opts):
                 txt = entr (e[0], compat=None)
                 print (txt)
 
-if __name__ == '__main__':
-        _main (None, None)
+if __name__ == '__main__': _main()

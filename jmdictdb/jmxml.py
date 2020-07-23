@@ -316,7 +316,7 @@ class Jmparser (object):
             rdngs.append (rdng)
         if rdngs: entr._rdng = rdngs
 
-    def do_senss (self, elems, entr, xlang=None):
+    def do_senss (self, elems, entr, xlang=None, prop_pos=False):
         XKW = self.XKW
         rdngs = getattr (entr, '_rdng', [])
         kanjs = getattr (entr, '_kanj', [])
@@ -329,7 +329,14 @@ class Jmparser (object):
             pelems = elem.findall('pos')
             if pelems:
                 last_pos = self.do_kws (pelems, sens, '_pos', 'POS')
-            elif last_pos:
+              # 'prop_pos' enables the propagation of a preceeding sense's
+              # PoS tags to the following sense when the latter has none.
+              # Very early JMdict XML files used that convention but it
+              # hasn't been used for long long time now thus we disable
+              # it by default and there is currently no API capability to
+              # enable it but we leave the code here in case a need arises
+              # in the future.
+            elif prop_pos and last_pos:
                 sens._pos = [jdb.Pos(kw=x.kw) for x in last_pos]
 
             self.do_kws   (elem.findall('name_type'), sens, '_misc', 'NAME_TYPE')

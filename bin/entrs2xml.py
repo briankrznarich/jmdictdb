@@ -5,6 +5,16 @@
 # Read entries from database and write to XML file.  Run with
 # --help option for details.
 
+  #FIXME? The --compat=jmex option was originally intended for serializing
+  # an entire jmdictdb database to XML but it is no longer useful for that
+  # because of the single corpus restriction and that it no longer includes
+  # non-active or unappoved entries.  (Not sure where/how the latter
+  # inability came about.)  However there seems little need any more to
+  # seralize a full database since Postgresql's pg_dump command does that
+  # better than we can.  It still has value as a development aid/tool
+  # since "jmex" formatted XML is used in generating the diff's used
+  # in history records.
+
 import sys, os, re, time, pdb
 _=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
 from jmdictdb import logger; from jmdictdb.logger import L
@@ -235,12 +245,8 @@ def compat_info (corpus, compat):
           #   0                     1            2         3     4       5
             'jmdict':
               ["dtd-jmdict.xml",   'jmdict',    'JMdict',  True, True, ['jmdict']],
-            'jmdicthist':
-              ["dtd-jmdict.xml",   'jmdicthist','JMdict',  True, True, ['jmdict']],
             'jmnedict':
               ["dtd-jmnedict.xml", 'jmnedict',  'JMnedict',True, True, ['jmnedict']],
-            'jmneold':
-              ["dtd-jmneold.xml",  'jmneold',   'JMnedict',True, True, ['jmnedict']],
             'jmex':
               ["dtd-jmdict-ex.xml", None,       'JMdict',  False,False,['jmdict','jmnedict']],
             }
@@ -292,7 +298,7 @@ def parse_cmdline ():
         p = argparse.ArgumentParser (formatter_class=FlexiFormatter,
             description=\
                 """%(prog)s will read entries from a JMdictDB database and
-                write them in XML form to a file.\n
+                 write them in XML form to a file.\n
 
                 All entries come from a single corpus given by -s/--corpus.
                  All active, approved entries in that corpus are output
@@ -326,7 +332,7 @@ def parse_cmdline ():
                 "to stdout.")
 
         p.add_argument ("--compat", default=None,
-            choices=['jmdict','jmnedict','jmneold','jmdicthist', 'jmex'],
+            choices=['jmdict','jmnedict','jmex'],
             help="""If not given, an appropriate compat value is
                  chosen automatically based on the corpus type.
                  You only need to use this option to generate
@@ -342,14 +348,6 @@ def parse_cmdline ():
                   (post Oct.2014) JMnedict DTD that includes seq
                   numbers and xrefs.  This is the standard JMnedict
                   XML and usually need not be specified.
-
-                * jmneold: generate XML that uses the old-style
-                  (pre Oct.2014) JMnedict DTD that does not include
-                  seq numbers and xrefs.
-
-                * jmdicthist: generate XML that uses the standard
-                  JMdict DTD (rev 1.09) but includes an <info> element
-                  with the entry's full history.
 
                 * jmex: extended form of XML that can represent
                   multiple corpora including both "jmdict" and
