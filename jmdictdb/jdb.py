@@ -1,10 +1,10 @@
 # Copyright (c) 2006-2014 Stuart McGraw
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-import sys, os, os.path, random, re, datetime, operator, csv
+import sys, os, os.path, random, re, datetime, operator, csv, json
 from time import time
 from collections import defaultdict
-from jmdictdb import fmtxml
+from jmdictdb import db, fmtxml
 from jmdictdb import logger; from jmdictdb.logger import L
 from jmdictdb.objects import *
 from jmdictdb.restr import *
@@ -1566,7 +1566,6 @@ class Kwds:
               'KINF':"kwkinf", 'LANG':"kwlang", 'MISC':"kwmisc", 'POS'  :"kwpos",
               'RINF':"kwrinf", 'STAT':"kwstat", 'XREF':"kwxref", 'CINF' :"kwcinf",
               'SRC' :"kwsrc",  'SRCT':"kwsrct", 'GRP' :"kwgrp",  'COPOS':"vcopos"}
-
     # Re COPOS, see comments in pg/conj.sql:vcopos, jmcgi.add_pos_flag() and IS-226.
 
     def __init__( self, cursor_or_dirname=None ):
@@ -1630,6 +1629,13 @@ class Kwds:
         # If 'dirname' is not supplied or is None, it will default
         # to "../../pg/data/" relative to the location of this module.
 
+        Converts = \
+            {'SRC':{'sinc':cvint, 'smin':cvint, 'smax':cvint, 'srct':cvint},
+            'DIAL':{'ents':cvjson}, 'FLD':{'ents':cvjson},
+            'KINF':{'ents':cvjson}, 'MISC':{'ents':cvjson},
+            'POS':{'ents':cvjson}, 'RINF':{'ents':cvjson},
+            'RAD':{'var':cvint,'strokes':cvint, 'loc':cvint},}
+
         if not dirname: dirname = std_csv_dir ()
         if tables is None: tables = self.Tables
         if dirname[-1] != '/' and dirname[-1] != '\\' and len(dirname) > 1:
@@ -1643,15 +1649,19 @@ class Kwds:
                 f = None;  failed.append (table);  continue
             else:
                 csvrdr = csv.reader (f, **dialect)
-                for n, (id, kw, descr, *rest) in enumerate (csvrdr):
-                      # Convert the id field to an int.  If not able to
-                      # and this is the first line, assume it a header
-                      # line and skip it.
-                    try: id = int (id)
-                    except ValueError:
-                        if n == 0: continue
-                        else: raise
-                    self.add (attr, (id, kw, descr or None))
+                fields = next (csvrdr)
+                if fields[0].isdigit():
+                    raise ValueError ("Missing header line: %s" % fname)
+                for row in csvrdr:
+                    row[0] = int(row[0])  # First item is always int id number.
+                    for i,itm in enumerate (fields):
+                          # Convert strings received from csv into expected
+                          # data types.
+                        if attr not in Converts: continue
+                        cvtfunc = Converts.get(attr).get (itm, None)
+                        if cvtfunc: row[i] = cvtfunc(row[i])
+                    dbrow = db.DbRow (row, fields)
+                    self.add (attr, dbrow)
             finally:
                 if f: f.close()
         return failed
@@ -1730,6 +1740,9 @@ class Kwds:
         vt = getattr (self, attr)
         r = [v for k,v in list(vt.items()) if isinstance(k, int)]
         return r
+
+def cvint (s): return None if s is None or s=='' else int(s)
+def cvjson (s): return None if s is None or s=='' else json.loads(s)
 
 def std_csv_dir ():
         ''' Return the path to the directory containing the
@@ -2304,3 +2317,8 @@ def reset_encoding (file, encoding='utf-8'):
         file.__init__(file.detach(),
                       line_buffering=file.line_buffering,
                       encoding=encoding)
+
+if __name__ == '__main__':
+        pdb.set_trace()
+        kw = Kwds('')
+        print (kw)

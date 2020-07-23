@@ -1,3 +1,4 @@
+id	kw	descr
 1	kw1	unquoted descr
 2	kw2	"quoted descr"
 3	kw3	"""embedded quotes"" unquoted part"
