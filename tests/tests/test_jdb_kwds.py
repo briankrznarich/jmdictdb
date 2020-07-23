@@ -79,7 +79,7 @@ class Loadcsv (unittest.TestCase):
 
     def test003 (_):
           # Check KINF records.
-        expect = set (((13, 'xxx', 'line 1'),(27, 'yy', None),(8, 'qq-r', None)))
+        expect = set (((13, 'xxx', 'line 1'),(27, 'yy', ''),(8, 'qq-r', '')))
         recs = _.o.recs('KINF')
         _.assertEqual (len(recs), 3)
         comparable_recs = set ((tuple(x) for x in recs))
