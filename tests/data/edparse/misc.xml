@@ -56,6 +56,7 @@
 <gloss>gallop</gloss>
 </sense>
 <sense>
+<pos>&n;</pos>
 <gloss>galop (dance)</gloss>
 </sense>
 </entry>
@@ -240,6 +241,8 @@
 <gloss>abstract</gloss>
 </sense>
 <sense>
+<pos>&adv;</pos>
+<pos>&n;</pos>
 <gloss>roughly</gloss>
 <gloss>about</gloss>
 </sense>
