@@ -46,7 +46,6 @@ class Test_restr (unittest.TestCase):
 class Test_entr (unittest.TestCase):
     def setUp(_):
         jdb.KW = jdb.Kwds ('data/fmtxml/kw/')
-        fmtxml.XKW = None
 
     def test0200010 (_): dotest (_, f.t_in['0200010'], f.t_exp['0200010'])
     def test0201020 (_): dotest (_, f.t_in['0201020'], f.t_exp['0201020'])
@@ -57,7 +56,6 @@ class Test_entr (unittest.TestCase):
 class Test_xrslv (unittest.TestCase):
     def setUp (_):
         jdb.KW = jdb.Kwds ('data/fmtxml/kw/')
-        fmtxml.XKW = None
 
     def test0202010(_): dotest (_, f.t_in['0202010'], f.t_exp['0202010'], compat='jmdict')
     def test0202020(_): dotest (_, f.t_in['0202020'], f.t_exp['0202020'], compat='jmdict')
@@ -68,7 +66,7 @@ class Test_xrslv (unittest.TestCase):
 class Test_jmnedict (unittest.TestCase):
     def setUp(_):
         jdb.KW = jdb.Kwds ('data/fmtxml/kw/')
-        fmtxml.XKW = None
+
     def test0300010(_): dotest (_, f.t_in['0300010'], f.t_exp['0300010'], compat='jmnedict')
     def test0300020(_): dotest (_, f.t_in['0300020'], f.t_exp['0300020'], compat='jmnedict')
     def test0300030(_): dotest (_, f.t_in['0300030'], f.t_exp['0300030'], compat='jmnedict')
@@ -94,7 +92,6 @@ def dotest (_, execstr, expected, **kwds):
 class Test_entr_diff (unittest.TestCase):
     def setUp(_):
         jdb.KW = jdb.Kwds ('data/fmtxml/kw/')
-        fmtxml.XKW = None
     def test_0001(_):
         lcls = {}
         exec (f.t_in['0400010'], globals(), lcls)
@@ -112,10 +109,6 @@ class Test_xrefs (unittest.TestCase):
     def setUp(_):
         from jmdictdb import xmlkw
         jdb.KW = jdb.Kwds ('data/fmtxml/kw/')
-          # XKW is a fmtxml glocal that is normally initialized inside
-          # fmtxml.entr() but since we are not calling .entr() we need
-          # initialize XKW "by hand".
-        fmtxml.XKW = xmlkw.make (jdb.KW)
 
     def test_00010(_):   # Xrefs must be augmented (have a .TARG attr)
         with _.assertRaisesRegex (AttributeError, 'missing TARG attribute'):

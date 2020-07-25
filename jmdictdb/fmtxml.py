@@ -7,10 +7,8 @@ Functions for generating XML descriptions of entries.
 """
 import re, difflib
 from xml.sax.saxutils import escape as esc, quoteattr as esca
-from jmdictdb import jdb, xmlkw
-
-global XKW, KW
-XKW = None
+from jmdictdb import jdb
+global KW
 
 def entr (entr, compat='jmex', genhists=False, genxrefs=True,
                 wantlist=False, last_imported=None):
@@ -49,13 +47,8 @@ def entr (entr, compat='jmex', genhists=False, genxrefs=True,
                 first history record in an entry results in a "entry
                 created" or "entry amended" xml audit element.
         '''
-          #FIXME: Need to generate an kwid->xml-entity mapping
-          # idependent of the KW table.  See comments in jmxml.py
-          # but note the mapping used here needs to also support
-          # the enhanced DTD.
-        global XKW, KW; KW = jdb.KW;
-        if not XKW: XKW = xmlkw.make (KW)
 
+        global KW; KW = jdb.KW
         if compat == 'jmex': compat = None
         fmt= entrhdr (entr, compat)
 
@@ -82,7 +75,7 @@ def kanj (k):
         fmt = []
         fmt.append ('<k_ele>')
         fmt.append ('<keb>%s</keb>' % esc(k.txt))
-        fmt.extend (kwds (k, '_inf', 'KINF', 'ke_inf', sort=True))
+        fmt.extend (ents (k, '_inf', 'KINF', 'ke_inf', sort=True))
         fmt.extend (['<ke_pri>%s</ke_pri>' %s
                      for s in jdb.freq2txts (getattr (k,'_freq',[]))])
         fmt.append ('</k_ele>')
@@ -93,7 +86,7 @@ def rdng (r, k, compat):
         fmt.append ('<r_ele>')
         fmt.append ('<reb>%s</reb>' % esc(r.txt))
         fmt.extend (restrs (r, k))
-        fmt.extend (kwds (r, '_inf', 'RINF', 're_inf', sort=True))
+        fmt.extend (ents (r, '_inf', 'RINF', 're_inf', sort=True, dtd=compat))
         fmt.extend (['<re_pri>%s</re_pri>' %s
                      for s in jdb.freq2txts (getattr (r,'_freq',[]))])
         if not compat: fmt.extend (audio (r))
@@ -149,13 +142,13 @@ def sens (s, kanj, rdng, compat, src, genxrefs=True):
         fmt.extend (restrs (s, kanj, '_stagk'))
         fmt.extend (restrs (s, rdng, '_stagr'))
 
-        fmt.extend (kwds (s, '_pos', 'POS', 'pos'))
+        fmt.extend (ents (s, '_pos', 'POS', 'pos', dtd=compat))
 
         xr = sens_xrefs (s, src, compat)
         fmt.extend (xr)
 
-        fmt.extend (kwds (s, '_fld', 'FLD', 'field'))
-        fmt.extend (kwds (s, '_misc', 'MISC', 'misc'))
+        fmt.extend (ents (s, '_fld', 'FLD', 'field', dtd=compat))
+        fmt.extend (ents (s, '_misc', 'MISC', 'misc', dtd=compat))
 
         notes = getattr (s, 'notes', None)
         if notes: fmt.append ('<s_inf>%s</s_inf>' % esc(notes))
@@ -164,7 +157,7 @@ def sens (s, kanj, rdng, compat, src, genxrefs=True):
         if lsource:
             for x in lsource: fmt.extend (lsrc (x))
 
-        fmt.extend (kwds (s, '_dial', 'DIAL', 'dial'))
+        fmt.extend (ents (s, '_dial', 'DIAL', 'dial', dtd=compat))
 
         for x in s._gloss: fmt.extend (gloss (x, compat))
 
@@ -172,25 +165,17 @@ def sens (s, kanj, rdng, compat, src, genxrefs=True):
         return fmt
 
 def trans (sens, compat, src, genxrefs):
-        """Format a jmnedict trans element.
-        s -- A sense object."""
+        "Format a jmnedict trans element."
 
-        fmt = []
-        nlist = getattr (sens, '_misc', [])
-        kwtab = getattr (XKW, 'NAME_TYPE')
-        for x in nlist:
-               # 'kwtab' contains only 'misc' keywords that are used
-               # in jmnedict so we want to ignore KeyErrors caused by
-               # encountering other (eg jmdict) keywords.  (IS-225)
-             try: fmt.append ('<name_type>&%s;</name_type>' % kwtab[x.kw].kw)
-             except KeyError: pass
+        fmt = (ents (sens, '_misc', 'MISC', 'name_type', dtd='jmnedict'))
         if genxrefs:
             xr = sens_xrefs (sens, src, compat)
             fmt.extend (xr)
         eng_id = KW.LANG['eng'].id
         for g in getattr (sens, '_gloss', []):
             lang = getattr (g, 'g_lang', eng_id)
-            lang_attr = (' xml:lang="%s"' % XKW.LANG[lang].kw) if lang != eng_id else ''
+            lang_attr = (' xml:lang="%s"' % KW.LANG[lang].kw)\
+                        if lang != eng_id else ''
             fmt.append ('<trans_det%s>%s</trans_det>' % (lang_attr, esc(g.txt)))
         if fmt:
             fmt.insert (0, '<trans>')
@@ -200,32 +185,77 @@ def trans (sens, compat, src, genxrefs):
 def gloss (g, compat=None):
         fmt = []
         attrs = []
-        if g.lang != XKW.LANG['eng'].id:
-            attrs.append ('xml:lang="%s"' % XKW.LANG[g.lang].kw)
+        if g.lang != KW.LANG['eng'].id:
+            attrs.append ('xml:lang="%s"' % KW.LANG[g.lang].kw)
           # As of DTD rev 1.09 ginf attributes are added to glosses so
           # we no longer do this only for the 'compat is None' condition. 
           #FIXME: this will produce "g_type" attributes in jmnedict 
           # in violation of the jmnedict DTD if there are .ginf items 
-          # in the data.  We fragilely count on there not being any.
-        if g.ginf != XKW.GINF['equ'].id:
-            attrs.append ('g_type="%s"' % XKW.GINF[g.ginf].kw)
+           # in the data.  We fragilely count on there not being any.
+        if g.ginf != KW.GINF['equ'].id:
+            attrs.append ('g_type="%s"' % KW.GINF[g.ginf].kw)
         attr = (' ' if attrs else '') + ' '.join (attrs)
         fmt.append ("<gloss%s>%s</gloss>" % (attr, esc(g.txt)))
         return fmt
 
-def kwds (parent, attr, domain, elem_name, sort=False):
+def ents (parent, attr, domain, elem_name, sort=False, dtd="jmdict"):
+        '''
+    Given a list of tag items (in the form ('parent','attr') we return
+    a list of XML elements containing the entities representing those
+    tags.
+      parent -- A Entr component like Kanj, Sens, etc.
+      attr -- A tag list attribute on 'parent' like "_kinf", "_pos", etc.
+      domain -- Type of tag list for lookup in jdb.KW ("KINF", "POS", etc.)
+      elem_name -- Name of XML element to use (eg "ke_inf", "pos", etc.)
+      sort -- If true sost list of elements before return.
+      dtd -- Type of DTD the XML will be used with: "jmdict" or "jmnedict".'''
+
+        if dtd in (None, 'jmex'): dtd = 'jmdict'
         nlist = getattr (parent, attr, [])
         if not nlist: return nlist
-        kwtab = getattr (XKW, domain)
-        kwlist = ['<%s>&%s;</%s>' % (elem_name, kwtab[x.kw].kw, elem_name)
+        kwtab = getattr (KW, domain)
+        kwlist = ['<%s>&%s;</%s>'
+                  % (elem_name, entity(kwtab,x.kw,dtd), elem_name)
                   for x in nlist]
         if sort: kwlist.sort()
         return kwlist
 
+def entity (kwtab, id, dtd):
+        '''
+    Return XML entity for tag with id number 'id' in 'kwtab'.
+      kwtab -- A dict containing ...
+      id -- Id number of tag
+      dtd -- Either "jmdict" or "jmnedict" '''
+
+        msg = "Illegal tag for DTD \"%s\": '%s'"
+        rec = kwtab[id]
+        if not rec.ents or dtd not in rec.ents:
+              # If there is no specific info the in .ents (entity info)
+              # attribute then, if the DTD is 'jmdict', the entity name
+              # is the 'kw' value.  If the DTD is not 'jmdict' then we
+              # expect explicit entity info and since it's not present,
+              # raise an error.
+            if dtd == 'jmdict': return rec.kw
+            raise KeyError(msg % (dtd, rec.kw))
+        entinfo = rec.ents[dtd]
+        if not isinstance (entinfo, dict):
+              # If the entity info is not a dict, then we presum it's a
+              # scalar whose bool value that indicates when true the 'kw'
+              # value is the entity name, or when false, the the tag is
+              # disallowed.
+            if entinfo: return rec.kw
+            else: raise KeyError(msg % (dtd, rec.kw))
+          # If the entity info is a dict, then it's "e" item, if present
+          # is the entity name.  If not present the entity name is the
+          # same as the tag.  (This may be the case when the entity info
+          # is present only to provide a different entity value for the DTD.)
+        if 'e' in entinfo: return entinfo['e']
+        return rec.kw
+
 def lsrc (x):
         fmt = [];  attrs = []
-        if x.lang != XKW.LANG['eng'].id or not x.wasei:
-            attrs.append ('xml:lang="%s"' % XKW.LANG[x.lang].kw)
+        if x.lang != KW.LANG['eng'].id or not x.wasei:
+            attrs.append ('xml:lang="%s"' % KW.LANG[x.lang].kw)
         if x.part: attrs.append ('ls_type="part"')
         if x.wasei: attrs.append ('ls_wasei="y"')
         attr = (' ' if attrs else '') + ' '.join (attrs)
@@ -360,14 +390,14 @@ def xref (xref, src):
 
         tag = 'xref'; attrs = []
         if src:
-            attrs.append ('type="%s"' % XKW.XREF[xref.typ].kw)
+            attrs.append ('type="%s"' % KW.XREF[xref.typ].kw)
             attrs.append ('seq="%s"' % targobj.seq)
             if targobj.src != src:
                 attrs.append ('corp="%s"' % jdb.KW.SRC[targobj.src].kw)
             if getattr (xref, 'notes', None):
                 attrs.append ('note="%s"' % esc(xref.notes))
         else:
-            if xref.typ == XKW.XREF['ant'].id: tag = 'ant'
+            if xref.typ == KW.XREF['ant'].id: tag = 'ant'
 
         attr = (' ' if attrs else '') + ' '.join (attrs)
         return '<%s%s>%s%%s</%s>' % (tag, attr, target, tag)
@@ -428,13 +458,12 @@ def info (entr, compat=None, genhists=False, last_imported=None):
         return fmt
 
 def audit (h, compat=None, force_created=False):
-        global XKW
         fmt = []
         fmt.append ('<audit>')
         fmt.append ('<upd_date>%s</upd_date>' % h.dt.date().isoformat())
         if not compat:
             if getattr (h, 'notes', None): fmt.append ('<upd_detl>%s</upd_detl>'   % esc(h.notes))
-            if getattr (h, 'stat', None):  fmt.append ('<upd_stat>%s</upd_stat>'   % XKW.STAT[h.stat].kw)
+            if getattr (h, 'stat', None):  fmt.append ('<upd_stat>%s</upd_stat>'   % KW.STAT[h.stat].kw)
             if getattr (h, 'unap', None):  fmt.append ('<upd_unap/>')
             if getattr (h, 'email', None): fmt.append ('<upd_email>%s</upd_email>' % esc(h.email))
             if getattr (h, 'name', None):  fmt.append ('<upd_name>%s</upd_name>'   % esc(h.name))
@@ -461,11 +490,10 @@ def audit (h, compat=None, force_created=False):
         return fmt
 
 def grps (entr):
-        global XKW
         fmt = []
         for x in getattr (entr, '_grp', []):
             ord = (' ord="%d"' % x.ord) if x.ord is not None else ''
-            fmt.append ('<group%s>%s</group>' % (ord, XKW.GRP[x.kw].kw))
+            fmt.append ('<group%s>%s</group>' % (ord, KW.GRP[x.kw].kw))
         return fmt
 
 def grpdef (kwgrp_obj):
@@ -482,12 +510,11 @@ def audio (entr_or_rdng):
         return ['<audio clipid="c%d"/>' % x.snd for x in a]
 
 def entrhdr (entr, compat=None):
-        global XKW
         if not compat:
             id = getattr (entr, 'id', None)
             idattr = (' id="%d"' % id) if id else ""
             stat = getattr (entr, 'stat', None)
-            statattr = (' stat="%s"' % XKW.STAT[stat].kw) if stat else ""
+            statattr = (' stat="%s"' % KW.STAT[stat].kw) if stat else ""
             apprattr = ' appr="n"' if entr.unap else ""
             dfrm = getattr (entr, 'dfrm', None)
             dfrmattr = (' dfrm="%d"' % entr.dfrm) if dfrm else ""
@@ -582,17 +609,21 @@ def entr_diff (eold, enew, n=2):
         return diffstr
 
 def _main():
-        cur = jdb.dbOpen ('jmdict')
-        while True:
-            try: id = input ("Id number? ")
-            except EOFError: id = None
-            if not id: break
-            e, raw = jdb.entrList (cur, [int(id)], ret_tuple=True)
-            jdb.augment_xrefs (cur, raw['xref'])
-            if not e:
-                print ("Entry id %d not found" % id)
-            else:
-                txt = entr (e[0], compat=None)
-                print (txt)
+        import sys
+        if len (sys.argv) not in (2,3):
+            sys.exit ("Usage:\n  python3 fmtxml.py id# [compat]")
+        dbname = 'jmdict'
+        if len (sys.argv) == 3: compat = sys.argv[2]
+        id = int(sys.argv[1])
+        cur = jdb.dbOpen (dbname)
+        e, raw = jdb.entrList (cur, [id], ret_tuple=True)
+        if not e: sys.exit ("Entry id %d not found" % id)
+        jdb.augment_xrefs (cur, raw['xref'])
+        txt = entr (e[0], compat=compat)
+        print (txt)
 
+  # Assuming you are cd'd to jmdictdb/ when running this, you will
+  # need to run like:
+  #   PYTHONPATH='..' python3 -mpdb fmtxml.py
+  # to make sure the local modules are imported.
 if __name__ == '__main__': _main()
