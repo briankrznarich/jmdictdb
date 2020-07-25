@@ -155,6 +155,25 @@
     _sens=[Sens(sens=1,
         _gloss=[Gloss(lang=1,ginf=1,txt='e3000080')])])]
 
+## 000210
+<entry>
+<ent_seq>3000210</ent_seq>
+<r_ele><reb>あ</reb></r_ele>
+<sense>
+<pos>&n;</pos>
+<gloss>aaa</gloss>
+</sense>
+<sense>
+<gloss>bbb</gloss>
+</sense>
+</entry>
+##-- 
+[Entr (seq=3000210, stat=2, unap=False, 
+    _rdng=[Rdng(rdng=1,txt='あ')],
+    _sens=[Sens(sens=1,_gloss=[Gloss(lang=1,ginf=1,txt='aaa')],_pos=[Pos(kw=17)]),
+           Sens(sens=2,_gloss=[Gloss(lang=1,ginf=1,txt='bbb')], ),]
+     )]
+
 ## 1499230
 <entry>
 <ent_seq>1499230</ent_seq>

@@ -32,6 +32,7 @@ class Test_parsexml (unittest.TestCase):
     def test_000060(_): _.dotest ('000060')  # rinf
     def test_000070(_): _.dotest ('000070')  # kinf
     def test_000080(_): _.dotest ('000080')  # restr
+    def test_000210(_): _.dotest ('000210')  # pos propagation
     def test_1499230(_):_.dotest ('1499230') # restr/nokanji
 
     # To do: restr combos, freq, pos, misc, fld, dial, lsrc, stagr,

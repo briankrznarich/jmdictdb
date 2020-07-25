@@ -5,6 +5,16 @@
 # Read entries from database and write to XML file.  Run with
 # --help option for details.
 
+  #FIXME? The --compat=jmex option was originally intended for serializing
+  # an entire jmdictdb database to XML but it is no longer useful for that
+  # because of the single corpus restriction and that it no longer includes
+  # non-active or unappoved entries.  (Not sure where/how the latter
+  # inability came about.)  However there seems little need any more to
+  # seralize a full database since Postgresql's pg_dump command does that
+  # better than we can.  It still has value as a development aid/tool
+  # since "jmex" formatted XML is used in generating the diff's used
+  # in history records.
+
 import sys, os, re, time, pdb
 _=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
 from jmdictdb import logger; from jmdictdb.logger import L
@@ -288,7 +298,7 @@ def parse_cmdline ():
         p = argparse.ArgumentParser (formatter_class=FlexiFormatter,
             description=\
                 """%(prog)s will read entries from a JMdictDB database and
-                write them in XML form to a file.\n
+                 write them in XML form to a file.\n
 
                 All entries come from a single corpus given by -s/--corpus.
                  All active, approved entries in that corpus are output
