@@ -17,34 +17,25 @@ class Test_parse_jmdict (unittest.TestCase):
                                           testid, 'b')
         _.jmparser = jmxml.Jmparser (KW)
 
-    def dotest (_, testid):
-        global _test_expect
-        xml, exp = _.getxml (testid)
-        entrs = _.jmparser.parse_entry (xml)
-        exec ("_test_expect=" + exp, globals())
-        _.assertEqual (entrs, _test_expect)
-        return entrs, _test_expect
+    def test_000010(_): dotest (_,'000010')
+    def test_000020(_): dotest (_,'000020')
+    def test_000030(_): dotest (_,'000030')
+    def test_000040(_): dotest (_,'000040')
+    def test_000050(_): dotest (_,'000050')
+    def test_000060(_): dotest (_,'000060')  # rinf
+    def test_000070(_): dotest (_,'000070')  # kinf
+    def test_000080(_): dotest (_,'000080')  # restr
+    def test_000210(_): dotest (_,'000210')  # pos propagation
+    def test_3001010(_): dotest (_,'3001010')  # entities: dial
+    def test_3001020(_): dotest (_,'3001020')  # entities: fld
+    def test_3001030(_): dotest (_,'3001030')  # entities: kinf
+    def test_3001040(_): dotest (_,'3001040')  # entities: misc
+    def test_3001050(_): dotest (_,'3001050')  # entities: pos
+    def test_3001060(_): dotest (_,'3001060')  # entities: rinf
+    def test_1499230(_):dotest (_,'1499230') # restr/nokanji
 
-    def test_000010(_): _.dotest ('000010')
-    def test_000020(_): _.dotest ('000020')
-    def test_000030(_): _.dotest ('000030')
-    def test_000040(_): _.dotest ('000040')
-    def test_000050(_): _.dotest ('000050')
-    def test_000060(_): _.dotest ('000060')  # rinf
-    def test_000070(_): _.dotest ('000070')  # kinf
-    def test_000080(_): _.dotest ('000080')  # restr
-    def test_000210(_): _.dotest ('000210')  # pos propagation
-    def test_3001010(_): _.dotest ('3001010')  # entities: dial
-    def test_3001020(_): _.dotest ('3001020')  # entities: fld
-    def test_3001030(_): _.dotest ('3001030')  # entities: kinf
-    def test_3001040(_): _.dotest ('3001040')  # entities: misc
-    def test_3001050(_): _.dotest ('3001050')  # entities: pos
-    def test_3001060(_): _.dotest ('3001060')  # entities: rinf
-    def test_1499230(_):_.dotest ('1499230') # restr/nokanji
-
-    # To do: restr combos, freq, pos, misc, fld, dial, lsrc, stagr,
-    #   stagk, xrslv, gloss (lang, ginf), hist, grp
-    #   jmnedict: name_type and others
+    # To do: restr combos, freq, lsrc, stagr, stagk, xrslv,
+    #      gloss (lang, ginf), hist, grp
     #   kanjdic: cinf, chr, krslv
     #   jmdict-ex stuff.
 
@@ -58,19 +49,19 @@ class Test_jmnedict (unittest.TestCase):
                                           testid, 'b')
         _.jmparser = jmxml.Jmparser (KW)
 
-    def dotest (_, testid):
+    def test_01_5001081(_): dotest (_,'5001081')
+    def test_02_5485055(_): dotest (_,'5485055')
+    def test_03_5478094(_): dotest (_,'5478094')
+    def test_04_5389819(_): dotest (_,'5389819')
+    def test_05_5259233(_): dotest (_,'5259233')
+
+def dotest (_, testid):
         global _test_expect
         xml, exp = _.getxml (testid)
         entrs = _.jmparser.parse_entry (xml)
         exec ("_test_expect=" + exp, globals())
         _.assertEqual (entrs, _test_expect)
         return entrs, _test_expect
-
-    def test_01_5001081(_): _.dotest ('5001081')
-    def test_02_5485055(_): _.dotest ('5485055')
-    def test_03_5478094(_): _.dotest ('5478094')
-    def test_04_5389819(_): _.dotest ('5389819')
-    def test_05_5259233(_): _.dotest ('5259233')
 
 def getxml (fname, testid, mode=''):
         # Read and return test data from a file.  The file may contain
