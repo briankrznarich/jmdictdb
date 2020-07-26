@@ -547,7 +547,10 @@ class Jmparser (object):
         kwtab = getattr (XKW, kwtabname)
         kwtxts, dups = jdb.rmdups ([x.text for x in elems])
         try: cls = getattr (jdb, kwtabname.capitalize())
-        except AttributeError: cls = jdb.Obj
+        except AttributeError:
+              # Temporary hack for jmnedict.
+            if kwtabname == 'NAME_TYPE': cls = jdb.Misc
+            else: raise
         kwrecs = []
         for x in kwtxts:
             try: kw = kwtab[x].id

@@ -155,25 +155,6 @@
     _sens=[Sens(sens=1,
         _gloss=[Gloss(lang=1,ginf=1,txt='e3000080')])])]
 
-## 000210
-<entry>
-<ent_seq>3000210</ent_seq>
-<r_ele><reb>あ</reb></r_ele>
-<sense>
-<pos>&n;</pos>
-<gloss>aaa</gloss>
-</sense>
-<sense>
-<gloss>bbb</gloss>
-</sense>
-</entry>
-##-- 
-[Entr (seq=3000210, stat=2, unap=False, 
-    _rdng=[Rdng(rdng=1,txt='あ')],
-    _sens=[Sens(sens=1,_gloss=[Gloss(lang=1,ginf=1,txt='aaa')],_pos=[Pos(kw=17)]),
-           Sens(sens=2,_gloss=[Gloss(lang=1,ginf=1,txt='bbb')], ),]
-     )]
-
 ## 1499230
 <entry>
 <ent_seq>1499230</ent_seq>
@@ -198,4 +179,162 @@
     _kanj=[Kanj(kanj=1,txt='葡萄')],
     _sens=[Sens(sens=1,
         _gloss=[Gloss(lang=1,ginf=1,txt='grape')])])]
+
+#====== PoS propagation
+# Versions of jmxml.py prior to 200725-868f2f4 incorrectly propagated
+# PoS tags to following senses that had no PoS tags.  (That was a
+# convention a long time ago and was not fixed in the code when the
+# convention was abandoned).  This test checks the the jmxml parser
+# no longer does this.
+
+## 000210
+<entry>
+<ent_seq>3000210</ent_seq>
+<r_ele><reb>あ</reb></r_ele>
+<sense>
+<pos>&n;</pos>
+<gloss>aaa</gloss>
+</sense>
+<sense>
+<gloss>bbb</gloss>
+</sense>
+</entry>
+##--
+[Entr (seq=3000210, stat=2, unap=False,
+    _rdng=[Rdng(rdng=1,txt='あ')],
+    _sens=[Sens(sens=1,_gloss=[Gloss(lang=1,ginf=1,txt='aaa')],_pos=[Pos(kw=17)]),
+           Sens(sens=2,_gloss=[Gloss(lang=1,ginf=1,txt='bbb')], ),]
+     )]
+
+#====== General entity parsing tests
+# There is one test per each of the six entity types:
+#   dial, fld, kinf, misc, pos, rinf
+# We check one tag picked more or less randomly from each type with
+# the exception of kinf and rinf: we use "&ik;" in each of those tests
+# because the entity is common to both but has a different 'id' value
+# in each.
+
+## 3001010
+<entry>
+<ent_seq>3001010</ent_seq>
+<r_ele><reb>あ</reb></r_ele>
+<sense>
+<dial>&osb;</dial>
+<gloss>a</gloss>
+</sense>
+</entry>
+##--
+[Entr (seq=3001010, stat=2, unap=False,
+    _rdng=[Rdng(rdng=1,txt='あ')],
+    _sens=[Sens(sens=1,_gloss=[Gloss(lang=1,ginf=1,txt='a')],_dial=[Dial(kw=5)]),]
+     )]
+
+## 3001020
+<entry>
+<ent_seq>3001020</ent_seq>
+<r_ele><reb>あ</reb></r_ele>
+<sense>
+<field>&food;</field>
+<gloss>a</gloss>
+</sense>
+</entry>
+##--
+[Entr (seq=3001020, stat=2, unap=False,
+    _rdng=[Rdng(rdng=1,txt='あ')],
+    _sens=[Sens(sens=1,_gloss=[Gloss(lang=1,ginf=1,txt='a')],_fld=[Fld(kw=3)]),]
+     )]
+
+## 3001030
+<entry>
+<ent_seq>3001030</ent_seq>
+<k_ele><keb>阿</keb><ke_inf>&ik;</ke_inf></k_ele>
+<r_ele><reb>あ</reb></r_ele>
+<sense>
+<gloss>a</gloss>
+</sense>
+</entry>
+##--
+[Entr (seq=3001030, stat=2, unap=False,
+    _rdng=[Rdng(rdng=1,txt='あ')],
+    _kanj=[Kanj(kanj=1,txt='阿',_inf=[Kinf(kw=4)])],
+    _sens=[Sens(sens=1,_gloss=[Gloss(lang=1,ginf=1,txt='a')]),]
+     )]
+
+## 3001040
+<entry>
+<ent_seq>3001040</ent_seq>
+<r_ele><reb>あ</reb></r_ele>
+<sense>
+<misc>&sl;</misc>
+<gloss>a</gloss>
+</sense>
+</entry>
+##--
+[Entr (seq=3001040, stat=2, unap=False,
+    _rdng=[Rdng(rdng=1,txt='あ')],
+    _sens=[Sens(sens=1,_gloss=[Gloss(lang=1,ginf=1,txt='a')],_misc=[Misc(kw=21)]),]
+     )]
+
+## 3001050
+<entry>
+<ent_seq>3001050</ent_seq>
+<r_ele><reb>あ</reb></r_ele>
+<sense>
+<pos>&v1;</pos>
+<gloss>a</gloss>
+</sense>
+</entry>
+##--
+[Entr (seq=3001050, stat=2, unap=False,
+    _rdng=[Rdng(rdng=1,txt='あ')],
+    _sens=[Sens(sens=1,_gloss=[Gloss(lang=1,ginf=1,txt='a')],_pos=[Pos(kw=28)]),]
+     )]
+
+## 3001060
+<entry>
+<ent_seq>3001060</ent_seq>
+<r_ele><reb>あ</reb><re_inf>&ik;</re_inf></r_ele>
+<sense>
+<gloss>a</gloss>
+</sense>
+</entry>
+##--
+[Entr (seq=3001060, stat=2, unap=False,
+    _rdng=[Rdng(rdng=1,txt='あ',_inf=[Rinf(kw=3)])],
+    _sens=[Sens(sens=1,_gloss=[Gloss(lang=1,ginf=1,txt='a')]),]
+     )]
+
+#===== Special entity tests.
+# These are cases where the entity differs from the internal tag.
+# Note that these are for jmdict, jmnedict tests are elsewhere.
+
+## 3001410
+<entry>
+<ent_seq>3001040</ent_seq>
+<r_ele><reb>あ</reb></r_ele>
+<sense>
+<misc>&male;</misc>
+<gloss>a</gloss>
+</sense>
+</entry>
+##--
+[Entr (seq=3001040, stat=2, unap=False,
+    _rdng=[Rdng(rdng=1,txt='あ')],
+    _sens=[Sens(sens=1,_gloss=[Gloss(lang=1,ginf=1,txt='a')],_misc=[Misc(kw=15)]),]
+     )]
+
+## 3001420
+<entry>
+<ent_seq>3001420</ent_seq>
+<r_ele><reb>あ</reb></r_ele>
+<sense>
+<misc>&fem;</misc>
+<gloss>a</gloss>
+</sense>
+</entry>
+##--
+[Entr (seq=3001420, stat=2, unap=False,
+    _rdng=[Rdng(rdng=1,txt='あ')],
+    _sens=[Sens(sens=1,_gloss=[Gloss(lang=1,ginf=1,txt='a')],_misc=[Misc(kw=9)]),]
+     )]
 
