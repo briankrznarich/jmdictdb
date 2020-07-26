@@ -4,7 +4,7 @@
 
 import sys, os, inspect, pdb
 _=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
-from jmdictdb import jdb, jmxml, xmlkw, pgi, fmt
+from jmdictdb import jdb, jmxml, pgi, fmt
 from jmdictdb.pylib import progress_bar
 
 def main (args, opts):
@@ -14,7 +14,7 @@ def main (args, opts):
             jdb.dbOpen (opts.database, **jdb.dbopts (opts))
             KW = jdb.KW
         else:
-            jdb.KW = KW = jdb.Kwds (jdb.std_csv_dir())
+            jdb.KW = KW = jdb.Kwds ('')
 
         xlang = None
         if opts.lang:

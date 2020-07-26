@@ -1,0 +1,120 @@
+# Tests for jmnedict entries.
+
+## 5001081
+<entry>
+<ent_seq>5001081</ent_seq>
+<r_ele>
+<reb>いはほ</reb>
+</r_ele>
+<trans>
+<name_type>&masc;</name_type>
+<trans_det>Iwao</trans_det>
+</trans>
+</entry>
+##--
+[Entr (seq=5001081, stat=2, unap=False,
+  _rdng=[Rdng(rdng=1,txt='いはほ')],
+  _sens=[Sens(sens=1,
+     _gloss=[Gloss(lang=1,ginf=1,txt='Iwao')],
+     _misc=[Misc(kw=15)])])]
+
+## 5485055
+<entry>
+<ent_seq>5485055</ent_seq>
+<k_ele>
+<keb>太田</keb>
+</k_ele>
+<r_ele>
+<reb>おおた</reb>
+</r_ele>
+<trans>
+<name_type>&place;</name_type>
+<name_type>&surname;</name_type>
+<trans_det>Oota</trans_det>
+</trans>
+</entry>
+##--
+[Entr (seq=5485055, stat=2, unap=False,
+  _kanj=[Kanj(kanj=1,txt='太田')],
+  _rdng=[Rdng(rdng=1,txt='おおた')],
+  _sens=[Sens(sens=1,
+    _gloss=[Gloss(lang=1,ginf=1,txt='Oota')],
+    _misc=[Misc(kw=182),Misc(kw=181)])])]
+
+## 5478094
+<entry>
+<ent_seq>5478094</ent_seq>
+<k_ele>
+<keb>聡美</keb>
+</k_ele>
+<r_ele>
+<reb>さとみ</reb>
+</r_ele>
+<trans>
+<name_type>&fem;</name_type>
+<trans_det>Satomi</trans_det>
+</trans>
+</entry>
+##--
+[Entr (seq=5478094, stat=2, unap=False,
+  _kanj=[Kanj(kanj=1,txt='聡美')],
+  _rdng=[Rdng(rdng=1,txt='さとみ')],
+  _sens=[Sens(sens=1,
+    _gloss=[Gloss(lang=1,ginf=1,txt='Satomi')],
+    _misc=[Misc(kw=9)])])]
+
+## 5389819
+<entry>
+<ent_seq>5389819</ent_seq>
+<k_ele>
+<keb>菖蒲</keb>
+</k_ele>
+<r_ele>
+<reb>しょうぶ</reb>
+</r_ele>
+<trans>
+<name_type>&place;</name_type>
+<name_type>&surname;</name_type>
+<name_type>&masc;</name_type>
+<name_type>&fem;</name_type>
+<trans_det>Shoubu</trans_det>
+</trans>
+</entry>
+##--
+[Entr (seq=5389819, stat=2, unap=False,
+  _kanj=[Kanj(kanj=1,txt='菖蒲')],
+  _rdng=[Rdng(rdng=1,txt='しょうぶ')],
+  _sens=[Sens(sens=1,
+    _gloss=[Gloss(lang=1,ginf=1,txt='Shoubu')],
+    _misc=[Misc(kw=182),Misc(kw=181),Misc(kw=15),Misc(kw=9)])])]
+
+## 5259233
+<entry>
+<ent_seq>5259233</ent_seq>
+<k_ele>
+<keb>湖南</keb>
+</k_ele>
+<r_ele>
+<reb>こなん</reb>
+</r_ele>
+<trans>
+<name_type>&place;</name_type>
+<name_type>&surname;</name_type>
+<name_type>&fem;</name_type>
+<trans_det>Konan</trans_det>
+</trans>
+<trans>
+<name_type>&place;</name_type>
+<trans_det>Hunan (China)</trans_det>
+</trans>
+</entry>
+##--
+[Entr (seq=5259233, stat=2, unap=False,
+  _kanj=[Kanj(kanj=1,txt='湖南')],
+  _rdng=[Rdng(rdng=1,txt='こなん')],
+  _sens=[Sens(sens=1,
+    _gloss=[Gloss(lang=1,ginf=1,txt='Konan')],
+    _misc=[Misc(kw=182),Misc(kw=181),Misc(kw=9)]),
+        Sens(sens=2,
+    _gloss=[Gloss(lang=1,ginf=1,txt='Hunan (China)')],
+    _misc=[Misc(kw=182)])])]
