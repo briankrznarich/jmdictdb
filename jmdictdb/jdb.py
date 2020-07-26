@@ -2283,11 +2283,6 @@ def crossprod (*args):
             result = [x + [y] for x in result for y in arg]
         return result
 
-def get_dtd (filename, root="JMdict", encoding="UTF-8"):
-        with open (filename, encoding=encoding) as f:
-            txt = f.read()
-            txt %= {'root':root, 'encoding':encoding}
-        return txt
 
 def reset_encoding (file, encoding='utf-8'):
         # As of Python-3.3, this seems to be the best (if still

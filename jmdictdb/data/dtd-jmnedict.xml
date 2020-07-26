@@ -109,16 +109,5 @@
 <!-- The following entity codes are used for common elements within the
 various information fields.
 -->
-<!ENTITY surname "family or surname">
-<!ENTITY place "place name">
-<!ENTITY unclass "unclassified name">
-<!ENTITY company "company name">
-<!ENTITY product "product name">
-<!ENTITY work "work of art, literature, music, etc. name">
-<!ENTITY masc "male given name or forename">
-<!ENTITY fem "female given name or forename">
-<!ENTITY person "full name of a particular person">
-<!ENTITY given "given name or forename, gender not specified">
-<!ENTITY station "railway station">
-<!ENTITY organization "organization name">
+<!-- {{entities}} -->
 ]>

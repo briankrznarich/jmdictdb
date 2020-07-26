@@ -5,7 +5,7 @@
 Functions for generating XML descriptions of entries.
 
 """
-import re, difflib
+import re, os, difflib
 from xml.sax.saxutils import escape as esc, quoteattr as esca
 from jmdictdb import jdb
 global KW
@@ -53,7 +53,7 @@ def entr (entr, compat='jmex', genhists=False, genxrefs=True,
         fmt= entrhdr (entr, compat)
 
         kanjs = getattr (entr, '_kanj', [])
-        for k in kanjs: fmt.extend (kanj (k))
+        for k in kanjs: fmt.extend (kanj (k, compat))
 
         rdngs = getattr (entr, '_rdng', [])
         for r in rdngs: fmt.extend (rdng (r, kanjs, compat))
@@ -71,11 +71,11 @@ def entr (entr, compat='jmex', genhists=False, genxrefs=True,
         if wantlist: return fmt
         return '\n'.join (fmt)
 
-def kanj (k):
+def kanj (k, compat):
         fmt = []
         fmt.append ('<k_ele>')
         fmt.append ('<keb>%s</keb>' % esc(k.txt))
-        fmt.extend (ents (k, '_inf', 'KINF', 'ke_inf', sort=True))
+        fmt.extend (ents (k, '_inf', 'KINF', 'ke_inf', sort=True, dtd=compat))
         fmt.extend (['<ke_pri>%s</ke_pri>' %s
                      for s in jdb.freq2txts (getattr (k,'_freq',[]))])
         fmt.append ('</k_ele>')
@@ -167,7 +167,7 @@ def sens (s, kanj, rdng, compat, src, genxrefs=True):
 def trans (sens, compat, src, genxrefs):
         "Format a jmnedict trans element."
 
-        fmt = (ents (sens, '_misc', 'MISC', 'name_type', dtd='jmnedict'))
+        fmt = (ents (sens, '_misc', 'MISC', 'name_type', dtd=compat))
         if genxrefs:
             xr = sens_xrefs (sens, src, compat)
             fmt.extend (xr)
@@ -200,57 +200,122 @@ def gloss (g, compat=None):
 
 def ents (parent, attr, domain, elem_name, sort=False, dtd="jmdict"):
         '''
-    Given a list of tag items (in the form ('parent','attr') we return
+    Given a list of tag items (in the form ('parent','attr')) we return
     a list of XML elements containing the entities representing those
     tags.
       parent -- A Entr component like Kanj, Sens, etc.
-      attr -- A tag list attribute on 'parent' like "_kinf", "_pos", etc.
-      domain -- Type of tag list for lookup in jdb.KW ("KINF", "POS", etc.)
-      elem_name -- Name of XML element to use (eg "ke_inf", "pos", etc.)
-      sort -- If true sost list of elements before return.
-      dtd -- Type of DTD the XML will be used with: "jmdict" or "jmnedict".'''
+      attr -- (str) A tag list attribute on 'parent' like "_kinf",
+          "_pos", etc.
+      domain -- (str) Type of tag list for lookup in jdb.KW ("KINF",
+          "POS", etc.)
+      elem_name --(str) Name of XML element to use (eg "ke_inf",
+          "pos", etc.)
+      sort -- (bool) If true sort list of elements before return.
+      dtd -- (str) Entity set.  Identifies a particular set of
+          tag -> entity mappings in the Kwds data.  Typically will
+          be "jmdict" or "jmnedict" but other alternatives may be
+          available depending on the data in the kw* tables and
+          xsv files.  None is equivalent to "jmdict".'''
 
-        if dtd in (None, 'jmex'): dtd = 'jmdict'
         nlist = getattr (parent, attr, [])
         if not nlist: return nlist
-        kwtab = getattr (KW, domain)
+          # For brevity make a temporary function that returns only
+          # the entity name.
+        ent_name = lambda id: entity(KW,domain,id,dtd)[0]
         kwlist = ['<%s>&%s;</%s>'
-                  % (elem_name, entity(kwtab,x.kw,dtd), elem_name)
+                    # Note that x.kw is the tag id number.
+                  % (elem_name, ent_name(x.kw), elem_name)
                   for x in nlist]
         if sort: kwlist.sort()
         return kwlist
 
-def entity (kwtab, id, dtd):
+def entity (kwds, domain, id, dtd):
         '''
-    Return XML entity for tag with id number 'id' in 'kwtab'.
-      kwtab -- A dict containing ...
-      id -- Id number of tag
-      dtd -- Either "jmdict" or "jmnedict" '''
+    Return the XML entity name and value for the 'domain' tag with
+    id number 'id' in 'kwds' for use with the DTD 'dtd'.
+      kwds -- A jdb.Kwds instance.
+      domain -- (str) The type of tag (eg "DIAL", "POS", etc).
+      id -- (int) Id number of tag.
+      dtd -- (str) Entity set.  Identifies a particular set of
+          tag -> entity mappings in the Kwds data.  Typically will
+          be "jmdict" or "jmnedict" but other alternatives may be
+          available depending on the data in the kw* tables and
+          xsv files.  None is equivalent to "jmdict".'''
 
         msg = "Illegal tag for DTD \"%s\": '%s'"
-        rec = kwtab[id]
+          #FIXME: following dtd adjustment should be done higher
+          # in call chain.
+        if dtd in (None, 'jmex'): dtd = 'jmdict'
+        rec = getattr (kwds, domain)[id]
+          # Assume the entity name and value will be the same as the tag
+          # name and descr.  We'll overwrite later if wrong.
+        ent, value = rec.kw, rec.descr
         if not rec.ents or dtd not in rec.ents:
-              # If there is no specific info the in .ents (entity info)
-              # attribute then, if the DTD is 'jmdict', the entity name
-              # is the 'kw' value.  If the DTD is not 'jmdict' then we
-              # expect explicit entity info and since it's not present,
-              # raise an error.
-            if dtd == 'jmdict': return rec.kw
-            raise KeyError(msg % (dtd, rec.kw))
-        entinfo = rec.ents[dtd]
-        if not isinstance (entinfo, dict):
-              # If the entity info is not a dict, then we presum it's a
-              # scalar whose bool value that indicates when true the 'kw'
-              # value is the entity name, or when false, the the tag is
-              # disallowed.
-            if entinfo: return rec.kw
-            else: raise KeyError(msg % (dtd, rec.kw))
-          # If the entity info is a dict, then it's "e" item, if present
-          # is the entity name.  If not present the entity name is the
-          # same as the tag.  (This may be the case when the entity info
-          # is present only to provide a different entity value for the DTD.)
-        if 'e' in entinfo: return entinfo['e']
-        return rec.kw
+              # If there is no specific entity info for our DTD in the
+              # rec.ents attribute then, if the DTD is 'jmdict', the entity
+              # name and value are the tag's 'kw' and 'descr' values.  That
+              # is, unless contrary info is provided in rec.ents we assume
+              # that all tags are DTD entities.  Conversely, if the DTD is
+              # "jmnedict" (anything other than "jmdict") we assume that
+              # no tags are DTD entities by default and hence if there is
+              # no rec.ents value, raise an error.
+            if dtd != 'jmdict': raise KeyError(msg % (dtd, rec.kw))
+        else:
+            entinfo = rec.ents[dtd]
+            if not isinstance (entinfo, dict):
+                  # If the entity info is not a dict, then we presume it's
+                  # a scalar whose bool value indicates when true that the
+                  # tag's 'kw'/'descr' values are the same as the entity,
+                  # or when false, the tag is disallowed.
+                if not entinfo: raise KeyError(msg % (dtd, rec.kw))
+            else:
+                  # If the entity info is a dict, then it's "e" item, if
+                  # present, is the entity name.  If not present the entity
+                  # name is the same as the tag.  Same for the "v" and the
+                  # entity value / tag descr.
+                if ('e' not in entinfo and 'v' not in entinfo)\
+                        or len(entinfo)>2:
+                    raise ValueError ("Bad entity info for %s[%d]: %r"
+                                      % (domain, id, entinfo))
+                if 'e' in entinfo: ent = entinfo['e']
+                if 'v' in entinfo: value = entinfo['v']
+        return ent, value
+
+def entities (kwds, dtd, grouped=True):
+       'Return a list of entity definitions suitable for inclusion in a DTD.'
+
+         # Note that there may be duplicate entity lines (where both the
+         # name and value are the same; for example at the current time
+         # "ik/word containing..." occurs in both the KINF and RINF groups.
+         # In the grouped output we leave the duplicates. In the ungrouped
+         # output (which is sorted) we eliminate duplicates.
+         #FIXME: should raise an error when duplocate entity names are
+         # present with different values.  It seems we can't rely on XML
+         # validation to pick this up: a quick check with a couple online
+         # XML validators reported no errors, even when the values were
+         # different.
+
+       dominfo = [  # These are the tag domains that use entities:
+           ('DIAL', '<dial> (dialect)'),
+           ('FLD',  '<field>'),
+           ('KINF', '<ke_inf> (kanji info)'),
+           ('MISC', '<misc> (miscellaneous)'),
+           ('POS',  '<pos> (part-of-speech)'),
+           ('RINF', '<re_inf> (reading info)'), ]
+       lines = []
+       for domain, descr in dominfo:
+           group = []
+           for rec in kwds.recs (domain):
+               try: ename, eval = entity (kwds, domain, rec.id, dtd)
+               except KeyError: pass
+               else: group.append ('<!ENTITY %s "%s">' % (ename, eval))
+           if grouped: group.sort (key=lambda x: x.lower())
+           if grouped and group: lines.append ("<!-- %s entities -->" % descr)
+           lines.extend (group)
+       if not grouped:
+           lines = list (set (lines))  # Remove any duplicate lines.
+           lines = sorted (lines, key=lambda x: x.lower())
+       return '\n'.join (lines)
 
 def lsrc (x):
         fmt = [];  attrs = []
@@ -607,6 +672,14 @@ def entr_diff (eold, enew, n=2):
         if len(diffs) >= 2: diffs = diffs[2:]
         diffstr = '\n'.join (diffs)
         return diffstr
+
+def get_dtd (kwds, dtd, grouped=False):
+        ents = entities (kwds, dtd, grouped)
+        fname = "dtd-%s.xml" % dtd
+        path = os.path.join (jdb.std_csv_dir(), fname)
+        with open (path) as f: txt = f.read()
+        txt = txt.replace ('<!-- {{entities}} -->', ents)
+        return txt
 
 def _main():
         import sys

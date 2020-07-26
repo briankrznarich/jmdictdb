@@ -35,13 +35,13 @@ def main():
             seqlist = read_seqfile (opts.seqfile)
 
           # Get compatibility info based on user request and corpus type.
-        corpid, dtd_fn, compat, dtd_root, dtd_date, appr, warn \
+        corpid, dtd, compat, dtd_root, dtd_date, appr, warn \
             = compat_info (opts.corpus, opts.compat)
         if warn and not opts.force: sys.exit (
             "The --compat option you requested (%s) incompatible with "\
             "the requested --corpus (%s).  To continue anyway, use the "\
             "--force option." % (opts.compat, opts.corpus))
-        if dtd_fn is None: opts.nodtd = True
+        if dtd is None: opts.nodtd = True
         if not opts.root: opts.root = dtd_root
 
           # Get a sql statement that will select all the entries to be
@@ -60,7 +60,7 @@ def main():
           # file if there is some error in the command line arguments that
           # can be detected above.
         outname = opts.output if opts.output else None
-        outf = open_output (outname, dtd_fn, opts.root, dtd_date)
+        outf = open_output (outname, dtd, opts.root, dtd_date)
 
           # Read the entries in blocks of 'opts.blocksize', format them
           # as XML, and write them to the output file.
@@ -188,9 +188,9 @@ def write_entrs (cur, outf, entrs, raw, compat, corpora=set()):
             outf.write (txt + "\n")
         if Debug: print ("Time: %s (fmt)"%(time.time()-start),file=sys.stderr)
 
-def open_output (filename, dtd_fn, dtd_root, dtd_date):
+def open_output (filename, dtd, dtd_root, dtd_date):
     # Create and open the output file and write the DTD to it if
-    # 'dtd_fn' (the name of the dtd template file) has a non-false
+    # 'dtd' (the name of the dtd template file) has a non-false
     # str value.
         if not filename: outf = sys.stdout
         else: outf = open (filename, "w")
@@ -198,21 +198,13 @@ def open_output (filename, dtd_fn, dtd_root, dtd_date):
           # of the dtd template file to use.  If 'dtd_fn' is false, skip the
           # dtd; the output file will be list <entry> and maybe <corpus>
           # elements.
-        if dtd_fn:
-            write_dtd (outf, dtd_fn, dtd_root)
+        if dtd:
+            dtdtxt= fmtxml.get_dtd (jdb.KW, dtd)
+            outf.write (dtdtxt)
             if dtd_date:
                 today = time.strftime ("%Y-%m-%d", time.localtime())
                 outf.write ("<!-- %s created: %s -->\n" % (dtd_root, today))
             outf.write ('<%s>\n' % dtd_root)
-        return outf
-
-def write_dtd (outf, dtd_fn, dtd_root):
-        dir = jdb.std_csv_dir()
-        dtdpath = dir + "/" + dtd_fn      # Fully qualified dtd file name.
-          # jdb.get_dtd() reads the dtd text and replaces the root
-          # element name name.
-        dtdtxt= jdb.get_dtd (dtdpath, dtd_root)
-        outf.write (dtdtxt)
         return outf
 
 def read_seqfile (seqfilename):
@@ -241,14 +233,14 @@ def compat_info (corpus, compat):
           #   4 appr: (bool) Included only active approved entries.
           #   5 srcts: List of compatible corpus types.
           #
-          #   dtd filename        fmtxml-compat  root      date  appr,  srct's
-          #   0                     1            2         3     4       5
+          #    dtd name  fmtxml-compat  root       date  appr   srct's
+          #    0           1            2          3     4      5
             'jmdict':
-              ["dtd-jmdict.xml",   'jmdict',    'JMdict',  True, True, ['jmdict']],
+              ["jmdict",   'jmdict',    'JMdict',  True, True, ['jmdict']],
             'jmnedict':
-              ["dtd-jmnedict.xml", 'jmnedict',  'JMnedict',True, True, ['jmnedict']],
+              ["jmnedict", 'jmnedict',  'JMnedict',True, True, ['jmnedict']],
             'jmex':
-              ["dtd-jmdict-ex.xml", None,       'JMdict',  False,False,['jmdict','jmnedict']],
+              [None,        None,       'JMdict',  False,False,['jmdict','jmnedict']],
             }
           # Note: when adding/changing/deleting compat entries above, be
           # sure to reflect any key changes in the --compat option choices
