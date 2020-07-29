@@ -78,7 +78,7 @@ def scantests (obj, collect):
         if isinstance (obj, unittest.TestCase):
             if collect is None: print (obj.id())
             else:
-                modnm, clsnm, testnm = obj.id().split ('.')
+                modnm, clsnm, testnm = obj.id().rsplit ('.', maxsplit=2)
                 collect[modnm][clsnm] += 1
         elif isinstance (obj, unittest.TestSuite):
             for s in obj._tests: scantests (s, collect)
