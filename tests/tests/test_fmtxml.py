@@ -87,26 +87,23 @@ def dotest (_, execstr, expected, **kwds):
                    % (len(expected), expected, len(xml), xml)
             _.failIf (1, msg)
 
-# Tests for fmtxml.entr_diff(), see IS-227.
-# Like class Test_entr above, we use data from data/fmtxml_data.py imported
-# (as 'f' for brevity) earlier.  See Test_entr above for more details.
-
+  # Tests for fmtxml.entr_diff(), see IS-227.
+  # Like class Test_entr above, we use data from data/fmtxml_data.py imported
+  # (as 'f' for brevity) earlier.  See Test_entr above for more details.
 class Test_entr_diff (unittest.TestCase):
     def setUp(_):
         jdb.KW = jdb.Kwds ('data/fmtxml/kw/')
         fmtxml.XKW = None
-    def test_0001(_):
+    def test_0400010(_): _.do_test ('0400010')   # No change.
+    def test_0400020(_): _.do_test ('0400020')   # rdng.txt change.
+    def test_0400030(_): _.do_test ('0400030')   # entr.src change.
+    def test_0400040(_): _.do_test ('0400040')   # entr.seq change.
+    def do_test (_, testnum):
         lcls = {}
-        exec (f.t_in['0400010'], globals(), lcls)
+        exec (f.t_in[testnum], globals(), lcls)
         e1, e2 = lcls['e1'], lcls['e2']
         s = fmtxml.entr_diff (e1, e2, n=0)
-        _.assertEqual (s, f.t_exp['0400010'])
-    def test_0002(_):
-        lcls = {}
-        exec (f.t_in['0400020'], globals(), lcls)
-        e1, e2 = lcls['e1'], lcls['e2']
-        s = fmtxml.entr_diff (e1, e2, n=0)
-        _.assertEqual (s, f.t_exp['0400020'])
+        _.assertEqual (s, f.t_exp[testnum])
 
 class Test_xrefs (unittest.TestCase):
     def setUp(_):

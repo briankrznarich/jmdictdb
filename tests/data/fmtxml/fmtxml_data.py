@@ -184,4 +184,21 @@ t_exp[tid] = '''\
 -<reb>たかはし</reb>
 +<reb>たかばし</reb>'''
 
+tid = '0400030' ####################################
+t_in[tid] = \
+        "e1 = Entr (id=1, src=1, _rdng=[Rdng (txt='たかはし')])\n"\
+        "e2 = Entr (id=2, src=99, _rdng=[Rdng (txt='たかはし')])"
+t_exp[tid] = '''\
+@@ -1,2 +1,2 @@
+-<ent_corp>jmdict</ent_corp>
++<ent_corp>test</ent_corp>'''
+
+tid = '0400040' ####################################
+t_in[tid] = \
+        "e1 = Entr (id=1, src=99, seq=1000123)\n"\
+        "e2 = Entr (id=2, src=99, seq=1000124)"
+t_exp[tid] = '''\
+@@ -1,2 +1,2 @@
+-<ent_seq>1000123</ent_seq>
++<ent_seq>1000124</ent_seq>'''
 
