@@ -28,16 +28,15 @@ def entr (entr, compat='jmex', genhists=False, genxrefs=True,
                 "jmnedict": generate XML that uses the standard
                   (post 2014-10) JMnedict DTD that include seq 
                   numbers and xrefs.
-          genhists -- If true, <info> and <audit> elements will 
-                be generated in the XML according to the value of
-                'compat'.   If false they will not be generated 
-                regardless of the value of 'compat'.
-          genxrefs -- If true generate <xref> elements based on the 
-                value of 'compat'.  (Generate for all jmdictxxx and
-                for jmnedict, but not for jmnedictold.) 
-                If false, never generate xrefs.  In order to generate
-                xrefs the 'entr' object must have augmented xrefs.
-                If it doesn't an exception will be thrown.
+          genhists -- If true and if compat is "jmex" (or None)
+                then <info>, <audit>, <note> and <srcnote> elements
+                will be generated in the XML.
+          genxrefs -- If true generate <xref> elements for the items
+                in the entry's ._xref and .xrslv lists .  If false
+                xrefs elements will be will not be generated.  Note
+                that any ._xref items must be augmented xrefs; if an
+                unaugmented xref is encountered an exception will be
+                thrown.
           wantlist -- If false, return the xml as a single string.
                 with embedded newline characters.  If true, return a
                 list of strings, one line per string, with no embedded
@@ -64,6 +63,12 @@ def entr (entr, compat='jmex', genhists=False, genxrefs=True,
 
         rdngs = getattr (entr, '_rdng', [])
         for r in rdngs: fmt.extend (rdng (r, kanjs, compat))
+
+        if not compat and genhists:  # includes .notes, .srcnote.
+               #FIXME: should be able to control <info>,<audit> and
+               # <notes>,<srcnote> indpendently.
+            fmt.extend (info (entr, compat, genhists,
+                              last_imported=last_imported))
 
         senss = getattr (entr, '_sens', [])
         if compat in ('jmnedict',):
