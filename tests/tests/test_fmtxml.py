@@ -60,7 +60,13 @@ class Test_restr (unittest.TestCase):
 
 class Test_entr (unittest.TestCase):
     def setUp(_):
-        jdb.KW = jdb.Kwds ('data/fmtxml/kw/')
+        jdb.KW = jdb.Kwds ('')
+        for id,kw,descr in ((1,'grp1','group grp1'),
+                            (2,'xx','group xx'),
+                            (10,'zz','group zz'),
+                            (11,'mxtpp55-2','group mxtpp55-2 with hyphen'),
+                            (200,'aabb','group aabb'),):
+            jdb.KW.add ('GRP', (id,kw,descr))
         fmtxml.XKW = None   # Force XKW to be reset from just loaded KW.
     def test0200010 (_): dotest (_, f.t_in['0200010'], f.t_exp['0200010'])
     def test0201020 (_): dotest (_, f.t_in['0201020'], f.t_exp['0201020'])
@@ -70,7 +76,7 @@ class Test_entr (unittest.TestCase):
 
 class Test_xrslv (unittest.TestCase):
     def setUp (_):
-        jdb.KW = jdb.Kwds ('data/fmtxml/kw/')
+        jdb.KW = jdb.Kwds ('')
         fmtxml.XKW = None   # Force XKW to be reset from just loaded KW.
     def test0202010(_): dotest (_, f.t_in['0202010'], f.t_exp['0202010'], compat='jmdict')
     def test0202020(_): dotest (_, f.t_in['0202020'], f.t_exp['0202020'], compat='jmdict')
@@ -80,7 +86,7 @@ class Test_xrslv (unittest.TestCase):
 
 class Test_jmnedict (unittest.TestCase):
     def setUp(_):
-        jdb.KW = jdb.Kwds ('data/fmtxml/kw/')
+        jdb.KW = jdb.Kwds ('')
         fmtxml.XKW = None   # Force XKW to be reset from just loaded KW.
     def test0300010(_): dotest (_, f.t_in['0300010'], f.t_exp['0300010'], compat='jmnedict')
     def test0300020(_): dotest (_, f.t_in['0300020'], f.t_exp['0300020'], compat='jmnedict')
@@ -105,7 +111,9 @@ def dotest (_, execstr, expected, **kwds):
   # (as 'f' for brevity) earlier.  See Test_entr above for more details.
 class Test_entr_diff (unittest.TestCase):
     def setUp(_):
-        jdb.KW = jdb.Kwds ('data/fmtxml/kw/')
+        jdb.KW = jdb.Kwds ('')
+        jdb.KW.add ('SRC', (1, 'jmdict', '', None, None,
+                            None,  None, None, None, 1))
           # XKW is a fmtxml global that is normally initialized inside
           # fmtxml.entr() but since we are not calling .entr() we need
           # initialize XKW "by hand".
@@ -124,7 +132,7 @@ class Test_entr_diff (unittest.TestCase):
 class Test_xrefs (unittest.TestCase):
     def setUp(_):
         from jmdictdb import xmlkw
-        jdb.KW = jdb.Kwds ('data/fmtxml/kw/')
+        jdb.KW = jdb.Kwds ('')
           # XKW is a fmtxml global that is normally initialized inside
           # fmtxml.entr() but since we are not calling .entr() we need
           # initialize XKW "by hand".
