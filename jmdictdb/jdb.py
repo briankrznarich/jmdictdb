@@ -1692,6 +1692,24 @@ class Kwds:
         shortname = '%s_%s' % (attr, row.kw.replace ('-', '_'))
         setattr (self, shortname, row.id)
 
+    def upd (self, attr, id_or_kw, kw=None, descr=None):
+        # Update or delete a row.
+        #   attrs -- Identifies the keyword set (eg, 'DIAL', 'POS', etc.
+        #   is_or_kw -- Identifies the row in the keyword set.
+        #   kw, descr -- New value for the given field.  If neither are
+        #     given (ie, both are None) the row will be deleted.
+        kwtab = getattr (self, attr)
+        r = kwtab[id_or_kw]
+        if kw is None and descr is None:
+            del kwtab[r.id]; del kwtab[r.kw]
+        else:
+            if descr is not None and descr != r.descr:
+                kwtab[r.id].descr = descr
+            if kw is not None and kw != r.kw:
+                del kwtab[r.kw]
+                kwtab[r.id].kw = kw
+                kwtab[kw] = kwtab[r.id]
+
     def attrs( self ):
         # Return list of attr name strings for attributes that contain
         # non-empty sets of rows.  Note that this instance will

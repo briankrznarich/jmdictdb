@@ -2,7 +2,7 @@
 
 import sys, pdb, unittest
 from jmdb import DBmanager
-from jmdictdb import jdb
+from jmdictdb import jdb, db
 
 Cursor = None
 def setUpModule():
@@ -143,6 +143,35 @@ class Loaddb (unittest.TestCase):
         _.assertEqual (len(recs), 4)
         comparable_recs = set ((tuple(x) for x in recs))
         _.assertEqual (comparable_recs, expect)
+
+class Upd (unittest.TestCase):
+    def setUp (_):
+        _.kwds = jdb.Kwds()
+        _.row = db.Obj(id=3,kw='v1',descr="Ichidan verb")
+        _.kwds.add ('POS', _.row)
+    def test001(_):                      # Verify setUp() did what we thought.
+        _.assertIs (_.row, _.kwds.POS[3])
+        _.assertIs (_.row, _.kwds.POS['v1'])
+        _.assertEqual (3, _.row.id)
+        _.assertEqual ('v1', _.row.kw)
+        _.assertEqual ("Ichidan verb", _.row.descr)
+    def test002(_):                                          # Check deletion.
+        _.kwds.upd ('POS', 3)
+        _.assertEqual (0, len (_.kwds.POS))
+    def test003(_):                                               # Update kw.
+        _.kwds.upd ('POS', 3, kw='a')
+        _.assertIs (_.row, _.kwds.POS[3])
+        _.assertIs (_.row, _.kwds.POS['a'])
+        _.assertEqual (3, _.row.id)
+        _.assertEqual ('a', _.row.kw)
+        _.assertEqual ("Ichidan verb", _.row.descr)
+    def test004(_):                                            # Update descr.
+        _.kwds.upd ('POS', 3, descr="v1 verb")
+        _.assertIs (_.row, _.kwds.POS[3])
+        _.assertIs (_.row, _.kwds.POS['v1'])
+        _.assertEqual (3, _.row.id)
+        _.assertEqual ('v1', _.row.kw)
+        _.assertEqual ("v1 verb", _.row.descr)
 
 class Missing: pass
 def validate_rec (_, o, domain, idx, kw, descr=Missing):
