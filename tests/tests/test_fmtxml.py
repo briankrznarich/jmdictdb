@@ -1,5 +1,5 @@
 import sys, unittest, datetime, pdb
-from jmdictdb import jdb
+from jmdictdb import jdb, db
 from jmdictdb.objects import *
 from jmdictdb import fmtxml, xmlkw
 
@@ -112,8 +112,11 @@ def dotest (_, execstr, expected, **kwds):
 class Test_entr_diff (unittest.TestCase):
     def setUp(_):
         jdb.KW = jdb.Kwds ('')
-        jdb.KW.add ('SRC', (1, 'jmdict', '', None, None,
-                            None,  None, None, None, 1))
+          # We need an additional kwsrc row to allow the tests to change
+          # between src's but we don't need every field in it, so for
+          # brevity add just the needed field: srct.
+        jdb.KW.add ('SRC', db.DbRow((1,'jmdict','',1),
+                                    ('id','kw','descr','srct')))
           # XKW is a fmtxml global that is normally initialized inside
           # fmtxml.entr() but since we are not calling .entr() we need
           # initialize XKW "by hand".
@@ -350,8 +353,8 @@ class Compat (unittest.TestCase):
         got = fmtxml.entr(_.entr, compat='jmex')
         expect = '''\
             <entry id="33" stat="A">
+            <ent_corp type="jmdict">test</ent_corp>
             <ent_seq>1000222</ent_seq>
-            <ent_corp>test</ent_corp>
             <r_ele>
             <reb>ゴミ</reb>
             </r_ele>
@@ -366,8 +369,8 @@ class Compat (unittest.TestCase):
         got = fmtxml.entr(_.entr, compat='jmex', genhists=True)
         expect = '''\
             <entry id="33" stat="A">
+            <ent_corp type="jmdict">test</ent_corp>
             <ent_seq>1000222</ent_seq>
-            <ent_corp>test</ent_corp>
             <r_ele>
             <reb>ゴミ</reb>
             </r_ele>
