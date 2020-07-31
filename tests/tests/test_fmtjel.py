@@ -1,6 +1,6 @@
 import sys, unittest, os.path, pdb
 import unittest_extensions, jmdb
-from jmdictdb import jdb, fmtjel, jmxml, xmlkw, jelparse
+from jmdictdb import jdb, fmtjel, jmxml, jelparse
 from jmdictdb.objects import *
 
 def main(): unittest.main()
@@ -29,7 +29,7 @@ def setUpModule():
         global DBcursor, JELparser, JMparser
         DBcursor = jmdb.DBmanager.use (DBNAME, DBFILE)
         JELparser = jmdb.JelParser (DBcursor)
-        JMparser = jmxml.Jmparser (jdb.KW)
+        JMparser = jmxml.Jmparser (jdb.KW, "jmdict")
 
 class General (unittest.TestCase):
     def test1000290(_): check(_,1000290)  # simple, 1H1S1Ts1G

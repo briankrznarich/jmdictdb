@@ -15,7 +15,7 @@ class Test_parse_jmdict (unittest.TestCase):
           # ElementTree which needs utf-8.)
         _.getxml = lambda testid: getxml ('data/jmxml/parse_entry.xml',
                                           testid, 'b')
-        _.jmparser = jmxml.Jmparser (KW)
+        _.jmparser = jmxml.Jmparser (KW, "jmdict")
 
     def test_000010(_): dotest (_,'000010')
     def test_000020(_): dotest (_,'000020')
@@ -47,7 +47,7 @@ class Test_jmnedict (unittest.TestCase):
           # Re mode='b', see comment in Test_parse_jmdict() above.
         _.getxml = lambda testid: getxml ('data/jmxml/jmnedict.xml',
                                           testid, 'b')
-        _.jmparser = jmxml.Jmparser (KW)
+        _.jmparser = jmxml.Jmparser (KW, "jmnedict")
 
     def test_01_5001081(_): dotest (_,'5001081')
     def test_02_5485055(_): dotest (_,'5485055')

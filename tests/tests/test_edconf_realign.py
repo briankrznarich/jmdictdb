@@ -1,5 +1,5 @@
 import sys, re, copy, collections, unittest, pdb
-from jmdictdb import jdb, jmxml, xmlkw
+from jmdictdb import jdb, jmxml
 from jmdictdb.objects import *
 
 # Module under test...
@@ -202,8 +202,8 @@ class MockDb (dict):
     # number.
     def __init__ (self, lookupfunc):
         dict.__init__ (self)
-        self.kw = jdb.Kwds (jdb.std_csv_dir())
-        self.jmparser = jmxml.Jmparser (self.kw)
+        self.kw = jdb.Kwds ('')
+        self.jmparser = jmxml.Jmparser (self.kw, "jmdict")
         self.ridx = collections.defaultdict (set)
         self.kidx = collections.defaultdict (set)
         self.lookupfunc = lookupfunc

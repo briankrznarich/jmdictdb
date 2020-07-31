@@ -1,7 +1,7 @@
 import sys, unittest, datetime, pdb
 from jmdictdb import jdb
 from jmdictdb.objects import *
-from jmdictdb import fmtxml, xmlkw
+from jmdictdb import fmtxml
 
 sys.path.append ("./data/fmtxml")
 import fmtxml_data as f
@@ -114,10 +114,6 @@ class Test_entr_diff (unittest.TestCase):
         jdb.KW = jdb.Kwds ('')
         jdb.KW.add ('SRC', (1, 'jmdict', '', None, None,
                             None,  None, None, None, 1))
-          # XKW is a fmtxml global that is normally initialized inside
-          # fmtxml.entr() but since we are not calling .entr() we need
-          # initialize XKW "by hand".
-        fmtxml.XKW = xmlkw.make (jdb.KW)
     def test_0400010(_): _.do_test ('0400010')   # No change.
     def test_0400020(_): _.do_test ('0400020')   # rdng.txt change.
     def test_0400030(_): _.do_test ('0400030')   # entr.src change.
@@ -131,12 +127,7 @@ class Test_entr_diff (unittest.TestCase):
 
 class Test_xrefs (unittest.TestCase):
     def setUp(_):
-        from jmdictdb import xmlkw
         jdb.KW = jdb.Kwds ('')
-          # XKW is a fmtxml global that is normally initialized inside
-          # fmtxml.entr() but since we are not calling .entr() we need
-          # initialize XKW "by hand".
-        fmtxml.XKW = xmlkw.make (jdb.KW)
 
     def test_00010(_):   # Xrefs must be augmented (have a .TARG attr)
         with _.assertRaisesRegex (AttributeError, 'missing TARG attribute'):

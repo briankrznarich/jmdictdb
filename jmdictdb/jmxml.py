@@ -6,11 +6,11 @@ Functions for parsing XML descriptions of entries into
 entry objects.
 """
 
-import sys, os, re, datetime
+import sys, os, copy, re, datetime
 from collections import defaultdict
 #import lxml.etree as ElementTree
 import xml.etree.cElementTree as ElementTree
-from jmdictdb import jdb, xmlkw
+from jmdictdb import jdb
 
 class ParseError (RuntimeError): pass
 class NotFoundError (RuntimeError): pass
@@ -35,8 +35,8 @@ class JmdictFile:
     #      It is more convinient to work with the entity string
     #      values than their expanded text values.
 
-    def __init__ (self, source):
-        self.source = source;  self.lineno = 0
+    def __init__ (self, source, xmltype=None):
+        self.source = source;  self.type = xmltype;  self.lineno = 0
         self.name = None; self.created=None
     def read (self, bytes):  # 'bytes' argument ignored.
         s = self.source.readline();  self.lineno += 1
@@ -55,14 +55,10 @@ class Jmparser (object):
             kw,         # A jdb.Kwds object initialized with database
                         #  keywords, such as returned by jdb.dbOpen()
                         #  or jdb.Kwds(jdb.std_csv_dir()).
-            xkw=None,   # A jdb.Kwds object initialized with XML
-                        #  keywords, such as returned by xmlmk.make().
-                        #  If None, __init__() will get one by calling
-                        #  xmlmk.make(kw).
+            xmltype,    # Type of XML: "jmdict" or "jmnedict"
             logfile=None):  # File object to write warning messages to.
         self.KW = kw
-        if xkw: self.XKW = xkw
-        else: self.XKW = xmlkw.make (kw)
+        self.XKW = make_enttab (kw, xmltype)
         self.logfile = logfile
         self.seq = 0
 
@@ -223,7 +219,7 @@ class Jmparser (object):
       attributes since these are required when adding restr,
       stagr, stagk, and freq objects.
         """
-        XKW, KW = self.XKW, self.KW
+        KW = self.KW
 
         entr = jdb.Entr ()
 
@@ -240,7 +236,7 @@ class Jmparser (object):
         dfrm = elem.get('dfrm')
         if dfrm is not None: entr.dfrm = int (dfrm)
         stat = elem.get('status') or jdb.KW.STAT['A'].id
-        try: stat = XKW.STAT[stat].id
+        try: stat = KW.STAT[stat].id
         except KeyError: raise ParseError ("Invalid <status> element value, '%s'" % stat)
         entr.stat = stat
         entr.unap = elem.get('appr') == 'n'
@@ -317,7 +313,7 @@ class Jmparser (object):
         if rdngs: entr._rdng = rdngs
 
     def do_senss (self, elems, entr, xlang=None, prop_pos=False):
-        XKW = self.XKW
+        KW = self.KW
         rdngs = getattr (entr, '_rdng', [])
         kanjs = getattr (entr, '_kanj', [])
         senss = [];  last_pos = None
@@ -339,7 +335,7 @@ class Jmparser (object):
             elif prop_pos and last_pos:
                 sens._pos = [jdb.Pos(kw=x.kw) for x in last_pos]
 
-            self.do_kws   (elem.findall('name_type'), sens, '_misc', 'NAME_TYPE')
+            self.do_kws   (elem.findall('name_type'), sens, '_misc', 'MISC')
             self.do_kws   (elem.findall('misc'),      sens, '_misc', 'MISC')
             self.do_kws   (elem.findall('field'),     sens, '_fld',  'FLD')
             self.do_kws   (elem.findall('dial'),      sens, '_dial', 'DIAL')
@@ -357,20 +353,20 @@ class Jmparser (object):
         if senss: entr._sens = senss
 
     def do_gloss (self, elems, sens, xlang=None):
-        XKW = self.XKW
+        KW = self.KW
         glosses=[]; dupchk={}
         for elem in elems:
-            lang = XKW.LANG['eng'].id    # Default value
-            ginf = XKW.GINF['equ'].id    # Default value
+            lang = KW.LANG['eng'].id    # Default value
+            ginf = KW.GINF['equ'].id    # Default value
             for attr in elem.keys():
                 v = elem.get (attr)
                 if attr == '{http://www.w3.org/XML/1998/namespace}lang':
-                    try: lang = XKW.LANG[v].id
+                    try: lang = KW.LANG[v].id
                     except KeyError:
                         self.warn ("Invalid gloss lang attribute: '%s'" % v)
                         continue
                 elif attr == "g_type":
-                    try: ginf = XKW.GINF[v].id
+                    try: ginf = KW.GINF[v].id
                     except KeyError:
                         self.warn ("Invalid gloss g_type attribute: '%s'" % v)
                         continue
@@ -381,7 +377,7 @@ class Jmparser (object):
                 self.warn ("gloss text '%s' not latin characters." % txt)
             if not jdb.unique ((lang,txt), dupchk):
                 self.warn ("Duplicate lang/text in gloss '%s'/'%s'"
-                           % (XKW.LANG[lang].kw, txt))
+                           % (KW.LANG[lang].kw, txt))
                 continue
             # (entr,sens,gloss,lang,txt)
             if txt and (not xlang or lang in xlang):
@@ -395,7 +391,7 @@ class Jmparser (object):
         for elem in elems:
             txt = elem.text or ''
             lng = elem.get ('{http://www.w3.org/XML/1998/namespace}lang')
-            try: lang = self.XKW.LANG[lng].id if lng else self.XKW.LANG['eng'].id
+            try: lang = self.KW.LANG[lng].id if lng else self.KW.LANG['eng'].id
             except KeyError:
                 self.warn ("Invalid lsource lang attribute: '%s'" % lng)
                 continue
@@ -476,7 +472,7 @@ class Jmparser (object):
             sens._xrslv.extend (xrefs)
 
     def do_hist (self, elems, entr):
-        XKW = self.XKW
+        KW = self.KW
         hists = []
         for elem in elems:
             x = elem.findtext ("upd_date")
@@ -489,7 +485,7 @@ class Jmparser (object):
             email = elem.findtext ("upd_email")
             diff = elem.findtext ("upd_diff")
             refs = elem.findtext ("upd_refs")
-            o.stat = XKW.STAT[stat].id if stat else XKW.STAT['A'].id
+            o.stat = KW.STAT[stat].id if stat else KW.STAT['A'].id
             o.unap = unap is not None
             o.name = name if name else None
             o.email = email if email else None
@@ -542,15 +538,10 @@ class Jmparser (object):
         resolve them in kw table 'kwtabname', and append them to
         the list attached to 'obj' named 'attr'.
         """
-        XKW = self.XKW
         if elems is None or len(elems) == 0: return None
-        kwtab = getattr (XKW, kwtabname)
+        kwtab = getattr (self.XKW, kwtabname)
         kwtxts, dups = jdb.rmdups ([x.text for x in elems])
-        try: cls = getattr (jdb, kwtabname.capitalize())
-        except AttributeError:
-              # Temporary hack for jmnedict.
-            if kwtabname == 'NAME_TYPE': cls = jdb.Misc
-            else: raise
+        cls = getattr (jdb, kwtabname.capitalize())
         kwrecs = []
         for x in kwtxts:
             try: kw = kwtab[x].id
@@ -624,13 +615,13 @@ class Jmparser (object):
         # $ptype is a string used only in error or warning messages
         # and is typically either "re_pri" or "ke_pri".
 
-        XKW = self.XKW
+        KW = self.KW
         mo = re.match (r'^([a-z]+)(\d+)$', fstr)
         if not mo:
             self.warn ("Invalid %s, '%s'" % (ptype, fstr))
             return None, None
         kwstr, val = mo.group (1,2)
-        try: kw = XKW.FREQ[kwstr].id
+        try: kw = KW.FREQ[kwstr].id
         except KeyError:
             self.warn ("Unrecognised %s, '%s'" % (ptype, fstr))
             return None, None
@@ -649,6 +640,45 @@ class Jmparser (object):
         print ("Seq %d: %s" % (self.seq, msg),
                file=self.logfile or sys.stderr)
 
+def make_enttab (KW, dtd):
+        kwds = copy.deepcopy (KW)
+        for attr in KW.Tables.keys():
+           kwtab = getattr (kwds, attr)
+           for r in kwds.recs (attr):
+               if not hasattr (r, 'ents'): continue
+               if not r.ents or dtd not in r.ents: continue
+               ent = r.ents[dtd]
+               if not isinstance (ent, dict):
+                   if not ent: kwds.upd (attr, r.id)
+               else:
+                   id, kw, descr = r.id, None, None
+                   if 'e' in ent: kw = ent['e']
+                   if 'v' in ent: descr = ent['v']
+                   if kw or descr: kwds.upd (attr, id, kw, descr)
+        return kwds
+
+def sniff (filename):
+        """
+        Guess if a file contains JMdict, JMnedict, or Jmex entries.
+        """
+        with open (filename) as f: data = f.read (21000)
+        jmex = jmdict = jmnedict = sense_seen = trans_seen = 0
+        for ln in data.splitlines():
+            if '<!DOCTYPE JMex'     in ln: jmex += 1
+            if '<!DOCTYPE JMdict'   in ln: jmdict += 1
+            if '<!DOCTYPE JMnedict' in ln: jmnedict += 1
+            if '<JMex>'             in ln: jmex += 1
+            if '<JMdict>'           in ln: jmdict += 1
+            if '<JMnedict>'         in ln: jmnedict += 1
+            if '<sense>' in ln and not sense_seen: sense_seen = True
+            if '<trans>' in ln and not trans_seen: trans_seen = True
+        if jmex and not jmdict and not jmnedict and not trans_seen:
+            return 'jmex'
+        if jmnedict and not jmdict and not jmex and not sense_seen:
+            return 'jmnedict'
+        if jmdict and not jmnedict and not jmex and not trans_seen:
+            return 'jmdict'
+        return None
 
 def crossprod (*args):
         """
@@ -659,7 +689,6 @@ def crossprod (*args):
         for arg in args:
             result = [x + [y] for x in result for y in arg]
         return result
-
 
 def extract (fin, seqs_wanted, dtd=False, fullscan=False, keepends=False):
         """
