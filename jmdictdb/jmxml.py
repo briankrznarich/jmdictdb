@@ -404,12 +404,6 @@ class Jmparser (object):
                 self.warn ("Invalid lsource type attribute: '%s'" % lstyp)
                 continue
             wasei = elem.get ('ls_wasei') is not None
-
-            if (lstyp or wasei) and not txt:
-                attrs = ("ls_wasei" if wasei else '') \
-                        + ',' if wasei and lstyp else '' \
-                        + ("ls_type" if lstyp else '')
-                self.warn ("lsource has attribute(s) %s but no text" % attrs)
             lsrc.append (jdb.Lsrc (lang=lang, txt=txt, part=lstyp=='part', wasei=wasei))
         if lsrc:
             if not hasattr (sens, '_lsrc'): sens._lsrc = []
