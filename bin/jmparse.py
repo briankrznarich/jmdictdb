@@ -27,14 +27,17 @@ def main (args, opts):
             pbar = progress_bar.InitBar (
                     title=args[0], size=total_items, offset=2)
 
-          #FIXME: we open the xml file with utf-8 encoding even though
-          # its encoding may be given within the file and may be different.
-        inpf = jmxml.JmdictFile( open( args[0], encoding='utf-8' ))
+        xmltype = None
+        if opts.xml_type: xmltype = opts.xml_type
+        else: xmltype = jmxml.sniff( args[0] )
+        if not xmltype: error ("Unable to determine DTD type,"
+                               " please use the - option.")
+        inpf = jmxml.JmdictFile( open( args[0] ))
         tmpfiles = pgi.initialize (opts.tempdir)
         if not opts.logfile: logfile = sys.stderr
-        else: logfile = open (opts.logfile, "w", encoding=opts.encoding)
+        else: logfile = open (opts.logfile, "w")
         eid = 0
-        jmparser = jmxml.Jmparser (KW, logfile=logfile)
+        jmparser = jmxml.Jmparser (KW, xmltype, logfile=logfile)
         for typ, entr in jmparser.parse_xmlfile (inpf, opts.begin, opts.count,
                                                  xlang, toptag=True,
                                                  seqnum_init=opts.sequence[0],
@@ -80,7 +83,7 @@ database (usually after pre-processing by jmload.pl).
 
 Arguments:
         filename -- Name of input jmdict xml file.  Default is
-        "JMdict".  Must use utf-8 encoding."""
+        "JMdict"."""
 
         p = OptionParser (usage=u, add_help_option=False,
                 formatter=IndentedHelpFormatterWithNL())
@@ -92,6 +95,11 @@ Arguments:
             dest="output", metavar="FILENAME",
             help="Name of output postgresql rebasable dump file.  "
                 "By convention this is usually given the suffix \".pgi\".")
+
+        p.add_option ("-x", "--xml-type", default=None,
+            help="XML DTD type: either: \"jmdict\" or \"jmnedict\".  "
+                "This is usually not needed since jmparse.py will "
+                "guess the type from the file contents.")
 
         p.add_option ("-b", "--begin", default=0,
             dest="begin", type="int", metavar="SEQNUM",
@@ -133,7 +141,10 @@ Arguments:
           smax -- The maximum value of the Postgresql sequence
               associated with this corpus.
 
-          srct -- The corpus type id number (see table kwsrct). 
+        [N.B. the database corpus record has an additional field,
+        "srct" that identifies the type of the corpus entries (eg
+        "jmdict", "jmnedict", etc) but that is supplied automatcally
+        by jmparse.py.]
 
         [N.B. that the corpus table ("kwsrc") also has two other columns,
         'descr' and 'notes' but jmparse provides no means for setting
@@ -226,16 +237,9 @@ Arguments:
             dest="progbar", action="store_false", default=True,
             help="Don't show the progress bar.")
 
-        p.add_option ("-t", "--tempdir", default=".",
+        p.add_option ("-T", "--tempdir", default=".",
             dest="tempdir", metavar="DIRPATH",
             help="Directory in which to create temporary files.")
-
-        p.add_option ("-e", "--encoding", default="utf-8",
-            type="str", dest="encoding",
-            help="Encoding for logfile messages (typically "
-                "\"sjis\", \"utf8\", or \"euc-jp\").  This does not "
-                "affect the output .pgi file or the temp files which "
-                "are always written with utf-8 encoding.")
 
         p.add_option ("-d", "--database", default=None,
             help="""Name of the database to load keywords from.  If
