@@ -233,7 +233,7 @@ class Jmparser (object):
             try: seq = int (elemseq.text)
             except ValueError: raise ParseError ("Invalid 'ent_seq' value, '%s'" % elem.text)
         if seq <= 0: raise ParseError ("Invalid 'ent_seq' value, '%s'" % elem.text)
-        entr.seq = seq
+        self.seq = entr.seq = seq
 
         id = elem.get('id')
         if id is not None: entr.id = int (id)
