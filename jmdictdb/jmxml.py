@@ -335,7 +335,7 @@ class Jmparser (object):
             elif prop_pos and last_pos:
                 sens._pos = [jdb.Pos(kw=x.kw) for x in last_pos]
 
-            self.do_kws   (elem.findall('name_type'), sens, '_misc', 'MISC')
+            self.do_kws   (elem.findall('name_type'), sens, '_misc', 'MISC', 'NAME_TYPE')
             self.do_kws   (elem.findall('misc'),      sens, '_misc', 'MISC')
             self.do_kws   (elem.findall('field'),     sens, '_fld',  'FLD')
             self.do_kws   (elem.findall('dial'),      sens, '_dial', 'DIAL')
@@ -526,26 +526,39 @@ class Jmparser (object):
             if not hasattr (entr_or_rdng, '_snd'): entr_or_rdng._snd = []
             entr_or_rdng._snd.extend (snds)
 
-    def do_kws (self, elems, obj, attr, kwtabname):
-        """
+    def do_kws (self, elems, obj, attr, kwtabname, elemname=None):
+        '''-------------------------------------------------------------------
         Extract the keywords in the elementtree elements 'elems',
         resolve them in kw table 'kwtabname', and append them to
         the list attached to 'obj' named 'attr'.
-        """
+
+        elems -- List of XML elements containing keywords.
+        obj -- Instance of one of the objects.* classes that the
+          resolved tags will be attached to, e.g., a Sens() instance
+          for MISC tags.
+        attr -- The attribute name of the list on 'obj' that will
+          contain the keyword objects, e.g., "_misc".
+        kwtabname -- Name of domain of keywords in Kwds, e.g. "MISC".
+        elemname -- Name of the XML element keywords are used in if
+          different (ignoring case) than 'kwtabname', e.g., (for
+          jmnedict) "NAME_TYPE".  This is used only for error messages.
+        -------------------------------------------------------------------'''
+
         if elems is None or len(elems) == 0: return None
         kwtab = getattr (self.XKW, kwtabname)
+        if elemname is None: elemname = kwtabname
         kwtxts, dups = jdb.rmdups ([x.text for x in elems])
         cls = getattr (jdb, kwtabname.capitalize())
         kwrecs = []
         for x in kwtxts:
             try: kw = kwtab[x].id
             except KeyError:
-                self.warn("Unknown %s keyword '%s'" % (kwtabname,x))
+                self.warn("Unknown %s keyword '%s'" % (elemname,x))
             else:
                 kwrecs.append (cls (kw=kw))
         dups, x = jdb.rmdups (dups)
         for x in dups:
-            self.warn ("Duplicate %s keyword '%s'" % (kwtabname, x))
+            self.warn ("Duplicate %s keyword '%s'" % (elemname, x))
         if kwrecs:
             if not hasattr (obj, attr): setattr (obj, attr, [])
             getattr (obj, attr).extend (kwrecs)
@@ -634,20 +647,52 @@ class Jmparser (object):
         L('jmxml').warn("Seq %d: %s" % (self.seq, msg))
 
 def make_enttab (KW, dtd):
+        '''-------------------------------------------------------------------
+        Make a copy of jdb.Kwds instance 'KW' modified so that the
+        included kw records are appropriate for the processing the
+        entities in XML of type 'dtd' ("jmdict' or "jmnedict").  For
+        example, the .MISC[15].kw value for jmdict is "male" but for
+        jmnedict is "masc".  .MISC[17] ("obs") is present for jmdict
+        but missing for jmnedict because it is a valid entity in the
+        former but not in the latter.  The records in the 'KW' copy
+        are modified/deleted based on the information in the .ents
+        item in each record.
+        -------------------------------------------------------------------'''
+
+          #FIXME: allow for dtd=="jmex".
         kwds = copy.deepcopy (KW)
         for attr in KW.Tables.keys():
            kwtab = getattr (kwds, attr)
            for r in kwds.recs (attr):
-               if not hasattr (r, 'ents'): continue
-               if not r.ents or dtd not in r.ents: continue
-               ent = r.ents[dtd]
+               ent = (getattr (r,'ents',{}) or {}).get (dtd, None)
+                 # If the dtd is "jmdict" we assume all kw recs are
+                 # applicable unless overridden by a ents["jmdict"]
+                 # item.  Thus we can skip any further processing (to
+                 # delete or modify a rec) for dtd=="jmdict" if there
+                 # is no 'ent' value or if there is but it contains no
+                 # no "jmdict' item.
+               if dtd=='jmdict' and ent is None: continue
                if not isinstance (ent, dict):
+                     # If 'ent' is a scalar (not a dict) then its bool
+                     # determines whether the record shoulbe be included
+                     # or not; since the record is alerady present we
+                     # delete it if 'ent' is not true.
+                     # Note that if 'ent' is None by virtue of it not
+                     # being present in .ents at all, it is also deleted.
+                     # Only when dtd=="jmdict" are recs kept by default.
                    if not ent: kwds.upd (attr, r.id)
-               else:
+               else:   # 'ent' is a dict() whose 'e' item if present gives
+                     # and alternative entity name, 'v' item if present
+                     # gives and alternative entity value.
                    id, kw, descr = r.id, None, None
                    if 'e' in ent: kw = ent['e']
                    if 'v' in ent: descr = ent['v']
                    if kw or descr: kwds.upd (attr, id, kw, descr)
+                   else:   # An empty dict is not allowed.
+                       m = "KW table %s (%s,'%s'): %s:"\
+                           "must have a 'e' or 'v' item."\
+                           % (attr, r.id, r.kw, dtd)
+                       raise ValueError (m)
         return kwds
 
 def sniff (filename):
