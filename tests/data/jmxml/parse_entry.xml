@@ -1,4 +1,4 @@
-## 000010
+## 3000010
 <entry>
 <ent_seq>3000010</ent_seq>
 <r_ele><reb>あ</reb></r_ele>
@@ -7,12 +7,12 @@
 </sense>
 </entry>
 ##--
-[Entr (seq=3000010, stat=2, unap=False, 
+[Entr (seq=3000010, stat=2, unap=False,
     _rdng=[Rdng(rdng=1,txt='あ')],
     _sens=[Sens(sens=1,
         _gloss=[Gloss(lang=1,ginf=1,txt='e3000010')])])]
 
-## 000020
+## 3000020
 <entry>
 <ent_seq>3000020</ent_seq>
 <r_ele><reb>あ</reb></r_ele>
@@ -22,13 +22,13 @@
 </sense>
 </entry>
 ##--
-[Entr (seq=3000020, stat=2, unap=False, 
+[Entr (seq=3000020, stat=2, unap=False,
     _kanj=[Kanj(kanj=1,txt='亜')],
     _rdng=[Rdng(rdng=1,txt='あ')],
     _sens=[Sens(sens=1,
         _gloss=[Gloss(lang=1,ginf=1,txt='e3000020')])])]
 
-## 000030
+## 3000030
 # Multiple readings, kanji
 <entry>
 <ent_seq>3000030</ent_seq>
@@ -42,7 +42,7 @@
 </sense>
 </entry>
 ##--
-[Entr (seq=3000030, stat=2, unap=False, 
+[Entr (seq=3000030, stat=2, unap=False,
     _kanj=[Kanj(kanj=1,txt='亜'),
            Kanj(kanj=2,txt='良い')],
     _rdng=[Rdng(rdng=1,txt='あ'),
@@ -51,7 +51,7 @@
     _sens=[Sens(sens=1,
         _gloss=[Gloss(lang=1,ginf=1,txt='e3000030')])])]
 
-## 000040
+## 3000040
 # Multiple glosses
 <entry>
 <ent_seq>3000040</ent_seq>
@@ -63,14 +63,14 @@
 </sense>
 </entry>
 ##--
-[Entr (seq=3000040, stat=2, unap=False, 
+[Entr (seq=3000040, stat=2, unap=False,
     _rdng=[Rdng(rdng=1,txt='あ')],
     _sens=[Sens(sens=1,
         _gloss=[Gloss(lang=1,ginf=1,txt='e3000040a'),
                 Gloss(lang=1,ginf=1,txt='e3000040b'),
                 Gloss(lang=1,ginf=1,txt='e3000040c')],)],)]
 
-## 000050
+## 3000050
 # Multiple senses
 <entry>
 <ent_seq>3000050</ent_seq>
@@ -89,7 +89,7 @@
 </sense>
 </entry>
 ##--
-[Entr (seq=3000050, stat=2, unap=False, 
+[Entr (seq=3000050, stat=2, unap=False,
     _rdng=[Rdng(rdng=1,txt='あ')],
     _sens=[Sens(sens=1,
               _gloss=[Gloss(lang=1,ginf=1,txt='e3000050a'),
@@ -101,7 +101,7 @@
                       Gloss(lang=1,ginf=1,txt='e3000050e'),
                       Gloss(lang=1,ginf=1,txt='e3000050f')]),])]
 
-## 000060
+## 3000060
 <entry>
 <ent_seq>3000060</ent_seq>
 <r_ele><reb>あ</reb><re_inf>&ok;</re_inf></r_ele>
@@ -110,13 +110,13 @@
 </sense>
 </entry>
 ##--
-[Entr (seq=3000060, stat=2, unap=False, 
+[Entr (seq=3000060, stat=2, unap=False,
     _rdng=[Rdng(rdng=1,txt='あ',
         _inf=[Rinf (kw=2)])],
     _sens=[Sens(sens=1,
         _gloss=[Gloss(lang=1,ginf=1,txt='e3000060')])])]
 
-## 000070
+## 3000070
 <entry>
 <ent_seq>3000070</ent_seq>
 <k_ele><keb>亜</keb><ke_inf>&oK;</ke_inf></k_ele>
@@ -125,13 +125,13 @@
 </sense>
 </entry>
 ##--
-[Entr (seq=3000070, stat=2, unap=False, 
+[Entr (seq=3000070, stat=2, unap=False,
     _kanj=[Kanj(kanj=1,txt='亜',
         _inf=[Kinf (kw=3)])],
     _sens=[Sens(sens=1,
         _gloss=[Gloss(lang=1,ginf=1,txt='e3000070')])])]
 
-## 000080
+## 3000080
 <entry>
 <ent_seq>3000080</ent_seq>
 <r_ele><reb>あ</reb><re_restr>亜</re_restr></r_ele>
@@ -146,8 +146,8 @@
 # Note that in xml, restr identifies RK pairs that are not
 # allowed but in Entr, restr identifies RK pairs that *are*
 # allowed.  Hence, restr(kanj=2) below...
- 
-[Entr (seq=3000080, stat=2, unap=False, 
+
+[Entr (seq=3000080, stat=2, unap=False,
     _rdng=[Rdng(rdng=1,txt='あ', _restr=[Restr(kanj=2)]),
            Rdng(rdng=2,txt='ああ')],
     _kanj=[Kanj(kanj=1,txt='亜'),
@@ -184,10 +184,10 @@
 # Versions of jmxml.py prior to 200725-868f2f4 incorrectly propagated
 # PoS tags to following senses that had no PoS tags.  (That was a
 # convention a long time ago and was not fixed in the code when the
-# convention was abandoned).  This test checks the the jmxml parser
+# convention was abandoned).  This test checks that the jmxml parser
 # no longer does this.
 
-## 000210
+## 3000210
 <entry>
 <ent_seq>3000210</ent_seq>
 <r_ele><reb>あ</reb></r_ele>
@@ -338,3 +338,31 @@
     _sens=[Sens(sens=1,_gloss=[Gloss(lang=1,ginf=1,txt='a')],_misc=[Misc(kw=9)]),]
      )]
 
+#====== Errors and warnings
+
+## 4001000
+# Should raise ParseError ("No <ent_seq> element found")
+<entry>
+</entry>
+##--
+[]
+
+## 4001010
+<entry>
+<ent_seq>4001010</ent_seq>
+</entry>
+##--
+[Entr (seq=4001010, stat=2, unap=False,
+    _kanj=[], _rdng=[], _sens=[])]
+
+## 4001020
+# Should generate warning: Sense 1 has no glosses
+<entry>
+<ent_seq>4001020</ent_seq>
+<sense>
+</sense>
+</entry>
+##--
+[Entr (seq=4001020, stat=2, unap=False,
+    _kanj=[], _rdng=[],
+    _sens=[Sens(sens=1, _gloss=[])])]

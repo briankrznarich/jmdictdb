@@ -4,17 +4,19 @@
 
 import sys, os, inspect, pdb
 _=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import logger; from jmdictdb.logger import L
 from jmdictdb import jdb, jmxml, pgi, fmt
 from jmdictdb.pylib import progress_bar
 
 def main (args, opts):
         global KW
-
+        if opts.logfile:
+            open (opts.logfile, 'w').close()  # logger needs file to exist.
+            logger.log_config (filename=opts.logfile)
         if opts.database:
             jdb.dbOpen (opts.database, **jdb.dbopts (opts))
             KW = jdb.KW
-        else:
-            jdb.KW = KW = jdb.Kwds ('')
+        else: jdb.KW = KW = jdb.Kwds ('')
 
         xlang = None
         if opts.lang:
@@ -27,14 +29,10 @@ def main (args, opts):
             pbar = progress_bar.InitBar (
                     title=args[0], size=total_items, offset=2)
 
-          #FIXME: we open the xml file with utf-8 encoding even though
-          # its encoding may be given within the file and may be different.
-        inpf = jmxml.JmdictFile( open( args[0], encoding='utf-8' ))
+        inpf = jmxml.JmdictFile( open( args[0] ))
         tmpfiles = pgi.initialize (opts.tempdir)
-        if not opts.logfile: logfile = sys.stderr
-        else: logfile = open (opts.logfile, "w", encoding=opts.encoding)
         eid = 0
-        jmparser = jmxml.Jmparser (KW, logfile=logfile)
+        jmparser = jmxml.Jmparser (KW)
         for typ, entr in jmparser.parse_xmlfile (inpf, opts.begin, opts.count,
                                                  xlang, toptag=True,
                                                  seqnum_init=opts.sequence[0],
@@ -229,13 +227,6 @@ Arguments:
         p.add_option ("-t", "--tempdir", default=".",
             dest="tempdir", metavar="DIRPATH",
             help="Directory in which to create temporary files.")
-
-        p.add_option ("-e", "--encoding", default="utf-8",
-            type="str", dest="encoding",
-            help="Encoding for logfile messages (typically "
-                "\"sjis\", \"utf8\", or \"euc-jp\").  This does not "
-                "affect the output .pgi file or the temp files which "
-                "are always written with utf-8 encoding.")
 
         p.add_option ("-d", "--database", default=None,
             help="""Name of the database to load keywords from.  If

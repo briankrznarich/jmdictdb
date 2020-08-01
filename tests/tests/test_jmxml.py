@@ -17,27 +17,47 @@ class Test_parse_jmdict (unittest.TestCase):
                                           testid, 'b')
         _.jmparser = jmxml.Jmparser (KW)
 
-    def test_000010(_): dotest (_,'000010')
-    def test_000020(_): dotest (_,'000020')
-    def test_000030(_): dotest (_,'000030')
-    def test_000040(_): dotest (_,'000040')
-    def test_000050(_): dotest (_,'000050')
-    def test_000060(_): dotest (_,'000060')  # rinf
-    def test_000070(_): dotest (_,'000070')  # kinf
-    def test_000080(_): dotest (_,'000080')  # restr
-    def test_000210(_): dotest (_,'000210')  # pos propagation
+    def test_3000010(_): dotest (_,'3000010')
+    def test_3000020(_): dotest (_,'3000020')
+    def test_3000030(_): dotest (_,'3000030')
+    def test_3000040(_): dotest (_,'3000040')
+    def test_3000050(_): dotest (_,'3000050')
+    def test_3000060(_): dotest (_,'3000060')  # rinf
+    def test_3000070(_): dotest (_,'3000070')  # kinf
+    def test_3000080(_): dotest (_,'3000080')  # restr
+    def test_3000210(_): dotest (_,'3000210')  # pos propagation
     def test_3001010(_): dotest (_,'3001010')  # entities: dial
     def test_3001020(_): dotest (_,'3001020')  # entities: fld
     def test_3001030(_): dotest (_,'3001030')  # entities: kinf
     def test_3001040(_): dotest (_,'3001040')  # entities: misc
     def test_3001050(_): dotest (_,'3001050')  # entities: pos
     def test_3001060(_): dotest (_,'3001060')  # entities: rinf
-    def test_1499230(_):dotest (_,'1499230') # restr/nokanji
+    def test_1499230(_): dotest (_,'1499230')  # restr/nokanji
 
     # To do: restr combos, freq, lsrc, stagr, stagk, xrslv,
     #      gloss (lang, ginf), hist, grp
     #   kanjdic: cinf, chr, krslv
     #   jmdict-ex stuff.
+
+  # Errors and warnings.
+  # Note that if a warning is generated but does not match the expected
+  # pattern, it will not be captured but will go to stderr as usual.
+  # And because it wasn't captured, the context vatiable ('cm' below)
+  # will be empty causing an IndexError when we try to check its contents.
+
+    def test_4001000(_):
+        msg = "No <ent_seq> element found"
+        with _.assertRaisesRegex (jmxml.ParseError, msg):
+            dotest (_, '4001000')
+
+    def test_4001010(_): dotest (_,'4001010')
+
+    def test_4001020(_):
+        with _.assertLogs ('jmxml', level='WARN') as cm:
+            dotest (_,'4001020')
+            _.assertRegex (cm.output[0],
+              ".*Seq 4001020: Sense 1 has no glosses")
+
 
 class Test_jmnedict (unittest.TestCase):
     def setUp (_):
@@ -49,19 +69,25 @@ class Test_jmnedict (unittest.TestCase):
                                           testid, 'b')
         _.jmparser = jmxml.Jmparser (KW)
 
+    def test_01_5000000(_): dotest (_,'5000000')
     def test_01_5001081(_): dotest (_,'5001081')
     def test_02_5485055(_): dotest (_,'5485055')
     def test_03_5478094(_): dotest (_,'5478094')
     def test_04_5389819(_): dotest (_,'5389819')
     def test_05_5259233(_): dotest (_,'5259233')
 
+    def test_20_3001010(_):
+        with _.assertLogs ('jmxml', level='WARN') as cm:
+            dotest (_,'3001010')
+            _.assertRegex (cm.output[0],
+              ".*Seq 3001010: Unknown NAME_TYPE keyword 'obs'")
+
 def dotest (_, testid):
-        global _test_expect
-        xml, exp = _.getxml (testid)
+        xml, exptxt = _.getxml (testid)
         entrs = _.jmparser.parse_entry (xml)
-        exec ("_test_expect=" + exp, globals())
-        _.assertEqual (entrs, _test_expect)
-        return entrs, _test_expect
+        expect = eval (exptxt, globals())
+        _.assertEqual (entrs, expect)
+        return entrs, expect
 
 def getxml (fname, testid, mode=''):
         # Read and return test data from a file.  The file may contain
@@ -118,8 +144,3 @@ def getxml (fname, testid, mode=''):
             return ('\n'.join (xml) + '\n'), expstr
 
 if __name__ == '__main__': unittest.main()
-
-
-
-
-

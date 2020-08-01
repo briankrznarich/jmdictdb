@@ -10,6 +10,8 @@ import sys, os, re, datetime
 from collections import defaultdict
 #import lxml.etree as ElementTree
 import xml.etree.cElementTree as ElementTree
+  # Use Python's logging for warning messages to facilitate testing.
+from jmdictdb import logger; from jmdictdb.logger import L
 from jmdictdb import jdb, xmlkw
 
 class ParseError (RuntimeError): pass
@@ -55,15 +57,13 @@ class Jmparser (object):
             kw,         # A jdb.Kwds object initialized with database
                         #  keywords, such as returned by jdb.dbOpen()
                         #  or jdb.Kwds(jdb.std_csv_dir()).
-            xkw=None,   # A jdb.Kwds object initialized with XML
+            xkw=None):  # A jdb.Kwds object initialized with XML
                         #  keywords, such as returned by xmlmk.make().
                         #  If None, __init__() will get one by calling
                         #  xmlmk.make(kw).
-            logfile=None):  # File object to write warning messages to.
         self.KW = kw
         if xkw: self.XKW = xkw
         else: self.XKW = xmlkw.make (kw)
-        self.logfile = logfile
         self.seq = 0
 
     def parse_entry (self, txt, dtd=None):
@@ -549,7 +549,7 @@ class Jmparser (object):
         for x in kwtxts:
             try: kw = kwtab[x].id
             except KeyError:
-                self.warn ("Unknown %s keyword '%s'" % (kwtabname,x))
+                self.warn("Unknown %s keyword '%s'" % (kwtabname,x))
             else:
                 kwrecs.append (cls (kw=kw))
         dups, x = jdb.rmdups (dups)
@@ -640,8 +640,7 @@ class Jmparser (object):
                 % (warn_type, kwstr, ', '.join (tmp)))
 
     def warn (self, msg):
-        print ("Seq %d: %s" % (self.seq, msg),
-               file=self.logfile or sys.stderr)
+        L('jmxml').warn("Seq %d: %s" % (self.seq, msg))
 
 
 def crossprod (*args):
