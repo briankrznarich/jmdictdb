@@ -590,11 +590,13 @@ def entrhdr (entr, compat=None):
             dfrmattr = (' dfrm="%d"' % entr.dfrm) if dfrm else ""
             fmt = ["<entry%s%s%s%s>" % (idattr, statattr, apprattr, dfrmattr)]
         else: fmt = ['<entry>']
-        if getattr (entr, 'seq', None):
-            fmt.append ('<ent_seq>%d</ent_seq>' % entr.seq)
         if getattr (entr, 'src', None) and not compat:
             src = jdb.KW.SRC[entr.src].kw
-            fmt.append ('<ent_corp>%s</ent_corp>' % src)
+            srctid = jdb.KW.SRC[entr.src].srct
+            srct = jdb.KW.SRCT[srctid].kw
+            fmt.append ('<ent_corp type="%s">%s</ent_corp>' % (srct,src))
+        if getattr (entr, 'seq', None):
+            fmt.append ('<ent_seq>%d</ent_seq>' % entr.seq)
         return fmt
 
 def sndvols (vols):

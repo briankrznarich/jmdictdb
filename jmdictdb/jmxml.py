@@ -10,6 +10,8 @@ import sys, os, copy, re, datetime
 from collections import defaultdict
 #import lxml.etree as ElementTree
 import xml.etree.cElementTree as ElementTree
+  # Use Python's logging for warning messages to facilitate testing.
+from jmdictdb import logger; from jmdictdb.logger import L
 from jmdictdb import jdb
 
 class ParseError (RuntimeError): pass
@@ -55,11 +57,9 @@ class Jmparser (object):
             kw,         # A jdb.Kwds object initialized with database
                         #  keywords, such as returned by jdb.dbOpen()
                         #  or jdb.Kwds(jdb.std_csv_dir()).
-            xmltype,    # Type of XML: "jmdict" or "jmnedict"
-            logfile=None):  # File object to write warning messages to.
+            xmltype):   # Type of XML: "jmdict" or "jmnedict"
         self.KW = kw
         self.XKW = make_enttab (kw, xmltype)
-        self.logfile = logfile
         self.seq = 0
 
     def parse_entry (self, txt, dtd=None):
@@ -229,7 +229,7 @@ class Jmparser (object):
             try: seq = int (elemseq.text)
             except ValueError: raise ParseError ("Invalid 'ent_seq' value, '%s'" % elem.text)
         if seq <= 0: raise ParseError ("Invalid 'ent_seq' value, '%s'" % elem.text)
-        entr.seq = seq
+        self.seq = entr.seq = seq
 
         id = elem.get('id')
         if id is not None: entr.id = int (id)
@@ -400,12 +400,6 @@ class Jmparser (object):
                 self.warn ("Invalid lsource type attribute: '%s'" % lstyp)
                 continue
             wasei = elem.get ('ls_wasei') is not None
-
-            if (lstyp or wasei) and not txt:
-                attrs = ("ls_wasei" if wasei else '') \
-                        + ',' if wasei and lstyp else '' \
-                        + ("ls_type" if lstyp else '')
-                self.warn ("lsource has attribute(s) %s but no text" % attrs)
             lsrc.append (jdb.Lsrc (lang=lang, txt=txt, part=lstyp=='part', wasei=wasei))
         if lsrc:
             if not hasattr (sens, '_lsrc'): sens._lsrc = []
@@ -546,7 +540,7 @@ class Jmparser (object):
         for x in kwtxts:
             try: kw = kwtab[x].id
             except KeyError:
-                self.warn ("Unknown %s keyword '%s'" % (kwtabname,x))
+                self.warn("Unknown %s keyword '%s'" % (kwtabname,x))
             else:
                 kwrecs.append (cls (kw=kw))
         dups, x = jdb.rmdups (dups)
@@ -637,8 +631,7 @@ class Jmparser (object):
                 % (warn_type, kwstr, ', '.join (tmp)))
 
     def warn (self, msg):
-        print ("Seq %d: %s" % (self.seq, msg),
-               file=self.logfile or sys.stderr)
+        L('jmxml').warn("Seq %d: %s" % (self.seq, msg))
 
 def make_enttab (KW, dtd):
         kwds = copy.deepcopy (KW)

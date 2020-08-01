@@ -4,17 +4,19 @@
 
 import sys, os, inspect, pdb
 _=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import logger; from jmdictdb.logger import L
 from jmdictdb import jdb, jmxml, pgi, fmt
 from jmdictdb.pylib import progress_bar
 
 def main (args, opts):
         global KW
-
+        if opts.logfile:
+            open (opts.logfile, 'w').close()  # logger needs file to exist.
+            logger.log_config (filename=opts.logfile)
         if opts.database:
             jdb.dbOpen (opts.database, **jdb.dbopts (opts))
             KW = jdb.KW
-        else:
-            jdb.KW = KW = jdb.Kwds ('')
+        else: jdb.KW = KW = jdb.Kwds ('')
 
         xlang = None
         if opts.lang:
@@ -34,10 +36,8 @@ def main (args, opts):
                                " please use the - option.")
         inpf = jmxml.JmdictFile( open( args[0] ))
         tmpfiles = pgi.initialize (opts.tempdir)
-        if not opts.logfile: logfile = sys.stderr
-        else: logfile = open (opts.logfile, "w")
         eid = 0
-        jmparser = jmxml.Jmparser (KW, xmltype, logfile=logfile)
+        jmparser = jmxml.Jmparser (KW, xmltype)
         for typ, entr in jmparser.parse_xmlfile (inpf, opts.begin, opts.count,
                                                  xlang, toptag=True,
                                                  seqnum_init=opts.sequence[0],
