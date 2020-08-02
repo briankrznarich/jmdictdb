@@ -42,6 +42,7 @@ def main():
             "the requested --corpus (%s).  To continue anyway, use the "\
             "--force option." % (opts.compat, opts.corpus))
         if dtd is None: opts.nodtd = True
+        if opts.nodtd: dtd = None
         if not opts.root: opts.root = dtd_root
 
           # Get a sql statement that will select all the entries to be
@@ -190,8 +191,7 @@ def write_entrs (cur, outf, entrs, raw, compat, corpora=set()):
 
 def open_output (filename, dtd, dtd_root, dtd_date):
     # Create and open the output file and write the DTD to it if
-    # 'dtd' (the name of the dtd template file) has a non-false
-    # str value.
+    # 'dtd' (the name of the dtd template) has a non-false str value.
         if not filename: outf = sys.stdout
         else: outf = open (filename, "w")
           # Write the dtd if requested (via a 'dtd_fn' value with the name
@@ -240,7 +240,8 @@ def compat_info (corpus, compat):
             'jmnedict':
               ["jmnedict", 'jmnedict',  'JMnedict',True, True, ['jmnedict']],
             'jmex':
-              [None,        None,       'JMdict',  False,False,['jmdict','jmnedict']],
+              [None,        None,       'JMdict',  False,False,['jmdict',
+                                                                'jmnedict']],
             }
           # Note: when adding/changing/deleting compat entries above, be
           # sure to reflect any key changes in the --compat option choices
@@ -381,11 +382,12 @@ def parse_cmdline ():
             help="Name to use as the root element in the output XML file.  "
                 "It is normally chosen automatically based "
                 "on --compat but can be overridden with this option.  "
-                "Will have no effect obviously if --nodtd is given.")
+                "Will be ignored if --nodtd is given.")
 
         p.add_argument ("--nodtd", default=None,
             action="store_true",
-            help="Do not write a DTD.")
+            help="Do not write a DTD or root element.  Output will be a "
+                "list of <entry> elements.")
 
         p.add_argument ("--blocksize", "-B", default=1000,
             type=int, metavar="NUM",

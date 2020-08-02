@@ -286,7 +286,7 @@ def entity (kwds, domain, id, dtd):
                 if 'v' in entinfo: value = entinfo['v']
         return ent, value
 
-def entities (kwds, dtd, grouped=True):
+def entities (kwds, dtd, grouped):
        'Return a list of entity definitions suitable for inclusion in a DTD.'
 
          # Note that there may be duplicate entity lines (where both the
@@ -680,7 +680,14 @@ def entr_diff (eold, enew, n=2):
         diffstr = '\n'.join (diffs)
         return diffstr
 
-def get_dtd (kwds, dtd, grouped=False):
+def get_dtd (kwds, dtd, grouped=True):
+        '''-------------------------------------------------------------------
+        kwds -- An initialized jdb.Kwds instance.
+        dtd -- DTD type: "jmdict' or "jmnedict".
+        grouped -- (bool) If true, entity definitions in the returned DTD
+          will be grouped by element; if false they will be in alphabetic 
+          order.
+        -------------------------------------------------------------------'''
         ents = entities (kwds, dtd, grouped)
         fname = "dtd-%s.xml" % dtd
         path = os.path.join (jdb.std_csv_dir(), fname)
