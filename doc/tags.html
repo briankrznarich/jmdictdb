@@ -18,15 +18,15 @@
 <h2 id="_procedure_to_add_or_modify_jmdictdb_tags">Procedure to add or modify JMdictDB tags</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>This document describes the procedure for implementing a "glocal"
+<p>This document describes the procedure for implementing a "global"
 change to the JMdictDB tags&#8201;&#8212;&#8201;that is, a change that will be
 incorporated in the JMdictDB distribution and distributed to
-all users of the JMdictDB software (both of them.)  This is in
+all users of the JMdictDB software (both of them. :-)  This is in
 contrast to a local tag change that can be made in the database
 tables at a particular site.</p>
 </div>
 <div class="paragraph">
-<p>There are three places that need changes:</p>
+<p>There are two places that need changes:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -34,11 +34,8 @@ tables at a particular site.</p>
 <p>the kw*.csv file(s) that define the tags values (section <a href="#sec3">3. Edit the appropriate csv file(s)</a>),</p>
 </li>
 <li>
-<p>the DTD template files (section <a href="#sec4">4. Update the DTD template files</a>)</p>
-</li>
-<li>
 <p>a SQL database update script to propagate the changes to any
-existent databases (section <a href="#sec5">5. Write a database update file to update existent databases</a>).</p>
+existent databases (section <a href="#sec4">4. Write a database update file to update existent databases</a>).</p>
 </li>
 </ul>
 </div>
@@ -91,24 +88,20 @@ of static tag information in JMdictDB.</p>
 <div class="paragraph">
 <p>If you are adding a new tag, add a line defining the new tag to
 the appropriate .csv file in jmdictdb/data/.  Each line consists
-of three tab-separated fields:</p>
+of either three or four tab-separated fields:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>id -- The next sequential number [*]
+<pre>id -- The next sequential number.
 kw -- A short abbreviation for the tag.
 descr -- A longer (but one line) description of the tag.  If the
   text contains any double-quote characters (") the entire descr
   text should be enclosed in double-quotes and each embedded
   double-quote should be doubled (ie, each " changed to "").
-TODO -- examine conflicts with same kw value in other domains.</pre>
+ents -- Modififcations to the tag for use in an XML file.
+  This field is present only in the files kwdial.csv, kwfld.csv,
+  kwkinf.csv, kwmisc.csv kwpos.csv and kwrinf.csv.</pre>
 </div>
-</div>
-<div class="paragraph">
-<p>[*] In some of the csv files there are there are groupings of id numbers.
-In kwmisc.csv for example id numbers above 180 are used for JMnedict
-tags.  In such cases use the next sequential number in the group you
-are adding the tag to.</p>
 </div>
 <div class="paragraph">
 <p>If you are changing an existing tag, edit the appropriate
@@ -135,30 +128,92 @@ STAT (all), SRCT (all), XREF('see','ant')</pre>
 <p>There may be others.</p>
 </div>
 <div class="paragraph">
-<p>Note too that if the tag will be used as an entity in a DTD, the
-tag name should be the same as the entity name and the description
-should be the same as he entity value.</p>
-</div>
-<div class="paragraph">
 <p>Be careful that your editor is set to preserve tabs (including
 trailing ones) when saving rather than replacing them with spaces.</p>
 </div>
-</div>
-<div class="sect2">
-<h3 id="sec4">4. Update the DTD template files</h3>
+<div class="sect3">
+<h4 id="_3_1_the_ents_value">3.1 The "ents" value</h4>
 <div class="paragraph">
-<p>If the tag is also used as an XML entity in either of the JMdict
-or JMnedict DTDs the corresponding entity should be updated in the
-DTD template files (jmdictdb/data/dtd-jmdict.xml,
-jmdictdb/data/dtd-jmnedict.xml).</p>
+<p>Some of the csv files contain a fourth column, "ents" which describe
+differences between the tag&#8217;s use in the JMdictDB software and its
+use in an XML file.</p>
 </div>
 <div class="paragraph">
-<p>The tag name and entity name should be the same, as should the tag
-description and entity value.</p>
+<p>If the "ents" value is empty, then the tag will will be represented
+as an entity in JMdict XML with an entity name that is the
+same as the tag&#8217;s "kw" value and an entity value that is the same
+as the tag&#8217;s "descr" value.  For JMnedict XML, the tag will be
+neither recognized when parsing XML nor output when generating XML.</p>
+</div>
+<div class="paragraph">
+<p>If the "ents" value is not empty, then it must be a JSON string
+representing an object.  The object must contain items with the keys
+"jmdict", "jmnedict" or both.  The "jmdict" item applies when
+processing JMdict XML and if absent the effect is the same as
+if the "ents" value was empty (the tag will be treated as an entity
+in the XML).  The "jmnedict" item works similarly for JMnedict XML
+(if absent the tag will <strong>not</strong> be treated as an entity in the XML.)</p>
+</div>
+<div class="paragraph">
+<p>The value of each item should be 0, 1 or another object.  If 0,
+the tag is neither recognized nor produced in the XML.  If 1,
+the tag is recognized and produced as an entity in the XML.
+Note that because tags are produced by default for JMdict and
+not for JMnedict, an "ents" value of {"jmdict":1} is effectively
+a no-op, as is {"jmnedict":0}.</p>
+</div>
+<div class="paragraph">
+<p>If the value is another object, it must have the keys "e", "v" or
+both.  If there is an "e" key, that item&#8217;s value will be used for
+the entity name in the XML rather than the tag&#8217;s "kw" value.  If
+there is  a "v" value, it will be used for the entity&#8217;s value in
+the XML rather than the tag&#8217;s "descr" value.</p>
+</div>
+<div class="paragraph">
+<p>Some examples from kwmisc.csv:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>5   col   colloquialism</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This has no "ents" value and thus the entity <code><code>&col;</code></code> will be
+recognized and produced in the JMdict XML but not in the
+JMnedict XML.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>181   surname	  family or surname   {"jmnedict":1}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code><code>&surname;</code></code> entity will be recognized and produced in
+the JMnedict XML.  It will also be recognized and produced
+in the JMdict XML by default since it is not specifically
+excluded with {"jmnedict":1, "jmdict":0}</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>  15   male  	male term, language, or name
+    {"jmdict":{"v":"male term or language"},
+     "jmnedict":{"e":"masc","v":"male given name or forename"}}
+
+  [Note: above is line-wrapped for this document; would be a
+   single line in the kwmisc.csv file.]</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this case the tag description <code><code>male term, language, or name</code></code>
+is used with within JMdictDB but in the JMdict XML, the value
+of the <code><code>&amp;male;</code></code> entity will be <code><code>male term or language.</code></code>  In
+the JMnedict XML the entity name will be <code><code>&masc;</code></code> and its
+value will be <code><code>male given name or forename.</code></code></p>
+</div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="sec5">5. Write a database update file to update existent databases</h3>
+<h3 id="sec4">4. Write a database update file to update existent databases</h3>
 <div class="paragraph">
 <p>The csv files contain the canonical tag definitions and are
 loaded into a jmdictdb database when it is first created but changes
@@ -166,8 +221,9 @@ made to the csv files afterwards are not automatically propagated
 to existing databases&#8201;&#8212;&#8201;that is done by the script you write here.</p>
 </div>
 <div class="paragraph">
-<p>Generally, adding a new tag or changing a tag&#8217;s description text is
-simple.  Changing a tag&#8217;s name (aka keyword) or deleting a tag is
+<p>Generally, adding a new tag or changing a tag&#8217;s description text
+or entities (ents) value is simple.
+Changing a tag&#8217;s name (aka keyword) or deleting a tag is
 more complicated because a history record needs to be created for
 any entries that use the tag.  Were that not done, someone looking
 at an entry&#8217;s history in the future could be confused by the absence
@@ -191,7 +247,7 @@ is not true, additional steps are required that are beyond the scope]
 of these instructions.</p>
 </div>
 <div class="sect3">
-<h4 id="_5_1_procedure">5.1 Procedure</h4>
+<h4 id="_4_1_procedure">4.1 Procedure</h4>
 <div class="paragraph">
 <p>Create a new database update file in db/updates/ named:</p>
 </div>
@@ -248,13 +304,15 @@ a partially applied update.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_5_2_add_a_new_tag">5.2. Add a new tag</h4>
+<h4 id="_4_2_add_a_new_tag">4.2. Add a new tag</h4>
 <div class="paragraph">
-<p>For adding new tags use a simple INSERT statement:</p>
+<p>For adding new tags use a simple INSERT statement.  For tables <strong>other
+than</strong> kwdial, kwfld, kwkinf, kwmisc, kwpos or kwrinf:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>INSERT INTO &lt;table-name&gt; VALUES (&lt;id-number&gt;, '&lt;tag-name&gt;', '&lt;description&gt;');</pre>
+<pre>INSERT INTO &lt;table-name&gt;
+VALUES (&lt;id-number&gt;, '&lt;tag-name&gt;', '&lt;description&gt;');</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -272,13 +330,21 @@ If you copied the text from the csv file un-double any doubled double
 quotes ("" &#8594; ").</p>
 </div>
 <div class="paragraph">
-<p>If the tag will be an entity in the JMdict or JMnedict XML DTDs,
-&lt;tag-name&gt; must be the same as the entity name and &lt;description&gt;
-the same as the entity value.</p>
+<p>For tables kwdial, kwfld, kwkinf, kwmisc, kwpos or kwrinf, the
+statement is similar but has an additional "ents" field.  Its
+value is the same text as used in the corresponding .csv file.
+If the value is empty in the .csv file replace '&lt;ents&gt;' below
+with NULL (without single quotes).</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>INSERT INTO &lt;table-name&gt;
+VALUES (&lt;id-number&gt;, '&lt;tag-name&gt;', '&lt;description&gt;', '&lt;ents&gt;');</pre>
+</div>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_5_3_tag_description_change">5.3. Tag description change</h4>
+<h4 id="_4_3_tag_description_or_entities_ents_change">4.3. Tag description or entities (ents) change</h4>
 <div class="paragraph">
 <p>Change a tag&#8217;s description text using a SQL UPDATE statement:</p>
 </div>
@@ -292,9 +358,28 @@ the same as the entity value.</p>
 <p>Note that if a single-quote (') occurs within the description
 text it needs to be doubled ('').</p>
 </div>
+<div class="paragraph">
+<p>A similar statement works for changing the "ents" value:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>UPDATE kwpos SET ents='&lt;new ents value&gt;'
+  WHERE kw='&lt;tag-name&gt;' AND descr='&lt;old description&gt;'</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Per the usual SQL rules both can be changes together:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>UPDATE kwpos
+  SET descr='&lt;new description&gt;', ents='&lt;new ents value&gt;'
+  WHERE kw='&lt;tag-name&gt;' AND descr='&lt;old description&gt;'</pre>
+</div>
+</div>
 </div>
 <div class="sect3">
-<h4 id="_5_4_tag_name_change_or_tag_deletion">5.4 Tag name change or tag deletion</h4>
+<h4 id="_4_4_tag_name_change_or_tag_deletion">4.4 Tag name change or tag deletion</h4>
 <div class="paragraph">
 <p>The SQL for these cases is a little more complicated due to the
 aforementioned need to create a history record.  Please refer
@@ -303,7 +388,7 @@ to Appendix A for the appropriate SQL.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_6_test_on_a_copy_of_the_production_database">6. Test on a copy of the production database:</h3>
+<h3 id="_5_test_on_a_copy_of_the_production_database">5. Test on a copy of the production database:</h3>
 <div class="paragraph">
 <p>Make copy of the production database and apply the update to it:</p>
 </div>
@@ -323,7 +408,7 @@ to edit some entries with the new/changed tags, etc.)</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_7_apply_the_database_update_to_the_test_database">7. Apply the database update to the test database:</h3>
+<h3 id="_6_apply_the_database_update_to_the_test_database">6. Apply the database update to the test database:</h3>
 <div class="literalblock">
 <div class="content">
 <pre>$ cd tests
@@ -360,7 +445,7 @@ tests pass.  Then, save the updated jmtest01 database:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_8_commit_the_changes">8. Commit the changes:</h3>
+<h3 id="_7_commit_the_changes">7. Commit the changes:</h3>
 <div class="literalblock">
 <div class="content">
 <pre>$ git status</pre>
@@ -382,7 +467,7 @@ $ git commit
 </div>
 </div>
 <div class="sect2">
-<h3 id="_9_update_production_code_and_database">9. Update production code and database</h3>
+<h3 id="_8_update_production_code_and_database">8. Update production code and database</h3>
 <div class="paragraph">
 <p>After the I&#8217;ve pulled the changes I&#8217;ll update the edrdg branch on
 GitLab and the production database can be updated:</p>
@@ -800,7 +885,7 @@ modify them.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-07-21 00:24:55 MDT
+Last updated 2020-08-01 20:24:25 MDT
 </div>
 </div>
 </body>
