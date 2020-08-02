@@ -10,6 +10,9 @@ import sys, os, copy, re, datetime
 from collections import defaultdict
 #import lxml.etree as ElementTree
 import xml.etree.cElementTree as ElementTree
+  # If debugging, get the dev libs rather than the installed ones.
+if __name__ == '__main__':
+    _=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
   # Use Python's logging for warning messages to facilitate testing.
 from jmdictdb import logger; from jmdictdb.logger import L
 from jmdictdb import jdb
@@ -37,8 +40,8 @@ class JmdictFile:
     #      It is more convinient to work with the entity string
     #      values than their expanded text values.
 
-    def __init__ (self, source, xmltype=None):
-        self.source = source;  self.type = xmltype;  self.lineno = 0
+    def __init__ (self, source):
+        self.source = source;  self.lineno = 0
         self.name = None; self.created=None
     def read (self, bytes):  # 'bytes' argument ignored.
         s = self.source.readline();  self.lineno += 1
@@ -57,9 +60,10 @@ class Jmparser (object):
             kw,         # A jdb.Kwds object initialized with database
                         #  keywords, such as returned by jdb.dbOpen()
                         #  or jdb.Kwds(jdb.std_csv_dir()).
-            xmltype):   # Type of XML: "jmdict" or "jmnedict"
+            xmltype):   # Type of XML: "jmdict", "jmnedict" or "jmex".
         self.KW = kw
-        self.XKW = make_enttab (kw, xmltype)
+        if xmltype == 'jmex': self.XKW = self.KW
+        else: self.XKW = make_enttab (self.KW, xmltype)
         self.seq = 0
 
     def parse_entry (self, txt, dtd=None):
@@ -126,7 +130,9 @@ class Jmparser (object):
         if grpdefs is None: grpdefs = {}
         elist=[];  count=0;  entrnum=0
         for event, elem in etiter:
-            if elem.tag not in ['entry', 'grpdef', 'corpus']: continue
+            if elem.tag not in ['entry', 'grpdef', 'corpus']:
+                L('jmxml.parse').debug("skipping element <%s>" % elem.tag)
+                continue
             if event == "start":
                 lineno = getattr (inpf, 'lineno', None)
                 if elem.tag == 'entry': entrnum += 1
@@ -922,20 +928,22 @@ def do_clip (elem):
                         strt=int(elem.findtext('ac_strt')), leng=int(elem.findtext('ac_leng')),
                         trns=elem.findtext('ac_trns'), notes=elem.findtext('ac_notes'))
 
-def main (args, opts):
-        jdb.KW = KW = kw.Kwds (kw.std_csv_dir())
-        KW.__dict__.update (kw.short_vars (KW))
-        jmparser = Jmparser (kW)
-        if len(args) >= 1:
-            inpf = JmdictFile( open( args[0], encoding='utf-8' ))
-            for tag,entr in jmparser.parse_xmlfile (inpf):
-                import fmt
-                print (fmt.entr (entr))
-        else:
-            print ("""
-No argument given.  Please supply the name of a file containing
-test entries that will be read, formatted and printed.  The entries
-must be enclosed in a root element (e.g. <JMdict>...</JMdict>) but
-a DTD is not necessary.""", file=sys.stderr)
+def main():
+        from jmdictdb import fmtxml
+        jdb.KW = jdb.Kwds ('')
+        if len(sys.argv) not in (2,3): sys.exit (
+            'Usage: %s: [xmltype] xml-filename\n'
+            '  xmltype: one of "jmdict", jmnedict", "jmex"\n'
+            '  xml-filename: name of XML file to parse. The entries must be\n'
+            '  enclosed in a root element (e.g. <JMdict>...</JMdict>) but a\n'
+            '  a DTD is not necessary.' % sys.argv[0])
+        filename = sys.argv.pop (-1)
+        xmltype = "jmex"
+        if len (sys.argv) > 1: xmltype = sys.argv.pop (-1)
+        inpf = JmdictFile( open( filename ))
+        jmparser = Jmparser (jdb.KW, xmltype)
+        for tag,entr in jmparser.parse_xmlfile (inpf):
+            print (fmtxml.entr (entr))
 
-if __name__ == '__main__': main (sys.argv[1:], None)
+if __name__ == '__main__': main()
+
