@@ -49,7 +49,8 @@ class JmdictFile:
             if s[0] == '\uFEFF': s = s[1:]
         s = re.sub (r'&[a-zA-Z0-9-]+;', _ent_repl, s)
         if self.created is None and self.lineno < 400:
-            mo = re.search (r'<!-- ([a-zA-Z]+) created: (\d{4})-(\d{2})-(\d{2}) -->', s)
+            pat = r'<!-- ([a-zA-Z]+) created: (\d{4})-(\d{2})-(\d{2}) -->'
+            mo = re.search (pat, s)
             if mo:
                 self.name = mo.group(1)
                 self.created = datetime.date (*map(int, mo.group(2,3,4)))
@@ -115,10 +116,10 @@ class Jmparser (object):
                         #   a string giving the name of the top-level
                         #   element.
         seqnum_init=1,  # If an entry does not contain a <ent_seq> tag
-        seqnum_incr=1): #   giving its sequence number, calculate a 
+        seqnum_incr=1): #   giving its sequence number, calculate a
                         #   seq number for it from the formula:
                         #     seqnum_init + (seqnum_incr * entrnum)
-                        #   where entrnum is the ordinal position of 
+                        #   where entrnum is the ordinal position of
                         #   the entry in the file, starting at 0.  For
                         #   example, to get jmdict-like sequence numbers
                         #   use seqnum_init=1000000 and seqnum_incr=10.
@@ -156,10 +157,11 @@ class Jmparser (object):
               # Old-style (pre 2014-10) jmnedict xml does not have "ent_seq"
               # elements so we will generate a synthetic seq_number based on
               # the ordinal position of the entry in the file ('entrnum').
-            self.seq = seq = int (elem.findtext ('ent_seq') 
+            self.seq = seq = int (elem.findtext ('ent_seq')
                                   or ((entrnum-1) * seqnum_incr + seqnum_init))
             if prevseq and seq <= prevseq:
-                self.warn (" (line %d): Sequence less than preceeding sequence" % lineno)
+                self.warn (" (line %d): Sequence less than preceeding sequence"
+                           % lineno)
             if not startseq or seq >= startseq:
                 startseq = None
                 try: entr = self.do_entr (elem, seq, xlang, corp_dict, grpdefs)
@@ -233,8 +235,10 @@ class Jmparser (object):
             elemseq = elem.find ('ent_seq')
             if elemseq is None: raise ParseError ("No <ent_seq> element found")
             try: seq = int (elemseq.text)
-            except ValueError: raise ParseError ("Invalid 'ent_seq' value, '%s'" % elem.text)
-        if seq <= 0: raise ParseError ("Invalid 'ent_seq' value, '%s'" % elem.text)
+            except ValueError:
+                raise ParseError ("Invalid 'ent_seq' value, '%s'" % elem.text)
+        if seq <= 0:
+            raise ParseError ("Invalid 'ent_seq' value, '%s'" % elem.text)
         self.seq = entr.seq = seq
 
         id = elem.get('id')
@@ -243,7 +247,8 @@ class Jmparser (object):
         if dfrm is not None: entr.dfrm = int (dfrm)
         stat = elem.get('status') or jdb.KW.STAT['A'].id
         try: stat = KW.STAT[stat].id
-        except KeyError: raise ParseError ("Invalid <status> element value, '%s'" % stat)
+        except KeyError:
+            raise ParseError ("Invalid <status> element value, '%s'" % stat)
         entr.stat = stat
         entr.unap = elem.get('appr') == 'n'
 
@@ -313,7 +318,8 @@ class Jmparser (object):
                     continue
                 rdng._freq.append (jdb.Freq(kw=fkw, value=fval))
             nokanji = elem.find ('re_nokanji')
-            self.do_restr (elem.findall('re_restr'), rdng, kanjs, 'restr', nokanji)
+            self.do_restr (elem.findall('re_restr'),
+                           rdng, kanjs, 'restr', nokanji)
             self.do_audio (elem.findall("audio"), rdng, jdb.Rdngsnd)
             rdngs.append (rdng)
         if rdngs: entr._rdng = rdngs
@@ -341,7 +347,8 @@ class Jmparser (object):
             elif prop_pos and last_pos:
                 sens._pos = [jdb.Pos(kw=x.kw) for x in last_pos]
 
-            self.do_kws   (elem.findall('name_type'), sens, '_misc', 'MISC', 'NAME_TYPE')
+            self.do_kws   (elem.findall('name_type'), sens, '_misc',
+                                                        'MISC', 'NAME_TYPE')
             self.do_kws   (elem.findall('misc'),      sens, '_misc', 'MISC')
             self.do_kws   (elem.findall('field'),     sens, '_fld',  'FLD')
             self.do_kws   (elem.findall('dial'),      sens, '_dial', 'DIAL')
@@ -350,8 +357,8 @@ class Jmparser (object):
             self.do_gloss (elem.findall('trans_det'), sens,)
             self.do_restr (elem.findall('stagr'),     sens, rdngs, 'stagr')
             self.do_restr (elem.findall('stagk'),     sens, kanjs, 'stagk')
-            self.do_xref  (elem.findall('xref'),      sens, jdb.KW.XREF['see'].id)
-            self.do_xref  (elem.findall('ant'),       sens, jdb.KW.XREF['ant'].id)
+            self.do_xref  (elem.findall('xref'),  sens, jdb.KW.XREF['see'].id)
+            self.do_xref  (elem.findall('ant'),   sens, jdb.KW.XREF['ant'].id)
 
             if not getattr (sens, '_gloss', None):
                 self.warn ("Sense %d has no glosses." % (ord+1))
@@ -406,7 +413,8 @@ class Jmparser (object):
                 self.warn ("Invalid lsource type attribute: '%s'" % lstyp)
                 continue
             wasei = elem.get ('ls_wasei') is not None
-            lsrc.append (jdb.Lsrc (lang=lang, txt=txt, part=lstyp=='part', wasei=wasei))
+            lsrc.append (jdb.Lsrc (lang=lang, txt=txt,
+                                   part=lstyp=='part', wasei=wasei))
         if lsrc:
             if not hasattr (sens, '_lsrc'): sens._lsrc = []
             sens._lsrc.extend (lsrc)
@@ -465,7 +473,8 @@ class Jmparser (object):
             rtxt = "\u30fb".join (reversed (rlst)) or None
 
             if ktxt or rtxt:
-                xrefs.append (jdb.Xrslv (typ=xtypkw, ktxt=ktxt, rtxt=rtxt, tsens=snum))
+                xrefs.append (jdb.Xrslv (typ=xtypkw, ktxt=ktxt,
+                                         rtxt=rtxt, tsens=snum))
         if xrefs:
             for n, x in enumerate (xrefs): x.ord = n + 1
             if not hasattr (sens, '_xrslv'): sens._xrslv = []
@@ -476,7 +485,7 @@ class Jmparser (object):
         hists = []
         for elem in elems:
             x = elem.findtext ("upd_date")
-            dt = datetime.datetime (*([int(z) for z in x.split ('-')] + [0, 0, 0]))
+            dt = datetime.datetime (*([int(z) for z in x.split('-')]+[0, 0, 0]))
             o = jdb.Hist (dt=dt)
             stat = elem.findtext ("upd_stat")
             unap = elem.find ("upd_unap")
@@ -507,11 +516,13 @@ class Jmparser (object):
                 continue
             ordtxt = elem.get ('ord')
             if not ordtxt:
-                self.warn ("Missing group 'ord' attribute on group element '%s'." % (txt))
+                self.warn ("Missing group 'ord' attribute "
+                           "on group element '%s'." % (txt))
                 continue
             try: ord = int (ordtxt)
             except (ValueError, TypeError):
-                self.warn ("Invalid 'ord' attribute '%s' on group element '%s'." % (ordtxt, txt))
+                self.warn ("Invalid 'ord' attribute '%s' "
+                           "on group element '%s'." % (ordtxt, txt))
                 continue
             grps.append (jdb.Grp (kw=grpdefid, ord=ord))
         if grps:
@@ -525,7 +536,8 @@ class Jmparser (object):
             if not v:
                 self.warn ("Missing audio clipid attribute."); continue
             try: clipid = int (v.lstrip('c'))
-            except (ValueError, TypeError): self.warn ("Invalid audio clipid attribute: %s" % v)
+            except (ValueError, TypeError):
+                self.warn ("Invalid audio clipid attribute: %s" % v)
             else:
                 snds.append (sndclass (snd=clipid, ord=n+1))
         if snds:
@@ -609,7 +621,8 @@ class Jmparser (object):
 
         if not elems and nokanji is None: return
         if elems and nokanji is not None:
-            self.warn ("Conflicting 'nokanji' and 're_restr' in reading %d." % rdng.rdng)
+            self.warn ("Conflicting 'nokanji' and 're_restr' in reading %d."
+                       % rdng.rdng)
         if nokanji is not None: allowed_kanj = None
         else:
             allowed_kanj, dups = jdb.rmdups ([x.text for x in elems])
@@ -826,10 +839,12 @@ def extract (fin, seqs_wanted, dtd=False, fullscan=False, keepends=False):
             if scanning == 'copy' or  scanning == 'nocopy':
                 if scanning == 'copy':
                       #FIXME? should we strip() when keepends is true?
-                    if keepends: rettxt.append (line.strip()) 
+                    if keepends: rettxt.append (line.strip())
                     else: rettxt.append (line.rstrip())
                 if line.lstrip().startswith ('</entry>'):
-                    if count <= 0 and (not seqs or (seqs[-1] < seq and not fullscan)): break
+                    if count <= 0 \
+                          and (not seqs or (seqs[-1] < seq and not fullscan)):
+                        break
                     if count > 0:
                         yield seq, rettxt;  rettxt = []
                     scanning = 'between_entries'
@@ -844,7 +859,9 @@ def extract (fin, seqs_wanted, dtd=False, fullscan=False, keepends=False):
                 ln = line.lstrip()
                 if ln.startswith ('<ent_seq>'):
                     n = ln.find ('</ent_seq>')
-                    if n < 0: raise IOError ('Invalid <ent_seq> element, line %d', lnnum)
+                    if n < 0:
+                        raise IOError ('Invalid <ent_seq> element, line %d',
+                                       lnnum)
                     seq = int (ln[9:n])
                 else:
                     seq += 1  # Old-style (pre 2014-10) JMnedict has no seq
@@ -914,19 +931,28 @@ def parse_sndfile (
 
 def do_vol (elem):
         return jdb.Sndvol (id=int(elem.get('id')[1:]),
-                        title=elem.findtext('av_title'), loc=elem.findtext('av_loc'),
-                        type=elem.findtext('av_type'), idstr=elem.findtext('av_idstr'),
-                        corp=elem.findtext('av_corpus'), notes=elem.findtext('av_notes'))
+                           title=elem.findtext('av_title'),
+                           loc=elem.findtext('av_loc'),
+                           type=elem.findtext('av_type'),
+                           idstr=elem.findtext('av_idstr'),
+                           corp=elem.findtext('av_corpus'),
+                           notes=elem.findtext('av_notes'))
 
 def do_sel (elem):
-        return jdb.Sndfile (id=int(elem.get('id')[1:]), vol=int(elem.get('vol')[1:]),
-                        title=elem.findtext('as_title'), loc=elem.findtext('as_loc'),
-                        type=elem.findtext('as_type'), notes=elem.findtext('as_notes'))
+        return jdb.Sndfile (id=int(elem.get('id')[1:]),
+                            vol=int(elem.get('vol')[1:]),
+                            title=elem.findtext('as_title'),
+                            loc=elem.findtext('as_loc'),
+                            type=elem.findtext('as_type'),
+                            notes=elem.findtext('as_notes'))
 
 def do_clip (elem):
-        return jdb.Snd (id=int(elem.get('id')[1:]), file=int(elem.get('sel')[1:]),
-                        strt=int(elem.findtext('ac_strt')), leng=int(elem.findtext('ac_leng')),
-                        trns=elem.findtext('ac_trns'), notes=elem.findtext('ac_notes'))
+        return jdb.Snd (id=int(elem.get('id')[1:]),
+                        file=int(elem.get('sel')[1:]),
+                        strt=int(elem.findtext('ac_strt')),
+                        leng=int(elem.findtext('ac_leng')),
+                        trns=elem.findtext('ac_trns'),
+                        notes=elem.findtext('ac_notes'))
 
 def main():
         from jmdictdb import fmtxml
@@ -946,4 +972,3 @@ def main():
             print (fmtxml.entr (entr))
 
 if __name__ == '__main__': main()
-
