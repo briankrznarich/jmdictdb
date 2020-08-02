@@ -105,4 +105,12 @@ UPDATE kwpos SET descr=replace(descr, ' we ',   ' `we'' ')    WHERE kw IN ('v2w-
 UPDATE kwrinf SET descr='gikun (meaning as reading) or jukujikun (special kanji reading)'
     WHERE kw='gikun' AND descr='gikun (meaning) reading';
 
+-- At this point the "descr" fields all match the old DTD.  Last change
+-- is to replace the back-quotes with regular single quotes which is the
+-- convention that will be used in the DTD going forward.  Note that
+-- there are additional rows with back-quotes in addition to the ones
+-- updated above.
+
+UPDATE kwpos SET descr=replace(descr,'`','''') WHERE descr LIKE '%`%';
+
 COMMIT;

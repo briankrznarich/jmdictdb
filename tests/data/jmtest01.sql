@@ -3959,9 +3959,9 @@ COPY public.conotes (id, txt) FROM stdin;
 COPY public.db (id, active, ts) FROM stdin;
 2029572	f	2019-05-14 10:46:08.849884
 11084276	f	2019-08-09 19:50:53.856433
-273560	t	2020-07-22 16:44:35.85915
-16133514	f	2020-07-16 10:32:49.620998
-11173099	f	2020-07-16 10:34:39.856739
+273560	t	2020-08-02 13:03:51.029015
+16133514	f	2020-08-02 13:03:25.646392
+11173099	f	2020-08-02 13:03:35.893273
 \.
 
 
@@ -5384,12 +5384,9 @@ COPY public.kwmisc (id, kw, descr, ents) FROM stdin;
 COPY public.kwpos (id, kw, descr, ents) FROM stdin;
 1	adj-i	adjective (keiyoushi)	\N
 2	adj-na	adjectival nouns or quasi-adjectives (keiyodoshi)	\N
-3	adj-no	nouns which may take the genitive case particle `no'	\N
 4	adj-pn	pre-noun adjectival (rentaishi)	\N
-5	adj-t	`taru' adjective	\N
 6	adv	adverb (fukushi)	\N
 7	adj-ix	adjective (keiyoushi) - yoi/ii class	\N
-8	adv-to	adverb taking the `to' particle	\N
 9	aux	auxiliary	\N
 10	aux-adj	auxiliary adjective	\N
 11	aux-v	auxiliary verb	\N
@@ -5407,18 +5404,7 @@ COPY public.kwpos (id, kw, descr, ents) FROM stdin;
 28	v1	Ichidan verb	\N
 29	v1-s	Ichidan verb - kureru special class	\N
 30	v5aru	Godan verb - -aru special class	\N
-31	v5b	Godan verb with `bu' ending	\N
-32	v5g	Godan verb with `gu' ending	\N
-33	v5k	Godan verb with `ku' ending	\N
 34	v5k-s	Godan verb - Iku/Yuku special class	\N
-35	v5m	Godan verb with `mu' ending	\N
-36	v5n	Godan verb with `nu' ending	\N
-37	v5r	Godan verb with `ru' ending	\N
-38	v5r-i	Godan verb with `ru' ending (irregular verb)	\N
-39	v5s	Godan verb with `su' ending	\N
-40	v5t	Godan verb with `tsu' ending	\N
-41	v5u	Godan verb with `u' ending	\N
-42	v5u-s	Godan verb with `u' ending (special class)	\N
 43	v5uru	Godan verb - Uru old class verb (old form of Eru)	\N
 44	vi	intransitive verb	\N
 45	vk	Kuru verb - special class	\N
@@ -5440,40 +5426,54 @@ COPY public.kwpos (id, kw, descr, ents) FROM stdin;
 15	cop	copula	\N
 13	exp	expressions (phrases, clauses, etc.)	\N
 48	vs-i	suru verb - included	\N
-65	adj-shiku	`shiku' adjective (archaic)	\N
-63	adj-kari	`kari' adjective (archaic)	\N
-64	adj-ku	`ku' adjective (archaic)	\N
-69	v4k	Yodan verb with `ku' ending (archaic)	\N
-76	v2k-k	Nidan verb (upper class) with `ku' ending (archaic)	\N
-85	v2k-s	Nidan verb (lower class) with `ku' ending (archaic)	\N
-70	v4g	Yodan verb with `gu' ending (archaic)	\N
-77	v2g-k	Nidan verb (upper class) with `gu' ending (archaic)	\N
-86	v2g-s	Nidan verb (lower class) with `gu' ending (archaic)	\N
-71	v4s	Yodan verb with `su' ending (archaic)	\N
-87	v2s-s	Nidan verb (lower class) with `su' ending (archaic)	\N
-72	v4t	Yodan verb with `tsu' ending (archaic)	\N
-78	v2t-k	Nidan verb (upper class) with `tsu' ending (archaic)	\N
-89	v2t-s	Nidan verb (lower class) with `tsu' ending (archaic)	\N
-73	v4n	Yodan verb with `nu' ending (archaic)	\N
-91	v2n-s	Nidan verb (lower class) with `nu' ending (archaic)	\N
-74	v4b	Yodan verb with `bu' ending (archaic)	\N
-81	v2b-k	Nidan verb (upper class) with `bu' ending (archaic)	\N
-93	v2b-s	Nidan verb (lower class) with `bu' ending (archaic)	\N
-75	v4m	Yodan verb with `mu' ending (archaic)	\N
-82	v2m-k	Nidan verb (upper class) with `mu' ending (archaic)	\N
-94	v2m-s	Nidan verb (lower class) with `mu' ending (archaic)	\N
-79	v2d-k	Nidan verb (upper class) with `dzu' ending (archaic)	\N
-90	v2d-s	Nidan verb (lower class) with `dzu' ending (archaic)	\N
-60	v4h	Yodan verb with `hu/fu' ending (archaic)	\N
-80	v2h-k	Nidan verb (upper class) with `hu/fu' ending (archaic)	\N
-92	v2h-s	Nidan verb (lower class) with `hu/fu' ending (archaic)	\N
-83	v2y-k	Nidan verb (upper class) with `yu' ending (archaic)	\N
-95	v2y-s	Nidan verb (lower class) with `yu' ending (archaic)	\N
-53	v4r	Yodan verb with `ru' ending (archaic)	\N
-84	v2r-k	Nidan verb (upper class) with `ru' ending (archaic)	\N
-96	v2r-s	Nidan verb (lower class) with `ru' ending (archaic)	\N
-88	v2z-s	Nidan verb (lower class) with `zu' ending (archaic)	\N
-97	v2w-s	Nidan verb (lower class) with `u' ending and `we' conjugation (archaic)	\N
+5	adj-t	'taru' adjective	\N
+3	adj-no	nouns which may take the genitive case particle 'no'	\N
+8	adv-to	adverb taking the 'to' particle	\N
+31	v5b	Godan verb with 'bu' ending	\N
+32	v5g	Godan verb with 'gu' ending	\N
+33	v5k	Godan verb with 'ku' ending	\N
+35	v5m	Godan verb with 'mu' ending	\N
+36	v5n	Godan verb with 'nu' ending	\N
+37	v5r	Godan verb with 'ru' ending	\N
+38	v5r-i	Godan verb with 'ru' ending (irregular verb)	\N
+39	v5s	Godan verb with 'su' ending	\N
+40	v5t	Godan verb with 'tsu' ending	\N
+41	v5u	Godan verb with 'u' ending	\N
+42	v5u-s	Godan verb with 'u' ending (special class)	\N
+65	adj-shiku	'shiku' adjective (archaic)	\N
+63	adj-kari	'kari' adjective (archaic)	\N
+64	adj-ku	'ku' adjective (archaic)	\N
+69	v4k	Yodan verb with 'ku' ending (archaic)	\N
+76	v2k-k	Nidan verb (upper class) with 'ku' ending (archaic)	\N
+85	v2k-s	Nidan verb (lower class) with 'ku' ending (archaic)	\N
+70	v4g	Yodan verb with 'gu' ending (archaic)	\N
+77	v2g-k	Nidan verb (upper class) with 'gu' ending (archaic)	\N
+86	v2g-s	Nidan verb (lower class) with 'gu' ending (archaic)	\N
+71	v4s	Yodan verb with 'su' ending (archaic)	\N
+87	v2s-s	Nidan verb (lower class) with 'su' ending (archaic)	\N
+72	v4t	Yodan verb with 'tsu' ending (archaic)	\N
+78	v2t-k	Nidan verb (upper class) with 'tsu' ending (archaic)	\N
+89	v2t-s	Nidan verb (lower class) with 'tsu' ending (archaic)	\N
+73	v4n	Yodan verb with 'nu' ending (archaic)	\N
+91	v2n-s	Nidan verb (lower class) with 'nu' ending (archaic)	\N
+74	v4b	Yodan verb with 'bu' ending (archaic)	\N
+81	v2b-k	Nidan verb (upper class) with 'bu' ending (archaic)	\N
+93	v2b-s	Nidan verb (lower class) with 'bu' ending (archaic)	\N
+75	v4m	Yodan verb with 'mu' ending (archaic)	\N
+82	v2m-k	Nidan verb (upper class) with 'mu' ending (archaic)	\N
+94	v2m-s	Nidan verb (lower class) with 'mu' ending (archaic)	\N
+79	v2d-k	Nidan verb (upper class) with 'dzu' ending (archaic)	\N
+90	v2d-s	Nidan verb (lower class) with 'dzu' ending (archaic)	\N
+60	v4h	Yodan verb with 'hu/fu' ending (archaic)	\N
+80	v2h-k	Nidan verb (upper class) with 'hu/fu' ending (archaic)	\N
+92	v2h-s	Nidan verb (lower class) with 'hu/fu' ending (archaic)	\N
+83	v2y-k	Nidan verb (upper class) with 'yu' ending (archaic)	\N
+95	v2y-s	Nidan verb (lower class) with 'yu' ending (archaic)	\N
+53	v4r	Yodan verb with 'ru' ending (archaic)	\N
+84	v2r-k	Nidan verb (upper class) with 'ru' ending (archaic)	\N
+96	v2r-s	Nidan verb (lower class) with 'ru' ending (archaic)	\N
+88	v2z-s	Nidan verb (lower class) with 'zu' ending (archaic)	\N
+97	v2w-s	Nidan verb (lower class) with 'u' ending and 'we' conjugation (archaic)	\N
 \.
 
 
@@ -6645,7 +6645,7 @@ COPY public.stagr (entr, sens, rdng) FROM stdin;
 --
 
 COPY public.testsrc (filename, method, hash) FROM stdin;
-/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	ab94a399dddba37b991fe2f8eceed9e5232b3548
+/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	2cfcff396a96ab01343688c27afd50d1162a7603
 \.
 
 
@@ -6735,7 +6735,7 @@ SELECT pg_catalog.setval('imp.entr_id_seq', 1, false);
 -- Name: entr_id_seq; Type: SEQUENCE SET; Schema: public; Owner: jmdictdb
 --
 
-SELECT pg_catalog.setval('public.entr_id_seq', 148, true);
+SELECT pg_catalog.setval('public.entr_id_seq', 155, true);
 
 
 --
@@ -6763,7 +6763,7 @@ SELECT pg_catalog.setval('public.seq_jmnedict', 1000030, true);
 -- Name: seq_test; Type: SEQUENCE SET; Schema: public; Owner: jmdictdb
 --
 
-SELECT pg_catalog.setval('public.seq_test', 40, true);
+SELECT pg_catalog.setval('public.seq_test', 47, true);
 
 
 --
