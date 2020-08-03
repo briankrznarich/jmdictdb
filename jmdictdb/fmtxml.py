@@ -291,7 +291,7 @@ def entities (kwds, dtd, grouped):
          # "ik/word containing..." occurs in both the KINF and RINF groups.
          # In the grouped output we leave the duplicates. In the ungrouped
          # output (which is sorted) we eliminate duplicates.
-         #FIXME: should raise an error when duplocate entity names are
+         #FIXME: should raise an error when duplicate entity names are
          # present with different values.  It seems we can't rely on XML
          # validation to pick this up: a quick check with a couple online
          # XML validators reported no errors, even when the values were
@@ -312,7 +312,11 @@ def entities (kwds, dtd, grouped):
                except KeyError: pass
                else: group.append ('<!ENTITY %s "%s">' % (ename, eval))
            if grouped: group.sort (key=lambda x: x.lower())
-           if grouped and group: lines.append ("<!-- %s entities -->" % descr)
+           if grouped and group:
+                 #FIXME: hardwiring "jmnedict" here is a hack.
+               if dtd == 'jmnedict' and domain == 'MISC':
+                   descr = '<name_type>';
+               lines.append ("<!-- %s entities -->" % descr)
            lines.extend (group)
        if not grouped:
            lines = list (set (lines))  # Remove any duplicate lines.
