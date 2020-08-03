@@ -5,15 +5,10 @@
 # Read entries from database and write to XML file.  Run with
 # --help option for details.
 
-  #FIXME? The --compat=jmex option was originally intended for serializing
-  # an entire jmdictdb database to XML but it is no longer useful for that
-  # because of the single corpus restriction and that it no longer includes
-  # non-active or unappoved entries.  (Not sure where/how the latter
-  # inability came about.)  However there seems little need any more to
-  # seralize a full database since Postgresql's pg_dump command does that
-  # better than we can.  It still has value as a development aid/tool
-  # since "jmex" formatted XML is used in generating the diff's used
-  # in history records.
+  #FIXME: The --compat=jmex option is intended for serializing an
+  # entire JMdictDB database but is not fully useful because the
+  # required --corpus/-s option restricts output to a subset of
+  # entries, a restriction imposed by jmxml.Jmparser.
 
 import sys, os, re, time, pdb
 _=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
@@ -35,15 +30,20 @@ def main():
             seqlist = read_seqfile (opts.seqfile)
 
           # Get compatibility info based on user request and corpus type.
-        corpid, dtd, compat, dtd_root, dtd_date, appr, warn \
+        corpid, dtd, compat, root, datestamp, appr, warn \
             = compat_info (opts.corpus, opts.compat)
         if warn and not opts.force: sys.exit (
             "The --compat option you requested (%s) incompatible with "\
             "the requested --corpus (%s).  To continue anyway, use the "\
             "--force option." % (opts.compat, opts.corpus))
-        if dtd is None: opts.nodtd = True
-        if opts.nodtd: dtd = None
-        if not opts.root: opts.root = dtd_root
+
+          # 'dtd' was set above to default dtd name.
+        if dtd: dtd = '\x01' + dtd      # Mark as a dtd name (vs filename).
+        if opts.dtd: dtd = opts.dtd     # Override if --dtd was given.
+        if opts.no_dtd: dtd = None      # Override if --no-dtd was given.
+          # 'root' was set above to default root name.
+        if opts.root: root = opts.root  # Override if --root was given.
+        if opts.no_root: root = None    # Override if --no-root was given.
 
           # Get a sql statement that will select all the entries to be
           # extracted, or in the case of a seq# file, the pool of entries
@@ -53,7 +53,7 @@ def main():
           # Following sets 'pbar' to None if no progress indicator wanted,
           #  to "" if 'blocks (aka dots) wanted, or to a progress_bar object
           #  for "percent" (the default).
-        if Debug: pbar = None
+        if Debug or not opts.progress or opts.progress=='none': pbar = None
         else: pbar = setup_progbar (cur, opts.progress, sql_base, seqlist)
 
           # Open the output file and also write the DTD to it if needed.
@@ -61,7 +61,8 @@ def main():
           # file if there is some error in the command line arguments that
           # can be detected above.
         outname = opts.output if opts.output else None
-        outf = open_output (outname, dtd, opts.root, dtd_date)
+        try: outf = open_output (outname, dtd, root, datestamp)
+        except OSError as e: print (str(e), file=sys.stderr)
 
           # Read the entries in blocks of 'opts.blocksize', format them
           # as XML, and write them to the output file.
@@ -74,7 +75,7 @@ def main():
             elif pbar == '': sys.stderr.write ('.');  sys.stderr.flush()
             if Debug: print ("%d entries written" % done, file=sys.stderr)
 
-        if not opts.nodtd: outf.writelines ('</%s>\n' % opts.root)
+        if root: outf.writelines ('</%s>\n' % root)
         if not Debug: sys.stderr.write ('\n')
         print ("Wrote %d entries" % done, file=sys.stderr)
 
@@ -189,7 +190,7 @@ def write_entrs (cur, outf, entrs, raw, compat, corpora=set()):
             outf.write (txt + "\n")
         if Debug: print ("Time: %s (fmt)"%(time.time()-start),file=sys.stderr)
 
-def open_output (filename, dtd, dtd_root, dtd_date):
+def open_output (filename, dtd, root, datestamp):
     # Create and open the output file and write the DTD to it if
     # 'dtd' (the name of the dtd template) has a non-false str value.
         if not filename: outf = sys.stdout
@@ -199,12 +200,16 @@ def open_output (filename, dtd, dtd_root, dtd_date):
           # dtd; the output file will be list <entry> and maybe <corpus>
           # elements.
         if dtd:
-            dtdtxt= fmtxml.get_dtd (jdb.KW, dtd)
+            if dtd[0] == '\x01':
+                dtdtxt= fmtxml.get_dtd (jdb.KW, dtd[1:])
+            else:
+                with open (dtd) as f: dtdtxt = f.read()
             outf.write (dtdtxt)
-            if dtd_date:
-                today = time.strftime ("%Y-%m-%d", time.localtime())
-                outf.write ("<!-- %s created: %s -->\n" % (dtd_root, today))
-            outf.write ('<%s>\n' % dtd_root)
+        if datestamp and root:
+            today = time.strftime ("%Y-%m-%d", time.localtime())
+            outf.write ("<!-- %s created: %s -->\n"
+                        % (root, today))
+        if root: outf.write ('<%s>\n' % root)
         return outf
 
 def read_seqfile (seqfilename):
@@ -226,10 +231,11 @@ def read_seqfile (seqfilename):
 def compat_info (corpus, compat):
         data = {
           # Values:
-          #   0 dtd filename:  Name of the DTD template file to use.
+          #   0 dtd name:  Name of the DTD template file to use (must be
+          #       a name recognized by fmtxml.get_dtd().
           #   1 fmtxml-compat:  Value of 'compat' to pass to fmtxml.entr().
           #   2 root:  Text to use in the XML root element.
-          #   3 date: (bool) Include a "created" timestamp in the XML.
+          #   3 date: (bool) Include a "created" datestamp in the XML.
           #   4 appr: (bool) Included only active approved entries.
           #   5 srcts: List of compatible corpus types.
           #
@@ -246,7 +252,7 @@ def compat_info (corpus, compat):
           # Note: when adding/changing/deleting compat entries above, be
           # sure to reflect any key changes in the --compat option choices
           # in parse_cmdline().
-          # Note: dtd-filename of "None" will suppress dtd like --nodtd.
+          # Note: dtd name of "None" will suppress dtd like --no-dtd.
 
         corpid = corpus
         if corpid.isdigit(): corpid = int (corpid)
@@ -293,7 +299,8 @@ def parse_cmdline ():
                 """%(prog)s will read entries from a JMdictDB database and
                  write them in XML form to a file.\n
 
-                All entries come from a single corpus given by -s/--corpus.
+                All entries come from a single corpus given by the
+                 mandatory option -s/--corpus.
                  All active, approved entries in that corpus are output
                  (but see --compat=jmex) unless a subset are selected by
                  sequence number in the command's arguments, in a file
@@ -302,7 +309,8 @@ def parse_cmdline ():
                  order with duplicates eliminated.
                  The particular XML format and DTD used is automatically
                  chosen based on --corpus but may be overridden with
-                 --compat."""\
+                 --compat.  The DTD and/or root element may be changed
+                 or supressed with --dtd, --no-dtd, --root, --no-root."""\
                 .replace("\n"+(" "*16),''))   # See Note-1 below.
 
         p.add_argument ("seqnums", nargs='*', type=int,
@@ -378,16 +386,23 @@ def parse_cmdline ():
                 "Mutually exclusive with sequence numbers arguments "
                 "and the --begin and --count options.")
 
-        p.add_argument ("--root", "-r",
+        p.add_argument ("--root", default=None,
             help="Name to use as the root element in the output XML file.  "
-                "It is normally chosen automatically based "
-                "on --compat but can be overridden with this option.  "
-                "Will be ignored if --nodtd is given.")
+                "If not given the root element will be chosen automatically "
+                "based on --compat.  Incompatible with --no-root.")
 
-        p.add_argument ("--nodtd", default=None,
-            action="store_true",
-            help="Do not write a DTD or root element.  Output will be a "
-                "list of <entry> elements.")
+        p.add_argument ("--no-root", default=False, action="store_true",
+            help="Do not generate a root element in the output XML; the "
+                "non-DTD output will be an un-enclosed list of <entry> "
+                "elements.  Incompatible with --root.")
+
+        p.add_argument ("--dtd", default=None,
+            help="Gives the name of a file containing the DTD to use.  "
+                "If not given the DTD  will be chosen automatically "
+                "based on --compat.  Incompatible with --no-dtd.")
+
+        p.add_argument ("--no-dtd", default=False, action="store_true",
+            help="Do not write a DTD.  Incompatible with --dtd.")
 
         p.add_argument ("--blocksize", "-B", default=1000,
             type=int, metavar="NUM",
@@ -395,9 +410,10 @@ def parse_cmdline ():
                 "A larger blocksize will speed up processing substantially "
                 "but require more memory.  Default is 1000.")
 
-        p.add_argument ("--progress", default="percent",
+        p.add_argument ("--progress", "-p", nargs='?',
+                        default="percent", const=None,
             help="""Show progress while running.  Choices are:\n
-                * none: no progress indicator.\n
+                * none (or no value): no progress indicator.\n
                 * percent (default): show a percentage progress bar.\n
                 * blocks: print a dot for each block of entries.\n
                 Progress bar output is written to stderr.
@@ -431,7 +447,11 @@ def parse_cmdline ():
                      "with sequence number arguments or --seqfile.")
         if  args.seqfile and args.seqnums:
             p.error ("Sequence number arguments are incompatible "
-                     "with --seqfile")
+                     "with --seqfile.")
+        if args.root and args.no_root:
+            p.error ("Options --root and --no-root are incompatible.")
+        if args.root and args.no_root:
+            p.error ("Options --dtd and --no-dtd are incompatible.")
         return args
 
 if __name__ == '__main__': main()
