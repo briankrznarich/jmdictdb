@@ -589,12 +589,12 @@ def sndvols (vols):
         for v in vols:
             idstr = ' id="v%s"' % str (v.id)
             fmt.append ('<avol%s>' % idstr)
-            if getattr (v, 'loc',   None) is not None: fmt.append ('<av_loc>%s</av_loc>'     % v.loc)
-            if getattr (v, 'type',  None) is not None: fmt.append ('<av_type>%s</av_type>'   % v.type)
-            if getattr (v, 'title', None) is not None: fmt.append ('<av_title>%s</av_title>' % v.title)
-            if getattr (v, 'idstr', None) is not None: fmt.append ('<av_idstr>%s</av_idstr>' % v.idstr)
-            if getattr (v, 'corp',  None) is not None: fmt.append ('<av_corpus>%s</av_corpus>' % v.corp)
-            if getattr (v, 'notes', None) is not None: fmt.append ('<av_notes>%s</av_notes>' % v.notes)
+            if v.loc:   fmt.append ('<av_loc>%s</av_loc>'     % v.loc)
+            if v.type:  fmt.append ('<av_type>%s</av_type>'   % v.type)
+            if v.title: fmt.append ('<av_title>%s</av_title>' % v.title)
+            if v.idstr: fmt.append ('<av_idstr>%s</av_idstr>' % v.idstr)
+            if v.corp:  fmt.append ('<av_corpus>%s</av_corpus>' % v.corp)
+            if v.notes: fmt.append ('<av_notes>%s</av_notes>' % v.notes)
             fmt.append ('</avol>')
         return fmt
 
@@ -605,10 +605,10 @@ def sndsels (sels):
             idstr = ' id="s%s"' % str (s.id)
             volstr = ' vol="v%s"' % str (s.vol)
             fmt.append ('<asel%s%s>' % (idstr, volstr))
-            if getattr (s, 'loc',   None) is not None: fmt.append ('<as_loc>%s</as_loc>'     % s.loc)
-            if getattr (s, 'type',  None) is not None: fmt.append ('<as_type>%s</as_type>'   % s.type)
-            if getattr (s, 'title', None) is not None: fmt.append ('<as_title>%s</as_title>' % s.title)
-            if getattr (s, 'notes', None) is not None: fmt.append ('<as_notes>%s</as_notes>' % s.notes)
+            if s.loc:   fmt.append ('<as_loc>%s</as_loc>'     % s.loc)
+            if s.type:  fmt.append ('<as_type>%s</as_type>'   % s.type)
+            if s.title: fmt.append ('<as_title>%s</as_title>' % s.title)
+            if s.notes: fmt.append ('<as_notes>%s</as_notes>' % s.notes)
             fmt.append ('</asel>')
         return fmt
 
@@ -619,26 +619,33 @@ def sndclips (clips):
             idstr = ' id="c%s"' % str (c.id)
             selstr = ' sel="s%s"' % str (c.file)
             fmt.append ('<aclip%s%s>' % (idstr,selstr))
-            if getattr (c, 'strt',  None) is not None: fmt.append ('<ac_strt>%s</ac_strt>'   % c.strt)
-            if getattr (c, 'leng',  None): fmt.append ('<ac_leng>%s</ac_leng>'   % c.leng)
-            if getattr (c, 'trns',  None): fmt.append ('<ac_trns>%s</ac_trns>'   % c.trns)
-            if getattr (c, 'notes', None): fmt.append ('<ac_notes>%s</ac_notes>' % c.notes)
+            if c.strt:  fmt.append ('<ac_strt>%s</ac_strt>'   % c.strt)
+            if c.leng:  fmt.append ('<ac_leng>%s</ac_leng>'   % c.leng)
+            if c.trns:  fmt.append ('<ac_trns>%s</ac_trns>'   % c.trns)
+            if c.notes: fmt.append ('<ac_notes>%s</ac_notes>' % c.notes)
             fmt.append ('</aclip>')
         return fmt
 
 def corpus (corpora):
         KW = jdb.KW;  fmt = []
         for c in corpora:
-            kwo = KW.SRC[c]
-            fmt.append ('<corpus id="%d">' % kwo.id)
-            fmt.append ('<co_name>%s</co_name>' % kwo.kw)
-            if getattr (kwo, 'descr', None): fmt.append ('<co_descr>%s</co_descr>' % esc(KW.SRC[c].descr))
-            if getattr (kwo, 'dt',    None): fmt.append ('<co_date>%s</co_date>'   % KW.SRC[c].dt)
-            if getattr (kwo, 'notes', None): fmt.append ('<co_notes>%s</co_notes>' % esc(KW.SRC[c].notes))
-            if getattr (kwo, 'seq',   None): fmt.append ('<co_sname>%s</co_sname>' % esc(KW.SRC[c].seq))
-            if getattr (kwo, 'sinc',  None): fmt.append ('<co_sinc>%d</co_sinc>'   % KW.SRC[c].sinc)
-            if getattr (kwo, 'smin',  None): fmt.append ('<co_smin>%d</co_smin>'   % KW.SRC[c].smin)
-            if getattr (kwo, 'smax',  None): fmt.append ('<co_smax>%d</co_smax>'   % KW.SRC[c].smax)
+            s = KW.SRC[c]
+            fmt.append ('<corpus id="%d">' % s.id)
+            fmt.append ('<co_name>%s</co_name>' % s.kw)
+            if s.descr:
+                fmt.append ('<co_descr>%s</co_descr>' % esc(KW.SRC[c].descr))
+            if s.dt:
+                fmt.append ('<co_date>%s</co_date>'   % KW.SRC[c].dt)
+            if s.notes:
+                fmt.append ('<co_notes>%s</co_notes>' % esc(KW.SRC[c].notes))
+            if s.seq:
+                fmt.append ('<co_sname>%s</co_sname>' % esc(KW.SRC[c].seq))
+            if s.sinc:
+                fmt.append ('<co_sinc>%d</co_sinc>'   % KW.SRC[c].sinc)
+            if s.smin:
+                fmt.append ('<co_smin>%d</co_smin>'   % KW.SRC[c].smin)
+            if s.smax:
+                fmt.append ('<co_smax>%d</co_smax>'   % KW.SRC[c].smax)
             fmt.append ('</corpus>')
         return fmt
 
@@ -658,7 +665,8 @@ def entr_diff (eold, enew, n=2):
           # Also, skip the <entry> line since they will always differ.
         rawdiff = difflib.unified_diff (eoldxml, enewxml, n=n)
         diffs = [x.rstrip() for x in rawdiff
-                 if not (x[1:].startswith ('<entry') or x.startswith ('@@ -1 +1 @@')) ]
+                 if not (x[1:].startswith ('<entry')
+                         or x.startswith ('@@ -1 +1 @@')) ]
           # Remove the intial "---", "+++" lines.
         if len(diffs) >= 2: diffs = diffs[2:]
         diffstr = '\n'.join (diffs)
