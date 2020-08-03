@@ -305,11 +305,14 @@ class Compat (unittest.TestCase):
                       _sens=[Sens(sens=1,
                                   notes="sense-note",
                                   _gloss=[Gloss(txt='trash',lang=1,ginf=1)])],
-                      _hist=[Hist(hist=1,stat=2,unap=True,
-                                  dt=datetime.datetime(2020,7,29),
+                      _hist=[Hist(hist=1,stat=2,unap=False,
+                                  dt=datetime.datetime(2020,7,29,9,10,59),
                                   userid='xy',name="Xavier Yu",
                                   email='nowhere',diff="diff",refs="refs",
-                                  notes="comments")] )
+                                  notes="comments"),
+                             Hist(hist=2,stat=2,unap=True,
+                                  dt=datetime.datetime(2020,7,30,15,30,5),
+                                  name="")]  )
 
     def test_01(_):
         got = fmtxml.entr(_.entr, compat='jmdict')
@@ -353,11 +356,29 @@ class Compat (unittest.TestCase):
             <s_inf>sense-note</s_inf>
             <gloss>trash</gloss>
             </sense>
+            <info>
+            <srcnote>src-note</srcnote>
+            <notes>entr-note</notes>
+            <audit>
+            <upd_date>2020-07-29 09:10:59</upd_date>
+            <upd_detl>comments</upd_detl>
+            <upd_stat>A</upd_stat>
+            <upd_email>nowhere</upd_email>
+            <upd_name>Xavier Yu</upd_name>
+            <upd_refs>refs</upd_refs>
+            <upd_diff>diff</upd_diff>
+            </audit>
+            <audit>
+            <upd_date>2020-07-30 15:30:05</upd_date>
+            <upd_stat>A</upd_stat>
+            <upd_unap/>
+            </audit>
+            </info>
             </entry>'''.replace (' '*12,'')
         _.assertEqual (expect, got)
 
     def test_04(_):
-        got = fmtxml.entr(_.entr, compat='jmex', genhists=True)
+        got = fmtxml.entr(_.entr, compat='jmex', genhists=False)
         expect = '''\
             <entry id="33" stat="A">
             <ent_corp type="jmdict">test</ent_corp>
@@ -365,20 +386,26 @@ class Compat (unittest.TestCase):
             <r_ele>
             <reb>ゴミ</reb>
             </r_ele>
+            <sense>
+            <s_inf>sense-note</s_inf>
+            <gloss>trash</gloss>
+            </sense>
             <info>
             <srcnote>src-note</srcnote>
             <notes>entr-note</notes>
-            <audit>
-            <upd_date>2020-07-29</upd_date>
-            <upd_detl>comments</upd_detl>
-            <upd_stat>A</upd_stat>
-            <upd_unap/>
-            <upd_email>nowhere</upd_email>
-            <upd_name>Xavier Yu</upd_name>
-            <upd_refs>refs</upd_refs>
-            <upd_diff>diff</upd_diff>
-            </audit>
             </info>
+            </entry>'''.replace (' '*12,'')
+        _.assertEqual (expect, got)
+
+    def test_05(_):
+        got = fmtxml.entr(_.entr, compat='jmex', geninfo=False)
+        expect = '''\
+            <entry id="33" stat="A">
+            <ent_corp type="jmdict">test</ent_corp>
+            <ent_seq>1000222</ent_seq>
+            <r_ele>
+            <reb>ゴミ</reb>
+            </r_ele>
             <sense>
             <s_inf>sense-note</s_inf>
             <gloss>trash</gloss>

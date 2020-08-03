@@ -10,25 +10,33 @@ from xml.sax.saxutils import escape as esc, quoteattr as esca
 from jmdictdb import jdb
 global KW
 
-def entr (entr, compat='jmex', genhists=False, genxrefs=True,
-                wantlist=False, last_imported=None):
+def entr (entr, compat='jmex', geninfo=True, genhists=True,
+                genxrefs=True, wantlist=False):
         '''
         Generate an XML description of entry 'entr'.
         Parameters:
           entr -- An entry object (such as return by entrList()).
-          compat -- 
+          compat --
                 "jmex" or None: generate XML that completely
                   describes the entry using an enhanced version
-                  of the jmdict DTD.  Otherwise:
-                "jmdict": generate XML that uses the most recent 
+                  of the jmdict DTD.
+                "jmdict": generate XML that uses the most recent
                   version of the standard JMdictDTD (currently
                   rev 1.09).
                 "jmnedict": generate XML that uses the standard
-                  (post 2014-10) JMnedict DTD that include seq 
+                  (post 2014-10) JMnedict DTD that include seq
                   numbers and xrefs.
-          genhists -- If true and if compat is "jmex" (or None)
-                then <info>, <audit>, <note> and <srcnote> elements
-                will be generated in the XML.
+          geninfo -- If true and if 'compat' is "jmex" (or None)
+                then <info> elements may be generated containing
+                <note> and <srcnote> elements.  They may also
+                contain <audit> elements if 'genhists' is true.
+                If false, <info> elements (and their descendant
+                elements) will never be generated.
+          genhists -- If true and if 'compat' is "jmex" (or None)
+                and 'geninfo' is true, then <audit> elements may
+                be generated as child elements in <info>.  They
+                serialize an entry's history records.  If false
+                <audit> elements will never be generated.
           genxrefs -- If true generate <xref> elements for the items
                 in the entry's ._xref and .xrslv lists .  If false
                 xrefs elements will be will not be generated.  Note
@@ -39,12 +47,6 @@ def entr (entr, compat='jmex', genhists=False, genxrefs=True,
                 with embedded newline characters.  If true, return a
                 list of strings, one line per string, with no embedded
                 newlines.
-          last_imported -- This parameter is ignored unless 'compat'
-                is non-None.  In that case, 'last_imported' gives the
-                sequence number of the last entry imported from a
-                jmdict or jmnedict xml file and controls whether the
-                first history record in an entry results in a "entry
-                created" or "entry amended" xml audit element.
         '''
 
         global KW; KW = jdb.KW
@@ -57,12 +59,6 @@ def entr (entr, compat='jmex', genhists=False, genxrefs=True,
         rdngs = getattr (entr, '_rdng', [])
         for r in rdngs: fmt.extend (rdng (r, kanjs, compat))
 
-        if not compat and genhists:  # includes .notes, .srcnote.
-               #FIXME: should be able to control <info>,<audit> and
-               # <notes>,<srcnote> indpendently.
-            fmt.extend (info (entr, compat, genhists,
-                              last_imported=last_imported))
-
         senss = getattr (entr, '_sens', [])
         if compat in ('jmnedict',):
             for x in senss: fmt.extend (trans (x, compat, entr.src, genxrefs))
@@ -70,6 +66,7 @@ def entr (entr, compat='jmex', genhists=False, genxrefs=True,
             for x in senss:
                 fmt.extend (sens (x, kanjs, rdngs, compat, entr.src, genxrefs))
 
+        if not compat: fmt.extend (info (entr, compat, geninfo, genhists))
         if not compat: fmt.extend (audio (entr))
         if not compat: fmt.extend (grps (entr))
         fmt.append ('</entry>')
@@ -130,8 +127,8 @@ def sens (s, kanj, rdng, compat, src, genxrefs=True):
         kanj -- The kanji object of the entry that 's' belongs to.
         rdng -- The reading object of the entry that 's' belongs to.
         compat -- See function entr().  We assume in sens() that if
-            compat is not None it is =='jmdictxxx', that is, if it 
-            were 'jmnedict', trans() would have been called rather 
+            compat is not None it is =='jmdictxxx', that is, if it
+            were 'jmnedict', trans() would have been called rather
             than sens().
         src -- If 'compat' is None, this should be the value of the
             entry's .src attribute.  It is passed to the xref() func
@@ -193,9 +190,9 @@ def gloss (g, compat=None):
         if g.lang != KW.LANG['eng'].id:
             attrs.append ('xml:lang="%s"' % KW.LANG[g.lang].kw)
           # As of DTD rev 1.09 ginf attributes are added to glosses so
-          # we no longer do this only for the 'compat is None' condition. 
-          #FIXME: this will produce "g_type" attributes in jmnedict 
-          # in violation of the jmnedict DTD if there are .ginf items 
+          # we no longer do this only for the 'compat is None' condition.
+          #FIXME: this will produce "g_type" attributes in jmnedict
+          # in violation of the jmnedict DTD if there are .ginf items
            # in the data.  We fragilely count on there not being any.
         if g.ginf != KW.GINF['equ'].id:
             attrs.append ('g_type="%s"' % KW.GINF[g.ginf].kw)
@@ -511,51 +508,34 @@ def xrslvs (xrslvs, src):
             fmt.append ("<%s%s>%s</%s>" % (elname, attrs, xreftxt, elname))
         return fmt
 
-def info (entr, compat=None, genhists=False, last_imported=None):
+def info (entr, compat, geninfo, genhists):
+        if compat or not geninfo: return []
         fmt = []
-        if not compat:
-            x = getattr (entr, 'srcnote', None)
-            if x: fmt.append ('<srcnote>%s</srcnote>' % esc(entr.srcnote))
-            x = getattr (entr, 'notes', None)
-            if x: fmt.append ('<notes>%s</notes>' % esc(entr.notes))
+        x = getattr (entr, 'srcnote', None)
+        if x: fmt.append ('<srcnote>%s</srcnote>' % esc(entr.srcnote))
+        x = getattr (entr, 'notes', None)
+        if x: fmt.append ('<notes>%s</notes>' % esc(entr.notes))
         if genhists:
             for n, x in enumerate (getattr (entr, '_hist', [])):
-                fmt.extend (audit (x, compat, force_created=
-                                   (n==0 and (last_imported is None or entr.seq>last_imported))))
+                fmt.extend (audit (x, compat))
         if fmt:
             fmt.insert (0, '<info>')
             fmt.append ('</info>')
         return fmt
 
-def audit (h, compat=None, force_created=False):
+def audit (h, compat=None):
+        if compat: return []  # Generate <audit> elements only for "jmex".
         fmt = []
         fmt.append ('<audit>')
-        fmt.append ('<upd_date>%s</upd_date>' % h.dt.date().isoformat())
-        if not compat:
-            if getattr (h, 'notes', None): fmt.append ('<upd_detl>%s</upd_detl>'   % esc(h.notes))
-            if getattr (h, 'stat', None):  fmt.append ('<upd_stat>%s</upd_stat>'   % KW.STAT[h.stat].kw)
-            if getattr (h, 'unap', None):  fmt.append ('<upd_unap/>')
-            if getattr (h, 'email', None): fmt.append ('<upd_email>%s</upd_email>' % esc(h.email))
-            if getattr (h, 'name', None):  fmt.append ('<upd_name>%s</upd_name>'   % esc(h.name))
-            if getattr (h, 'refs', None):  fmt.append ('<upd_refs>%s</upd_refs>'   % esc(h.refs))
-            if getattr (h, 'diff', None):  fmt.append ('<upd_diff>%s</upd_diff>'   % esc(h.diff))
-        else:
-              # When generating JMdict or JMnedict compatible XML,
-              # history details (such as hist.note) are considered
-              # "not for distribution".  We will generate audit elements
-              # for each hist record, but provide only the date, and
-              # "entry created" or "entry amended".  History records
-              # added to imported entries should always result in
-              # "entry amended" except if the first record says
-              # "entry created".  The first history record on post-
-              # import entries should always be "entry created".
-              # Catch is we can't tell from an entry itself whether
-              # it is an imported entry, or was created post-import,
-              # so we rely on the caller to set 'force_created' to
-              # true for the first hist record in post-import entries.
-            if force_created or h.notes == "Entry created": note = "Entry created"
-            else: note = "Entry amended"
-            fmt.append ('<upd_detl>%s</upd_detl>' % note)
+        dt = h.dt.isoformat (' ', 'seconds')
+        fmt.append ('<upd_date>%s</upd_date>' % dt)
+        if h.notes: fmt.append ('<upd_detl>%s</upd_detl>'   % esc(h.notes))
+        if h.stat:  fmt.append ('<upd_stat>%s</upd_stat>'   % KW.STAT[h.stat].kw)
+        if h.unap:  fmt.append ('<upd_unap/>')
+        if h.email: fmt.append ('<upd_email>%s</upd_email>' % esc(h.email))
+        if h.name:  fmt.append ('<upd_name>%s</upd_name>'   % esc(h.name))
+        if h.refs:  fmt.append ('<upd_refs>%s</upd_refs>'   % esc(h.refs))
+        if h.diff:  fmt.append ('<upd_diff>%s</upd_diff>'   % esc(h.diff))
         fmt.append ('</audit>')
         return fmt
 
@@ -685,7 +665,7 @@ def get_dtd (kwds, dtd, grouped=True):
         kwds -- An initialized jdb.Kwds instance.
         dtd -- DTD type: "jmdict' or "jmnedict".
         grouped -- (bool) If true, entity definitions in the returned DTD
-          will be grouped by element; if false they will be in alphabetic 
+          will be grouped by element; if false they will be in alphabetic
           order.
         -------------------------------------------------------------------'''
         ents = entities (kwds, dtd, grouped)
