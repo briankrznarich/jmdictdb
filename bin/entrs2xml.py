@@ -37,11 +37,14 @@ def main():
             "the requested --corpus (%s).  To continue anyway, use the "\
             "--force option." % (opts.compat, opts.corpus))
 
-          # 'dtd' was set above to default dtd name.
+          # 'dtd' was set above to the default dtd name.
         if dtd: dtd = '\x01' + dtd      # Mark as a dtd name (vs filename).
         if opts.dtd: dtd = opts.dtd     # Override if --dtd was given.
         if opts.no_dtd: dtd = None      # Override if --no-dtd was given.
-          # 'root' was set above to default root name.
+          # 'root' was set above to the default root name.
+        rootpart = "+-"
+        if opts.root and opts.root[-1] in ("+-"):
+            opts.root, rootpart = opts.root[:-1], opts.root[-1]
         if opts.root: root = opts.root  # Override if --root was given.
         if opts.no_root: root = None    # Override if --no-root was given.
 
@@ -61,7 +64,8 @@ def main():
           # file if there is some error in the command line arguments that
           # can be detected above.
         outname = opts.output if opts.output else None
-        try: outf = open_output (outname, dtd, root, datestamp)
+        root_open = root if root and '+' in rootpart else None
+        try: outf = open_output (outname, dtd, root_open)
         except OSError as e: print (str(e), file=sys.stderr)
 
           # Read the entries in blocks of 'opts.blocksize', format them
@@ -75,8 +79,9 @@ def main():
             elif pbar == '': sys.stderr.write ('.');  sys.stderr.flush()
             if Debug: print ("%d entries written" % done, file=sys.stderr)
 
-        if root: outf.writelines ('</%s>\n' % root)
-        if not Debug: sys.stderr.write ('\n')
+        if root and '-' in rootpart:
+            outf.writelines ('</%s>\n' % root)
+        #if not Debug: sys.stderr.write ('\n')
         print ("Wrote %d entries" % done, file=sys.stderr)
 
 def read_entries (cur, sql_base, seqlist, count, blksize):
@@ -190,9 +195,29 @@ def write_entrs (cur, outf, entrs, raw, compat, corpora=set()):
             outf.write (txt + "\n")
         if Debug: print ("Time: %s (fmt)"%(time.time()-start),file=sys.stderr)
 
-def open_output (filename, dtd, root, datestamp):
-    # Create and open the output file and write the DTD to it if
-    # 'dtd' (the name of the dtd template) has a non-false str value.
+def open_output (filename, dtd, root, datestamp=True):
+        '''-------------------------------------------------------------------
+        Create and open the output file and optionally write a DTD, a
+        datestamp, and the opening tag of the root element to it.
+
+        Parameters:
+          filename -- (str) The name of the file to write to.  If None
+            or an empty string, output will be written to stdout.
+          dtd -- (str) The name of a file or the name of a DTD recognized
+            by fmtxml.get_dtd().  If the latter it must be prefixed with
+            a '\x01' character.  If None or an empty string no DTD will
+            be written.
+          root -- (str) Name of an XML root element which will enclose
+            the rest of the XML elements.  The opening tag this element
+            will be written here.  If None or an empty string, no opening
+            tag will be written.
+          datestamp -- (bool) If true, and if 'root' is also true, an
+            XML comment containing a date stamp for the current date (in
+            local time) will be written immediately before the root tag.
+
+        Returns: the file instance for the opened output file.
+        -------------------------------------------------------------------'''
+
         if not filename: outf = sys.stdout
         else: outf = open (filename, "w")
           # Write the dtd if requested (via a 'dtd_fn' value with the name
@@ -205,11 +230,11 @@ def open_output (filename, dtd, root, datestamp):
             else:
                 with open (dtd) as f: dtdtxt = f.read()
             outf.write (dtdtxt)
-        if datestamp and root:
+        if root and datestamp:
             today = time.strftime ("%Y-%m-%d", time.localtime())
-            outf.write ("<!-- %s created: %s -->\n"
-                        % (root, today))
+            outf.write ("<!-- %s created: %s -->\n" % (root, today))
         if root: outf.write ('<%s>\n' % root)
+
         return outf
 
 def read_seqfile (seqfilename):
@@ -334,12 +359,11 @@ def parse_cmdline ():
 
         p.add_argument ("--compat", default=None,
             choices=['jmdict','jmnedict','jmex'],
-            help="""If not given, an appropriate compat value is
-                 chosen automatically based on the corpus type.
-                 You only need to use this option to generate
-                 specalized XML output.
-
-                If given, COMPAT must have one of the following values:
+            help="""Determines the format of the output XML and
+                 the default DTD used. If not given, an appropriate
+                 compat value is chosen automatically based on the
+                 corpus type.  If given, COMPAT must have one of
+                 the following values:
 
                 * jmdict: generate XML that uses the standard
                   JMdict DTD (rev 1.09).  This is the standard
@@ -389,7 +413,16 @@ def parse_cmdline ():
         p.add_argument ("--root", default=None,
             help="Name to use as the root element in the output XML file.  "
                 "If not given the root element will be chosen automatically "
-                "based on --compat.  Incompatible with --no-root.")
+                "based on --compat.  The name may be suffixed with a \"+\" "
+                "in which case only the opening tag of the root element "
+                "will be output.  A \"-\" suffix will will cause only the "
+                "closing tag to be written.  A \"+\" or \"-\" alone will "
+                "have the same effect for the default root element name.  "
+                "The \"+\" and \"-\" actions are useful when appending the "
+                "results of several consecutive executions into a single "
+                "file: a \"+\" is used with the first, --no-root with the "
+                "middle ones, and \"-\" with the last.  "
+                "--root is incompatible with --no-root.")
 
         p.add_argument ("--no-root", default=False, action="store_true",
             help="Do not generate a root element in the output XML; the "
