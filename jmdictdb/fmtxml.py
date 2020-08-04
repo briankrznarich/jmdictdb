@@ -529,15 +529,18 @@ def info (entr, compat, geninfo, genhists):
 
 def audit (h, compat=None):
         if compat: return []  # Generate <audit> elements only for "jmex".
-        fmt = []
-        fmt.append ('<audit>')
+        fmt = [];  attrs = []
         dt = h.dt.isoformat (' ', 'seconds')
-        fmt.append ('<upd_date>%s</upd_date>' % dt)
-        if h.notes: fmt.append ('<upd_detl>%s</upd_detl>'   % esc(h.notes))
-        if h.stat:  fmt.append ('<upd_stat>%s</upd_stat>'   % KW.STAT[h.stat].kw)
-        if h.unap:  fmt.append ('<upd_unap/>')
-        if h.email: fmt.append ('<upd_email>%s</upd_email>' % esc(h.email))
+        attrs.append ('time="%s"' % dt)
+        attrs.append ('stat="%s"' % KW.STAT[h.stat].kw)
+        if h.unap:  attrs.append ('unap="true"')
+        attrs = " ".join (attrs)
+        if attrs: attrs = " " + attrs
+        fmt.append ('<audit%s>' % attrs)
+        if h.userid:fmt.append ('<upd_uid>%s</upd_uid>'     % esc(h.userid))
         if h.name:  fmt.append ('<upd_name>%s</upd_name>'   % esc(h.name))
+        if h.email: fmt.append ('<upd_email>%s</upd_email>' % esc(h.email))
+        if h.notes: fmt.append ('<upd_detl>%s</upd_detl>'   % esc(h.notes))
         if h.refs:  fmt.append ('<upd_refs>%s</upd_refs>'   % esc(h.refs))
         if h.diff:  fmt.append ('<upd_diff>%s</upd_diff>'   % esc(h.diff))
         fmt.append ('</audit>')
@@ -565,22 +568,39 @@ def audio (entr_or_rdng):
 
 def entrhdr (entr, compat=None):
         if not compat:
-            id = getattr (entr, 'id', None)
-            idattr = (' id="%d"' % id) if id else ""
-            stat = getattr (entr, 'stat', None)
-            statattr = (' stat="%s"' % KW.STAT[stat].kw) if stat else ""
-            apprattr = ' appr="n"' if entr.unap else ""
-            dfrm = getattr (entr, 'dfrm', None)
-            dfrmattr = (' dfrm="%d"' % entr.dfrm) if dfrm else ""
-            fmt = ["<entry%s%s%s%s>" % (idattr, statattr, apprattr, dfrmattr)]
+            src = srct = None
+            if entr.src:
+                  # 'entr.src' will always have a value for entries
+                  # retrieved from a database but may be None in test
+                  # scenarios.
+                src = jdb.KW.SRC[entr.src].kw
+                srctid = jdb.KW.SRC[entr.src].srct
+                srct = jdb.KW.SRCT[srctid].kw
+            attrs = []
+            if entr.id:   attrs.append ('id="%s"' % entr.id)
+            if entr.stat: attrs.append ('stat="%s"' % KW.STAT[entr.stat].kw)
+            if entr.unap: attrs.append ('unap="true"')
+            if entr.dfrm: attrs.append ('dfrm="%d"' % entr.dfrm)
+            if src and srct:
+                attrs.append ('corpus="%s" type="%s"' % (src, srct))
+            attrs = (" " + " ".join(attrs) if attrs else "")
+            fmt = ["<entry%s>" % (attrs)]
+              # Note that the <ent_corp> element below duplicates infomation
+              # already included in "corpus" and "type" attributes of <entry>
+              # above.  The corpus info in the <entry> element is most useful
+              # when parsing the xml, but the <ent_corp> element is used in
+              # the history diffs; we maintain it because:
+              # - When generating history diffs the <entry> element is not
+              #   included (minutia like id# and dfrm# changes aren't
+              #   relevant to users) but changes in corpus and type are
+              #   and need to be included in the history diff.
+              # - We used <ent_corp> historically for this and that element
+              #   name is now ensconced in many existing history diffs.
+              #   Prefer not to change format now.
+            if src and srct:
+                fmt.append ('<ent_corp type="%s">%s</ent_corp>' % (srct,src))
         else: fmt = ['<entry>']
-        if getattr (entr, 'src', None) and not compat:
-            src = jdb.KW.SRC[entr.src].kw
-            srctid = jdb.KW.SRC[entr.src].srct
-            srct = jdb.KW.SRCT[srctid].kw
-            fmt.append ('<ent_corp type="%s">%s</ent_corp>' % (srct,src))
-        if getattr (entr, 'seq', None):
-            fmt.append ('<ent_seq>%d</ent_seq>' % entr.seq)
+        if entr.seq: fmt.append ('<ent_seq>%d</ent_seq>' % entr.seq)
         return fmt
 
 def sndvols (vols):

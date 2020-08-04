@@ -180,7 +180,7 @@ def write_entrs (cur, outf, entrs, raw, compat, corpora=set()):
         start = time.time()
         for e in entrs:
             if not compat:
-                if e.src not in corpora:
+                if 0 and e.src not in corpora:  #FIXME: temporarily disabled
                     txt = '\n'.join (fmtxml.corpus ([e.src]))
                     outf.write (txt + "\n")
                     corpora.add (e.src)
@@ -271,8 +271,10 @@ def compat_info (corpus, compat):
             'jmnedict':
               ["jmnedict", 'jmnedict',  'JMnedict',True, True, ['jmnedict']],
             'jmex':
-              [None,        None,       'JMdict',  False,False,['jmdict',
-                                                                'jmnedict']],
+              ["jmex",      None,       'JMex',    False,False,['jmdict',
+                                                                'jmnedict',
+                                                                'kanjidic',
+                                                                'examples']],
             }
           # Note: when adding/changing/deleting compat entries above, be
           # sure to reflect any key changes in the --compat option choices

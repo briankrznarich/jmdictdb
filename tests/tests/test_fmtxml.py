@@ -346,7 +346,7 @@ class Compat (unittest.TestCase):
     def test_03(_):
         got = fmtxml.entr(_.entr, compat='jmex')
         expect = '''\
-            <entry id="33" stat="A">
+            <entry id="33" stat="A" corpus="test" type="jmdict">
             <ent_corp type="jmdict">test</ent_corp>
             <ent_seq>1000222</ent_seq>
             <r_ele>
@@ -359,19 +359,15 @@ class Compat (unittest.TestCase):
             <info>
             <srcnote>src-note</srcnote>
             <notes>entr-note</notes>
-            <audit>
-            <upd_date>2020-07-29 09:10:59</upd_date>
-            <upd_detl>comments</upd_detl>
-            <upd_stat>A</upd_stat>
-            <upd_email>nowhere</upd_email>
+            <audit time="2020-07-29 09:10:59" stat="A">
+            <upd_uid>xy</upd_uid>
             <upd_name>Xavier Yu</upd_name>
+            <upd_email>nowhere</upd_email>
+            <upd_detl>comments</upd_detl>
             <upd_refs>refs</upd_refs>
             <upd_diff>diff</upd_diff>
             </audit>
-            <audit>
-            <upd_date>2020-07-30 15:30:05</upd_date>
-            <upd_stat>A</upd_stat>
-            <upd_unap/>
+            <audit time="2020-07-30 15:30:05" stat="A" unap="true">
             </audit>
             </info>
             </entry>'''.replace (' '*12,'')
@@ -380,7 +376,7 @@ class Compat (unittest.TestCase):
     def test_04(_):
         got = fmtxml.entr(_.entr, compat='jmex', genhists=False)
         expect = '''\
-            <entry id="33" stat="A">
+            <entry id="33" stat="A" corpus="test" type="jmdict">
             <ent_corp type="jmdict">test</ent_corp>
             <ent_seq>1000222</ent_seq>
             <r_ele>
@@ -400,7 +396,7 @@ class Compat (unittest.TestCase):
     def test_05(_):
         got = fmtxml.entr(_.entr, compat='jmex', geninfo=False)
         expect = '''\
-            <entry id="33" stat="A">
+            <entry id="33" stat="A" corpus="test" type="jmdict">
             <ent_corp type="jmdict">test</ent_corp>
             <ent_seq>1000222</ent_seq>
             <r_ele>
