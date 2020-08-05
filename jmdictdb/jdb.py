@@ -1956,10 +1956,21 @@ def bom_fixall (e):
 import psycopg2
 import psycopg2.extensions
 dbapi = psycopg2
+
+def dbopen (dburi, allow_params=False, **kwds):
+        "Replacement for dbOpen() that accepts a database URI."
+
+        opts = parse_pguri (dburi, allow_params)
+        dbname = opts.pop('database')
+          # keys in 'kwds' should overwrite those in 'opts'. 
+        opts_ = {}; opts_.update (opts);  opts_.update (kwds)
+        cur = dbOpen (dbname, **opts_)
+        return cur
+
 def dbOpen (dbname_, **kwds):
         """\
         Open a DBAPI cursor to a jmdict database and initialize
-        a Kwds instance with the name KW.
+        a Kwds instance with the global name KW.
 
         dbOpen() accepts all the same keyword arguments that the
         underlying Psycopg2 connect() call takes ('database', 'user',
