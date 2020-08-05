@@ -247,21 +247,23 @@ def entity (kwds, domain, id, dtd):
         msg = "Illegal tag for DTD \"%s\": '%s'"
           #FIXME: following dtd adjustment should be done higher
           # in call chain.
-        if dtd in (None, 'jmex'): dtd = 'jmdict'
+        if dtd is None: dtd = 'jmex'
         rec = getattr (kwds, domain)[id]
           # Assume the entity name and value will be the same as the tag
           # name and descr.  We'll overwrite later if wrong.
         ent, value = rec.kw, rec.descr
         if not rec.ents or dtd not in rec.ents:
               # If there is no specific entity info for our DTD in the
-              # rec.ents attribute then, if the DTD is 'jmdict', the entity
-              # name and value are the tag's 'kw' and 'descr' values.  That
-              # is, unless contrary info is provided in rec.ents we assume
-              # that all tags are DTD entities.  Conversely, if the DTD is
-              # "jmnedict" (anything other than "jmdict") we assume that
-              # no tags are DTD entities by default and hence if there is
-              # no rec.ents value, raise an error.
-            if dtd != 'jmdict': raise KeyError(msg % (dtd, rec.kw))
+              # rec.ents attribute then, if the DTD is "jmdict" or "jmex",
+              # the entity name and value are the tag's 'kw' and 'descr'
+              # values.  That is, unless contrary info is provided in
+              # rec.ents we assume that all tags are DTD entities.
+              # Conversely, if the DTD is "jmnedict" (anything other
+              # than "jmdict" or "jmex") we assume that no tags are DTD
+              # entities by default and hence if there is no rec.ents
+              # value, raise an error.
+            if dtd not in ('jmdict', 'jmex'):
+                raise KeyError(msg % (dtd, rec.kw))
         else:
             entinfo = rec.ents[dtd]
             if not isinstance (entinfo, dict):

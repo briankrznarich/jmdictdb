@@ -97,6 +97,28 @@ class Test_jmnedict (unittest.TestCase):
     def test0305001(_):  # IS-221
         dotest (_, f.t_in['0305001'], f.t_exp['0305001'], compat='jmnedict')
 
+class Jmex (unittest.TestCase):
+    def setUp(_):
+        jdb.KW = jdb.Kwds ('')
+        fmtxml.XKW = None   # Force XKW to be reset from just loaded KW.
+    def test_001(_):
+          # Rinf(kw=103) below is a RINF['name'] tag used in kanjidic but
+          # disallowed in jmdict.  Since the jmex format allows all tags
+          # it should not cause an error.
+        data = Entr (src=99, seq=601010,
+                    _rdng=[Rdng (txt='たかはし',_inf=[Rinf(kw=103)])],)
+        expect = '''\
+            <entry corpus="test" type="jmdict">
+            <ent_corp type="jmdict">test</ent_corp>
+            <ent_seq>601010</ent_seq>
+            <r_ele>
+            <reb>たかはし</reb>
+            <re_inf>&name;</re_inf>
+            </r_ele>
+            </entry>'''.replace(' '*12,'')
+        got = fmtxml.entr (data)   # compat='jmex' is default.
+        _.assertEqual (expect, got)
+
 def dotest (_, execstr, expected, **kwds):
         lcls = {}
         exec (execstr, globals(), lcls)
