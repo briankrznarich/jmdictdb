@@ -186,7 +186,7 @@ loadjm: data/jmdict.pgi
 	rm -f data/jmdict_xresolv.log
 	psql $(PG_HOST) -U $(USER) -d $(DB) -c 'DELETE FROM imp.kwsrc'
 	PGOPTIONS=--search_path=imp,public psql $(PG_HOST) -U $(USER) -d $(DB) -f data/jmdict.pgi
-	psql $(PG_HOST) -U $(USER) -d $(DB) -v 'src=1' -f db/import.sql
+	psql $(PG_HOST) -U $(USER) -d $(DB) -f db/import.sql
 
 #------ Load JMnedict ----------------------------------------------------
 
@@ -205,7 +205,7 @@ loadne: data/jmnedict.pgi
 	rm -f data/jmnedict_xresolv.log
 	psql $(PG_HOST) -U $(USER) -d $(DB) -c 'DELETE FROM imp.kwsrc'
 	PGOPTIONS=--search_path=imp,public psql $(PG_HOST) -U $(USER) -d $(DB) -f data/jmnedict.pgi
-	psql $(PG_HOST) -U $(USER) -d $(DB) -v 'src=2' -f db/import.sql
+	psql $(PG_HOST) -U $(USER) -d $(DB) -f db/import.sql
 
 #------ Load examples ---------------------------------------------------
 
@@ -222,7 +222,7 @@ loadex: data/examples.pgi
 	rm -f data/examples_xresolv.log
 	psql $(PG_HOST) -U $(USER) -d $(DB) -c 'DELETE FROM imp.kwsrc'
 	PGOPTIONS=--search_path=imp,public psql $(PG_HOST) -U $(USER) -d $(DB) -f data/examples.pgi
-	psql $(PG_HOST) -U $(USER) -d $(DB) -v 'src=3' -f db/import.sql
+	psql $(PG_HOST) -U $(USER) -d $(DB) -f db/import.sql
 
 #------ Load kanjidic2.xml ---------------------------------------------------
 
@@ -239,7 +239,7 @@ loadkd: data/kanjidic2.pgi
 	rm -f data/kanjidic2_xresolv.log
 	psql $(PG_HOST) -U $(USER) -d $(DB) -c 'DELETE FROM imp.kwsrc'
 	PGOPTIONS=--search_path=imp,public psql $(PG_HOST) -U $(USER) -d $(DB) -f data/kanjidic2.pgi
-	psql $(PG_HOST) -U $(USER) -d $(DB) -v 'src=4' -f db/import.sql
+	psql $(PG_HOST) -U $(USER) -d $(DB) -f db/import.sql
 
 #------ Load jmdict, jmnedict, examples -------------------------------------
 

@@ -39,30 +39,26 @@ def main():
         tmpfiles = pgi.initialize (args.tempdir)
         eid = 0
         jmparser = jmxml.Jmparser (KW, xmltype)
-        for typ, entr in jmparser.parse_xmlfile (inpf, args.begin, args.count,
-                                                 xlang, toptag=True,
-                                                 seqnum_init=args.sequence[0],
-                                                 seqnum_incr=args.sequence[1]):
+        for typ, entr in jmparser.parse_file (
+                            inpf, args.begin, args.count,
+                            xlang, toptag=True,
+                            seqnum_init=args.sequence[0],
+                            seqnum_incr=args.sequence[1]):
             if typ == 'entry':
                 eid += 1
                 if pbar: pbar (eid)
                 if not getattr (entr, 'src', None): entr.src = corpid
                 jdb.setkeys (entr, eid)
                 pgi.wrentr (entr, tmpfiles)
-            elif typ == 'corpus':
-                pgi.wrcorp (entr, tmpfiles)
             elif typ == 'grpdef':
                 pgi.wrgrpdef (entr, tmpfiles)
             elif typ == 'root':
                   # Note that 'entr' here is actually the tag name of the
                   # top-level element in the xml file, typically either
                   # "JMdict" or "JMnedict".
-                try: corpid, corprec \
-                        = pgi.parse_corpus_opt (args.corpus, entr, inpf.created, kw=KW)
-                except KeyError: pass
-                else:
-                    if corprec: pgi.wrcorp (corprec, tmpfiles)
-
+                pass
+          #FIXME! 2nd, 3rd parms hardwaired below for test.
+        pgi.wrcorpora (jmparser.corpora, 'jmdict', 'jmdict', tmpfiles)
         sys.stdout.write ('\n')
         pgi.finalize (tmpfiles, args.output, not args.keep)
 
@@ -105,98 +101,8 @@ database."""
 
         p.add_argument ("-s", "--corpus",
             help="""\
-        CORPUS defines a corpus record (in table kwsrc) to which all
-         entries in the input file will be assigned.  It consists of
-         up to seven comma separated items.  Spaces are not permitted
-         within the string.  Items can be left out with two adjacent
-         commas.\n
 
-        The CORPUS items are:\n
-
-          id -- Id number of the corpus record.\n
-
-          kw -- A short string used as an identifier for the corpus.
-             Must start with a lowercase letter followed by zero or
-             more lowercase letters, digits, or underscore ("_")
-             characters.  Must not already be used in the database.\n
-
-          dt -- The corpus' date in the form: "yyyy-mm-dd".\n
-
-          sinc -- The increment value of the Postgresql sequence
-              associated with this corpus.  (The seqence will be
-              created automatically with the name "seq_"+<kw>.\n
-
-          smin -- The minimum value of the Postgresql sequence
-              associated with this corpus.\n
-
-          smax -- The maximum value of the Postgresql sequence
-              associated with this corpus.\n
-
-        [N.B. the database corpus record has an additional field,
-         "srct" that identifies the type of the corpus entries (eg
-         "jmdict", "jmnedict", etc) but that is supplied automatcally
-         by jmparse.py.]\n
-
-        [N.B. that the corpus table ("kwsrc") also has two other columns,
-         'descr' and 'notes' but jmparse provides no means for setting
-         their values.  They can be updated in the database table after
-         kwsrc is loaded, using standard Postgresql tools like "psql".]\n
-
-        Unless only 'id' is given in the CORPUS string, a corpus record
-         will be written to the output .pgi file.  A record with this 'id'
-         number or 'kw' must not exist in the database when the entries
-         are later loaded.\n
-
-        If only 'id' is given in CORPUS, a new corpus record will not
-         be created; rather, all enties will be assigned the given corpus
-         id number and it will be assumed that a corpus record with that
-         id number already exists when the entries are later loaded.\n
-
-        If this option is not given at all, jmparse will examine the
-         name of the top-level element in the input file.  If it is
-         "JMdict", jmparse will use "1", "jmdict", and "jmdict_seq"
-         for 'id', 'kw', and 'seq' respectively.  If it is "JMnedict",
-         jmparse will use "2", "jmnedict", and "jmnedict_seq" for 'id',
-         'kw', and 'seq' respectively.  In both cases it will use the
-         date extracted from the "date comment" in the input XML file
-         if available for 'dt'.
-         If the top-level element name is neither "JMdict" or "JMnedict"
-         an error will be reported.\n
-
-        Examples:\n
-
-        <no option>\n
-
-          Will create a new corpus record based on information
-          extracted from the XML input file as described above.
-          This is the usual choice when processing the JMdict
-          or jmnedict files downloaded from Monash.\n
-
-        -s 6,jmdict_2,2008-03-15,jmdict_seq\n
-
-          Will create a new corpus (kwsrc table) record with
-          an id of 6, and name of "jmdict_2", a date of "2008-
-          03-15.  It will use the same sequence generator as
-          the jmdict corpus (should that also be loaded).\n
-
-        -s 15,,,myseq\n
-
-          Will create a new corpus (kwsrc table) record with
-          an id of 15.  The name will be taken from the top-
-`         level element in the input file, and the date from
-          the date comment in the file if it exists.  The corpus
-          record will specify sequence "myseq" (which you must
-          create sometime before later attempting to add an entry
-          with no sequence number).\n
-
-        -s 5\n
-
-          Will give all entries produced by this execution
-          of jmparse.py a corpus id (entr.src value) of 5 but
-          will not generate any kwsrc record in the output
-          .pgi file.  When these entries are loaded into the
-          database a kwsrc table record with id=5 must already
-          exist or an integrity error will occur."""\
+            ."""\
         .replace("\n"+(" "*8),''))   # See Note-1 below.
 
         p.add_argument ("-g", "--lang",

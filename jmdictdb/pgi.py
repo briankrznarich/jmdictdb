@@ -41,8 +41,14 @@ def wrentr (e, workfiles):
             _wrrow (e.chr, workfiles['chr'])
             for x in e.chr._cinf: _wrrow (x, workfiles['cinf'])
 
-def wrcorp (rowobj, workfiles):
-        _wrrow (rowobj, workfiles['kwsrc'])
+def wrcorpora (corpora, defcorp, deftype, workfiles):
+          #FIXME! 'srct' is a temporary hack.
+        srct = {'jmdict':1, 'jmnedict':2, 'examples':3, 'kanjidic':4}
+        for cname, (ctype, id) in corpora.items():
+            if not cname: cname = defcorp
+            if not ctype: ctype = deftype
+            rowobj = jdb.Obj(id=id,kw=cname,seq='seq_'+cname,srct=srct[ctype])
+            _wrrow (rowobj, workfiles['kwsrc'])
 
 def wrgrpdef (rowobj, workfiles):
         _wrrow (rowobj, workfiles['kwgrp'])
@@ -139,83 +145,3 @@ def pgesc (s):
         s = s.replace ('\r', '')  #Delete \r's.
         s = s.replace ('\t', '\\t')
         return s
-
-def parse_corpus_opt (sopt, roottag, datestamp, srctarg=None, kw=None):
-        """
-        Return a corpus id number to use in entr.src and (possibly)
-        create a corpus (aka kwsrc) record in the output .pgi file.
-        A kwsrc record has seven fields: 'id' (id number), 'kw'
-        (keyword), 'dt' (datetime stamp), 'sincr' (increment to
-        use for the Postgresql sequence for this corpus it it needs
-        to be created), 'smin' (minimum sequence value), 'smax'
-        (maximum sequence value), and srct (id number of row in kwsrct).
-        We derive four fields from information in the 'sopt' string,
-        the 'roottag' string, and the 'datestamp' string parameters.
-        'sopt' is contains one to four comma separated fields as
-        decribed in the help message for the (-s, --corpus) option.
-        'srct' is typically (in the caller) hardwired to the appropriate
-        type id (from KW.SRCT).
-
-        [N.B. the kwsrc table also has two other columns, 'descr' and
-        'notes' but this function has no provision for setting their
-        values.  They can be set explicitly outside this function, or
-        updated in the database table after kwsrc is loaded.]
-
-        The procedure is:
-         - If no sopt string is given:
-            - If 'roottag' is "jmdict", "jmnedict" or "kanjidict2" use
-              1, 2 or 4 respectively as the 'id' value, 'roottag' as the
-              'kw' value, 'datestamp' as the 'dt' value and "jmdict_seq",
-              "jmnedict_seq" or "kanjidic_seq" respectively as the 'seq'
-              value, and, if srctarg is None, 1, 2 or 4 respectively as
-              the 'srct' value.  If 'srctarg' is not None, use its value
-              for 'srct.
-            - If roottag is not one of those three values, raise an error.
-         - If sopt was given then,
-            - Use the first field as the corpus id number.
-            - If the first field is the only field, no kwsrc record
-              will be generated in the pgi file; it is expected that
-              a kwsrc record with the corpus id number already exist
-              in the kwsrc table when the data in loaded into the
-              database.
-            - If there is more than one field, they will be used to
-              create a kwsrc record.  If 'kw' is missing, 'roottag' will
-              be used as 'kw'.  If 'roottag' is also false, and error is
-              raised.  If 'dt' is missing, 'datestamp' will be used.
-              If 'seq' is missing, the 'kw' value affixed with "-seq" 
-              is used.  If 'srct' is missing, 'srctarg' will be used.
-        """
-        corpid = corpnm = corpdt = corpseq = None
-        sinc = 10; smin = None; smax = None; srct = None
-        if sopt:
-            a = sopt.split (',')
-              # FIXME: no or non-int a[0] raises IndexError or ValueError.
-              #   Should we raise something more informative and specific?
-            corpid = int(a[0])
-            if len (a) == 1:
-                return corpid, None
-            if len (a) > 1 and a[1]: corpnm = a[1]
-            if len (a) > 2 and a[2]: corpdt = a[2]
-            if len (a) > 3 and a[3]: sinc = int(a[3])
-            if len (a) > 4 and a[4]: smin = int(a[4])
-            if len (a) > 5 and a[5]: smax = int(a[5])
-            if len (a) > 6 and a[6]: srct = int(a[6])
-
-        if not corpnm: corpnm = roottag.lower()
-        if not corpid:
-              # FIXME: unknown roottag raises KeyError.  Should we raise something
-              #   more informative and specific?
-              # FIXME: we really shouldn't assign fixed values to the id numbers.
-            corpid = {'jmdict':1, 'jmnedict':2, 'examples':3, 'kanjidic':4}[corpnm]
-        if not corpdt: corpdt = datestamp
-        corpseq = "seq_" + corpnm
-        if corpid == 1:
-            if not smin: smin = 1000000
-            if not smax: smax = 8999999
-        if not srct: srct = srctarg 
-        if not srct: srct = corpnm
-        if kw: srct = kw.SRCT[srct].id
-        if not isinstance (srct, int): 
-            raise ValueError ("'srct' must be a int, is '%r'" % srct)
-        return corpid, jdb.Obj (id=corpid, kw=corpnm, dt=corpdt, seq=corpseq,
-                                sinc=sinc, smin=smin, smax=smax, srct=srct)

@@ -18,6 +18,7 @@ from jmdictdb import logger; from jmdictdb.logger import L
 from jmdictdb import jdb
 
 class ParseError (RuntimeError): pass
+class InvalidError (RuntimeError): pass
 class NotFoundError (RuntimeError): pass
 
 def _ent_repl (mo):
@@ -65,23 +66,16 @@ class Jmparser (object):
         self.KW = kw
         if xmltype == 'jmex': self.XKW = self.KW
         else: self.XKW = make_enttab (self.KW, xmltype)
+        self.corpora = {}
+        self.type_guess = set()
         self.seq = 0
 
-    def parse_entry (self, txt, dtd=None):
+    def parse_entry (self, txt):
         # Convert an XML text string into entry objects.
-        #
-        # @param txt Text string containing a piece of XML defining
-        #            one of more entry elements.
-        # @param dtd (optional) A text string providing a DTD to be
-        #            prepended to 'txt'.  If not provide no DTD will
-        #            be prepended.
-        # @returns An list of entry objects.
+        # Parameters:
+        #   txt -- (str) XML text defining one of more entry elements.
+        # Returns: A list of entry objects.
 
-        if dtd: txt = dtd + txt
-        else:
-            pat = '&[a-zA-Z0-9-]+;'
-            if isinstance (txt, bytes): pat = pat.encode ('latin1')
-            txt = re.sub (pat, _ent_repl, txt)
         xo = ElementTree.XML (txt)
         if xo is None:
             print ("No parse results")
@@ -89,7 +83,7 @@ class Jmparser (object):
         e = self.do_entr (xo, None)
         return [e]
 
-    def parse_xmlfile (self,
+    def parse_file (self,  # Parse a full JMdict/JMnedict XML file.
         inpf,           # (file) An open jmdict/jmnedict XML file..
         startseq=None,  # (int) Skip until an entry with this seq
                         #   number is seen, or None to start at first
@@ -127,11 +121,10 @@ class Jmparser (object):
         etiter = iter(ElementTree.iterparse( inpf, ("start","end")))
         event, root = next(etiter)
         if toptag: yield 'root', root.tag
-        if corp_dict is None: corp_dict = {}
         if grpdefs is None: grpdefs = {}
         elist=[];  count=0;  entrnum=0
         for event, elem in etiter:
-            if elem.tag not in ['entry', 'grpdef', 'corpus']:
+            if elem.tag not in ['entry', 'grpdef']:
                 L('jmxml.parse').debug("skipping element <%s>" % elem.tag)
                 continue
             if event == "start":
@@ -139,17 +132,12 @@ class Jmparser (object):
                 if elem.tag == 'entry': entrnum += 1
                 continue
 
-              # At this point elem.tag must be either 'entry', 'corpus', or
-              # 'grpdef', and event is 'end'.
+              # At this point elem.tag must be either 'entry' or 'grpdef'
+              #  and event is 'end'.
             if elem.tag == 'grpdef':
                 grpdef = self.do_grpdef (elem)
                 grpdefs[grpdef.id] = grpdefs[grpdef.kw] = grpdef
                 yield "grpdef", grpdef
-                continue
-            if elem.tag == 'corpus':
-                corp = self.do_corpus (elem)
-                corp_dict[corp.id] = corp_dict[corp.kw] = corp
-                yield "corpus", corp
                 continue
 
               # From this point on elem.tag is 'entr'...
@@ -171,24 +159,6 @@ class Jmparser (object):
                 count += 1
                 if elimit and count >= elimit: break
             root.clear()
-
-    def do_corpus (self, elem):
-        o = jdb.Obj (id=int(elem.get('id')), kw=elem.findtext ('co_name'))
-        descr = elem.findtext ('co_descr')
-        if descr: o.descr = descr
-        dt = elem.findtext ('co_date')
-        if dt: o.dt = dt
-        notes = elem.findtext ('co_notes')
-        if notes: o.notes = notes
-        sname = elem.findtext ('co_sname')
-        if sname: o.seq = sname
-        sinc = elem.findtext ('co_sinc')
-        if sinc: o.sinc = sinc
-        smin = elem.findtext ('co_smin')
-        if smin: o.smin = smin
-        smax = elem.findtext ('co_smax')
-        if smax: o.smax = smax
-        return o
 
     def do_grpdef (self, elem):
         o = jdb.Obj (id=int(elem.get('id')), kw=elem.findtext ('gd_name'))
@@ -251,9 +221,11 @@ class Jmparser (object):
             raise ParseError ("Invalid <status> element value, '%s'" % stat)
         entr.stat = stat
         entr.unap = elem.get('appr') == 'n'
-
-        corpname = elem.findtext('ent_corp')
-        if corpname is not None: entr.src = corp_dict[corpname].id
+        entr.src = self.do_corpus_attrs (elem.get('corpus'), elem.get('type'))
+          #FIXME: check contents of <ent_corp> element for condistency
+          # with the corpus attributes just processed or use as def if
+          # attributes not present.
+        #corpname = elem.findtext('ent_corp')
         self.do_kanjs (elem.findall('k_ele'), entr)
         self.do_rdngs (elem.findall('r_ele'), entr)
         self.do_senss (elem.findall('sense'), entr, xlang)
@@ -262,6 +234,29 @@ class Jmparser (object):
         self.do_audio (elem.findall("audio"), entr, jdb.Entrsnd)
         self.do_groups(elem.findall("group"), entr, grpdefs)
         return entr
+
+    def do_corpus_attrs (self, corp, corpt):
+        '''-------------------------------------------------------------------
+        The JMex format adds two attributes to <entry> tags:
+        "corpus" and (corpus) "type".  We process them by creating 
+        a local record of each distict "corpus" name seen.  Each is
+        assigned a value consisting od a 2-tuple of the "type" value
+        and an integer that id that is assigned to Entr() object's
+        .src attribute.
+        -------------------------------------------------------------------'''
+        if corp in self.corpora:
+              # If that named corpus has been already seen but with a
+              # different corpus type, that's a no-no.
+            if self.corpora[corpt][0] != corpt:
+                raise InvalidError ("Corpus %s type change from %s to %s"
+                                    % (corp, self.corpora[corpt][0], corpt))
+          # Save the corpus name and type, alone with a sequentially
+          # increasing id number.  'corp' and/or 'corpt' may be None,
+          # that's ok.
+        else:
+            nextid = 1+max ([t[1] for c,t in self.corpora.values()] or [0])
+            self.corpora[corp] = (corpt, nextid)
+        return self.corpora[corp][1]  # Return the assigned corpus id number.
 
     def do_info (self, elems, entr):
         if not elems: return
