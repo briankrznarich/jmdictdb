@@ -1630,7 +1630,7 @@ class Kwds:
         # to "../../pg/data/" relative to the location of this module.
 
         Converts = \
-            {'SRC':{'sinc':cvint, 'smin':cvint, 'smax':cvint, 'srct':cvint},
+            {'SRC':{'sinc':cvint, 'smin':cvint, 'smax':cvint},
             'DIAL':{'ents':cvjson}, 'FLD':{'ents':cvjson},
             'KINF':{'ents':cvjson}, 'MISC':{'ents':cvjson},
             'POS':{'ents':cvjson}, 'RINF':{'ents':cvjson},

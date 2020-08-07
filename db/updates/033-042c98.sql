@@ -1,7 +1,7 @@
 \set ON_ERROR_STOP
 BEGIN;
 
--- Add new version check function.
+-- Add support for XML DTD entity information in kw* tables.
 
 \set dbversion  '''042c98'''  -- Update version applied by this update.
 \set require    '''f62d8a,aa7ceb'''  -- These updates(s) must be active.

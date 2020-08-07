@@ -6,7 +6,7 @@
 
 -- NOTE: Remember to check if any corresponding changes are needed
 -- to python/lib/objects.py when this file is updated. 
- 
+
 CREATE TABLE kwsrc (
     id SMALLINT PRIMARY KEY,
     kw VARCHAR(20) NOT NULL UNIQUE,
@@ -17,7 +17,7 @@ CREATE TABLE kwsrc (
     sinc SMALLINT,		-- Sequence INCREMENT value used when creating seq.
     smin BIGINT,		-- Sequence MINVALUE value used when creating seq.
     smax BIGINT,		-- Sequence MAXVALUE value used when creating seq.
-    srct SMALLINT NOT NULL REFERENCES kwsrct(id));
+    srct TEXT NOT NULL REFERENCES kwsrct(kw));
 
 CREATE TABLE entr (
     id SERIAL PRIMARY KEY,
