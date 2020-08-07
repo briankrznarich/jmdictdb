@@ -1,19 +1,23 @@
 -- This file defines the tables that contain corpora entry data.
--- It is included by both the main mktables.sql script that is 
+-- It is included by both the main mktables.sql script that is
 -- run when a new JMdictDB database is created and by imptabs.sql
 -- which creates a copy of the tables in a separate schema for
 -- use when importing bulk data.
 
 -- NOTE: Remember to check if any corresponding changes are needed
--- to python/lib/objects.py when this file is updated. 
+-- to python/lib/objects.py when this file is updated.
 
+-- Table kwsrc needs to be in this file because these objects are created
+-- in both the "public" schema and the "imp" schema used when importing
+-- bulk data.  Objects (like kwsrct) in mktables.sql are created only in
+-  the public schema.
 CREATE TABLE kwsrc (
     id SMALLINT PRIMARY KEY,
     kw VARCHAR(20) NOT NULL UNIQUE,
     descr VARCHAR(255),
     dt DATE,
     notes VARCHAR(255),
-    seq VARCHAR(20) NOT NULL,	-- Name of sequence to create for entr.seq default values.
+    seq VARCHAR(20) NOT NULL,   -- Name of sequence to create for entr.seq default values.
     sinc SMALLINT,		-- Sequence INCREMENT value used when creating seq.
     smin BIGINT,		-- Sequence MINVALUE value used when creating seq.
     smax BIGINT,		-- Sequence MAXVALUE value used when creating seq.
@@ -35,7 +39,7 @@ CREATE INDEX ON entr(seq);
 CREATE INDEX ON entr(stat) WHERE stat!=2;
 CREATE INDEX ON entr(dfrm) WHERE dfrm IS NOT NULL;
 CREATE INDEX ON entr(unap) WHERE unap;
-   -- Following temporarily disabled since it is preventing the 
+   -- Following temporarily disabled since it is preventing the
    -- submission of "approved" entries.
 -- -- CREATE UNIQUE INDEX entr_active ON entr(src,seq,stat,unap) WHERE stat=2 AND NOT unap;
 
@@ -74,7 +78,7 @@ CREATE TABLE gloss (
     ginf SMALLINT NOT NULL DEFAULT 1
       REFERENCES kwginf(id),
     txt VARCHAR(2048) NOT NULL);
-CREATE INDEX ON gloss(txt); 
+CREATE INDEX ON gloss(txt);
 CREATE UNIQUE INDEX ON gloss(entr,sens,lang,txt);
 CREATE INDEX ON gloss(lower(txt) varchar_pattern_ops); --For case-insensitive LIKE 'xxx%'
 CREATE INDEX ON gloss(lower(txt)); 		    --For case-insensitive '='

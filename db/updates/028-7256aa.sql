@@ -9,7 +9,7 @@ BEGIN;
                               --  order to apply this update.
 
 \qecho Checking database version...
-SELECT CASE WHEN (EXISTS (SELECT 1 FROM db WHERE id=x:require::INT)) THEN NULL 
+SELECT CASE WHEN (EXISTS (SELECT 1 FROM db WHERE id=x:require::INT)) THEN NULL
     ELSE (SELECT err('Database at wrong update level, need version '||:require)) END;
 INSERT INTO db(id) VALUES(x:dbversion::INT);
 UPDATE db SET active=FALSE WHERE id!=x:dbversion::INT;

@@ -1,4 +1,4 @@
--- Copyright (c) 2006-2014,2018 Stuart McGraw 
+-- Copyright (c) 2006-2014,2018 Stuart McGraw
 -- SPDX-License-Identifier: GPL-2.0-or-later
 
 -- JMdict schema for Postgresql
@@ -8,7 +8,7 @@
 ---------------------------------------------------------------------------
 -- Database version identifier; use a new number whenever a change is
 -- made to the schema in pg/mktables.sql that will prevent the changed
--- version from working with not-yet-updated application software. 
+-- version from working with not-yet-updated application software.
 -- Should be a random 6-digit hexidecimal string.  One way to generate
 -- is with:
 --   python -c 'import random;print("%06.6x"%random.randint(0,16777215))'
@@ -27,7 +27,7 @@ CREATE OR REPLACE FUNCTION err(msg TEXT) RETURNS boolean AS $body$
     BEGIN RAISE '%', msg; END;
     $body$ LANGUAGE plpgsql;
 
--- Function to check that database has required updates active. 
+-- Function to check that database has required updates active.
 -- Parameter 'need' is a single text string containing a comma-separated
 --  list of the update values.  Any that are not active updates in the
 --  the "dbx" table will be reported as missing and an error raised.
@@ -61,20 +61,20 @@ CREATE OR REPLACE FUNCTION vchk(need text) RETURNS setof VOID AS $$
 -- independent of other updates (addition of an experimental feature
 -- that does not affect the rest of the schema for example) that
 -- update row may have a true 'active' value in addition to any
--- other rows that are also active. 
--- View 'dbx' shows the 'id' values in the hex number form used 
+-- other rows that are also active.
+-- View 'dbx' shows the 'id' values in the hex number form used
 -- ouside the database and is for convenience.
 
 CREATE TABLE db (
     id INT PRIMARY KEY,
-    active BOOLEAN DEFAULT TRUE, 
+    active BOOLEAN DEFAULT TRUE,
     ts TIMESTAMP DEFAULT NOW());
 INSERT INTO db(id) VALUES(x:updateid::INT);
 
 -- Presents table "db" with hexadecimal id numbers for convenience.
 CREATE OR REPLACE VIEW dbx AS (
     SELECT LPAD(TO_HEX(id),6,'0') AS id, active, ts, id AS idd
-    FROM db 
+    FROM db
     ORDER BY ts DESC);
 ---------------------------------------------------------------------------
 
@@ -156,11 +156,11 @@ CREATE TABLE rad (
     var SMALLINT NOT NULL,	-- Variant number.
       PRIMARY KEY (num,var),
     rchr CHAR(1),		-- Radical character from unicode blocks CJK radicals
-				--   2F00-2FDF and Radicals Supplement 2E80-2EFF.
+                                --   2F00-2FDF and Radicals Supplement 2E80-2EFF.
     chr CHAR(1),		-- Radical character from outside radical blocks.
     strokes SMALLINT,		-- Number of strokes.
     loc	CHAR(1) 		-- Location code.
-	CHECK(loc is NULL OR loc IN('O','T','B','R','L','E','V')),
+        CHECK(loc is NULL OR loc IN('O','T','B','R','L','E','V')),
     name VARCHAR(50),		-- Name of radical (japanese).
     examples VARCHAR(20));	-- Characters that include the radical.
 
@@ -169,55 +169,55 @@ CREATE TABLE kwsrct (
     kw VARCHAR(20) NOT NULL UNIQUE,
     descr VARCHAR(255));
 
--- The tables that contain corpra entry data are defined in a 
--- separate file since they created both by this file when creating 
--- a new JMdictDB database, and by imptabs.sql when creating a 
+-- The tables that contain corpra entry data are defined in a
+-- separate file since they created both by this file when creating
+-- a new JMdictDB database, and by imptabs.sql when creating a
 -- separate schema for use during bulk loading.
 
 \ir entrobjs.sql
 
--- The following functions are used in the main database but are not 
+-- The following functions are used in the main database but are not
 -- needed in the import schema and so are defined only here.
-  
+
 CREATE OR REPLACE FUNCTION kwsrc_updseq() RETURNS trigger AS $kwsrc_updseq$
     -- Create a sequence for entr.seq numbers whenever a new
-    -- row is added to table 'kwsrc' (and delete it when row 
+    -- row is added to table 'kwsrc' (and delete it when row
     -- is deleted).  This allows every corpus to maintain its
     -- own sequence.  The sequence is *not* made default value
     -- of entr.seq (because there multiple sequences are used
     -- depending on entr.src); the API is responsible for choosing
-    -- and using the correct sequence. 
+    -- and using the correct sequence.
 
     DECLARE seqnm VARCHAR; newseq VARCHAR := ''; oldseq VARCHAR := '';
-	partinc VARCHAR := ''; partmin VARCHAR := ''; partmax VARCHAR := '';
-	usedcnt INT;
+        partinc VARCHAR := ''; partmin VARCHAR := ''; partmax VARCHAR := '';
+        usedcnt INT;
     BEGIN
-	IF TG_OP != 'DELETE' THEN newseq=NEW.seq; END IF;
-	IF TG_OP != 'INSERT' THEN oldseq=OLD.seq; END IF;
-	IF oldseq != '' THEN
-	    -- 'kwsrc' row was deleted or updated.  Drop the deleted sequence
-	    -- if not used in any other rows.
-	    SELECT INTO usedcnt COUNT(*) FROM kwsrc WHERE seq=oldseq;
-	    IF usedcnt = 0 THEN
-		EXECUTE 'DROP SEQUENCE IF EXISTS '||oldseq;
-		END IF;
-	ELSEIF newseq != '' THEN 
-	    -- 'kwsrc' row was inserted or updated.  See if sequence 'newseq'
-	    -- already exists, and if so, do nothing.  If not, create it.
-	    IF NEW.sinc IS NOT NULL THEN
-		partinc = ' INCREMENT ' || NEW.sinc;
-		END IF;
-	    IF NEW.smin IS NOT NULL THEN
-		partmin = ' MINVALUE ' || NEW.smin;
-		END IF;
-	    IF NEW.smax IS NOT NULL THEN
-		partmax = ' MAXVALUE ' || NEW.smax;
-		END IF;
-	    IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname=NEW.seq AND relkind='S') THEN
-	        EXECUTE 'CREATE SEQUENCE '||newseq||partinc||partmin||partmax||' NO CYCLE';
-		END IF;
-	    END IF;
-	RETURN NEW;
+        IF TG_OP != 'DELETE' THEN newseq=NEW.seq; END IF;
+        IF TG_OP != 'INSERT' THEN oldseq=OLD.seq; END IF;
+        IF oldseq != '' THEN
+            -- 'kwsrc' row was deleted or updated.  Drop the deleted sequence
+            -- if not used in any other rows.
+            SELECT INTO usedcnt COUNT(*) FROM kwsrc WHERE seq=oldseq;
+            IF usedcnt = 0 THEN
+                EXECUTE 'DROP SEQUENCE IF EXISTS '||oldseq;
+                END IF;
+        ELSEIF newseq != '' THEN
+            -- 'kwsrc' row was inserted or updated.  See if sequence 'newseq'
+            -- already exists, and if so, do nothing.  If not, create it.
+            IF NEW.sinc IS NOT NULL THEN
+                partinc = ' INCREMENT ' || NEW.sinc;
+                END IF;
+            IF NEW.smin IS NOT NULL THEN
+                partmin = ' MINVALUE ' || NEW.smin;
+                END IF;
+            IF NEW.smax IS NOT NULL THEN
+                partmax = ' MAXVALUE ' || NEW.smax;
+                END IF;
+            IF NOT EXISTS (SELECT relname FROM pg_class WHERE relname=NEW.seq AND relkind='S') THEN
+                EXECUTE 'CREATE SEQUENCE '||newseq||partinc||partmin||partmax||' NO CYCLE';
+                END IF;
+            END IF;
+        RETURN NEW;
         END;
     $kwsrc_updseq$ LANGUAGE plpgsql;
 
@@ -229,46 +229,46 @@ CREATE OR REPLACE FUNCTION syncseq() RETURNS VOID AS $syncseq$
     -- (which are used for generation of corpus specific seq numbers.)
     DECLARE cur REFCURSOR; seqname VARCHAR; maxseq BIGINT;
     BEGIN
-	-- The following cursor gets the max value of entr.seq for each corpus
-	-- for entr.seq values within the range of the associated seq (where
-	-- the range is what was given in kwsrc table .smin and .smax values.  
-	-- [Don't confuse kwsrc.seq (name of the Postgresq1 sequence that
-	-- generates values used for entry seq numbers) with entr.seq (the
-	-- entry sequence numbers themselves).]  Since the kwsrc.smin and
-	-- .smax values can be changed after the sequence was created, and
-	-- doing so may screwup the operation herein, don't do that!  It is 
-	-- also possible that multiple kwsrc's can share a common 'seq' value,
-	-- but have different 'smin' and 'smax' values -- again, don't do that!
-	-- The rather elaborate join below is done to make sure we get a row
-	-- for every kwsrc.seq value, even if there are no entries that
-	-- reference that kwsrc row. 
+        -- The following cursor gets the max value of entr.seq for each corpus
+        -- for entr.seq values within the range of the associated seq (where
+        -- the range is what was given in kwsrc table .smin and .smax values.
+        -- [Don't confuse kwsrc.seq (name of the Postgresq1 sequence that
+        -- generates values used for entry seq numbers) with entr.seq (the
+        -- entry sequence numbers themselves).]  Since the kwsrc.smin and
+        -- .smax values can be changed after the sequence was created, and
+        -- doing so may screwup the operation herein, don't do that!  It is
+        -- also possible that multiple kwsrc's can share a common 'seq' value,
+        -- but have different 'smin' and 'smax' values -- again, don't do that!
+        -- The rather elaborate join below is done to make sure we get a row
+        -- for every kwsrc.seq value, even if there are no entries that
+        -- reference that kwsrc row.
 
-	OPEN cur FOR 
-	    SELECT ks.sqname, COALESCE(ke.mxseq,ks.smin,1) 
-	    FROM 
-		(SELECT seq AS sqname, MIN(smin) AS smin
-		FROM kwsrc 
-		GROUP BY seq) AS ks
-	    LEFT JOIN	-- Find the max entr.seq number in use, but ignoring
-			-- any that are autside the min/max bounds of the kwsrc's
-			-- sequence.
-		(SELECT k.seq AS sqname, MAX(e.seq) AS mxseq
-		FROM entr e 
-		JOIN kwsrc k ON k.id=e.src 
-		WHERE e.seq BETWEEN COALESCE(k.smin,1)
-		    AND COALESCE(k.smax,9223372036854775807)
-		GROUP BY k.seq,k.smin) AS ke 
-	    ON ke.sqname=ks.sqname;
-	LOOP
-	    FETCH cur INTO seqname, maxseq;
-	    EXIT WHEN NOT FOUND;
-	    EXECUTE 'SELECT setval(''' || seqname || ''', ' || maxseq || ')';
-	    END LOOP;
-	END;
+        OPEN cur FOR
+            SELECT ks.sqname, COALESCE(ke.mxseq,ks.smin,1)
+            FROM
+                (SELECT seq AS sqname, MIN(smin) AS smin
+                FROM kwsrc
+                GROUP BY seq) AS ks
+            LEFT JOIN	-- Find the max entr.seq number in use, but ignoring
+                        -- any that are autside the min/max bounds of the kwsrc's
+                        -- sequence.
+                (SELECT k.seq AS sqname, MAX(e.seq) AS mxseq
+                FROM entr e
+                JOIN kwsrc k ON k.id=e.src
+                WHERE e.seq BETWEEN COALESCE(k.smin,1)
+                    AND COALESCE(k.smax,9223372036854775807)
+                GROUP BY k.seq,k.smin) AS ke
+            ON ke.sqname=ks.sqname;
+        LOOP
+            FETCH cur INTO seqname, maxseq;
+            EXIT WHEN NOT FOUND;
+            EXECUTE 'SELECT setval(''' || seqname || ''', ' || maxseq || ')';
+            END LOOP;
+        END;
     $syncseq$ LANGUAGE plpgsql;
 
 CREATE FUNCTION entr_seqdef() RETURNS trigger AS $entr_seqdef$
-    -- This function is used as an "insert" trigger on table 
+    -- This function is used as an "insert" trigger on table
     -- 'entr'.  It checks the 'seq' field value and if NULL,
     -- provides a default value from one of several sequences,
     -- with the sequence used determined by the value if the
@@ -277,10 +277,10 @@ CREATE FUNCTION entr_seqdef() RETURNS trigger AS $entr_seqdef$
 
     DECLARE seqnm VARCHAR;
     BEGIN
-        IF NEW.seq IS NOT NULL THEN 
-	    RETURN NEW;
-	    END IF;
-	SELECT seq INTO seqnm FROM kwsrc WHERE id=NEW.src;
+        IF NEW.seq IS NOT NULL THEN
+            RETURN NEW;
+            END IF;
+        SELECT seq INTO seqnm FROM kwsrc WHERE id=NEW.src;
         NEW.seq :=  NEXTVAL(seqnm);
         RETURN NEW;
         END;
@@ -343,7 +343,7 @@ CREATE TABLE rdngsnd (	-- Reading to sound clip map.
 CREATE INDEX rdngsnd_snd ON rdngsnd(snd);
 
 
--- The following tables are used for resolving textual xrefs to 
+-- The following tables are used for resolving textual xrefs to
 -- actual entries and senses when loading data from external files.
 -- See file pg/xresolv.sql for a description of the process.
 
@@ -355,7 +355,7 @@ DROP TABLE IF EXISTS conjo_notes, conotes, conjo, conj CASCADE;
 
 -- Notes for conj, conjo items.
 CREATE TABLE conotes (
-    id INT PRIMARY KEY, 
+    id INT PRIMARY KEY,
     txt TEXT NOT NULL);
 
 -- Verb and adjective inflection names.
@@ -368,12 +368,12 @@ CREATE TABLE conjo (
     pos SMALLINT NOT NULL                 -- Part-of-speech id from 'kwpos'.
       REFERENCES kwpos(id) ON UPDATE CASCADE,
     conj SMALLINT NOT NULL                -- Conjugation id from 'conj'.
-      REFERENCES conj(id) ON UPDATE CASCADE, 
+      REFERENCES conj(id) ON UPDATE CASCADE,
     neg BOOLEAN NOT NULL DEFAULT FALSE,   -- Negative form.
     fml BOOLEAN NOT NULL DEFAULT FALSE,   -- Formal (aka distal) form.
     onum SMALLINT NOT NULL DEFAULT 1,     -- Okurigana variant id when more than one exists.
       PRIMARY KEY (pos,conj,neg,fml,onum),
-    stem SMALLINT DEFAULT 1,              -- Number of chars to remove to get stem. 
+    stem SMALLINT DEFAULT 1,              -- Number of chars to remove to get stem.
     okuri VARCHAR(50) NOT NULL,           -- Okurigana text.
     euphr VARCHAR(50) DEFAULT NULL,       -- Kana for euphonic change in stem (する and 来る).
     euphk VARCHAR(50) DEFAULT NULL,       -- Kanji for change in stem (used only for 為る-＞出来る).
@@ -384,10 +384,10 @@ CREATE TABLE conjo (
 CREATE TABLE conjo_notes (
     pos SMALLINT NOT NULL,  ---.
     conj SMALLINT NOT NULL, --  \
-    neg BOOLEAN NOT NULL,   --   +--- Primary key of table 'conjo'. 
+    neg BOOLEAN NOT NULL,   --   +--- Primary key of table 'conjo'.
     fml BOOLEAN NOT NULL,   --  /
     onum SMALLINT NOT NULL, ---'
       FOREIGN KEY (pos,conj,neg,fml,onum) REFERENCES conjo(pos,conj,neg,fml,onum) ON UPDATE CASCADE,
     note SMALLINT NOT NULL
-      REFERENCES conotes(id) ON UPDATE CASCADE, 
+      REFERENCES conotes(id) ON UPDATE CASCADE,
     PRIMARY KEY (pos,conj,neg,fml,onum,note));

@@ -1,10 +1,10 @@
--- Copyright (c) 2008 Stuart McGraw 
+-- Copyright (c) 2008 Stuart McGraw
 -- SPDX-License-Identifier: GPL-2.0-or-later
 
 -- Schema for JMdictDB users/sessions database.
 
 -- Note: the gen_random_bytes() function used below is in the pgcrypto
--- extention which must be installed (one time only) before this script 
+-- extention which must be installed (one time only) before this script
 -- is executed.  It can be installed by a database superuser (e.g. user
 -- "postgres") with the sql command:
 --   CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -28,21 +28,21 @@ CREATE OR REPLACE VIEW dbx AS (
 -- Users and sessions tables.
 
 CREATE TABLE users (
-	userid VARCHAR(16) PRIMARY KEY,
-	fullname TEXT,
-	email TEXT,
-	pw TEXT,
-	disabled BOOLEAN NOT NULL DEFAULT false,
+        userid VARCHAR(16) PRIMARY KEY,
+        fullname TEXT,
+        email TEXT,
+        pw TEXT,
+        disabled BOOLEAN NOT NULL DEFAULT false,
         -- priv: null:user, 'E':editor, 'A':admin+editor.
- 	priv CHAR(1) CHECK (strpos('EA', priv)>0),
-	notes TEXT);
+        priv CHAR(1) CHECK (strpos('EA', priv)>0),
+        notes TEXT);
 
 CREATE TABLE sessions (
-	id TEXT PRIMARY KEY DEFAULT
+        id TEXT PRIMARY KEY DEFAULT
           translate (encode (gen_random_bytes (12), 'base64'), '+/', '-_'),
-	userid VARCHAR(64) 
+        userid VARCHAR(64)
           REFERENCES users(userid) ON DELETE CASCADE ON UPDATE CASCADE,
-	ts TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
+        ts TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
         svc VARCHAR(64) DEFAULT NULL,
         state JSONB DEFAULT NULL);
 CREATE INDEX sessions_userid ON sessions(userid);

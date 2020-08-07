@@ -122,5 +122,5 @@ CREATE OR REPLACE VIEW vrslv AS (
         AS c ON (v.ktxt=c.ktxt AND v.entr!=c.id)
     GROUP BY v.seq,v.src,v.stat,v.unap,v.entr,v.sens,v.typ,v.ord,v.rtxt,v.ktxt,
              v.tsens,v.notes,v.prio, c.src,c.stat,c.unap,c.kanj);
- 
+
 COMMIT;
