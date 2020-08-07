@@ -66,7 +66,7 @@ def main (args, opts):
         mtime = datetime.date.fromtimestamp(os.stat(args[0])[8])
         corpid, corprec \
             = pgi.parse_corpus_opt (opts.corpus, "examples", mtime,
-                                    KW.SRCT['examples'].id)
+                                    KW.SRCT['examples'].kw)
         tmpfiles = pgi.initialize (opts.tempdir)
         if not opts.noaction:
             tmpfiles = pgi.initialize (opts.tempdir)

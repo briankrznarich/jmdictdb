@@ -214,8 +214,8 @@ def parse_corpus_opt (sopt, roottag, datestamp, srctarg=None, kw=None):
             if not smax: smax = 8999999
         if not srct: srct = srctarg 
         if not srct: srct = corpnm
-        if kw: srct = kw.SRCT[srct].id
-        if not isinstance (srct, int): 
-            raise ValueError ("'srct' must be a int, is '%r'" % srct)
+        if kw: srct = kw.SRCT[srct].kw
+        if not isinstance (srct, str):
+            raise ValueError ("'srct' must be a str, is '%r'" % srct)
         return corpid, jdb.Obj (id=corpid, kw=corpnm, dt=corpdt, seq=corpseq,
                                 sinc=sinc, smin=smin, smax=smax, srct=srct)

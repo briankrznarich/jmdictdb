@@ -20,4 +20,3 @@
 \copy kwsrct from '../jmdictdb/data/kwsrct.csv' CSV HEADER delimiter E'\t' quote E'\b'
 \copy kwsrc  from '../jmdictdb/data/kwsrc.csv'  CSV HEADER delimiter E'\t' quote E'\b'
 \copy rad from '../jmdictdb/data/rad.csv' CSV HEADER delimiter E'\t' quote E'\b'
-

@@ -69,7 +69,8 @@ def main (args, opts):
         if not pbar: print ("Parsing...", file=sys.stderr)
         srcdate = parse_xmlfile (args[0], 4, workfiles, opts.b, opts.c, langs, pbar)
         srcrec = jdb.Obj (id=4, kw='kanjidic', descr='kanjidic2.xml',
-                          dt=srcdate, seq='seq_kanjidic', srct=KW.SRCT['kanjidic'].id)
+                          dt=srcdate, seq='seq_kanjidic',
+                          srct=KW.SRCT['kanjidic'].kw)
         pgi.wrcorp (srcrec, workfiles)
         pgi.finalize (workfiles, opts.o, not opts.k)
         if not pbar: print ("\nDone!", file=sys.stderr)

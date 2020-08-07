@@ -1427,7 +1427,7 @@ CREATE TABLE public.kwsrc (
     sinc smallint,
     smin bigint,
     smax bigint,
-    srct smallint NOT NULL
+    srct text NOT NULL
 );
 
 
@@ -3959,9 +3959,10 @@ COPY public.conotes (id, txt) FROM stdin;
 COPY public.db (id, active, ts) FROM stdin;
 2029572	f	2019-05-14 10:46:08.849884
 11084276	f	2019-08-09 19:50:53.856433
-273560	t	2020-08-02 13:03:51.029015
 16133514	f	2020-08-02 13:03:25.646392
 11173099	f	2020-08-02 13:03:35.893273
+12840591	t	2020-08-06 17:50:01.913543
+273560	f	2020-08-02 13:03:51.029015
 \.
 
 
@@ -5503,9 +5504,9 @@ COPY public.kwrinf (id, kw, descr, ents) FROM stdin;
 --
 
 COPY public.kwsrc (id, kw, descr, dt, notes, seq, sinc, smin, smax, srct) FROM stdin;
-99	test	Corpus for testing and experimentation	\N	\N	seq_test	\N	\N	\N	1
-1	jmdict	\N	\N	\N	seq_jmdict	10	1000000	8999999	1
-2	jmnedict	\N	\N	\N	seq_jmnedict	10	1000000	8999999	2
+99	test	Corpus for testing and experimentation	\N	\N	seq_test	\N	\N	\N	jmdict
+1	jmdict	\N	\N	\N	seq_jmdict	10	1000000	8999999	jmdict
+2	jmnedict	\N	\N	\N	seq_jmnedict	10	1000000	8999999	jmnedict
 \.
 
 
@@ -6645,7 +6646,7 @@ COPY public.stagr (entr, sens, rdng) FROM stdin;
 --
 
 COPY public.testsrc (filename, method, hash) FROM stdin;
-/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	2cfcff396a96ab01343688c27afd50d1162a7603
+/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	668a02be4eb896c129d00f567638f0b4220ec9f2
 \.
 
 
@@ -8523,7 +8524,7 @@ ALTER TABLE ONLY public.kresolv
 --
 
 ALTER TABLE ONLY public.kwsrc
-    ADD CONSTRAINT kwsrc_srct_fkey FOREIGN KEY (srct) REFERENCES public.kwsrct(id);
+    ADD CONSTRAINT kwsrc_srct_fkey FOREIGN KEY (srct) REFERENCES public.kwsrct(kw);
 
 
 --
