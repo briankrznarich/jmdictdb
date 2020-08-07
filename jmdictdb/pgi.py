@@ -42,12 +42,10 @@ def wrentr (e, workfiles):
             for x in e.chr._cinf: _wrrow (x, workfiles['cinf'])
 
 def wrcorpora (corpora, defcorp, deftype, workfiles):
-          #FIXME! 'srct' is a temporary hack.
-        srct = {'jmdict':1, 'jmnedict':2, 'examples':3, 'kanjidic':4}
         for cname, (ctype, id) in corpora.items():
             if not cname: cname = defcorp
             if not ctype: ctype = deftype
-            rowobj = jdb.Obj(id=id,kw=cname,seq='seq_'+cname,srct=srct[ctype])
+            rowobj = jdb.Obj (id=id, kw=cname, seq='seq_'+cname, srct=ctype)
             _wrrow (rowobj, workfiles['kwsrc'])
 
 def wrgrpdef (rowobj, workfiles):
