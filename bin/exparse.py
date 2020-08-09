@@ -52,7 +52,7 @@ def main (args, opts):
           # write a message to the logfile.
         logfile = sys.stderr
         if opts.logfile:
-            logfile = open (opts.logfile, "w", encoding=opts.encoding)
+            logfile = open (opts.logfile, "w")
         def msg (message): _msg (logfile, opts.verbose, message)
         pbar = None
         if opts.progbar:
@@ -61,24 +61,25 @@ def main (args, opts):
             pbar = progress_bar.InitBar (
                     title=args[0], size=total_items, offset=2)
 
-        fin = ABPairReader (args[0], encoding='utf-8')
+        fin = ABPairReader (args[0])
           # FIXME: following gives localtime, change to utc or lt+tz.
         mtime = datetime.date.fromtimestamp(os.stat(args[0])[8])
-        corpid, corprec \
-            = pgi.parse_corpus_opt (opts.corpus, "examples", mtime,
-                                    KW.SRCT['examples'].kw)
         tmpfiles = pgi.initialize (opts.tempdir)
         if not opts.noaction:
             tmpfiles = pgi.initialize (opts.tempdir)
-            if corprec: pgi.wrcorp (corprec, tmpfiles)
+        srcid = 1    # This id, which will reference kwsrc.id after import,
+                     # will be adjusted when data is imported into database
+                     # so its value is arbitrary here.
         for eid, entr in enumerate (parse_ex (fin, opts.begin)):
+            entr.src = srcid
             if not opts.noaction:
-                entr.src = corpid
                 jdb.setkeys (entr, eid+1)
                 pgi.wrentr (entr, tmpfiles)
             if pbar: pbar (eid)
             if opts.count and eid+1 >= opts.count: break
-        sys.stdout.write ('\n')
+        srcrec = jdb.Obj (id=srcid, kw=opts.corpus, dt=mtime,
+                          seq='seq_'+opts.corpus, srct=KW.SRCT['examples'].kw)
+        pgi._wrrow (srcrec, tmpfiles['kwsrc'])
         if not opts.noaction: pgi.finalize (tmpfiles, opts.output,
                                             not opts.keep)
 
@@ -291,53 +292,8 @@ Arguments:
             help="Number of entries to process.  If not given or 0, "
                 "all entries in the file will be processed.")
 
-        p.add_option ("-s", "--corpus",
-            dest="corpus", default=None,
-            help="""\
-        CORPUS defines a corpus record (in table kwsrc) to which all
-        entries in the input file will be assigned.  It is set of one
-        to four comma separated items.  Spaces are not permitted within
-        the string.
-
-        The CORPUS items are:
-
-          id -- Id number of the corpus record.
-
-          kw -- A short string used as an identifier for the corpus.
-             Must start with a lowercase letter followed by zero or
-             more lowercase letters, digits, or underscore ("_")
-             characters.  Must not already be used in the database.
-
-          dt -- The corpus' date in the form: "yyyy-mm-dd".
-
-          seq -- The name of a Postgresql sequence that will be used
-             to assign sequence numbers of entries of this corpus when
-             those entries have no explicit sequence number.  Note that
-             this does not affect entries loaded by jmdict which always
-             assigns explicit seq numbers to entries it generates.
-             There are five predefined sequences:
-                jmdict_seq, jmnedict_seq, examples_seq, test_seq, seq.
-             You can create additional sequences if required.
-
-        [N.B. that the corpus table ("kwsrc") also has two other columns,
-        'descr' and 'notes' but exparse.py provides no means for setting
-        their values.  They can be updated in the database table after
-        kwsrc is loaded, using standard Postgresql tools like "psql".]
-
-        Unless only 'id' is given in the CORPUS string, a corpus record
-        will be written to the output .pgi file.  A record with this 'id'
-        number or 'kw' must not exist in the database when the output
-        file is later loaded.
-
-        If only 'id' is given in CORPUS, a new corpus record will not
-        be created; rather, all enties will be assigned the given corpus
-        id number and it will be assumed that a corpus record with that
-        id number already exists when the output file is later loaded.
-
-        If this option is not given at all, exparse.py will use "3",
-        "examples", and "examples_seq", and the last-modified date of
-        the input file (or null if not available) for 'id', 'kw', and
-        'seq', and 'dt' respectively.""")
+        p.add_option ("-s", "--corpus", default="examples",
+            help='Corpus name to use for entries.  Default is "examples".')
 
         p.add_option ("-k", "--keep", default=False,
             dest="keep", action="store_true",
@@ -350,13 +306,6 @@ Arguments:
         p.add_option ("-t", "--tempdir", default=".",
             dest="tempdir", metavar="DIRPATH",
             help="Directory in which to create temporary files.")
-
-        p.add_option ("-e", "--encoding", default='utf-8',
-            type="str", dest="encoding",
-            help="Encoding for error and logfile messages (typically "
-                "\"sjis\", \"utf8\", or \"euc-jp\").  This does not "
-                "affect the output .pgi file or the temp files which "
-                "are always written with utf-8 encoding.")
 
         p.add_option("--no-progress",
             dest="progbar", action="store_false", default=True,
