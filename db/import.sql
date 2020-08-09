@@ -33,7 +33,7 @@ BEGIN;
 -- number.
 
 -- Add columns that will be used to map imported kwsrc.id's to new
--- values for eexistance in the public.kwsrc table.
+-- values for existance in the public.kwsrc table.
 ALTER TABLE imp.kwsrc
     ADD COLUMN IF NOT EXISTS newid INT,  -- replacement id number.
     ADD COLUMN IF NOT EXISTS isnew BOOL; -- a row not in public.kwsrc.
@@ -50,8 +50,9 @@ UPDATE imp.kwsrc i SET newid=m.newid, isnew=m.isnew
     WHERE m.id=i.id;
 
 -- Add the imp.kwsrc rows identified as new to the public.kwsrc table.
-INSERT INTO public.kwsrc(id,kw,seq,srct)
-    SELECT newid, kw, 'seq_'||kw, srct FROM imp.kwsrc WHERE isnew;
+INSERT INTO public.kwsrc
+    SELECT newid, kw, descr, dt, notes, seq, sinc, smin, smax, srct
+    FROM imp.kwsrc WHERE isnew;
 
   -- Load the imported entr table and it's children into the public
   -- schema tables.  The imported entr rows are expected to start with

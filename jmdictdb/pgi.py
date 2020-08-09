@@ -45,7 +45,8 @@ def wrcorpora (corpora, defcorp, deftype, workfiles):
         for cname, (ctype, id) in corpora.items():
             if not cname: cname = defcorp
             if not ctype: ctype = deftype
-            rowobj = jdb.Obj (id=id, kw=cname, seq='seq_'+cname, srct=ctype)
+            rowobj = jdb.Obj (id=id, kw=cname, seq='seq_'+cname,
+                              sinc=10, smin=1000000, smax=8999999, srct=ctype)
             _wrrow (rowobj, workfiles['kwsrc'])
 
 def wrgrpdef (rowobj, workfiles):

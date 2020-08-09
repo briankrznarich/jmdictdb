@@ -58,17 +58,45 @@ class JmdictFile:
         return s
 
 class Jmparser (object):
+    '''-----------------------------------------------------------------------
+    A class for parsing a JMdict, JMnedict or JMex (a superset of
+    the elements in the first two) formatted XML file into a list of
+    objects.Entr instances.
+    Methods:
+    .parse_file() -- A generator that will incrementally parse a full
+        XML file, returning an objects.Entr instance on each iteration.
+    .parse_entry() -- Parses a string containing concatenated <entry>
+        elements returning a list of objects.Entr instances.
+    -----------------------------------------------------------------------'''
     def __init__ (self,
-            kw,         # A jdb.Kwds object initialized with database
-                        #  keywords, such as returned by jdb.dbOpen()
-                        #  or jdb.Kwds(jdb.std_csv_dir()).
-            xmltype):   # Type of XML: "jmdict", "jmnedict" or "jmex".
+            kw,           # A jdb.Kwds object initialized with database
+                          #  keywords, such as returned by jdb.dbOpen()
+                          #  or jdb.Kwds(jdb.std_csv_dir()).
+            xmltype,      # (str) Type of XML: "jmdict", "jmnedict", "jmex".
+                          #  This determines the xml format and tags that
+                          #  will be recognised by the parser and is used
+                          #  as the corpus type when when generating the
+                          #  kwsrc table data.
+            srcids=True): # (bool) If true, all entries without an explicit
+                          #  corpus (jmdict and jmnedict XML) will be
+                          #  assigned an entr.src id number like (jmex)
+                          #  entries that do have an explicit corpus.
+                          #  If false, entries without an explicit corpus
+                          #  will be assigned an entr.src value of None.
+                          #  This is desirable in tests and other cases
+                          #  where the caller will determine the proper
+                          #  value.
+        L('jmxml').debug("module: %s" % __file__)
         self.KW = kw
         if xmltype == 'jmex': self.XKW = self.KW
         else: self.XKW = make_enttab (self.KW, xmltype)
+        self.seq = 0  #FIXME? sequence numbers are per-corpus so maintaining
+          # a single stream of numbers here will do the wrong thing in the
+          # presence of jmex XML which mixes multiple corpora.  On the other
+          # hand jmex XML always contains embedded sequence numbers so it
+          # should never need sequence number generation.
         self.corpora = {}
-        self.type_guess = set()
-        self.seq = 0
+        self.srcids = srcids
 
     def parse_entry (self, txt):
         # Convert an XML text string into entry objects.
@@ -76,6 +104,9 @@ class Jmparser (object):
         #   txt -- (str) XML text defining one of more entry elements.
         # Returns: A list of entry objects.
 
+        pat = '&[a-zA-Z0-9-]+;'
+        if isinstance (txt, bytes): pat = pat.encode ('latin1')
+        txt = re.sub (pat, _ent_repl, txt)
         xo = ElementTree.XML (txt)
         if xo is None:
             print ("No parse results")
@@ -84,7 +115,7 @@ class Jmparser (object):
         return [e]
 
     def parse_file (self,  # Parse a full JMdict/JMnedict XML file.
-        inpf,           # (file) An open jmdict/jmnedict XML file..
+        inpf,           # (file) An open jmdict/jmnedict XML file.
         startseq=None,  # (int) Skip until an entry with this seq
                         #   number is seen, or None to start at first
                         #   entry.  See also parameters seqnum_init
@@ -92,13 +123,6 @@ class Jmparser (object):
         elimit=None,    # (int) Maximum number of entries to process.
         xlang=None,     # (list) List of lang id's to limit extracted
                         #   glosses to.
-        corp_dict=None, # (dict) A mapping that contains corpus (aka
-                        #   "kwsrc") records indexed by id number and
-                        #   name.  <ent_corp> elements will be looked
-                        #   up in this dict.  If not supplied, it is
-                        #   expected that <corpus> elements will occur
-                        #   in the XML that define corpora before they
-                        #   are referenced by <ent_corp> elements.
         grpdefs=None,   # (dict) A mapping that contains grpdef (aka
                         #   "kwgrp") records indexed by id number and
                         #   name.  <group> elements will be looked
@@ -124,9 +148,9 @@ class Jmparser (object):
         if grpdefs is None: grpdefs = {}
         elist=[];  count=0;  entrnum=0
         for event, elem in etiter:
-            if elem.tag not in ['entry', 'grpdef']:
-                L('jmxml.parse').debug("skipping element <%s>" % elem.tag)
-                continue
+
+            if elem.tag not in ['entry', 'grpdef']: continue
+
             if event == "start":
                 lineno = getattr (inpf, 'lineno', None)
                 if elem.tag == 'entry': entrnum += 1
@@ -152,7 +176,7 @@ class Jmparser (object):
                            % lineno)
             if not startseq or seq >= startseq:
                 startseq = None
-                try: entr = self.do_entr (elem, seq, xlang, corp_dict, grpdefs)
+                try: entr = self.do_entr (elem, seq, xlang, grpdefs)
                 except ParseError as e:
                     self.warn (" (line %d): %s" % (lineno, e))
                 else: yield "entry", entr
@@ -166,7 +190,7 @@ class Jmparser (object):
         if descr: o.descr = descr
         return o
 
-    def do_entr (self, elem, seq, xlang=None, corp_dict=None, grpdefs=None):
+    def do_entr (self, elem, seq, xlang=None, grpdefs=None):
         """
     Create an entr object from a parsed ElementTree entry
     element, 'elem'.  'lineno' is the source file line number
@@ -178,9 +202,7 @@ class Jmparser (object):
     * The 'entr' record will have no .src (aka corpus) attribute
       if there is no <ent_corp> element in the entry.  In this
       case the .src attribute is expected to be added by the
-      caller.  If there is a <ent_corp> element, it will be
-      used to find a corpus in 'corp_dict', which in turn will
-      will provide an id number used in .src.
+      caller.
     * Items in sense's _xref list are unresolved xrefs, not
       resolved xrefs as in a database entr object.
       jdb.resolv_xref() or similar can be used to resolve the
@@ -221,7 +243,15 @@ class Jmparser (object):
             raise ParseError ("Invalid <status> element value, '%s'" % stat)
         entr.stat = stat
         entr.unap = elem.get('appr') == 'n'
-        entr.src = self.do_corpus_attrs (elem.get('corpus'), elem.get('type'))
+          # Get the corpus name and type.  These will have non-None values
+          # only for "jmex" XML.
+        corp, corpt = elem.get('corpus'), elem.get('type')
+          # Get a srcid number for the pair.
+        srcid = self.do_corpus_attrs (corp, corpt)
+          # We leave entr.src set to None if there is no explicit corpus
+          # name and supression of srcids was requested (eg when parsing
+          # entries for tests of the caller wants to manage the srcids.)
+        if corp or self.srcids: entr.src = srcid
           #FIXME: check contents of <ent_corp> element for condistency
           # with the corpus attributes just processed or use as def if
           # attributes not present.
@@ -237,26 +267,42 @@ class Jmparser (object):
 
     def do_corpus_attrs (self, corp, corpt):
         '''-------------------------------------------------------------------
-        The JMex format adds two attributes to <entry> tags:
-        "corpus" and (corpus) "type".  We process them by creating 
-        a local record of each distict "corpus" name seen.  Each is
-        assigned a value consisting od a 2-tuple of the "type" value
-        and an integer that id that is assigned to Entr() object's
-        .src attribute.
+        Assign an id number for entr.src and stash away a corresponding
+        corpus record for use in kwsrc.
+        The JMex format adds two attributes to <entry> tags: "corpus"
+        and (corpus) "type".  We process them by creating a local record
+        of each distict "corpus" name seen.  Each is assigned a value
+        consisting of a 2-tuple of the "type" value and an integer that
+        id that is assigned to Entr() object's .src attribute.
+
+        In the case of non-jmex format xml (eg jmdict and jmnedict whos
+        DTDs have no provision for a corpus identifier) the assigned .src
+        id number is None.
         -------------------------------------------------------------------'''
         if corp in self.corpora:
               # If that named corpus has been already seen but with a
-              # different corpus type, that's a no-no.
-            if self.corpora[corpt][0] != corpt:
+              # different corpus type, that's a no-no.  Note that 'corp'
+              # will be None for jmdict and jmnedict entries and may
+              # be None for jmex entries sometimes (eg tests).
+            if corpt and corpt != self.corpora[corp][0]:
                 raise InvalidError ("Corpus %s type change from %s to %s"
                                     % (corp, self.corpora[corpt][0], corpt))
-          # Save the corpus name and type, alone with a sequentially
-          # increasing id number.  'corp' and/or 'corpt' may be None,
-          # that's ok.
         else:
-            nextid = 1+max ([t[1] for c,t in self.corpora.values()] or [0])
-            self.corpora[corp] = (corpt, nextid)
+              # First time this corpus name has been seen.
+              # Save the name and type, along with a sequentially increasing
+              # id number.  'corp' and/or 'corpt' may be None, that's ok.
+              # We also assign an id number which may be used for entr.src.
+              # This number will be one greater than the largest number
+              # already assigned.  Note that these id values will be adjusted
+              # when the data is imported into a database.
+            srcids = [t[1] for c,t in self.corpora.values()]
+            srcid = 1 + max (srcids or [0])
+            self.corpora[corp] = (corpt, srcid)
         return self.corpora[corp][1]  # Return the assigned corpus id number.
+
+    def get_corpora (self):
+        "Return the corpora info keyed by id number."
+        return 
 
     def do_info (self, elems, entr):
         if not elems: return
