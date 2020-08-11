@@ -7,7 +7,7 @@ from jmdictdb import submit   # Module to test
   # Database name and load file for tests.
 DBNAME, DBFILE = "jmtest01", "data/jmtest01.sql"
 
-  # These tests are not intended to be comprehensive but test a few 
+  # These tests are not intended to be comprehensive but test a few
   # common cases in the context of a complete submission.
 
   # These tests create entries in the "test" corpus (src=99) in
@@ -35,6 +35,69 @@ class General (unittest.TestCase):
           #  and thus it should exactly match 'out'.
         _.assertEqual (inp, out)
 
+class Approval (unittest.TestCase):
+    def test1000010(_):  # Create an new unapproved entry and approve.
+        inp = Entr (stat=2, src=99,
+                    _rdng=[Rdng(txt='パン')], _kanj=[],
+                    _sens=[Sens(_gloss=[Gloss(txt="breab",lang=1,ginf=1)])],
+                    _hist=[Hist()])
+        eid,seq,src = submit_ (inp, disp='')
+        DBcursor.connection.commit()
+          # An index exception on next line indicates the new entry
+          #  was not found.
+        out = jdb.entrList (DBcursor, None, [eid])[0]
+          # Make a change to the entry.
+        inp._sens[0]._gloss[0].txt = "bread"
+        inp.dfrm = eid
+          # And submit with editor approval.
+        eid2,seq2,src2 = submit_ (inp, disp='a',is_editor=True,userid='smg')
+        out2 = jdb.entrList (DBcursor, None, [eid2])[0]
+        _.assertEqual (inp, out2)
+          # The original entry should have been disappeared.
+        out3 = jdb.entrList (DBcursor, None, [eid])
+        _.assertEqual ([], out3)
+        #FIXME? should also check history records?
+
+    def test1000020(_):  # Edit an approved entry and approve.
+        inp = Entr (stat=2, src=99,
+                    _rdng=[Rdng(txt='パン')], _kanj=[],
+                    _sens=[Sens(_gloss=[Gloss(txt="breab",lang=1,ginf=1)])],
+                    _hist=[Hist()])
+          # Create a new, approved entry.
+        eid,seq,src = submit_ (inp, disp='a',is_editor=True,userid='smg')
+        DBcursor.connection.commit()
+          # An index exception on next line indicates the new entry
+          #  was not found.
+        out = jdb.entrList (DBcursor, None, [eid])[0]
+          # Make a change to the entry.
+        inp._sens[0]._gloss[0].txt = "bread"
+        inp.dfrm = eid
+          # And submit with editor approval.
+        eid2,seq2,src2 = submit_ (inp, disp='a',is_editor=True,userid='smg')
+        out2 = jdb.entrList (DBcursor, None, [eid2])[0]
+        _.assertEqual (inp, out2)
+          # The original entry should have been disappeared.
+        out3 = jdb.entrList (DBcursor, None, [eid])
+        _.assertEqual ([], out3)
+
+    def test1000030(_):  # Fail when submit entries with same corpus/seq#.
+                         # IS-213.
+        inp = Entr (seq=1000030, stat=2, src=99,
+                    _rdng=[Rdng(txt='パン')], _kanj=[],
+                    _sens=[Sens(_gloss=[Gloss(txt="bread",lang=1,ginf=1)])],
+                    _hist=[Hist()])
+          # Create a new, approved entry.
+        eid,seq,src = submit_ (inp, disp='a',is_editor=True,userid='smg')
+        DBcursor.connection.commit()
+        with _.assertRaisesRegex (db.IntegrityError,
+                    'duplicate key value violates unique constraint '
+                    '"entr_src_seq_idx"'):
+            submit_ (inp, disp='a', is_editor=True, userid='smg')
+          # The db connection is in failed transaction state at this point;
+          # do a rollback to prevent failure of subsequent operations that
+          # use it.  
+        DBcursor.connection.rollback()
+
 class Xrefs (unittest.TestCase):   # Named with plural form because "Xref"
     @classmethod                   #  conflicts with objects.Xref.
     def setUpClass(cls):
@@ -44,6 +107,9 @@ class Xrefs (unittest.TestCase):   # Named with plural form because "Xref"
           # finished.
         cls.t1 = addentr ('猫\fねこ\f[1]cat', q=20100, c=99)
         cls.t2 = addentr ('馬\fうま\f[1]horse[2]mule', q=20110, c=99)
+    def setUp(_):
+          # In case a test fail left an open aborted transaction.
+        DBcursor.connection.rollback()
 
     def test0001(_):
           # Create a single, simple xref.
@@ -103,9 +169,10 @@ def addentr (jel, q=None, c=99, s=2, u=False, d=None):
         return entr
 
   # Submit an Entr via submit.submission().
-def submit_ (entr, disp=''):  # Trailing "_" to avoid conflict
+def submit_ (entr, **kwds):  # Trailing "_" to avoid conflict
         errs = []             #  with submit module.
-        id,seq,src = submit.submission (DBcursor, entr, '', errs)
+        kwds['errs'] = errs
+        id,seq,src = submit.submission (DBcursor, entr, **kwds)
         if errs: raise RuntimeError (errs)
         DBcursor.connection.commit()
         return id,seq,src
@@ -122,6 +189,8 @@ def setUpModule():
 
 def tearDownModule():
         #print ("Deleting entries from 'test' corpus", file=sys.stderr)
+        DBcursor.connection.rollback()   # In case a test fail left an
+                                         #  open aborted transaction.
         db.ex (DBcursor.connection,
                "DELETE FROM entr WHERE src=99; COMMIT")
 

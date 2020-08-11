@@ -367,15 +367,19 @@ def approve (dbh, entr, edtree, errs):
                     "The id numbers are: %s"\
                     % ', '.join ("id="+url(x) for x in leafsn(e.args[0]))))
                 return
-          # Write the approved entry to the database...
+          # Prepare 'entr' to become independent.
         entr.dfrm = None
         entr.unap = False
-        res = addentr (dbh, entr)
-          # ...and delete the old root if any.  Because the dfrm foreign
-          # key is specified with "on delete cascade", deleting the root
-          # entry will also delete all it's children. edtree[0].id is
-          # the id number of the edit root.
+          # Delete the old root if any.  We need to delete the old active
+          # entry before adding the new one, to avoid annoying the database
+          # constraint the prohibits two active, approved entries.
+          # Because the dfrm foreign key is "on delete cascade", deleting
+          # the root entry will also delete all it's children.  edtree[0].id
+          # is the id number of the edit root.
         if edtree: delentr (dbh, edtree[0].id)
+          # With the old approved entry gone we can write the new one to
+          # the database.
+        res = addentr (dbh, entr)
         return res
 
 def reject (dbh, entr, edtree, errs, rejcnt=None):

@@ -10,7 +10,8 @@
 -- Table kwsrc needs to be in this file because these objects are created
 -- in both the "public" schema and the "imp" schema used when importing
 -- bulk data.  Objects (like kwsrct) in mktables.sql are created only in
--  the public schema.
+-- the public schema.
+
 CREATE TABLE kwsrc (
     id SMALLINT PRIMARY KEY,
     kw VARCHAR(20) NOT NULL UNIQUE,
@@ -39,9 +40,10 @@ CREATE INDEX ON entr(seq);
 CREATE INDEX ON entr(stat) WHERE stat!=2;
 CREATE INDEX ON entr(dfrm) WHERE dfrm IS NOT NULL;
 CREATE INDEX ON entr(unap) WHERE unap;
-   -- Following temporarily disabled since it is preventing the
-   -- submission of "approved" entries.
--- -- CREATE UNIQUE INDEX entr_active ON entr(src,seq,stat,unap) WHERE stat=2 AND NOT unap;
+  -- Following disallows two active (stat=2), approved (unap=False)
+  -- with the same corpus (seq) and sequence number (seq) from 
+  -- existing at the same time. (IS-213).
+CREATE UNIQUE INDEX ON entr (src,seq) WHERE stat=2 AND NOT unap;
 
 CREATE TABLE rdng (
     entr INT NOT NULL REFERENCES entr(id) ON DELETE CASCADE ON UPDATE CASCADE,

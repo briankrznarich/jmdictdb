@@ -16,7 +16,7 @@
 -- When changing updateid don't forget to change python/lib/dbver.py to
 -- tell the JMdictDB API to expect the new version.
 
-\set updateid '''c3ee8f'''
+\set updateid '''e99634'''
 
 -- This is a function for the benefit of psql scripts that can be
 -- conditionally called to generate an error in order to stop the

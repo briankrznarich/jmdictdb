@@ -3352,8 +3352,9 @@ COPY public.db (id, active, ts) FROM stdin;
 11084276	f	2019-08-09 19:50:53.856433
 16133514	f	2020-08-02 13:03:25.646392
 11173099	f	2020-08-02 13:03:35.893273
-12840591	t	2020-08-06 17:50:01.913543
 273560	f	2020-08-02 13:03:51.029015
+15308340	t	2020-08-11 14:03:08.621505
+12840591	f	2020-08-06 17:50:01.913543
 \.
 
 
@@ -6037,7 +6038,7 @@ COPY public.stagr (entr, sens, rdng) FROM stdin;
 --
 
 COPY public.testsrc (filename, method, hash) FROM stdin;
-/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	268b7f5f1153816717cb7ce0e46925111ff3cdf9
+/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	dd94ac7b0af4ac13158e4964f53c97338c08d41b
 \.
 
 
@@ -6717,6 +6718,13 @@ CREATE INDEX entr_dfrm_idx ON public.entr USING btree (dfrm) WHERE (dfrm IS NOT 
 --
 
 CREATE INDEX entr_seq_idx ON public.entr USING btree (seq);
+
+
+--
+-- Name: entr_src_seq_idx; Type: INDEX; Schema: public; Owner: jmdictdb
+--
+
+CREATE UNIQUE INDEX entr_src_seq_idx ON public.entr USING btree (src, seq) WHERE ((stat = 2) AND (NOT unap));
 
 
 --
