@@ -31,10 +31,6 @@
 # new Postgresql databases.
 
 set -e
-  # BIN is path to programs directory.  May be an empty string to
-  # use programs in PATH.  If not empty, must have trailing "/".
-  # If relative, it's relative to the tests/ directory.
-BIN=../bin/
 DBNAME=jmnew
 TMPDIR=./tmp
 OUTFILE=$TMPDIR/xmlrt-$$.xml
@@ -71,28 +67,28 @@ if [ $preserve = "no" ]; then rm -fv $TMPDIR/xmlrt-*; fi
   #  files are written to tests/tmp/ as is the output xml file,
   #  jmdict-out.xml.
 set -ex
-${BIN}jmparse.py  -l $TMPLOG -o $TMPPGI $INPFILE
+  # Create a new JMdictDB database.
 psql  -U postgres -d postgres -c "drop database if exists $DBNAME"
 psql  -U postgres -d postgres -c "create database $DBNAME owner \
     jmdictdb template template0 encoding 'utf8'"
-(cd ../db && psql  -U jmdictdb -d $DBNAME -f schema.sql
-  psql -U jmdictdb -d $DBNAME -c "DELETE FROM imp.kwsrc"
-  PGOPTIONS=--search_path=imp,public psql -U jmdictdb -d $DBNAME \
-     -f ../tests/$TMPPGI
-  psql -U jmdictdb -d $DBNAME -v "src=$SRCID" -f import.sql
-  psql -U postgres -d $DBNAME -f 'syncseq.sql'
-  psql -U postgres -d $DBNAME -c 'vacuum analyze' )
-
+psql  -U jmdictdb -d $DBNAME -f ../db/schema.sql
+  # Parse the xml file to generate a .pgi file 
+../bin/jmparse.py  -l $TMPLOG -o $TMPPGI $INPFILE
+  # Load the .pgi file into the new database.
+../bin/pgload.py -U jmdictdb $DBNAME $TMPPGI
+  # Post-load cleanup.
+psql -U postgres -d $DBNAME -f ../db/syncseq.sql
+psql -U postgres -d $DBNAME -c 'vacuum analyze'
   # Don't resolve xrefs.  If left unresolved they will produce the same
   # <xref> elements when written back to xml.  If resolve attempted, some
   # will succeed, some fail and order of produced <xref> tags after writing
   # back to xml will be altered causing spurious differences.
-## ${BIN}xresolv.py -d postgres://jmdictdb@/$DBNAME -i \
+## ../bin/xresolv.py -d postgres://jmdictdb@/$DBNAME -i \
 ##    -sjmdict -tjmdict -vwarning >$TMPLOG2 2>&1
 
   # dump the database back out as xml.  Use blocksize of 20K as the
   # default of 1K is pretty slow.
-${BIN}entrs2xml.py -d $DBNAME -B20000 -s$SRCID -o $OUTFILE
+../bin/entrs2xml.py -d $DBNAME -B20000 -s$SRCID -o $OUTFILE
 
   # ...and compare to original input xml.  We filter the diff output to
   # eliminate the expected difference in the timestamps and use grep's
