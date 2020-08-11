@@ -67,11 +67,13 @@ def main (args, opts):
                     title=args[0], size=total_items, offset=2, stream=sys.stdout)
 
         if not pbar: print ("Parsing...", file=sys.stderr)
-        srcdate = parse_xmlfile (args[0], 4, workfiles, opts.b, opts.c, langs, pbar)
-        srcrec = jdb.Obj (id=4, kw='kanjidic', descr='kanjidic2.xml',
-                          dt=srcdate, seq='seq_kanjidic',
-                          srct=KW.SRCT['kanjidic'].kw)
-        pgi.wrcorp (srcrec, workfiles)
+        srcid = 1    # This id, which will reference kwsrc.id after import,
+                     # will be adjusted when data is imported into database
+                     # so its value is arbitrary here.
+        srcdate = parse_xmlfile (args[0], srcid, workfiles, opts.b, opts.c, langs, pbar)
+        srcrec = jdb.Obj (id=srcid, kw=opts.corpus, dt=srcdate,
+                          seq='seq_'+opts.corpus, srct=KW.SRCT['kanjidic'].kw)
+        pgi._wrrow (srcrec, workfiles['kwsrc'])
         pgi.finalize (workfiles, opts.o, not opts.k)
         if not pbar: print ("\nDone!", file=sys.stderr)
 
@@ -383,8 +385,6 @@ def warn (msg, *args):
         s = "%s (line %d), warning: %s" % (Char, Lineno, msg % args)
         print (s, file=Opts.l)
 
-
-
 #---------------------------------------------------------------------
 
 from optparse import OptionParser
@@ -414,6 +414,8 @@ arguments:
              help="Write the output load data to this filename.  If "
                 "not given input filename with the extension replaced "
                 "by \".pgi\" will be used.")
+        p.add_option ("-s", "--corpus", default="kanjidic",
+            help='Corpus name to use for entries.  Default is "kanjidic".')
         p.add_option ("-g", "--language",
              type="str", dest="g", default=None,
              help="Value is a comma separated list (with no spaces) of "

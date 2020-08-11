@@ -1,52 +1,69 @@
 \set ON_ERROR_STOP
 
--- Migrate data that has been loaded into the import schema "imp"
--- into the main database tables in the public schema.
--- This procedure is NOT concurrency-friendly; the database should
--- be quiesent when this procedure is run.
--- Before running this script the data to import should be loaded:
---    SET search_path TO imp,public;
---    \ir data/jmnedict.pgi
--- or
---    PGOPTIONS=--search_path=imp,public psql -d ... -f data/jmnedict.pgi
--- If a source id is given on the command line with -v "src=<n>'
--- and a kwsrc row with that id exists in the public.kwsrc table,
--- that src id will be used for the entr rows migrated into the
--- public table.  If no such row exists in public.kwsrc, the
--- imported kwsrc row will added to public.kwsrc but with an
--- id from the command line.  If no command line src id value is
--- given, the imported kwsrc row will be added to public.kwsrc
--- with its id unchanged.
+-- This script will migrate entry data that has beeb imported into
+-- schema "imp", into the "public" schema where they become accessible
+-- to the JMdictDB system.
+--
+-- The import entries all have assigned corpora (that is, each entry
+-- has an entr.src value referencing a row by id number in imp.kwsrc).
+-- Those corpora need to be merged into the already existing corpora
+-- in public.kwsrc.  We do this by adding a new column to imp.kwsrc
+-- 'newid' and setting its values to id numbers that will be used in
+-- public.kwsrc.
+-- When a imp.kwsrc.newid value does not match any id numbers in
+-- public.kwsrc the entire imp.kwsrc row is copied into the public.-
+-- kwsrc table and given an 'id' value of 'newid'.
+-- When there is a matching id number in public.kwsrc, the entries
+-- belonging to the imp.kwsrc corpus will be reassigned the public.-
+-- kwsrc corpus.
+-- In both cases when entries are copied to the public schema, their
+-- entr.src values are replaced with the value from 'newid'.
+-- Note that when a corpus is mapped to an already existing row in
+-- in public.kwsrc, none of the other information in the imp.kwsrc
+-- row is carried over or even checked; it is the user's responsibility
+-- to to make sure that the new corpus assignment is compatible (has
+-- the same corpus type ('srct') value, for example.)
+--
+-- Before running this script we expect that the user has:
+--   * Added a new column to the imp.kwsrc table, e.g.:
+--       ALTER TABLE imp.kwsrc
+--         ADD COLUMN IF NOT EXISTS newid INT;
+--   * Set the value of imp.kwsrc.newid to either of:
+--     * A value matching an 'id' value in public.kwsrc.
+--       In this case entries belonging to the imp.kwsrc corpora will
+--       be reassigned to the matching public.kwsrc corpus.
+--     * A value not matching any 'id' value in public.kwsrc.
+--       In this case the imp.kwsrc row will be copied into the public.-
+--       kwdsrc and the copied entries belonging to the imp.kwsrc
+--       corpora will be reassigned to it.
 
 BEGIN;
 
-SELECT id AS src_default FROM imp.kwsrc \gset
-SELECT CASE WHEN :'src'= ':src'
-  THEN :src_default ELSE :'src' END::int AS src \gset
+-- Add the imp.kwsrc rows that don't have matching (by id) rows in the
+-- public.kwsrc table.
 
-  -- If there already exists a kwsrc record with the same id=:src
-  -- in the destination kwsrc table, use it.  If not, add the record
-  -- (using an id of :src) from the import data.  The id in the import
-  -- kwsrc table is ignored.
+INSERT INTO public.kwsrc
+    (SELECT newid, kw, descr, dt, notes, seq, sinc, smin, smax, srct
+     FROM imp.kwsrc WHERE newid NOT IN (SELECT id FROM public.kwsrc));
 
-INSERT INTO kwsrc
-    (SELECT :src,kw,descr,dt,notes,seq,sinc,smin,smax,srct
-     FROM imp.kwsrc k
-     WHERE :src NOT IN (SELECT id FROM kwsrc));
-
-  -- Load the imported entr table and it's children into the public
-  -- schema tables.  The imported entr rows are expected to start with
-  -- id=1.  We adjust the id's before inserting them to values that are
-  -- greater then the largest id already in public.entr.  The foreign
-  -- key references to entr.id in the children tables are adjusted the
-  -- same way.  We also change the value of 'src' to ':src' during the
-  -- load.
+-- Load the imported entr table and it's children into the public
+-- schema tables.  The imported entr rows are expected to start with
+-- id=1.  We adjust the id's before inserting them to values that are
+-- greater then the largest id already in public.entr.  The foreign
+-- key references to entr.id in the children tables are adjusted the
+-- same way.  We also change the value of 'entr.src' to '.newid' from
+-- the imp.kwsrc table during the load which assigns them to the public
+-- corpus corresponding to the one they belonged to in "imp".
 
   -- Set the value of script variable 'maxid' to the value of the
   -- largest entr.id in use in the main public.entr table.
 SELECT COALESCE(MAX(id),0) AS maxid FROM public.entr \gset
 
-INSERT INTO entr    (SELECT   id+:maxid,:src,stat,seq,dfrm,unap,srcnote,notes FROM imp.entr);
+INSERT INTO public.entr
+                    (SELECT e.id+:maxid,s.newid,stat,
+                            e.seq,dfrm,unap,srcnote,e.notes
+                     FROM imp.entr e JOIN imp.kwsrc s ON s.id=e.src);
+
 INSERT INTO rdng    (SELECT entr+:maxid,rdng,txt                     FROM imp.rdng);
 INSERT INTO kanj    (SELECT entr+:maxid,kanj,txt                     FROM imp.kanj);
 INSERT INTO sens    (SELECT entr+:maxid,sens,notes                   FROM imp.sens);
@@ -67,13 +84,13 @@ INSERT INTO xresolv (SELECT entr+:maxid,sens,ord,typ,rtxt,ktxt,tsens,vsrc,vseq,n
 INSERT INTO chr     (SELECT entr+:maxid,chr,bushu,strokes,freq,grade,jlpt FROM imp.chr);
 INSERT INTO cinf    (SELECT entr+:maxid,kw,value,mctype              FROM imp.cinf);
 INSERT INTO kresolv (SELECT entr+:maxid,kw,value                     FROM imp.kresolv);
-COMMIT;
 
   -- Update the sequences which is necessary after any bulk load.
   -- Changes to sequences are not transactional so no point in doing
   -- before the commit.
 SELECT setval('entr_id_seq',  (SELECT max(id) FROM entr));
 
-  -- The following will delete the contents of all imp.* tables due
-  -- the the cascade delete rules on the foreign keys.
-DELETE FROM imp.kwsrc;
+  -- Since we create the schema anew for each import no need to keep
+  -- it around.
+DROP SCHEMA imp CASCADE;
+COMMIT;

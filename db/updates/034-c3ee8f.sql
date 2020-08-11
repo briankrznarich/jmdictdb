@@ -31,3 +31,14 @@ ALTER TABLE kwsrc ALTER COLUMN srct SET NOT NULL;
 ALTER TABLE kwsrc DROP COLUMN _x;
 
 COMMIT;
+
+-- Delete the "imp" schema if present.  It is used when loading
+-- entries in bulk but is now created on demand by the import scripts.
+
+\echo Previous changes have been committed.  If the following command fails
+\echo due to permissions, it can be copied and run by hand as the postgresql
+\echo super-user, e.g.:
+\echo   psql -U postgres -d [database-name] -c 'DROP SCHEMA IF EXISTS imp'
+\echo Note that a NOTICE message that the schema does not exist is not a
+\echo failure.
+DROP SCHEMA IF EXISTS imp;

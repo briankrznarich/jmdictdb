@@ -15,7 +15,7 @@ class Test_parse_jmdict (unittest.TestCase):
           # ElementTree which needs utf-8.)
         _.getxml = lambda testid: getxml ('data/jmxml/parse_entry.xml',
                                           testid, 'b')
-        _.jmparser = jmxml.Jmparser (KW, "jmdict")
+        _.jmparser = jmxml.Jmparser (KW, "jmdict", srcids=False)
 
     def test_3000010(_): dotest (_,'3000010')
     def test_3000020(_): dotest (_,'3000020')
@@ -58,7 +58,6 @@ class Test_parse_jmdict (unittest.TestCase):
             _.assertRegex (cm.output[0],
               ".*Seq 4001020: Sense 1 has no glosses")
 
-
 class Test_jmnedict (unittest.TestCase):
     def setUp (_):
         global KW
@@ -67,7 +66,7 @@ class Test_jmnedict (unittest.TestCase):
           # Re mode='b', see comment in Test_parse_jmdict() above.
         _.getxml = lambda testid: getxml ('data/jmxml/jmnedict.xml',
                                           testid, 'b')
-        _.jmparser = jmxml.Jmparser (KW, "jmnedict")
+        _.jmparser = jmxml.Jmparser (KW, "jmnedict", srcids=False)
 
     def test_01_5000000(_): dotest (_,'5000000')
     def test_01_5001081(_): dotest (_,'5001081')
@@ -84,10 +83,10 @@ class Test_jmnedict (unittest.TestCase):
 
 def dotest (_, testid):
         xml, exptxt = _.getxml (testid)
-        entrs = _.jmparser.parse_entry (xml)
+        got = _.jmparser.parse_entry (xml)
         expect = eval (exptxt, globals())
-        _.assertEqual (entrs, expect)
-        return entrs, expect
+        _.assertEqual (expect, got)
+        return got, expect
 
 def getxml (fname, testid, mode=''):
         # Read and return test data from a file.  The file may contain
