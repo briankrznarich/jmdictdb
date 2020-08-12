@@ -234,7 +234,7 @@ class Jmparser (object):
         self.seq = entr.seq = seq
 
         id = elem.get('id')
-        if id is not None: entr.id = int (id)
+        if id is not None: entr.id = entr.idx = int (id)
         dfrm = elem.get('dfrm')
         if dfrm is not None: entr.dfrm = int (dfrm)
         stat = elem.get('status') or jdb.KW.STAT['A'].id
@@ -295,7 +295,7 @@ class Jmparser (object):
               # This number will be one greater than the largest number
               # already assigned.  Note that these id values will be adjusted
               # when the data is imported into a database.
-            srcids = [t[1] for c,t in self.corpora.values()]
+            srcids = [srcid for corp,(ctype,srcid) in self.corpora.items()]
             srcid = 1 + max (srcids or [0])
             self.corpora[corp] = (corpt, srcid)
         return self.corpora[corp][1]  # Return the assigned corpus id number.

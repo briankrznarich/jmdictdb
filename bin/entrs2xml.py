@@ -81,7 +81,7 @@ def main():
 
         if root and '-' in rootpart:
             outf.writelines ('</%s>\n' % root)
-        #if not Debug: sys.stderr.write ('\n')
+        if args.progress: sys.stderr.write ('\n')
         print ("Wrote %d entries" % done, file=sys.stderr)
 
 def read_entries (cur, sql_base, seqlist, count, blksize):

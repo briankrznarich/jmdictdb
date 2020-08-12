@@ -63,6 +63,7 @@ def main():
                   # top-level element in the xml file, typically either
                   # "JMdict" or "JMnedict".
                 pass
+        if args.progress: print()
         pgi.wrcorpora (jmparser.corpora, defcorp, xmltype, tmpfiles)
         pgi.finalize (tmpfiles, args.output, not args.keep)
         rpt = report_counts (counts, jmparser.corpora, defcorp)
