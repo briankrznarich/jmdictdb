@@ -66,7 +66,7 @@ def initialize (tmpdir):
         data = (
           ('kwsrc',  ['id','kw','descr','dt','notes','seq','sinc','smin','smax','srct']),
           ('kwgrp',  ['id','kw','descr']),
-          ('entr',   ['id','src','stat','seq','dfrm','unap','srcnote','notes']),
+          ('entr',   ['id','src','stat','seq','dfrm','unap','srcnote','notes','idx']),
           ('kanj',   ['entr','kanj','txt']),
           ('kinf',   ['entr','kanj','ord','kw']),
           ('rdng',   ['entr','rdng','txt']),

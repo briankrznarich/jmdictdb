@@ -35,7 +35,8 @@ CREATE TABLE entr (
       REFERENCES entr(id) ON DELETE CASCADE ON UPDATE CASCADE,
     unap BOOLEAN NOT NULL,
     srcnote VARCHAR(255) NULL,
-    notes TEXT);
+    notes TEXT,
+    idx INT);
 CREATE INDEX ON entr(seq);
 CREATE INDEX ON entr(stat) WHERE stat!=2;
 CREATE INDEX ON entr(dfrm) WHERE dfrm IS NOT NULL;

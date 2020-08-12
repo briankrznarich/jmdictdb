@@ -5,20 +5,20 @@ COPY kwsrc(id,kw,descr,dt,notes,seq,sinc,smin,smax,srct) FROM STDIN;
 1	jmdict	\N	\N	\N	seq_jmdict	\N	\N	\N	jmdict
 \.
 
-COPY entr(id,src,stat,seq,dfrm,unap,srcnote,notes) FROM STDIN;
-1	1	2	3000010	\N	False	\N	\N
-2	1	2	3000020	\N	False	\N	\N
-3	1	2	3000030	\N	False	\N	\N
-4	1	2	3000040	\N	False	\N	\N
-5	1	2	3000050	\N	False	\N	\N
-6	1	2	3000060	\N	False	\N	\N
-7	1	2	3000070	\N	False	\N	\N
-8	1	2	3000080	\N	False	\N	\N
-9	1	2	3000090	\N	False	\N	\N
-10	1	2	3000100	\N	False	\N	\N
-11	1	2	3000110	\N	False	\N	\N
-12	1	2	3000120	\N	False	\N	\N
-13	1	2	3000130	\N	False	\N	\N
+COPY entr(id,src,stat,seq,dfrm,unap,srcnote,notes,idx) FROM STDIN;
+1	1	2	3000010	\N	False	\N	\N	\N
+2	1	2	3000020	\N	False	\N	\N	\N
+3	1	2	3000030	\N	False	\N	\N	\N
+4	1	2	3000040	\N	False	\N	\N	\N
+5	1	2	3000050	\N	False	\N	\N	\N
+6	1	2	3000060	\N	False	\N	\N	\N
+7	1	2	3000070	\N	False	\N	\N	\N
+8	1	2	3000080	\N	False	\N	\N	\N
+9	1	2	3000090	\N	False	\N	\N	\N
+10	1	2	3000100	\N	False	\N	\N	\N
+11	1	2	3000110	\N	False	\N	\N	\N
+12	1	2	3000120	\N	False	\N	\N	\N
+13	1	2	3000130	\N	False	\N	\N	\N
 \.
 
 COPY kanj(entr,kanj,txt) FROM STDIN;

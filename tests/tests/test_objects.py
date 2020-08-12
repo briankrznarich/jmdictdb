@@ -84,7 +84,7 @@ class Test_DbRow_compare (unittest.TestCase):
 
 class Test_Attrs (unittest.TestCase):
     # Check the jmdictdb objects for the expected attribute sets.
-    def test000010(_): attrchk (_, Entr(),    ['id','src','stat','seq','dfrm','unap','srcnote','notes',
+    def test000010(_): attrchk (_, Entr(),    ['id','src','stat','seq','dfrm','unap','srcnote','notes','idx',
                                                '_kanj','_rdng','_sens','_hist','_snd','_grp','chr','_krslv'])
     def test000020(_): attrchk (_, Rdng(),    ['entr','rdng','txt','_inf','_freq','_restr','_snd'])
     def test000030(_): attrchk (_, Kanj(),    ['entr','kanj','txt','_inf','_freq'])

@@ -25,11 +25,11 @@ from jmdictdb.db import DbRow, Obj
 
 class Entr (DbRow):
     def __init__ (s, id=None, src=None, stat=None, seq=None, dfrm=None,
-                     unap=None, srcnote=None, notes=None,
+                     unap=None, srcnote=None, notes=None, idx=None,
                      _kanj=None, _rdng=None, _sens=None, _hist=None,
                      _snd=None, _grp=None, chr=None, _krslv=None):
-        DbRow.__init__(s, ( id,  src,  stat,  seq,  dfrm,  unap,  srcnote,  notes),
-                          ('id','src','stat','seq','dfrm','unap','srcnote','notes'))
+        DbRow.__init__(s, ( id,  src,  stat,  seq,  dfrm,  unap,  srcnote,  notes,  idx),
+                          ('id','src','stat','seq','dfrm','unap','srcnote','notes','idx'))
         s._kanj = _kanj or []
         s._rdng = _rdng or []
         s._sens = _sens or []
