@@ -5,37 +5,44 @@
 # Read entries from database and write to XML file.  Run with
 # --help option for details.
 
-  #FIXME: The --compat=jmex option is intended for serializing an
-  # entire JMdictDB database but is not fully useful because the
-  # required --corpus/-s option restricts output to a subset of
-  # entries, a restriction imposed by jmxml.Jmparser.
-
-import sys, os, re, time, pdb
+import sys, os, collections, re, time, pdb
 _=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
 from jmdictdb import logger; from jmdictdb.logger import L
 from jmdictdb import jdb, fmt, fmtxml
 from jmdictdb.pylib import progress_bar
 
+# Logging calls:
+#  Level     Source
+#   8       read_entries
+#   9       read_entries.seqlist.sql
+#   9       read_entries.all.sql
+#   D,I	    (root)
+
 def main():
-        global Debug
         opts = parse_cmdline()
-        Debug = opts.debug
+        loglvl = logger.levelnum (opts.loglevel)
+        logfmt = "%(message)s" if loglvl > 10 else None
+        logger.config (level=loglvl, fmt=logfmt)
+
         cur = jdb.dbOpen (None, **jdb.parse_pguri(opts.dburi))
 
         seqlist = []
           # opts.seqnums and opts.seqfile won't both be true (although
           # both may be false); prohibited in parse_cmdline().
         if opts.seqnums: seqlist = opts.seqnums
-        if opts.seqfile:
-            seqlist = read_seqfile (opts.seqfile)
+        if opts.seqfile: seqlist = read_seqfile (opts.seqfile)
 
-          # Get compatibility info based on user request and corpus type.
-        corpid, dtd, compat, root, datestamp, appr, warn \
-            = compat_info (opts.corpus, opts.compat)
+        corps, ctypes = parse_corpopt (opts.corpus, opts.compat)
+        details = compat_details (opts.compat, ctypes)
+        compat, dtd, root, datestamp, appr, _, warn = details
         if warn and not opts.force: sys.exit (
-            "The --compat option you requested (%s) incompatible with "\
-            "the requested --corpus (%s).  To continue anyway, use the "\
-            "--force option." % (opts.compat, opts.corpus))
+            "The --compat option you requested:\n"
+            "  %s\n"
+            "is incompatible with the types of the copora you requested:\n"
+            "  %s\n"
+            "To continue anyway, please rerun with the --force option."\
+            % (opts.compat, ctypes))
+        L().info("Writing '%s' compatible XML" % compat)
 
           # 'dtd' was set above to the default dtd name.
         if dtd: dtd = '\x01' + dtd      # Mark as a dtd name (vs filename).
@@ -51,12 +58,13 @@ def main():
           # Get a sql statement that will select all the entries to be
           # extracted, or in the case of a seq# file, the pool of entries
           # containing the seq#s.
-        sql_base = select_entries (corpid, opts.begin, opts.count, appr)
+        sql_base = select_entries (corps, opts.begin, opts.count, appr)
 
           # Following sets 'pbar' to None if no progress indicator wanted,
           #  to "" if 'blocks (aka dots) wanted, or to a progress_bar object
           #  for "percent" (the default).
-        if Debug or not opts.progress or opts.progress=='none': pbar = None
+        if L().level<=10 or not opts.progress or opts.progress=='none':
+            pbar = None
         else: pbar = setup_progbar (cur, opts.progress, sql_base, seqlist)
 
           # Open the output file and also write the DTD to it if needed.
@@ -70,19 +78,19 @@ def main():
 
           # Read the entries in blocks of 'opts.blocksize', format them
           # as XML, and write them to the output file.
-        done = 0
+        done = 0; counters = collections.Counter()
         for entries,raw in read_entries (cur, sql_base, seqlist,
                                          opts.count, opts.blocksize):
             done += len(entries)
-            write_entrs (cur, outf, entries, raw, compat)
+            write_entrs (cur, outf, entries, raw, compat, counters)
             if pbar: pbar (done)
             elif pbar == '': sys.stderr.write ('.');  sys.stderr.flush()
-            if Debug: print ("%d entries written" % done, file=sys.stderr)
+            L().debug("main: block of %d entries written" % done)
 
         if root and '-' in rootpart:
             outf.writelines ('</%s>\n' % root)
-        if args.progress: sys.stderr.write ('\n')
-        print ("Wrote %d entries" % done, file=sys.stderr)
+        if opts.progress: sys.stderr.write ('\n')
+        L().info("Wrote %d entries %r" % (done, dict(counters)))
 
 def read_entries (cur, sql_base, seqlist, count, blksize):
     # This is a generator that reads and yields successive blocks of entries.
@@ -103,7 +111,8 @@ def read_entries (cur, sql_base, seqlist, count, blksize):
                       "WHERE seq IN %%s ORDER BY src,seq,id LIMIT %d"\
                       % (sql_base, blksize)
                 sql_args = [seqnums]
-                if Debug: print (sql, sql_args, file=sys.stderr)
+                L('read_entries.seqlist.sql').log(8,"sql: %s" % sql)
+                L('read_entries.seqlist.sql').log(8,"args: %s" % sql_args)
                 start = time.time()
                 tmptbl = jdb.entrFind (cur, sql, sql_args)
             else:
@@ -116,6 +125,8 @@ def read_entries (cur, sql_base, seqlist, count, blksize):
                   #           OR e.src>lastsrc)
                   # and (lastsrc, lastseq, lastid) are from the last entry in
                   # the last block read.
+                L('read_entries.start').log(9,"Reading %d entries after src=%s,"
+                            " seq=%s, id=%s" % (blksize,lastsrc,lastseq,lastid))
                 sql = "SELECT id FROM (%s) AS e "\
                       "WHERE ((e.src=%%s AND e.seq=%%s AND e.id>=%%s) "\
                               "OR (e.src=%%s AND e.seq>%%s) "\
@@ -129,16 +140,17 @@ def read_entries (cur, sql_base, seqlist, count, blksize):
                   # Create a temporary table of id numbers and give that to
                   # jdb.entrList().  This is an order of magnitude faster than
                   # giving the above sql directly to entrList().
-                if Debug: print (sql, sql_args, file=sys.stderr)
+                L('read_entries.all.sql').log(8,"sql: %s" % sql)
+                L('read_entries.all.sql').log(8,"args: %s" % sql_args)
                 start = time.time()
                 tmptbl = jdb.entrFind (cur, sql, sql_args)
             mid = time.time()
             entrs, raw = jdb.entrList (cur, tmptbl, None,
                                        ord="src,seq,id", ret_tuple=True)
             end = time.time()
-            if Debug: print ("read %d entries" % len(entrs), file=sys.stderr)
-            if Debug: print ("Time: %s (entrFind), %s (entrList)"
-                             % (mid-start, end-mid), file=sys.stderr)
+            L('read_entries').log(9,"Read %d entries" % len(entrs))
+            L('read_entries').log(9,"Time: %s (entrFind), %s (entrList)"
+                      % (mid-start, end-mid))
             if not entrs : break
             yield entrs, raw
               # Update the 'last*' variables for the next time through
@@ -147,7 +159,7 @@ def read_entries (cur, sql_base, seqlist, count, blksize):
                 = entrs[-1].src, entrs[-1].seq, entrs[-1].id + 1
             if count is not None: count -= blksize
 
-def select_entries (corpid, begin, count, appr):
+def select_entries (corpids, begin, count, appr):
     # Based on the entry selection criteria given on the command line
     # (and available here in 'opts'), create a SQL statement that will
     # select the entire set of entries that we will extract from the
@@ -156,7 +168,9 @@ def select_entries (corpid, begin, count, appr):
     # Ordering and retrieving these entries in blocks will be done
     # later using the sql generated here as a subselect.
 
-        whr_terms = ["src=%s" % corpid]
+        if not corpids: whr_terms = ["TRUE"]
+        else: whr_terms = ["src IN (%s)"
+                           % (",".join([str(x) for x in corpids]))]
         if appr:
             whr_terms.append ("NOT unap")
             whr_terms.append ("stat=%s" % str(jdb.KW.STAT['A'].id))
@@ -172,18 +186,51 @@ def select_entries (corpid, begin, count, appr):
             sql_base += " LIMIT %s" % int (count)
         return sql_base
 
-def write_entrs (cur, outf, entrs, raw, compat, corpora=set()):
+def parse_corpopt (corpspec, compat):
+        '''-------------------------------------------------------------------
+        corpspec -- (str) A comma separated list to corpus names or id
+          numbers to include in the output.  If prefixed with a "!" the
+          output will include entries from corpora other than the listed
+          ones.  If nil, default value is determined by 'compat'.
+        compat -- (str) Compatibility name.  Must be one of: "jmdict",
+          "jmnedict", "jmex" or nil.  Denotes the form of the output
+          XML and DTD.
+        If 'corpspec' is nil and 'compat' is "jmex", all corpora will be
+        included.  If 'compat' is other than "jmex", only the corpus with
+        the same name as 'compat' will be output.
+        If both 'corpspec' and 'compat' are nil a ValueError is raised.
+        -------------------------------------------------------------------'''
+
+        if not corpspec and not compat:
+            raise ValueError ("'corpspec' and 'compat' both nil.")
+        exclude = False
+        if not corpspec:
+            if compat != 'jmex': corpspec = compat
+            else: corpspec, exclude = "!", True    # All corpora.
+        if corpspec.startswith('!'): exclude, corpspec = True, corpspec[1:]
+        corpspecs = corpspec.split (',')
+        corps = set();  nfg = set()
+        for corp in corpspecs:
+            if not corp: continue  # Ignore blank resulting from .split().
+            try: corp = int (corp)
+            except ValueError: pass
+            try: corpid = jdb.KW.SRC[corp].id
+            except KeyError:
+                nfg.add (corp);  continue
+            corps.add (corpid)
+        if nfg: raise KeyError ("Non-existent corpora: %s" % ", ".join(nfg))
+        if exclude: corps = {x.id for x in jdb.KW.recs('SRC')} - corps
+        ctypes = {jdb.KW.SRC[x].srct for x in corps}
+        return corps, ctypes
+
+def write_entrs (cur, outf, entrs, raw, compat, counters=None):
           # To format xrefs in xml, they must be augmented so that the
           # the target reading and kanji text will be available.
         jdb.augment_xrefs (cur, raw['xref'])
           # Generate xml for each entry and write it to the output file.
         start = time.time()
         for e in entrs:
-            if not compat:
-                if 0 and e.src not in corpora:  #FIXME: temporarily disabled
-                    txt = '\n'.join (fmtxml.corpus ([e.src]))
-                    outf.write (txt + "\n")
-                    corpora.add (e.src)
+            if not compat or compat == 'jmex':
                 grp = getattr (e, '_grp', [])
                 for g in grp:
                     gob = jdb.KW.GRP[g.kw]
@@ -193,7 +240,8 @@ def write_entrs (cur, outf, entrs, raw, compat, corpora=set()):
                         outf.write (txt + "\n")
             txt = fmtxml.entr (e, compat=compat, genhists=True)
             outf.write (txt + "\n")
-        if Debug: print ("Time: %s (fmt)"%(time.time()-start),file=sys.stderr)
+            if counters is not None: counters[jdb.KW.SRC[e.src].srct] += 1
+        L().debug ("write_entries: time: %s (fmt)" % (time.time()-start))
 
 def open_output (filename, dtd, root, datestamp=True):
         '''-------------------------------------------------------------------
@@ -253,42 +301,40 @@ def read_seqfile (seqfilename):
         if f != sys.stdin: f.close()
         return seqlist
 
-def compat_info (corpus, compat):
+def compat_details (compat, ctypes):
+        '''-------------------------------------------------------------------
+        Returns a 7-item list with details for compatibility mode 'compat'
+        or details for a recommented mode based on 'ctypes' (a set of corpus
+        types) if 'compat' is None.  The last item indicates if the selected
+        compat mode if compatible with 'ctypes' ("") or not ("warn").
+        -------------------------------------------------------------------'''
         data = {
+          # Keys: compat mode.
           # Values:
           #   0 dtd name:  Name of the DTD template file to use (must be
           #       a name recognized by fmtxml.get_dtd().
-          #   1 fmtxml-compat:  Value of 'compat' to pass to fmtxml.entr().
-          #   2 root:  Text to use in the XML root element.
-          #   3 date: (bool) Include a "created" datestamp in the XML.
-          #   4 appr: (bool) Included only active approved entries.
-          #   5 srcts: List of compatible corpus types.
+          #   1 root:  Text to use in the XML root element.
+          #   2 date: (bool) Include a "created" datestamp in the XML.
+          #   3 appr: (bool) Included only active approved entries.
+          #   4 srcts: Set of compatible corpus types.
           #
-          #    dtd name  fmtxml-compat  root       date  appr   srct's
-          #    0           1            2          3     4      5
-            'jmdict':
-              ["jmdict",   'jmdict',    'JMdict',  True, True, ['jmdict']],
-            'jmnedict':
-              ["jmnedict", 'jmnedict',  'JMnedict',True, True, ['jmnedict']],
-            'jmex':
-              ["jmex",      None,       'JMex',    False,False,['jmdict',
-                                                                'jmnedict',
-                                                                'kanjidic',
-                                                                'examples']],
-            }
+          #              dtd name    root       date  appr   srct's
+          #              0           1          2     3      4
+            'jmdict':   ("jmdict",   'JMdict',  True, True, {'jmdict'}),
+            'jmnedict': ("jmnedict", 'JMnedict',True, True, {'jmnedict'}),
+            'jmex':     ("jmex",     'JMex',    False,False,{'jmdict',
+                                                             'jmnedict',
+                                                             'kanjidic',
+                                                             'examples'}), }
           # Note: when adding/changing/deleting compat entries above, be
           # sure to reflect any key changes in the --compat option choices
           # in parse_cmdline().
           # Note: dtd name of "None" will suppress dtd like --no-dtd.
 
-        corpid = corpus
-        if corpid.isdigit(): corpid = int (corpid)
-        corpid = jdb.KW.SRC[corpid].id
-        srct = jdb.KW.SRC[corpid].srct
-        srctkw = jdb.KW.SRCT[srct].kw
-        if not compat: compat = srctkw
-        warn = srctkw not in data[compat][5]
-        return [corpid] + data[compat][:5] + [warn]
+        if compat: data = {compat: data[compat]}
+        for c,(_,_,_,_,srct) in data.items():
+            if not (ctypes - srct): return (c,) + data[c] + ('',)
+        return (compat,) + data[compat] + ('warn',)
 
 def setup_progbar (cur, prog_type, sql_base, seqlist):
     # Return a value that will be used when displaying a progress indicator:
@@ -350,10 +396,9 @@ def parse_cmdline ():
                 "Sequence numbers may be given on the command line "
                 "or in the file specified by --seqfile but not both.")
 
-        p.add_argument ("-s", "--corpus", required=True,
+        p.add_argument ("-s", "--corpus",
             help="Extract entries belonging to this corpus.  May be "
-                "given as either a corpus name or id number.  This "
-                "option is REQUIRED.")
+                "given as either a corpus name or id number.")
 
         p.add_argument ("-o", "--output", default=None,
             help="Filename to write XML to.  If not given, output is "
@@ -458,16 +503,22 @@ def parse_cmdline ():
                  may exist."""\
                 .replace("\n"+(" "*16),''))  # See Note-1 below.
 
-        p.add_argument ("-d", "--dburi", default="jmdict",
+        p.add_argument ("-d", "--dburi", default='jmdict',
             help="URI of the database to use.  If the database is local "
                 "(on the same machine) and no additional connection "
                 "information (username, etc) is needed, this can be "
                 "simply the database name.  Default is \"jmdict\".")
 
-        p.add_argument ("-D", "--debug", default="0",
-            dest="debug", type=int,
-            help="If given a value greater than 0, print debugging information "
-                "while executing.  See source code for details.")
+        p.add_argument ("-L", "--loglevel", default='info',
+            help="""Determines logging level with lower numerical values
+                 producing more details.  Also accepts keywords.
+                   warn (30) -- Show only warning and error messages.
+                   info (20) -- Show info and summary messages in addition
+                     to the above.  This is the default level.
+                   debug (10) -- Debugging messages in addition to the above.
+                   9, 8 -- Yet more debuggign messages including SQL used
+                     to read entries from the database."""\
+                .replace("\n"+(" "*16),''))  # See Note-1 below.)
 
           # Note-1: Help text in triple quotes contains the embedded
           # leading space characters.  These are removed with the
