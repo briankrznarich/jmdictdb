@@ -12,13 +12,39 @@ import sys, logging, traceback, os, datetime, re, pdb
   #   L('logger_name').info("log message...")
 L = logging.getLogger;
 
-  # Define an aditional logging level for summary messages: informational
-  # messages that are for providing top-level summary of results and
-  # which should be shown even when info-level messages aren't.
-SUMMARY = 36
+# The following changes to the logging module's behavior will be available
+# to any program importing this module; calling config() is not necessary.
 
-def log_config (level="warning", filename=None, ts=None, filters=None):
-        """
+  # Add a new SUMMARY level between WARNING and ERROR.  This is for high
+  # level info messages that summarize successful results such as a message
+  # that a total of 'n' items were processed.
+SUMMARY = 36
+logging.addLevelName (SUMMARY, 'SUMMARY')
+def sum (self, msg, *args, **kwargs):
+        self.log (SUMMARY, msg, *args, **kwargs)
+logging.Logger.sum = sum
+  # Replace the word "CRITICAL" when outputting the logging level in text
+  # form.  The logging module already recognizes "FATAL" in various input
+  # contexts and there is a logging/logger.fatal() method.
+  #HACK: we're obviously mucking with a logging private variable here.
+logging._levelToName[50] = 'FATAL'
+
+  # Without asking for anything different the logging module's default
+  # message format should simply be the message.
+logging.BASIC_FORMAT='%(message)s'
+  # Similarly, the root logger's name should be nil.
+logging.root.name = ''
+
+def setLevel (level):  # Set overall logging level.
+        logging.root.setLevel (levelnum (level))
+          # If no handlers have been set (the case if no logging
+          # configuration has been done), the root logger's lastResort
+          # handler will handle the message and it too has a level.
+        if logging.lastResort:
+            logging.lastResort.setLevel (levelnum (level))
+
+def config (level="warning", filename=None, ts=None, fmt=None, filters=None):
+        '''------------------------------------------------------------------
         level -- One of: "critical", "error", "warning", "info", "debug".
         filename -- If not given or None, logging messages will be written
           to sys.stderr.  Otherwise the name of a file to which the logging
@@ -29,7 +55,9 @@ def log_config (level="warning", filename=None, ts=None, filters=None):
           logging messages.  If None the timestamp will be absent if the
           'filename' parameter is false (ie, output to stderr) and present
           otherwise (output to a file).  If 'ts' is not None then timestamp
-          will be present if true, absent if false.
+          will be present if true, absent if false.  Only effective when
+          the default format is used (i.e., fmt=None).
+        fmt -- Use an alternate format instead of the default.
         filters -- A list of strings that specify logging messages to
           output.  Each consists of an initial (case-insensitive) letter
           from the set ('s', 'w', 'i', 'd'} (corresponding to the logging
@@ -58,20 +86,8 @@ def log_config (level="warning", filename=None, ts=None, filters=None):
           Note that if the order of the two filters were reversed, the
           forth message would be output because the 'Dyes$' filter would
           match before the '!D^xx' filter could reject it.
-        """
+        -------------------------------------------------------------------'''
 
-          # Replace the Python "logging" module's CRITICAL level with a more
-          # meaningful (to us) value of FATAL.  The numerical level remains
-          # the same (50) as does the function name logging.critical().  We
-          # are interested only in changing the output messages.
-        logging.addLevelName (50, 'FATAL')
-          # The following might be more interoperable with other libraries'
-          # use of logging but accesses a logging module "private" variable.
-        #logging._levelToName[50] = 'FATAL'  # Replaces 'CRITICAL'.
-          # Add a new SUMMARY level between WARNING and ERROR.  This
-          # is for high level info messages tha summarize succesful
-          # results such as a message that 'n' items were processed.
-        logging.addLevelName (SUMMARY, 'SUMMARY')
           # Remove any existing handlers.  This allows us to reconfigure
           # logging even if caller previously called basicConfig().
         for handler in logging.root.handlers[:]:
@@ -98,10 +114,12 @@ def log_config (level="warning", filename=None, ts=None, filters=None):
         if ts is None: want_ts = bool (filename)
         else: want_ts = ts
         tsfmt = '%(asctime)s-%(process)d ' if want_ts else ''
+        if fmt: format = fmt
+        else: format = tsfmt + '%(levelname)1.1s %(name)s: %(message)s'
           # Now do our configuration.
         logging.basicConfig (
             level=levelnum(level),
-            format=tsfmt + '%(levelname)1.1s %(name)s: %(message)s',
+            format=format,
             datefmt="%y%m%d-%H%M%S",
               # When both "stream" and "filename" are present and non-None,
               # "filename" takes precedence according to
@@ -125,6 +143,8 @@ def log_config (level="warning", filename=None, ts=None, filters=None):
                   # To allow debug messages to be filtered the logger's
                   # level has to allow them too.
                 L().setLevel(1)
+
+log_config = config     # For back comptibility.
 
 def levelnum( level ):
         """
@@ -183,4 +203,4 @@ def handler( ex_cls, ex, tb ):
 
 def enable(): sys.excepthook = handler
 
-__all__ = ['log_config', 'L']
+__all__ = ['config', 'log_config', 'L']

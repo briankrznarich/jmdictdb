@@ -9,6 +9,11 @@ from jmdictdb import logger; from jmdictdb.logger import L
 from jmdictdb.objects import *
 from jmdictdb.restr import *
 
+# Logging calls:
+#   Level    Source
+#    5      jdb.entr_data.db.sql
+#    5      jdb.entr_data.db.time
+
   # Get the database version id number(s) required by this version
   # of the JMdictDB API.  When dbOpen() is called it will check that
   # all version id's in the DBVERS list are present in database table
@@ -352,17 +357,17 @@ def entr_data (dbh, crit, args=None, ord=None, tables=None):
             else: assert False   # this should never happen.
             if tbl not in t: t[tbl] = []
             try:
-                L('lib.jdb.entr_data.db.sql').debug("sql: "+sql)
-                L('lib.jdb.entr_data.db.sql').debug("args: %r"%(args,))
+                L('jdb.entr_data.db.sql').log(5,"sql: "+sql)
+                L('jdb.entr_data.db.sql').log(5,"args: %r"%(args,))
                 t[tbl].extend (dbread (dbh, sql, args, cls=cls))
-                L('lib.jdb.entr_data.db.time').debug("table %s read time: %s"%(tbl,time()-time_last))
+                L('jdb.entr_data.db.time').log(5,"table %s read time: %s"%(tbl,time()-time_last))
                 time_last = time()
             except (psycopg2.ProgrammingError) as e:
-                L('lib.jdb.entr_data').error(str(e))
-                L('lib.jdb.entr_data.db.sql').error("  sql: "+sql)
-                L('lib.jdb.entr_data.db.sql').error("  args: %r"%(args,))
+                L('jdb.entr_data').error(str(e))
+                L('jdb.entr_data.db.sql').error("  sql: "+sql)
+                L('jdb.entr_data.db.sql').error("  args: %r"%(args,))
                 dbh.connection.rollback()
-        L('lib.jdb.entr_data.db.time').debug("total time: %s"%(time()-time_start))
+        L('jdb.entr_data.db.time').log(5,"total time: %s"%(time()-time_start))
         return t
 
 def entr_bld (t):
