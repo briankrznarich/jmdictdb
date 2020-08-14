@@ -283,7 +283,7 @@ CREATE TABLE chr(
     grade SMALLINT,
     jlpt SMALLINT,
     radname VARCHAR(50));
-CREATE UNIQUE INDEX ON chr(chr);
+CREATE UNIQUE INDEX ON chr(entr,chr);  -- Only one chr item per entr.
 -- XX ALTER TABLE chr ADD CONSTRAINT chr_rad_fkey FOREIGN KEY (bushu) REFERENCES rad(num);
 
 CREATE TABLE cinf(

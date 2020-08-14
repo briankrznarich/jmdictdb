@@ -3354,9 +3354,8 @@ COPY public.db (id, active, ts) FROM stdin;
 16133514	f	2020-08-02 13:03:25.646392
 11173099	f	2020-08-02 13:03:35.893273
 273560	f	2020-08-02 13:03:51.029015
+9415724	t	2020-08-13 19:14:47.626189
 12840591	f	2020-08-06 17:50:01.913543
-3317668	t	2020-08-11 20:14:20.733264
-15308340	f	2020-08-11 14:03:08.621505
 \.
 
 
@@ -6040,7 +6039,7 @@ COPY public.stagr (entr, sens, rdng) FROM stdin;
 --
 
 COPY public.testsrc (filename, method, hash) FROM stdin;
-/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	e355d44921564fc125ba9af2b2388899d44baeb2
+/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	dd94ac7b0af4ac13158e4964f53c97338c08d41b
 \.
 
 
@@ -6688,10 +6687,10 @@ ALTER TABLE ONLY public.xresolv
 
 
 --
--- Name: chr_chr_idx; Type: INDEX; Schema: public; Owner: jmdictdb
+-- Name: chr_entr_chr_idx; Type: INDEX; Schema: public; Owner: jmdictdb
 --
 
-CREATE UNIQUE INDEX chr_chr_idx ON public.chr USING btree (chr);
+CREATE UNIQUE INDEX chr_entr_chr_idx ON public.chr USING btree (entr, chr);
 
 
 --
