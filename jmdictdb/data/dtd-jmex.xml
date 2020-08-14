@@ -10,7 +10,7 @@
         -->
 <!ATTLIST entry id CDATA #IMPLIED>
 <!ATTLIST entry stat CDATA #IMPLIED>
-<!ATTLIST entry unap CDATA #IMPLIED>
+<!ATTLIST entry unap CDATA #IMPLIED><!-- FIXME: Actually a boolean -->
 <!ATTLIST entry dfrm CDATA #IMPLIED>
 <!ATTLIST entry corpus CDATA #IMPLIED>
 <!ATTLIST entry type CDATA #IMPLIED>

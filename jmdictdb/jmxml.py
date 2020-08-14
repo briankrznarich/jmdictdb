@@ -237,12 +237,12 @@ class Jmparser (object):
         if id is not None: entr.id = entr.idx = int (id)
         dfrm = elem.get('dfrm')
         if dfrm is not None: entr.dfrm = int (dfrm)
-        stat = elem.get('status') or jdb.KW.STAT['A'].id
+        stat = elem.get('stat') or jdb.KW.STAT['A'].id
         try: stat = KW.STAT[stat].id
         except KeyError:
             raise ParseError ("Invalid <status> element value, '%s'" % stat)
         entr.stat = stat
-        entr.unap = elem.get('appr') == 'n'
+        entr.unap = xmlbool (elem.get('unap'))
           # Get the corpus name and type.  These will have non-None values
           # only for "jmex" XML.
         corp, corpt = elem.get('corpus'), elem.get('type')
@@ -521,27 +521,26 @@ class Jmparser (object):
             if not hasattr (sens, '_xrslv'): sens._xrslv = []
             sens._xrslv.extend (xrefs)
 
-    def do_hist (self, elems, entr):
+    def do_hist (self, elems, entr):  # Process <audit> element.
         KW = self.KW
         hists = []
         for elem in elems:
-            x = elem.findtext ("upd_date")
-            dt = datetime.datetime (*([int(z) for z in x.split('-')]+[0, 0, 0]))
-            o = jdb.Hist (dt=dt)
-            stat = elem.findtext ("upd_stat")
-            unap = elem.find ("upd_unap")
-            notes = elem.findtext ("upd_detl")
-            name = elem.findtext ("upd_name")
-            email = elem.findtext ("upd_email")
-            diff = elem.findtext ("upd_diff")
-            refs = elem.findtext ("upd_refs")
-            o.stat = KW.STAT[stat].id if stat else KW.STAT['A'].id
-            o.unap = unap is not None
-            o.name = name if name else None
-            o.email = email if email else None
-            o.notes = notes if notes else None
-            o.refs = refs if refs else None
-            o.diff = diff if diff else None
+            dt = elem.get ('time')
+              # The 'time" attribute is supposed to be formatted as
+              # "YYYY-MM-DD hh:mm:ss" but the following will work with
+              # date only, and/or time with fractional seconds.
+            dtparts = (re.split (r'[ :.-]', dt)[:6] + [0,0,0])[:6]
+            dt = datetime.datetime (*[int(x) for x in dtparts])
+            stat = elem.get ('stat')
+            stat = KW.STAT[stat].id if stat else KW.STAT['A'].id
+            unap = xmlbool (elem.get ('unap'))
+            o = jdb.Hist (dt=dt, stat=stat, unap=unap)
+            o.userid = elem.findtext ("upd_uid") or None
+            o.name = elem.findtext ("upd_name") or None
+            o.email = elem.findtext ("upd_email") or None
+            o.notes = elem.findtext ("upd_detl") or None
+            o.refs = elem.findtext ("upd_refs") or None
+            o.diff = elem.findtext ("upd_diff") or None
             hists.append (o)
         if hists:
             if not hasattr (entr, '_hist'): entr._hist = []
@@ -994,6 +993,13 @@ def do_clip (elem):
                         leng=int(elem.findtext('ac_leng')),
                         trns=elem.findtext('ac_trns'),
                         notes=elem.findtext('ac_notes'))
+
+def xmlbool (value):
+        if not value: return False
+        v = value.lower()
+        try: return {"false":False, "0":False, "true":True, "1":True}[v]
+        except KeyError:
+            raise ValueError ("Illegal XML boolean value: %s" % value)
 
 def main():
         from jmdictdb import fmtxml

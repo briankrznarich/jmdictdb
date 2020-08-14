@@ -90,12 +90,6 @@ the edconf_realign tests.
 <r_ele>
 <reb>みなみじゅうじざ</reb>
 </r_ele>
-<info>
-<audit>
-<upd_date>2007-05-30</upd_date>
-<upd_detl>Entry created</upd_detl>
-</audit>
-</info>
 <sense>
 <pos>&n;</pos>
 <gloss>Southern Cross</gloss>
@@ -110,12 +104,6 @@ the edconf_realign tests.
 <r_ele>
 <reb>じゅうじざ</reb>
 </r_ele>
-<info>
-<audit>
-<upd_date>2007-05-30</upd_date>
-<upd_detl>Entry created</upd_detl>
-</audit>
-</info>
 <sense>
 <pos>&n;</pos>
 <xref>南十字座</xref>
