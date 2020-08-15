@@ -34,11 +34,11 @@ def main():
                     title=args.filename, size=total_items, offset=2)
 
         xmltype = None
-        if args.xml_type: xmltype = args.xml_type
+        if args.xml: xmltype = args.xml
         else: xmltype = jmxml.sniff( args.filename )
         if not xmltype:
-            sys.exit ("Unable to determine DTD type,"
-                      " please use the --xml-type option.")
+            sys.exit ("Unable to determine XML/DTD type,"
+                      " please use the --xml option.")
         defcorp = xmltype or args.corpus
 
         inpf = jmxml.JmdictFile( open( args.filename ))
@@ -113,10 +113,10 @@ def parse_cmdline():
                 "By convention this is usually given the suffix \".pgi\".  "
                 "If this option is not given output is written stdout.")
 
-        p.add_argument ("-x", "--xml-type",
-            help="XML DTD type: either: \"jmdict\" or \"jmnedict\".  "
-                "This is usually not needed since jmparse.py will "
-                "guess the type from the file contents.")
+        p.add_argument ("-x", "--xml",
+            help="XML DTD type: either: \"jmdict\", \"jmnedict\" or "
+                "\"jmex\".  This is usually not needed since jmparse.py "
+                "will guess the type from the file contents.")
 
         p.add_argument ("-s", "--corpus",
             help="""Corpus name to use for entries that don't specify
@@ -197,4 +197,3 @@ def parse_cmdline():
         return args
 
 if __name__ == '__main__': main()
-

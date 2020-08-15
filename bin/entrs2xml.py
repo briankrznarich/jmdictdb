@@ -32,11 +32,11 @@ def main():
         if opts.seqnums: seqlist = opts.seqnums
         if opts.seqfile: seqlist = read_seqfile (opts.seqfile)
 
-        corps, ctypes = parse_corpopt (opts.corpus, opts.compat)
-        details = compat_details (opts.compat, ctypes)
+        corps, ctypes = parse_corpopt (opts.corpus, opts.xml)
+        details = compat_details (opts.xml, ctypes)
         compat, dtd, root, datestamp, appr, _, warn = details
         if warn and not opts.force: sys.exit (
-            "The --compat option you requested:\n"
+            "The --xmlt option you requested:\n"
             "  %s\n"
             "is incompatible with the types of the copora you requested:\n"
             "  %s\n"
@@ -404,7 +404,8 @@ def parse_cmdline ():
             help="Filename to write XML to.  If not given, output is "
                 "to stdout.")
 
-        p.add_argument ("--compat", default=None,
+        p.add_argument ("-x", "--xml", "--compat", default=None,
+              # --compat is for backward compatibility.
             choices=['jmdict','jmnedict','jmex'],
             help="""Determines the format of the output XML and
                  the default DTD used. If not given, an appropriate
