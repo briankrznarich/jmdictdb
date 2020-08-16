@@ -127,7 +127,9 @@ class Clean (unittest.TestCase):
     def test_0030(_): _.assertEqual ('a b', submit.clean ('a b'))
     def test_0040(_): _.assertEqual ('a\nb', submit.clean ('a\nb'))
     def test_0050(_): _.assertEqual ('a\nb', submit.clean ('a\r\nb'))
-    def test_0060(_): _.assertEqual ('aa      b', submit.clean ('aa\tb'))
+      # Tests 0060: currently tab expansion was reverted hence the change here.
+    #def test_0060(_): _.assertEqual ('aa      b', submit.clean ('aa\tb'))
+    def test_0060(_): _.assertEqual ('aa\tb', submit.clean ('aa\tb'))
     def test_0070(_): _.assertEqual ('ab', submit.clean ('a\bb\x1f'))
 
        # When given 'source' and 'errs' arguments it will record the

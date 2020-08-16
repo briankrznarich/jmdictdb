@@ -628,7 +628,9 @@ def clean (s, source=None, errs=None):
           #  10 11 12 13 14 15 16 17 18  19    1a     1b 1c 1d 1e 1f
              N, N, N, N, N, N, N, N, N,  N,    N,     N, N, N, N, N ])
           # Expand any tabs to spaces.
-        cleaned = cleaned.expandtabs()
+          # [Postponing the tab expansion, needs more consideration
+          # and discussion.] 
+        #cleaned = cleaned.expandtabs()
         if source and cleaned != s:
             errs.append ("Illegal characters in '%s'" % source)
         return cleaned
