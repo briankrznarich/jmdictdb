@@ -6,7 +6,7 @@ import sys, cgi, re, datetime, copy
 try: import pkgpath.py  # Make jmdictdb package available on sys.path.
 except ImportError: pass
 from jmdictdb import logger; from jmdictdb.logger import L
-from jmdictdb import jdb, jmcgi, jelparse, jellex, serialize, fmt
+from jmdictdb import jdb, jmcgi, jelparse, jellex, serialize, submit, fmt
 
 def main (args, opts):
         logger.enable()
@@ -49,24 +49,24 @@ def main (args, opts):
 
         seq = url_int ('seq', form, errs)
         src = url_int ('src', form, errs)
-        notes = url_str ('notes', form)
-        srcnote = url_str ('srcnote', form)
+        notes = submit.clean (url_str ('notes', form))
+        srcnote = submit.clean (url_str ('srcnote', form))
 
           # These are the JEL (JMdict Edit Language) texts which
           # we will concatenate into a string that is fed to the
           # JEL parser which will create an Entr object.
-        kanj = (stripws (url_str ('kanj', form))).strip()
-        rdng = (stripws (url_str ('rdng', form))).strip()
-        sens = (url_str ('sens', form)).strip()
+        kanj = submit.clean ((stripws (url_str ('kanj', form))).strip())
+        rdng = submit.clean ((stripws (url_str ('rdng', form))).strip())
+        sens = submit.clean ((url_str ('sens', form)).strip())
         intxt = "\f".join ((kanj, rdng, sens))
         grpstxt = url_str ('grp', form)
 
           # Get the meta-edit info which will go into the history
           # record for this change.
-        comment = url_str ('comment', form)
-        refs    = url_str ('reference', form)
-        name    = url_str ('name', form)
-        email   = url_str ('email', form)
+        comment = submit.clean (url_str ('comment', form))
+        refs    = submit.clean (url_str ('reference', form))
+        name    = submit.clean (url_str ('name', form))
+        email   = submit.clean (url_str ('email', form))
 
         if errs: jmcgi.err_page (errs)
 
@@ -189,6 +189,7 @@ def main (args, opts):
         entr = jdb.add_hist (entr, pentr, sess.userid if sess else None,
                              name, email, comment, refs,
                              entr.stat==KW.STAT['D'].id)
+        if errs: jmcgi.err_page (errs)
         if not delete:
             check_for_errors (entr, errs)
             if errs: jmcgi.err_page (errs)

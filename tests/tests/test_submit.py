@@ -9,26 +9,46 @@ DBNAME, DBFILE = "jmtest01", "data/jmtest01.sql"
 
   # These tests are not intended to be comprehensive but test a few
   # common cases in the context of a complete submission.
-
+  #
   # These tests create entries in the "test" corpus (src=99) in
   # order not to change any of the entries in other corpora which
-  # would invalidate the database for further tests.  All "test"
-  # corpus entries are deleted in the module setup function so
-  # preexisting detritus won't affect these tests, and again in
-  # the module tear down function to leave things clean for tests
-  # that use the database afterwards.
+  # could invalidate the database for further tests.
+  #
+  # The tests all share the same database connection (via global
+  # 'DBcursor') so sequential operations (eg submit an entry then
+  # read it) are in the same transaction and the first operation
+  # need not do a commit for the second to see its changes.
+  #
+  # Conversly a failure of any test will leave the database connection
+  # in a failed transaction state which will break any following tests.
+  # This is avoided by having a setUp() method in each class, which
+  # is run before each test, do a rollback.
+  #
+  # Both at start of this module's tests and again after they've all
+  # run, module setup and teardown functions delete all the entries in
+  # the test corpus so preexisting detritus won't affect these tests
+  # and to leave things clean for tests that use the database afterwards.
 
 class General (unittest.TestCase):
-    def test1000010(_):  # Minimal new entry
-        inp = Entr (stat=2, src=99,
+    def setUp(_):
+          # In case a test fail left an open aborted transaction.
+        DBcursor.connection.rollback()
+    def test_1000010(_):  # Minimal new entry: no sense, reading or kanji.
+        errs = []
+        e = Entr (src=99, stat=2, _hist=[Hist()])
+        submit.submission (DBcursor, e, '', errs)
+        _.assertEqual (0, len(errs))
+
+    def test_1000020(_):  # A more realistic submission.
+        inp = Entr (stat=2, src=99, _hist=[Hist()],
                     _rdng=[Rdng(txt='ゴミ')], _kanj=[],
-                    _sens=[Sens(_gloss=[Gloss(txt="trash",lang=1,ginf=1)])],
-                    _hist=[Hist()])
+                    _sens=[Sens(_gloss=[Gloss(txt="trash",lang=1,ginf=1)])],)
         eid,seq,src = submit_ (inp, disp='')
         for t in eid,seq,src: _.assertTrue(t)
-        DBcursor.connection.commit()
           # An index exception on next line indicates the new entry
-          #  was not found.
+          #  was not found.  Note that we do not have to commit it;
+          # because we read with the same connection it was written
+          # with the read is in the same transaction.
         out = jdb.entrList (DBcursor, None, [eid])[0]
           # Note that submit.submission() modified 'inp' to set all the
           #  object primary key fields to the values used in the database
@@ -36,6 +56,9 @@ class General (unittest.TestCase):
         _.assertEqual (inp, out)
 
 class Approval (unittest.TestCase):
+    def setUp(_):
+          # In case a test fail left an open aborted transaction.
+        DBcursor.connection.rollback()
     def test1000010(_):  # Create an new unapproved entry and approve.
         inp = Entr (stat=2, src=99,
                     _rdng=[Rdng(txt='パン')], _kanj=[],
@@ -65,7 +88,6 @@ class Approval (unittest.TestCase):
                     _hist=[Hist()])
           # Create a new, approved entry.
         eid,seq,src = submit_ (inp, disp='a',is_editor=True,userid='smg')
-        DBcursor.connection.commit()
           # An index exception on next line indicates the new entry
           #  was not found.
         out = jdb.entrList (DBcursor, None, [eid])[0]
@@ -88,15 +110,47 @@ class Approval (unittest.TestCase):
                     _hist=[Hist()])
           # Create a new, approved entry.
         eid,seq,src = submit_ (inp, disp='a',is_editor=True,userid='smg')
-        DBcursor.connection.commit()
         with _.assertRaisesRegex (db.IntegrityError,
                     'duplicate key value violates unique constraint '
                     '"entr_src_seq_idx"'):
             submit_ (inp, disp='a', is_editor=True, userid='smg')
           # The db connection is in failed transaction state at this point;
           # do a rollback to prevent failure of subsequent operations that
-          # use it.  
+          # use it.
         DBcursor.connection.rollback()
+
+class Clean (unittest.TestCase):
+      # Tests for submit.clean() which strips ascii control characters
+      # from a string and expands tabs.
+    def test_0010(_): _.assertEqual (None, submit.clean (None))
+    def test_0020(_): _.assertEqual ('', submit.clean (''))
+    def test_0030(_): _.assertEqual ('a b', submit.clean ('a b'))
+    def test_0040(_): _.assertEqual ('a\nb', submit.clean ('a\nb'))
+    def test_0050(_): _.assertEqual ('a\nb', submit.clean ('a\r\nb'))
+    def test_0060(_): _.assertEqual ('aa      b', submit.clean ('aa\tb'))
+    def test_0070(_): _.assertEqual ('ab', submit.clean ('a\bb\x1f'))
+
+       # When given 'source' and 'errs' arguments it will record the
+       # cleanup by adding a message to 'errs'.
+
+    def test_0310(_):   # Nothing removed, no message.
+         errs = []
+         _.assertEqual ('ab', submit.clean ('ab', 'test', errs))
+         _.assertEqual ([], errs);
+
+    def test_0320(_):  # Make sure we get expected message and existing
+         errs = ['x']  #  messages are not overwritten.
+         _.assertEqual ('ab', submit.clean ('a\x0cb', 'test', errs))
+         _.assertEqual ('x', errs[0]);
+         _.assertEqual ("Illegal characters in 'test'", errs[1])
+
+    def test_0330(_):  # In context of a submission, bad characters
+        errs = []      #  abort it.
+        e = Entr (src=99, stat=2, _hist=[Hist(notes='a\r\nb')])
+        eid,seq,src = submit.submission (DBcursor, e, '', errs)
+        _.assertEqual ((None,None,None), (eid,seq,src))
+        _.assertEqual (1, len(errs))
+        _.assertEqual ("Illegal characters in 'comments'", errs[0])
 
 class Xrefs (unittest.TestCase):   # Named with plural form because "Xref"
     @classmethod                   #  conflicts with objects.Xref.
@@ -174,7 +228,7 @@ def submit_ (entr, **kwds):  # Trailing "_" to avoid conflict
         kwds['errs'] = errs
         id,seq,src = submit.submission (DBcursor, entr, **kwds)
         if errs: raise RuntimeError (errs)
-        DBcursor.connection.commit()
+        # Don't commit, transaction will be rolled back automatically.
         return id,seq,src
 
   # Global variables.
@@ -191,6 +245,7 @@ def tearDownModule():
         #print ("Deleting entries from 'test' corpus", file=sys.stderr)
         DBcursor.connection.rollback()   # In case a test fail left an
                                          #  open aborted transaction.
+          # Remove any test entries that we couldn't avoid committing.
         db.ex (DBcursor.connection,
                "DELETE FROM entr WHERE src=99; COMMIT")
 

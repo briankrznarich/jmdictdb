@@ -295,8 +295,18 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
               # but will never return a None, so no need to check return val.
             L('submit.submission').debug("adding hist for '%s', merge=%s"
                                                % (h.name, merge_rev))
-            entr = jdb.add_hist (entr, pentr, userid, h.name, h.email,
-                                 clean(h.notes), clean(h.refs), merge_rev)
+              # Check that the user-supplied info has no ascii control
+              # characters.  If there are, the submission is not done
+              # rather than quietly doimng the cleaning ourselves.
+              # Justification is that the caller (in the cgi case that
+              # would be the edconf.py page) should have already checked
+              # and fixed the problem.
+            entr = jdb.add_hist (entr, pentr, userid,
+                                 clean (h.name, 'submitter name', errs),
+                                 clean (h.email, 'submitter emil', errs),
+                                 clean (h.notes, 'comments', errs),
+                                 clean (h.refs, 'refs', errs),
+                                 merge_rev)
         if not errs:
               # Occasionally, often from copy-pasting, a unicode BOM
               # character finds its way into one of an entry's text
@@ -316,7 +326,11 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
                 L('submit.submission').debug("bad url parameter (disp=%s)" % disp)
                 errs.append ("Bad url parameter (disp=%s)" % disp)
         L('submit.submission').debug("seqset: %s"
-                                           % logseq (dbh, entr.seq, entr.src))
+                                     % logseq (dbh, entr.seq, entr.src))
+        if errs:
+            L('submit.submission').debug("Entry not submitted due to errors")
+            for e in errs: L('submit.submission').debug('  '+e)
+
           # Note that changes have not been committed yet, caller is
           # expected to do that.
           # If no errors the return value is a 3-tuple of:
@@ -594,10 +608,27 @@ def url (entrid):
         return '<a href="entr.py?svc=%s&sid=%s&e=%s">%s</a>' \
                  % (Svc, Sid, entrid, entrid)
 
-def clean (s):
-        # Clean up unexpected/unwanted characters in text str 's'.
-        # Currently this consists only of deleting '\r' characters 
-        # that can occur in data pasted into form fields like the
-        # history comments or refs fields. 
+def clean (s, source=None, errs=None):
+        '''-------------------------------------------------------------------
+        Remove all ascii control characters except '\n's from str 's'.
+        If 'source' is not None it indicates an error message will
+        be appended to list 'errs' (which should also be supplied)
+        if any characters are removed and is a str giving the source
+        of 's' for use in the error message (eg. "history comments",
+        "gloss", etc.)
+        -------------------------------------------------------------------'''
         if not s: return s
-        return s.replace ('\r', '')
+        N = None
+          # Delete all ascii control characters in 's' except for
+          # '\n' ('\x0a') and tabs ('\x09') which are expanded.
+          #FIXME: what about unicode bogons?
+        cleaned = s.translate ([
+          #  00 01 02 03 04 05 06 07 08  09    0a     0b 0c 0d 0e 0f
+             N, N, N, N, N, N, N, N, N, '\x09','\x0a',N, N, N, N, N,
+          #  10 11 12 13 14 15 16 17 18  19    1a     1b 1c 1d 1e 1f
+             N, N, N, N, N, N, N, N, N,  N,    N,     N, N, N, N, N ])
+          # Expand any tabs to spaces.
+        cleaned = cleaned.expandtabs()
+        if source and cleaned != s:
+            errs.append ("Illegal characters in '%s'" % source)
+        return cleaned
