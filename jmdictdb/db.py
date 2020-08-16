@@ -1,6 +1,9 @@
 import sys, datetime, pdb
 import psycopg2, psycopg2.extras
 from psycopg2.extras import DictCursorBase
+  # The following are imported so that db.py consumers can access them
+  # via the db.py module without needing to import psycopg2 directly.
+from psycopg2.extras import DictCursor, NamedTupleCursor
 from psycopg2 import Error, Warning, InterfaceError, DatabaseError, \
     DataError, OperationalError,IntegrityError, InternalError, \
     ProgrammingError, NotSupportedError
@@ -37,10 +40,11 @@ class DbRowCursor (DictCursorBase):
             self.index = [x[0] for x in self.description]
             self._query_executed = 0
 
-def connect (dburi, cursor_factory=DbRowCursor):
+def open (dburi, cursor_factory=DbRowCursor):
         dbargs = parse_pguri (dburi)
         dbconn = dbapi.connect (cursor_factory=cursor_factory, **dbargs)
         return dbconn
+connect = open
 
 def ex (dbconn, sql, args=(), cursor_factory=None):
         cur = dbconn.cursor (cursor_factory=cursor_factory)
@@ -49,8 +53,10 @@ def ex (dbconn, sql, args=(), cursor_factory=None):
 
 def query (dbconn, sql, args=(), one=False, cursor_factory=None):
         cur = ex (dbconn, sql, args, cursor_factory=cursor_factory)
-        if one: return cur.fetchone()
-        else: return cur.fetchall()
+        if one: rs = cur.fetchone()
+        else: rs = cur.fetchall()
+        cur.close()
+        return rs
 
 def query1 (dbconn, sql, args=(), cursor_factory=None):
         return query (dbconn, sql, args, one=True,
