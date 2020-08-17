@@ -6,7 +6,7 @@ Functions for parsing XML descriptions of entries into
 entry objects.
 """
 
-import sys, os, copy, re, datetime
+import sys, os, copy, re, datetime, pdb
 from collections import defaultdict
 #import lxml.etree as ElementTree
 import xml.etree.cElementTree as ElementTree
@@ -71,7 +71,7 @@ class Jmparser (object):
     def __init__ (self,
             kw,           # A jdb.Kwds object initialized with database
                           #  keywords, such as returned by jdb.dbOpen()
-                          #  or jdb.Kwds(jdb.std_csv_dir()).
+                          #  or jdb.Kwds('').
             xmltype,      # (str) Type of XML: "jmdict", "jmnedict", "jmex".
                           #  This determines the xml format and tags that
                           #  will be recognised by the parser and is used
@@ -97,12 +97,16 @@ class Jmparser (object):
           # should never need sequence number generation.
         self.corpora = {}
         self.srcids = srcids
+        self.entr = None  # When multiple entries are being processed, this
+                          # will be the last entry processed until early in
+                          # do_entr() when it is set to the current entry
+                          # being processed.
 
     def parse_entry (self, txt):
-        # Convert an XML text string into entry objects.
+        # Convert an XML text string into an entry object.
         # Parameters:
-        #   txt -- (str) XML text defining one of more entry elements.
-        # Returns: A list of entry objects.
+        #   txt -- (str) XML text defining entry elements.
+        # Returns: A list of one entry object.
 
         pat = '&[a-zA-Z0-9-]+;'
         if isinstance (txt, bytes): pat = pat.encode ('latin1')
@@ -164,15 +168,15 @@ class Jmparser (object):
                 yield "grpdef", grpdef
                 continue
 
-              # From this point on elem.tag is 'entr'...
+              # From this point on elem.tag must be 'entr'...
             prevseq = self.seq
               # Old-style (pre 2014-10) jmnedict xml does not have "ent_seq"
               # elements so we will generate a synthetic seq_number based on
               # the ordinal position of the entry in the file ('entrnum').
             self.seq = seq = int (elem.findtext ('ent_seq')
                                   or ((entrnum-1) * seqnum_incr + seqnum_init))
-            if prevseq and seq <= prevseq:
-                self.warn (" (line %d): Sequence less than preceeding sequence"
+            if prevseq and seq < prevseq:
+                 self.warn (" (line %d): Sequence less than preceeding sequence"
                            % lineno)
             if not startseq or seq >= startseq:
                 startseq = None
@@ -192,36 +196,37 @@ class Jmparser (object):
 
     def do_entr (self, elem, seq, xlang=None, grpdefs=None):
         """
-    Create an entr object from a parsed ElementTree entry
-    element, 'elem'.  'lineno' is the source file line number
-    of the "<entry>" line or None and is only used in error
-    messages.
+        Create an entr object from a parsed ElementTree entry
+        element, 'elem'.  'lineno' is the source file line number
+        of the "<entry>" line or None and is only used in error
+        messages.
 
-    Note that the entry object returned is different from one
-    read from the database in the following respects:
-    * The 'entr' record will have no .src (aka corpus) attribute
-      if there is no <ent_corp> element in the entry.  In this
-      case the .src attribute is expected to be added by the
-      caller.
-    * Items in sense's _xref list are unresolved xrefs, not
-      resolved xrefs as in a database entr object.
-      jdb.resolv_xref() or similar can be used to resolve the
-      xrefs.
-    * Attributes will be missing if the corresponding xml
-      information is not present.  For example, if a particular
-      entry has no <ke_ele> elements, the entr object will not
-      have a '._kanj' attribute.  In an entr object read from
-      the database, it will have a '._kanj' attribute with a
-      value of [].
-    * The entr object does not have many of the foreign key
-      attributes: gloss.gloss, xref.xref, <anything>.entr, etc.
-      However, it does have rdng.rdng, kanj.kanj, and sens.sens
-      attributes since these are required when adding restr,
-      stagr, stagk, and freq objects.
+        Note that the entry object returned is different from one
+        read from the database in the following respects:
+        * The 'entr' record will have no .src (aka corpus) attribute
+          if there is no <ent_corp> element in the entry.  In this
+          case the .src attribute is expected to be added by the
+          caller.
+        * Items in sense's _xref list are unresolved xrefs, not
+          resolved xrefs as in a database entr object.
+          jdb.resolv_xref() or similar can be used to resolve the
+          xrefs.
+        * Attributes will be missing if the corresponding xml
+          information is not present.  For example, if a particular
+          entry has no <ke_ele> elements, the entr object will not
+          have a '._kanj' attribute.  In an entr object read from
+          the database, it will have a '._kanj' attribute with a
+          value of [].
+        * The entr object does not have many of the foreign key
+          attributes: gloss.gloss, xref.xref, <anything>.entr, etc.
+          However, it does have rdng.rdng, kanj.kanj, and sens.sens
+          attributes since these are required when adding restr,
+          stagr, stagk, and freq objects.
         """
         KW = self.KW
 
-        entr = jdb.Entr ()
+        prev_entr = self.entr
+        self.entr = entr = jdb.Entr ()
 
         if not seq:
             elemseq = elem.find ('ent_seq')
@@ -233,10 +238,8 @@ class Jmparser (object):
             raise ParseError ("Invalid 'ent_seq' value, '%s'" % elem.text)
         self.seq = entr.seq = seq
 
-        id = elem.get('id')
-        if id is not None: entr.id = entr.idx = int (id)
-        dfrm = elem.get('dfrm')
-        if dfrm is not None: entr.dfrm = int (dfrm)
+        entr.id = intn (elem.get('id'))
+        entr.dfrm = intn (elem.get('dfrm'))
         stat = elem.get('stat') or jdb.KW.STAT['A'].id
         try: stat = KW.STAT[stat].id
         except KeyError:
@@ -703,7 +706,11 @@ class Jmparser (object):
                 % (warn_type, kwstr, ', '.join (tmp)))
 
     def warn (self, msg):
-        L('jmxml').warn("Seq %d: %s" % (self.seq, msg))
+        if self.entr:
+            stat = ' ' + jdb.KW.STAT[self.entr.stat].kw \
+                       + ('*' if self.entr.unap else '')
+        else: stat = ''
+        L('jmxml').warn("Seq %d%s: %s" % (self.seq, stat, msg))
 
 def make_enttab (KW, dtd):
         '''-------------------------------------------------------------------
@@ -1000,6 +1007,9 @@ def xmlbool (value):
         try: return {"false":False, "0":False, "true":True, "1":True}[v]
         except KeyError:
             raise ValueError ("Illegal XML boolean value: %s" % value)
+
+def intn (s):
+        return int(s) if s else None
 
 def main():
         from jmdictdb import fmtxml

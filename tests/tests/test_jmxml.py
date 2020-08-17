@@ -56,7 +56,7 @@ class Test_parse_jmdict (unittest.TestCase):
         with _.assertLogs ('jmxml', level='WARN') as cm:
             dotest (_,'4001020')
             _.assertRegex (cm.output[0],
-              ".*Seq 4001020: Sense 1 has no glosses")
+              ".*Seq 4001020 A: Sense 1 has no glosses")
 
 class Test_jmnedict (unittest.TestCase):
     def setUp (_):
@@ -79,7 +79,7 @@ class Test_jmnedict (unittest.TestCase):
         with _.assertLogs ('jmxml', level='WARN') as cm:
             dotest (_,'3001010')
             _.assertRegex (cm.output[0],
-              ".*Seq 3001010: Unknown NAME_TYPE keyword 'obs'")
+              ".*Seq 3001010 A: Unknown NAME_TYPE keyword 'obs'")
 
 def dotest (_, testid):
         xml, exptxt = _.getxml (testid)

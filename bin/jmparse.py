@@ -51,7 +51,7 @@ def main():
                             seqnum_init=args.sequence[0],
                             seqnum_incr=args.sequence[1]):
             if typ == 'entry':
-                eid += 1
+                eid += 1; entr.idx = entr.id
                 if pbar: pbar (eid)
                 jdb.setkeys (entr, eid)
                 pgi.wrentr (entr, tmpfiles)

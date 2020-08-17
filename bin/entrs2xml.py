@@ -74,7 +74,7 @@ def main():
         outname = opts.output if opts.output else None
         root_open = root if root and '+' in rootpart else None
         try: outf = open_output (outname, dtd, root_open)
-        except OSError as e: print (str(e), file=sys.stderr)
+        except OSError as e: sys.exit (str(e))
 
           # Read the entries in blocks of 'opts.blocksize', format them
           # as XML, and write them to the output file.
