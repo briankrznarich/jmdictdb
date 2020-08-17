@@ -184,7 +184,7 @@ data/jmdict.pgi: data/jmdict.xml
 
 loadjm: data/jmdict.pgi
 	rm -f data/jmdict_xresolv.log
-	$(BINDIR)pgload.py -U $(USER) $(DB) data/jmdict.pgi
+	$(BINDIR)pgload.py -U $(USER) -d $(DB) data/jmdict.pgi
 
 #------ Load JMnedict ----------------------------------------------------
 
@@ -201,7 +201,7 @@ data/jmnedict.pgi: data/jmnedict.xml
 
 loadne: data/jmnedict.pgi
 	rm -f data/jmnedict_xresolv.log
-	$(BINDIR)pgload.py -U $(USER) $(DB) data/jmnedict.pgi
+	$(BINDIR)pgload.py -U $(USER) -d $(DB) data/jmnedict.pgi
 
 #------ Load examples ---------------------------------------------------
 
@@ -216,7 +216,7 @@ data/examples.pgi: data/examples.txt
 
 loadex: data/examples.pgi
 	rm -f data/examples_xresolv.log
-	$(BINDIR)pgload.py -U $(USER) $(DB) data/examples.pgi
+	$(BINDIR)pgload.py -U $(USER) -d $(DB) data/examples.pgi
 
 #------ Load kanjidic2.xml ---------------------------------------------------
 
@@ -231,7 +231,7 @@ data/kanjidic2.pgi: data/kanjidic2.xml
 
 loadkd: data/kanjidic2.pgi
 	rm -f data/kanjidic2_xresolv.log
-	$(BINDIR)pgload.py -U $(USER) $(DB) data/kanjidic2.pgi
+	$(BINDIR)pgload.py -U $(USER) -d $(DB) data/kanjidic2.pgi
 
 #------ Load jmdict, jmnedict, examples -------------------------------------
 

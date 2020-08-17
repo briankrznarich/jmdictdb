@@ -59,22 +59,27 @@ def main():
         cmd = "psql %s -d %s -f %s/imptabs.sql" % (user, args.dburi, dbdir)
         run (cmd)
 
+        sql = "ALTER TABLE imp.kwsrc\n"\
+              " ADD COLUMN IF NOT EXISTS newid INT;\n"\
+              "ALTER TABLE imp.entr\n"\
+              " DROP CONSTRAINT IF EXISTS entr_dfrm_fkey;"
+        L().info("Ex:\n %s" % sql)
+        db.ex (dbconn, sql); dbconn.commit()
+
           # Import the raw entry data into the "imp" schema.
-        cmd = "PGOPTIONS=--search_path=imp,public psql -d %s -f %s"\
+        cmd = "PGOPTIONS=--search_path=imp,public psql -e -d %s -f %s"\
                                     % (args.dburi, args.filename)
         run (cmd)
 
           # Update the imported kwsrc table data.
 
         L('pgload').info("Updating table imp.kwsrc")
-        sql1 = "ALTER TABLE imp.kwsrc"\
-               " ADD COLUMN IF NOT EXISTS newid INT;"
-        db.ex (dbconn, sql1)
-        sql2 = "UPDATE imp.kwsrc SET kw=%s,newid=%s WHERE id=%s"
+        sql = "UPDATE imp.kwsrc SET kw=%s,newid=%s WHERE id=%s"
         for n, (srcid, corp, ctype, oldcorp) in enumerate (impcorp):
             newid = max_srcid + 1 + n
             if newid == TEST_ID: newid += 1
-            db.ex (dbconn, sql2, (corp, newid, srcid))
+            L().info("Ex:\n%s" % (sql % (corp, newid, srcid)))
+            db.ex (dbconn, sql, (corp, newid, srcid))
         dbconn.commit()
 
           # Run the import.sql script which will add the rows in the
@@ -89,7 +94,7 @@ def main():
         run (cmd)
 
 def run (cmd):
-        L('pgload').info("run: " + cmd)
+        L().info("Run: " + cmd)
         subprocess.run (cmd, shell=True, check=True)
 
 def remap (kwsrc, map):
@@ -144,13 +149,13 @@ def parse_cmdline():
 
         p = ArgumentParser (description=u, formatter_class=ParagraphFormatter)
 
-        p.add_argument ("dburi",
-            help="URI for database to open.")
-
         p.add_argument ("filename",
             help="Name of file containing entry data to load.  By "
                 "convention usually has a .pgi extension.  If omitted, "
                 "input will be read from stdin.")
+
+        p.add_argument ("-d", "--dburi", required=True,
+            help="URI for database to load pgi data into.")
 
         p.add_argument ("--show", default=False, action='store_true',
             help="List the corpus names and id numbers present in the input "

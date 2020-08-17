@@ -25,6 +25,10 @@
 -- the same corpus type ('srct') value, for example.)
 --
 -- Before running this script we expect that the user has:
+--   * Imported the incoming data into the imp schema tables.  Note
+--       that  before this can be done (in order to avoid failed
+--       'dfrm' foreign key references), the user must also drop the
+--       "entr_dfrm_fkey" constraint on the imp.entr table.
 --   * Added a new column to the imp.kwsrc table, e.g.:
 --       ALTER TABLE imp.kwsrc
 --         ADD COLUMN IF NOT EXISTS newid INT;
@@ -59,10 +63,33 @@ INSERT INTO public.kwsrc
   -- largest entr.id in use in the main public.entr table.
 SELECT COALESCE(MAX(id),0) AS maxid FROM public.entr \gset
 
+  -- Check that the target rows of any imported rows that have non-
+  -- NULL 'dfrm' values are also present in the imported rows.  Other-
+  -- wise the 'dfrm' would end up NULL and the information about some
+  -- entries parents silently lost.
+SELECT err('Missing ''dfrm'' target: '|| dfrmlist)
+    FROM (SELECT dfrmlist
+          -- The string_agg() function will return 1 row (of NULL) when
+          -- its base query returns 0 rows; hence the enclosing query to
+          -- eliminate that row.
+        FROM (SELECT string_agg (i.dfrm::TEXT, ',') AS dfrmlist
+              FROM imp.entr i
+              LEFT JOIN imp.entr t ON i.dfrm=t.idx
+              WHERE t.id IS NULL) AS x) AS y WHERE dfrmlist IS NOT NULL;
+
+  -- Move the entr rows from the imp schema to the public one. assigning
+  -- new 'id' and 'src' values en route.
 INSERT INTO public.entr
                     (SELECT e.id+:maxid,s.newid,stat,
-                            e.seq,dfrm,unap,srcnote,e.notes
+                            e.seq,NULL,unap,srcnote,e.notes,e.idx
                      FROM imp.entr e JOIN imp.kwsrc s ON s.id=e.src);
+
+  -- Update the 'dfrm' values (set to NULL above) to the equivalent id's
+  -- of the correct rows now in the public.entr table.
+UPDATE public.entr SET dfrm=m.id
+    FROM (SELECT p.id,i.idx FROM imp.entr i JOIN public.entr p ON i.dfrm=p.idx) AS m
+    WHERE public.entr.idx=m.idx;
+ALTER TABLE entr ADD FOREIGN KEY
 
 INSERT INTO rdng    (SELECT entr+:maxid,rdng,txt                     FROM imp.rdng);
 INSERT INTO kanj    (SELECT entr+:maxid,kanj,txt                     FROM imp.kanj);
@@ -92,5 +119,5 @@ SELECT setval('entr_id_seq',  (SELECT max(id) FROM entr));
 
   -- Since we create the schema anew for each import no need to keep
   -- it around.
-DROP SCHEMA imp CASCADE;
+--DROP SCHEMA imp CASCADE;
 COMMIT;
