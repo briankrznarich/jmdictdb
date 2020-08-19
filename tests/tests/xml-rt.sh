@@ -44,17 +44,18 @@ preserve=no
 
 usage() { echo "\
 Usage: $script [-d dbname][-p] filename.xml
-  dbname -- Name of scratch database to use.  Any existing database
+  -d dbname -- Name of scratch database to use.  Any existing database
       with this name will be dropped and its data lost.
   -p -- Preserve temp files from previous runs instead of deleting
       them when starting.  Use this when doing simultaneous runs of
       this script in mutiple processes to prevent processes from
-      deleting each other's results." 1>&2; }
-while getopts "pd:" opt; do
+      deleting each other's temp files." 1>&2; }
+while getopts "pd:h" opt; do
     case "$opt" in
         h|\?) usage; exit 0;;
         d)  DBNAME=$OPTARG;;
         p)  preserve=yes;;
+        *) usage; exit 1;
         esac
     done
 shift $((OPTIND-1))
