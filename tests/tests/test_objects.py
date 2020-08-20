@@ -108,7 +108,7 @@ class Test_Attrs (unittest.TestCase):
     def test000200(_): attrchk (_, Cinf(),    ['entr','kw','value','mctype'])
     def test000210(_): attrchk (_, Chr(),     ['entr','chr','bushu','strokes','freq','grade','jlpt','_cinf'])
     def test000220(_): attrchk (_, Xrslv(),   ['entr','sens','ord','typ','rtxt','ktxt','tsens','vsrc','vseq','notes','prio'])
-    def test000230(_): attrchk (_, Kreslv(),  ['entr','kw','value'])
+    def test000230(_): attrchk (_, Krslv(),   ['entr','kw','value'])
     def test000240(_): attrchk (_, Entrsnd(), ['entr','ord','snd'])
     def test000250(_): attrchk (_, Rdngsnd(), ['entr','rdng','ord','snd'])
     def test000260(_): attrchk (_, Snd(),     ['id','file','strt','leng','trns','notes'])

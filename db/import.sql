@@ -89,7 +89,6 @@ INSERT INTO public.entr
 UPDATE public.entr SET dfrm=m.id
     FROM (SELECT p.id,i.idx FROM imp.entr i JOIN public.entr p ON i.dfrm=p.idx) AS m
     WHERE public.entr.idx=m.idx;
-ALTER TABLE entr ADD FOREIGN KEY
 
 INSERT INTO rdng    (SELECT entr+:maxid,rdng,txt                     FROM imp.rdng);
 INSERT INTO kanj    (SELECT entr+:maxid,kanj,txt                     FROM imp.kanj);
@@ -110,7 +109,7 @@ INSERT INTO stagk   (SELECT entr+:maxid,sens,kanj                    FROM imp.st
 INSERT INTO xresolv (SELECT entr+:maxid,sens,ord,typ,rtxt,ktxt,tsens,vsrc,vseq,notes,prio FROM imp.xresolv);
 INSERT INTO chr     (SELECT entr+:maxid,chr,bushu,strokes,freq,grade,jlpt FROM imp.chr);
 INSERT INTO cinf    (SELECT entr+:maxid,kw,value,mctype              FROM imp.cinf);
-INSERT INTO kresolv (SELECT entr+:maxid,kw,value                     FROM imp.kresolv);
+INSERT INTO krslv   (SELECT entr+:maxid,kw,value                     FROM imp.krslv);
 
   -- Update the sequences which is necessary after any bulk load.
   -- Changes to sequences are not transactional so no point in doing

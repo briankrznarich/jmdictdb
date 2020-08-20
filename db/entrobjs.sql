@@ -273,7 +273,7 @@ CREATE INDEX xresolv_kanj ON xresolv(ktxt);
 --  Kanjidic tables
 -------------------
 
-CREATE TABLE chr(
+CREATE TABLE chr (
     entr INT PRIMARY KEY	-- Defines readings and meanings, but not kanji.
       REFERENCES entr(id) ON DELETE CASCADE ON UPDATE CASCADE,
     chr CHAR(1) NOT NULL,	-- Defines kanji.
@@ -286,7 +286,7 @@ CREATE TABLE chr(
 CREATE UNIQUE INDEX ON chr(entr,chr);  -- Only one chr item per entr.
 -- XX ALTER TABLE chr ADD CONSTRAINT chr_rad_fkey FOREIGN KEY (bushu) REFERENCES rad(num);
 
-CREATE TABLE cinf(
+CREATE TABLE cinf (
     entr INT NOT NULL
       REFERENCES chr(entr) ON DELETE CASCADE ON UPDATE CASCADE,
     kw SMALLINT NOT NULL
@@ -297,7 +297,7 @@ CREATE TABLE cinf(
 CREATE INDEX cinf_kw ON cinf(kw);
 CREATE INDEX cinf_val ON cinf(value);
 
-CREATE TABLE kresolv(
+CREATE TABLE krslv (
     entr INT NOT NULL
       REFERENCES entr(id) ON DELETE CASCADE ON UPDATE CASCADE,
     kw SMALLINT NOT NULL,

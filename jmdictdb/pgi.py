@@ -36,7 +36,7 @@ def wrentr (e, workfiles):
         for x in getattr (e, '_snd',   []): _wrrow (x, workfiles['entrsnd'])
         for x in getattr (e, '_hist',  []): _wrrow (x, workfiles['hist'])
         for x in getattr (e, '_grp',   []): _wrrow (x, workfiles['grp'])
-        for x in getattr (e, '_krslv', []): _wrrow (x, workfiles['kresolv'])
+        for x in getattr (e, '_krslv', []): _wrrow (x, workfiles['krslv'])
         if e.chr is not None:
             _wrrow (e.chr, workfiles['chr'])
             for x in e.chr._cinf: _wrrow (x, workfiles['cinf'])
@@ -88,7 +88,7 @@ def initialize (tmpdir):
           ('grp',    ['entr','kw','ord','notes']),
           ('chr',    ['entr','chr','bushu','strokes','freq','grade','jlpt','radname']),
           ('cinf',   ['entr','kw','value']),
-          ('kresolv',['entr','kw','value']),
+          ('krslv',  ['entr','kw','value']),
           ('sndvol', ['id','title','loc','type','idstr','corp','notes']),
           ('sndfile',['id','vol','title','loc','type','notes']),
           ('snd',    ['id','file','strt','leng','trns','notes']),

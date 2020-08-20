@@ -82,4 +82,12 @@ UPDATE gloss SET txt=translate (txt,
   E'\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f', '')
     WHERE txt ~ E'[\x1-\x8\xb-\x1f]';
 
+CREATE TABLE krslv (
+    entr INT NOT NULL
+      REFERENCES entr(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    kw SMALLINT NOT NULL,
+    value VARCHAR(50) NOT NULL,
+      PRIMARY KEY (entr,kw,value));
+INSERT INTO krslv (SELECT * FROM kresolv);
+
 COMMIT;

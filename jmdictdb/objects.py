@@ -175,7 +175,7 @@ class Xrslv (DbRow):
         DbRow.__init__(s, ( entr,  sens,  ord,  typ,  rtxt,  ktxt,  tsens,  vsrc,  vseq,  notes,  prio),
                           ('entr','sens','ord','typ','rtxt','ktxt','tsens','vsrc','vseq','notes','prio'))
 
-class Kreslv (DbRow):
+class Krslv (DbRow):
     def __init__ (s, entr=None, kw=None, value=None):
         DbRow.__init__(s, ( entr,  kw,  value),
                           ('entr','kw','value'))

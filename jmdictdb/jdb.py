@@ -406,7 +406,7 @@ def entr_bld (t):
           # will be a single 'chr' object, not a list.
         mup (None,     chr,  ['entr'],        entr,                ['id'],  'chr')
         mup ('_cinf',  chr,  ['entr'],        t.get('cinf',[]),    ['entr'])
-        mup ('_krslv', entr, ['id'],          t.get('kresolv',[]), ['entr'])
+        mup ('_krslv', entr, ['id'],          t.get('krslv',[]),   ['entr'])
         return entr     # 'entr' is a list of Entr instances.
 
 def filt (parents, pks, children, fks):

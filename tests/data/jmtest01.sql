@@ -834,6 +834,19 @@ CREATE TABLE public.kresolv (
 ALTER TABLE public.kresolv OWNER TO jmdictdb;
 
 --
+-- Name: krslv; Type: TABLE; Schema: public; Owner: jmdictdb
+--
+
+CREATE TABLE public.krslv (
+    entr integer NOT NULL,
+    kw smallint NOT NULL,
+    value character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.krslv OWNER TO jmdictdb;
+
+--
 -- Name: kwcinf; Type: TABLE; Schema: public; Owner: jmdictdb
 --
 
@@ -3354,7 +3367,7 @@ COPY public.db (id, active, ts) FROM stdin;
 16133514	f	2020-08-02 13:03:25.646392
 11173099	f	2020-08-02 13:03:35.893273
 273560	f	2020-08-02 13:03:51.029015
-9415724	t	2020-08-13 19:14:47.626189
+9415724	t	2020-08-19 21:28:17.442967
 12840591	f	2020-08-06 17:50:01.913543
 \.
 
@@ -4073,6 +4086,14 @@ COPY public.kinf (entr, kanj, ord, kw) FROM stdin;
 --
 
 COPY public.kresolv (entr, kw, value) FROM stdin;
+\.
+
+
+--
+-- Data for Name: krslv; Type: TABLE DATA; Schema: public; Owner: jmdictdb
+--
+
+COPY public.krslv (entr, kw, value) FROM stdin;
 \.
 
 
@@ -6335,6 +6356,14 @@ ALTER TABLE ONLY public.kresolv
 
 
 --
+-- Name: krslv krslv_pkey; Type: CONSTRAINT; Schema: public; Owner: jmdictdb
+--
+
+ALTER TABLE ONLY public.krslv
+    ADD CONSTRAINT krslv_pkey PRIMARY KEY (entr, kw, value);
+
+
+--
 -- Name: kwcinf kwcinf_kw_key; Type: CONSTRAINT; Schema: public; Owner: jmdictdb
 --
 
@@ -7150,6 +7179,14 @@ ALTER TABLE ONLY public.kinf
 
 ALTER TABLE ONLY public.kresolv
     ADD CONSTRAINT kresolv_entr_fkey FOREIGN KEY (entr) REFERENCES public.entr(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: krslv krslv_entr_fkey; Type: FK CONSTRAINT; Schema: public; Owner: jmdictdb
+--
+
+ALTER TABLE ONLY public.krslv
+    ADD CONSTRAINT krslv_entr_fkey FOREIGN KEY (entr) REFERENCES public.entr(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
