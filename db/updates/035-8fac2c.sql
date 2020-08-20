@@ -10,6 +10,7 @@ BEGIN;
 -- Update the kwxref table for two very old (2011) changes.
 -- Remove control characters that were previously allowed into history
 --   records.
+-- Rename table kresolv to krslv.
 
 \set dbversion  '''8fac2c'''  -- Version applied by this update.
 \set require    '''c3ee8f'''  -- These updates(s) must be active.
