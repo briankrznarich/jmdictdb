@@ -116,7 +116,10 @@ def main (args, opts):
 
         sentrs = fl ("entr")
         for sentr in sentrs:
-            try: entrs = serialize.unserialize (sentr)
+              # unserialize() will only return one entry but rest of code
+              # is from when it would return a list, so wrap it in a list
+              # to minimize changes.
+            try: entrs = [serialize.unserialize (sentr)]
             except Exception as e:
                 errs.append ("Bad 'entr' value, unable to unserialize: %s" % str(e))
             else:

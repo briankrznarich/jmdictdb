@@ -1,322 +1,173 @@
-# Copyright (c) 2008 Stuart McGraw
+# Copyright (c) 2019,2020 Stuart McGraw
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-import zlib, base64, datetime, time, json, \
-       urllib.request, urllib.parse, urllib.error
-from jmdictdb import jdb
+# Serialize and deserialize a jdb.Entr object.
+# The current version reconstructs a jdb.Entr object that is
+# functionally equivalent but not identical to the original
+# Entr object.  A reconstructed object may not compare equal
+# to the original object but should function equivalently.
+# In particular:
+# - Fields representing foreign key values and order in the
+#   database (the .entr, .rdng, .kanj. .sens, .gloss attribute
+#   values, etc.) are not neccesarily preserved since the
+#   relationships are implicit in objects' presence in lists
+#   bound to a parent object.
+# - Fields used to order an object among siblings may not be
+#   preserved since order in implicit in lists.
+# - For example. an object:
+#     Entr(id=334455,..., _rdng=[Rdng(entr=334455,rdng=2,txt=...)
+#   will be serialized and reconstructed as:
+#     Entr(id=334455,..., _rdng=[Rdng(entr=None,rdng=None,txt=...)
+#   The FK and order attributes of all an entry's sub-objects
+#   can be set by jdb.setkeys().
 
-def serialize (obj):
-        s = jencode (obj)
-        b = s.encode('latin1')
-        b = zlib.compress (b)
-        b = base64.b64encode (b)
-        s = urllib.parse.quote_plus (b)
+import sys, datetime, pdb
+import json, zlib, base64, urllib.parse
+from jmdictdb import jdb, dbver
+from jmdictdb.objects import *
+from pprint import pprint as pp    # For debugging.
+
+def serialize (entr, compress=False):
+        s = jencode (entr)
+        if compress:
+            b = s.encode ('utf-8')
+            b = zlib.compress (b)
+            b = base64.b64encode (b)
+            s = urllib.parse.quote_plus (b)
         return s
 
-def unserialize (str):
-        s = urllib.parse.unquote_plus (str)
-        b = s.encode('latin1')
-        b = base64.b64decode (b)
-        b = zlib.decompress (b)
-        s = b.decode('latin1')
-        obj = jdecode (s)
-        return obj
+def unserialize (s):
+        s = s.strip()
+        if s[0] not in '{[':
+            s = urllib.parse.unquote_plus (s)
+            b = base64.b64decode (s)
+            b = zlib.decompress (b)
+            s = b.decode ('utf-8')
+        entr = jdecode (s)
+        return entr
 
-def jencode (obj):
-        r = obj2struc (obj)
-        jstr = json.dumps (r)
+def jencode (entr, ascii=False):
+        r = e2t (entr)
+        wrap = {"jmver": [("%0.6x"%x) for x in dbver.DBVERS],
+                "entry": r}
+        jstr = json.dumps (wrap, ensure_ascii=ascii)
         return jstr
 
 def jdecode (jstr):
-        r = json.loads (jstr)
-        o = struc2obj (r)
-        return o
+        wrap = json.loads (jstr)
+          #FIXME: check version number in 'wrap'.
+        entr = t2e (wrap["entry"])
+        return entr
 
-# The following two functions convert certain Python objects
-# to and from a description format that consists solely of
-# data types supported by JSON.  This allows those certain
-# objects to be converted to this description format, JSON
-# encoded, transmitted to a receiving process, JSON deccoded,
-# and finally deconverted to get a reconstructed object that
-# matches the original.
+#-----------------------------------------------------------------------------
+# Generate a JSONifyable data structure from an Entr instance (e2t)
+# or reconstruct an Entr instance from the data structure (t2e).
+# Entr objects are trees of data and can thus be represented and
+# recontructed from nested lists.  (Prior to revs 190608-620303c
+# and 190429-ecd5374 which restructured the _restr and _freq lists
+# respectively, the data in Entr objects was an acyclic graph.
+# Previous revs also allowed JSONification of arbitrary sub-parts
+# of Entr objects (e.g. Rdng objects) which we have dispensed with.)
 #
-# The description format can represent and correctly restore
-# objects that have shared or cyclical references.
-#
-# It supports the following object types:
-#  scalar: int, float, boolean, None, str[1], unicode
-#  container: list
-#  object: jdb.DbRow, jdb.Obj
-#
-# Representation format
-# A python object is represented by itself, if it is of one
-# of the scalar types mention above.  If not, it is represented
-# by a 1-, 2-, or 3-item list.
-#
-#  1. [idn]
-#  2. [typ, val]
-#  3. [idn, typ, val]
-#
-# where 'idn' is an integer "object number", 'typ' is a string
-# giving the object's type (e.g. "list", or "DbRow") and 'val'
-# is a representation of the object's value.  For a list, it is
-# a list of the obj2struc representations on each list item.
-# For other supported objects, it is a dict where each key is
-# a string naming one of the object's attributes, and each value
-# is the obj2struc representation of the attribute's value.
-#
-# For the 1-item list case, 'isn' is the object number of an
-# object represented earlier in the representation with a 3-item
-# form having the same 'idn' number.  This is how cyclic and
-# shared referenced are represented.
-#
-# Example:
-#
-# >>> a = [4, 5, [None, 6]]
-# >>> a[2][0] = a
-# >>> a
-# [4, 5, [[...], 6]]
-# >>> x = obj2struc (a)
-# >>> print x
-# [1, 'list', [4, 5, ['list', [[1], 6]]]]
-# >>> print struc2obj (x)
-# [4, 5, [[...], 6]]
-#
+# The reconstructed Entr object is functionally equivalent to the
+# original but not necessarily equal to it; in particular, foreign
+# key and order fields are not reproduce since their values are
+# implied by the object's position in its containing list.
 
-Serializable_classes = (
-  'Obj', 'DbRow',
-  'Chr', 'Cinf', 'Dial', 'Entr', 'Entrsnd', 'Fld', 'Freq', 'Gloss', 'Hist',
-  'Kanj', 'Kinf', 'Kreslv', 'Lsrc', 'Misc', 'Pos', 'Rdng', 'Restr', 'Rinf',
-  'Rdngsnd', 'Sens', 'Stagk', 'Stagr', 'Xref', 'Xrslv', 'Grp')
+def e2t (e): return (    # Entr object -> nested lists
+        e.id,e.src,e.stat,e.seq,e.dfrm,e.unap,e.srcnote,e.notes,e.idx,
+        [(k.txt,
+            [i.kw for i in k._inf],
+            [(f.kw,f.value) for f in k._freq])
+            for k in e._kanj],
+        [(r.txt,
+            [i.kw for i in r._inf],
+            [(f.kw,f.value) for f in r._freq],
+            [rk.kanj for rk in r._restr],
+            [s.snd for s in r._snd],)
+            for r in e._rdng],
+        [(s.notes,
+            [(g.lang,g.ginf,g.txt) for g in s._gloss],
+            [x.kw for x in s._pos],
+            [x.kw for x in s._misc],
+            [x.kw for x in s._fld],
+            [x.kw for x in s._dial],
+            [(x.lang,x.txt,x.part,x.wasei) for x in s._lsrc],
+            [x.rdng for x in s._stagr],
+            [x.kanj for x in s._stagk],
+            [(x.typ,x.xentr,x.xsens,      # .entr,.sens,.xref omitted.
+              x.rdng,x.kanj,x.notes,x.nosens,x.lowpri) for x in s._xref],
+            [(x.entr,x.sens,x.xref,x.typ, # .xentr,.xsens omitted.
+              x.rdng,x.kanj,x.notes,x.nosens,x.lowpri) for x in s._xrer],
+            [(x.typ,x.rtxt,x.ktxt,x.tsens,x.vsrc,x.vseq,x.notes,x.prio)
+              for x in s._xrslv],)
+            for s in e._sens],
+        [(h.stat,h.unap,ts2str(h.dt),h.userid,h.name,h.email,
+            h.diff,h.refs,h.notes) for h in e._hist],
+        [(x.id,x.file,x.strt,x.leng,x.trns,x.notes)
+            for x in e._snd],
+        [(x.kw,x.notes) for x in e._grp],
+        None if not e.chr else
+            (e.chr.chr,e.chr.bushu,e.chr.strokes,
+             e.chr.freq,e.chr.grade,e.chr.jlpt,
+             [(i.kw,i.value,i.mctype) for i in e.chr._cinf]),
+        [(x.kw,x.value) for x in e._krslv],)
 
-def obj2struc (o, seen=None):
-
-        if seen is None:
-
-              # If seen is None, this is a top-level (i.e. not
-              # a recursive) call.
-              #
-              # 'seen' is used to record the id() of every
-              # object precessed so that we can tell when we
-              # see the same object a second of more times.
-              # The dict key is the id() number and the value
-              # a list of references to the desc's the represent
-              # the object.  The first desc in the list will
-              # be of the form [typ, val], and following ones
-              # of the form [None].  Before returning (at the
-              # top-level) the desc's will have 'idn's inserted.
-
-            seen = dict()
-            toplevel = True
-
-        else: toplevel = False
-
-          # Get the object's id() value and string naming its type.
-
-        idn = id(o); typ = type(o).__name__
-        if typ == 'instance': typ = o.__class__.__name__
-
-        if typ in (('list', 'tuple', 'datetime') + Serializable_classes):
-
-              # These are complex types not directly representable
-              # in JSON, or which may have references to them.
-              # We convert each into a 1- or 2-item list called a
-              # descriptor.
-
-            if idn in seen:
-
-                  # If 'idn' is a key in seen we've seen this object
-                  # before and henceforth will be represented with a
-                  # descriptor of the form ['idn'], where 'idn' is the
-                  # object number used for the object in it's first
-                  # occuring representation.  We will supply the actual
-                  # 'idn' value later so for now use a placeholder [None].
-                  # (The id() value is too long to use and would bloat
-                  # the representation when it's serialized.)
-
-                desc = [None]
-
-                  # Append this descriptor to the seen object list
-                  # so we can find it later, in order to replace the
-                  # None.
-
-                seen[idn].append (desc)
-
-            else:
-
-                  # This object has not been seen before...
-                  # Create an empty descriptor (list) for it, and use it
-                  # to start a list in 'seen', keyed by this object's id()
-                  # number.  Note that we have to create the descriptor
-                  # before processing the object value because the latter
-                  # could contain references to this object which will
-                  # require the descriptor to be registered in 'seen'.
-
-                desc = []
-                seen[idn] = [desc]
-                if typ in ('list', 'tuple'):
-
-                      # If object is a seq, the representation of its
-                      # value is a list of the representation of each
-                      # of it items.
-
-                    val = [obj2struc(v,seen) for v in o]
-
-                elif typ == 'datetime':
-                    val = o.isoformat (' ')
-
-                else:
-                      # If object is one of the supported objects
-                      # its representation in a dictionary with the
-                      # keys naming the object's attributes, and its
-                      # values the representation of the object's
-                      # attribute values.  We have to process the
-                      # attributes in a deterministic order because
-                      # if the objects they reference are referenced
-                      # elsewhere, we have to assure that the same
-                      # reference will be seen first during restore
-                      # in struc2obj as was seen first here, since
-                      # the first reference carries the idn tag.
-
-                    val = dict([(a,obj2struc(v,seen))
-                                for a,v in sorted (o.__dict__.items())])
-
-                  # Now we can fill out the empty desc list created above
-                  # with the actual type and value.
-
-                desc.extend ([typ, val])
-
-        elif typ in ('str', 'unicode', 'int', 'long', 'float', 'bool', 'NoneType'):
-
-              # Basic scalar types that are directly representable in JSON
-              # and to which we don't expect (or don't support) mutiple or
-              # cyclic references.
-
-            desc = o
-
-        else:
-              # Any other types are not supported.
-
-            raise ValueError ("Unsupported type: %s" % str(type(o)))
-
-          # Go through the representation and add 'idn' values where needed.
-
-        if toplevel:
-            xid = 0
-            for idn,refs in list(seen.items()):
-
-                  # 'idn' here is the id() number of an object.
-                  # 'refs' is a list, with the first item being the
-                  # descriptor of the form [typ, val] for the first
-                  # occurance of the object, and subsequence items
-                  # (if any) are references to the object of the form
-                  # [None].  We need to change the first item to the
-                  # form [idn, typ, val] and following items to form
-                  # [idn].  ('idn' here is just a small unique number
-                  # not a id() number.)
-
-                  # If the list len is 1, there are no refernces to
-                  # this object so we need not do anything, the descriptor
-                  # is fine as it stands.
-
-                if len(refs) <= 1: continue
-
-                  # Separate the first descriptor and remaining reference
-                  # descriptors.
-
-                first = refs.pop(0)
-
-                  # Generate a new 'idn' number.
-
-                xid += 1
-
-                  # Change the first descriptor from [typ, val] to
-                  # [idn, typ, val].
-
-                first.insert (0, xid)
-                for descx in refs:
-
-                      # For each of the reference descriptors, change
-                      # from [None] to [idn].
-
-                    descx[0] = xid
-
-        return desc
-
-
-def struc2obj (desc, seen=None):
-          # Convert a JSON'able structure into an object.
-
-          # 'Seen' is used to restore cyclic and shared references.
-        if seen is None: seen = dict()
-
-          # Simple scalars are represented by themselves in the descriptor
-          # structure.
-        if type(desc) is not list: o = desc
-
-          # Otherwise, a list is a descriptor.
-        else:
-              # This is an object descriptor.
-              # It is either [id, typ, val], [typ, val], or [id].
-            idn = typ = None
-            if   len (desc) == 1: (idn,) = desc
-            elif len (desc) == 2: (typ, val) = desc
-            elif len (desc) == 3: (idn, typ, val) = desc
-            else: raise ValueError ("Expected length 1, 2, or 3 list")
-
-            if idn and type(idn) is not int:
-                raise ValueError ("Id value '%s' is not an int" % idn)
-
-            if not typ:
-                  # If no 'typ' value, this descriptor is of the form
-                  # [idn] and is a reference to a previously seen object.
-                  # We expect the find the object in the 'seen' registry.
-                try: o = seen[idn]
-                except KeyError: raise ValueError ("Id value '%s' not found" % idn)
-            else:
-                  # Process a descriptor based on its 'typ'...
-                  # In each case below, before we reconstruct the object's
-                  # value, we need (is there is an 'idn' value) make and
-                  # empty intance of the object and register it in 'seen'
-                  # so than any values that refer to it can do so.
-                  # FIXME: Need to do this in better more general way.
-
-                if typ == 'list':
-                    o = list()
-                    if idn: seen[idn] = o
-                    o.extend ([struc2obj(v,seen) for v in val])
-                elif typ == 'tuple':
-                      # FIXME: tuple immutable so we can't create empty
-                      # instance first to register with 'seen' and add
-                      # values after.
-                    o = tuple([struc2obj(v,seen) for v in val])
-                    if idn: seen[idn] = o
-                elif typ in Serializable_classes:
-                    cls = getattr (jdb, typ)
-                    o = cls()
-                    if idn: seen[idn] = o
-                    for a,v in sorted(val.items()):
-                        setattr (o, a, struc2obj(v,seen))
-                elif typ == 'datetime':
-                    o = isoformat2datetime (val)
-                else:
-                    raise ValueError ("Unknown type: %s" % typ)
-        return o
-
-def isoformat2datetime (isoformat):
-          # FIXME: handle microsecs and timezone
-        s = isoformat.replace ('T', ' ')
-        ts = time.strptime (s, "%Y-%m-%d %H:%M:%S")
-        v = datetime.datetime(*ts[:6])
-        return v
+def t2e (t):  # Inverse of e2t(): nestsed lists -> Entr object
+        id, src, stat, seq, dfrm, unap, srcnote, notes, idx, \
+          pkanj, prdng, psens, phist, psnd, pgrp, pchr, pkrslv = t
+        e = Entr (id, src, stat, seq, dfrm, unap, srcnote, notes, idx,
+            _kanj=[Kanj(txt=k[0],
+                        _inf=[Kinf(kw=x) for x in k[1]],
+                        _freq=[Freq(kw=kw,value=v) for kw,v in k[2]]
+                        ) for k in pkanj],
+            _rdng=[Rdng(txt=r[0],
+                        _inf=[Rinf(kw=x) for x in r[1]],
+                        _freq=[Freq(kw=k,value=v) for k,v in r[2]],
+                        _restr=[Restr(kanj=x) for x in r[3]],
+                        _snd=[Snd(*x) for x in r[4]]
+                        ) for r in prdng],
+            _sens=[Sens(notes=s[0],
+                        _gloss=[Gloss(None,None,None,*g) for g in s[1]],
+                        _pos=[Pos(kw=x) for x in s[2]],
+                        _misc=[Misc(kw=x) for x in s[3]],
+                        _fld=[Fld(kw=x) for x in s[4]],
+                        _dial=[Dial(kw=x) for x in s[5]],
+                        _lsrc=[Lsrc(lang=lang,txt=txt,part=part,wasei=wasei)
+                              for lang,txt,part,wasei in s[6]],
+                        _stagr=[Stagr(rdng=x) for x in s[7]],
+                        _stagk=[Stagk(kanj=x) for x in s[8]],
+                        _xref=[Xref(None,None,None,typ,xentr,xsens,
+                                    rdng,kanj,notes,nosens,lowpri)
+                               for typ,xentr,xsens,rdng,kanj,notes,nosens,lowpri
+                               in s[9]],
+                        _xrer=[Xref(entr,sens,xref,typ,None,None,
+                                    rdng,kanj,notes,nosens,lowpri)
+                               for entr,sens,xref,typ,rdng,kanj,notes,nosens,lowpri
+                               in s[10]],
+                        _xrslv=[Xrslv(None,None,None,typ,rtxt,ktxt,tsens,
+                                      vsrc,vseq,notes,prio)
+                                for typ,rtxt,ktxt,tsens,vsrc,vseq,notes,prio
+                                in s[11]])
+                   for s in psens],
+            _hist=[Hist(None,None,stat,unap,str2ts(dt),
+                        userid,name,email,diff,refs,notes)
+                   for stat,unap,dt,userid,name,email,diff,refs,notes
+                   in phist],
+            _snd=[Snd(*x) for x in psnd],
+            _grp=[Grp(kw=kw,notes=notes) for kw,notes in pgrp],
+            chr=None if not pchr else \
+                Chr(None,*pchr[:6],
+                    [Cinf(kw=k,value=v,mtype=m) for k,v,m in pchr[6]]),
+            _krslv=[Krslv(kw=k,value=v) for k,v in pkrslv],
+            )
+        return e
 
 # The following two functions serialize and de-serialize
 # jmcgi.SearchItems objects.
 
 def so2js (obj):
-        # Convert a SearchItems object to a structure serializable
-        # by json.  This is a temporary hack and should be generalized
-        # later, possibly by generalizing serialize.obj2struct().
+        # Convert a SearchItems object to JSON.
 
         js = obj.__dict__.copy()
         if  hasattr (obj, 'txts'):
@@ -326,7 +177,7 @@ def so2js (obj):
         return soj
 
 def js2so (soj):
-        # Convert a json-serialized SearchItems object back to an
+        # Convert a JSON-serialized SearchItems object back to an
         # object.  For convenience, we don't restore it to a SearchItem
         # but to an Obj.  SearchItem's purpose is to prevent adding
         # unexpected attributes, something we don't have to worry about
@@ -343,3 +194,27 @@ def js2so (soj):
             sis.append (o)
         if sis: obj.txts = sis
         return obj
+
+def ts2str (dt):        # Convert datetime timestamp to str.
+        if not dt: return None
+        return dt.strftime ("%Y-%m-%d %H:%M:%S")
+
+def str2ts (s):         # Convert str to datetime timestamp.
+        if not s: return None
+        return datetime.datetime.strptime (s, "%Y-%m-%d %H:%M:%S")
+
+def main():
+        cur = jdb.dbopen ('jmdict')
+        e = jdb.entrList (cur, None, [1971310])[0]
+        x = serialize (e, compress=False)
+        d = unserialize (x)
+        jdb.setkeys (d)
+        print ("MATCH!!" if e==d else "BZZZ, sorry.")
+        pdb.set_trace()
+
+  # Assuming you are cd'd to jmdictdb/ when running this, you will
+  # need to run like:
+  #   PYTHONPATH='..' python3 -mpdb serialize.py
+  # to make sure the local modules are imported.
+
+if __name__ == '__main__': main()
