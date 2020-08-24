@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.5">
+<title>Development Environment</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+</head>
+<body class="article">
+<div id="header">
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_development_environment">Development Environment</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This document describes setting up an environment for doing development
+work on the JMdictDB code.  This environment will allow the Apache
+web server to access the CGI files directly
+in your development directory with a dedicated database allowing you
+to change the code and see the results without affecting deployed
+production code or database.</p>
+</div>
+<div class="sect2">
+<h3 id="_1_get_the_jmdictdb_software">1. Get the JMdictDB software</h3>
+<div class="paragraph">
+<p>Generally one should do development of a new JMdictDB "feature" on
+a new Git branch dedicated for those changes.  The new branch
+should be based off of one of the two on-going JMdictDB branches:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>master&#8201;&#8212;&#8201;Most new changes should be done on a new branch based
+on the "master" branch.  After testing and integration they will
+be merged back into "master" and will be available in the
+production environment the next time it is upgraded.</p>
+</li>
+<li>
+<p>edrdg&#8201;&#8212;&#8201;This branch is the code currently deployed at edrdg.com
+and should be reserved for emergency bug fixes that need to be
+deployed immediately at that site without waiting for the
+normal cycle of upgrading to the latest code in "master".</p>
+</li>
+</ul>
+</div>
+<div class="sect3">
+<h4 id="_1_1_get_a_fresh_copy_or_update_the_jmdictdb_software">1.1. Get a fresh copy or update the JMdictDB software</h4>
+<div class="paragraph">
+<p>In the following we&#8217;ll use &lt;DEVDIR&gt; to denote the directory you
+want to use for the development code, and &lt;BRANCH&gt; for the name
+of your feature branch.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ git clone https://gitlab.com/yamagoya/jmdictdb.git &lt;DEVDIR&gt;
+$ cd &lt;DEVDIR&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Alternatively, if you have an existing development directory you
+can cd to it and do <code>git checkout master; git pull</code>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_1_2_create_a_new_branch_from_branch_master">1.2. Create a new branch from branch "master"</h4>
+<div class="literalblock">
+<div class="content">
+<pre>$ git checkout -b &lt;BRANCH&gt; master</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_database">2. Database</h3>
+<div class="paragraph">
+<p>We&#8217;ll use &lt;DEVDB&gt; to denote the name of the database you&#8217;ll use
+for development work.  You can name it whatever you want but
+since the database server may serve other databases having nothing
+to do with JMdictDB the author&#8217;s convention is to use names prefixed
+with "jm".</p>
+</div>
+<div class="sect3">
+<h4 id="_2_1_make_a_copy_of_the_current_jmdict_database">2.1. Make a copy of the current jmdict database</h4>
+<div class="paragraph">
+<p>This will be a database you for use while doing development work</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ createdb -Ojmdictdb &lt;DEVDB&gt;    # That's -Oh, not -zero.
+$ pg_dump jmdict | psql -d &lt;DEVDB&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This is not strictly necessary; you can access any database from
+your development code as long as the database version is compatible
+but if your work involves database changes such as adding tags or
+schema changes you&#8217;ll want to develop and test them in a separate
+database.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_2_2_apply_any_needed_database_updates">2.2. Apply any needed database updates:</h4>
+<div class="literalblock">
+<div class="content">
+<pre>$ tools/dbversion.py &lt;DEVDB&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If the api and database version are compatible, you&#8217;re all set.  If
+it reports something like:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>code expects updates: a921f4
+&lt;DEVDB&gt;: incompatible, missing updates: a921f4, has updates: 7256aa</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>then look in db/updates/ for a series of updates that will bring
+you from, in this example, 7256aa to a921f4.  At the time of writing,
+there are three that follow 028-7256aa.sql:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>029-000000.sql  029-835781.sql  030-a921f4.sql</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Apply each, in order, eg:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>psql -d&lt;DEVDB&gt; -Ujmdictdb -f 029-000000.sql
+psql -d&lt;DEVDB&gt; -Ujmdictdb -f 029-835781.sql
+psql -d&lt;DEVDB&gt; -Ujmdictdb -f 030-a921f4.sql</pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_2_3_check_direct_non_web_access">2.3. Check direct (non-web) access</h4>
+<div class="paragraph">
+<p>You should now be able to access the development database with the
+command line tools.  <code>shentr.py</code> can provide a useful test:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ bin/shentr.py -d&lt;DEVDB&gt; -q 1408370
+Entry: jmdict 1408370 A {1974702}
+Kanji: 1.太陽[ichi1,news1,nf04]
+Readings: 1.たいよう[ichi1,news1,nf04]
+Senses:
+1. [n]
+  1. sun
+History:
+1. A 2018-03-20 15:42:14 Johan Råde&lt;johan.rade@gmail.com&gt;
+  Diff:
+    @@ -19 +18,0 @@
+    -&lt;gloss&gt;solar&lt;/gloss&gt;</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_setup_web_access">3. Setup Web Access</h3>
+<div class="sect3">
+<h4 id="vdir">3.1. Create a web server virtual directory</h4>
+<div class="paragraph">
+<p>See section
+<a href="install.html#apache_config">5.configuring_the_apache_webserver</a>
+in the <a href="install.html">Install documentation</a>
+for instructions on adding a virtual directory.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+This need only be done once.  If you&#8217;ve configured a virtual
+directory for &lt;DEVDIR&gt; in the past you can continue to use that.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>In that example you&#8217;ll want to change the name of the virtual directory
+(jpdicts in the example) to a name of your choice (which we&#8217;ll refer to
+as &lt;VDIR&gt; below), and the physical directory (/var/wwww/jmdictdb/ in
+the example) to the path to &lt;DEVDIR&gt;.</p>
+</div>
+<div class="paragraph">
+<p>The web server will need to be restarted in order for it to read the
+new configuration.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="config_ini">3.2. Config and log files</h4>
+<div class="paragraph">
+<p>See section
+<a href="install.html#config_ini">6.Create a config.ini file for CGI settings</a>
+in the
+<a href="install.html">Install documentation</a>
+for general instructions on the config files.</p>
+</div>
+<div class="paragraph">
+<p>Particularizing here:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Since the web files will be served directly from &lt;DEVDIR&gt; the
+config.ini and config-pvt.ini files should be created in
+&lt;DEVDIR&gt;/web/lib/.  config.ini can be empty if the default
+settings described in config-sample.ini are ok.</p>
+</li>
+<li>
+<p>The config-pvt.ini file must contain a [db_&lt;DEVDB-SVC&gt;] section
+to allow CGI access to your development database.
+&lt;DEVDB-SVC&gt; is the "service name" used in URLs as the &amp;svc=&#8230;&#8203;" value.
+The author finds that naming the service section anything other
+than "db_&lt;DEVDB&gt;" (that is, not making the service name the same
+as the database name) inevitably leads to confusion.</p>
+</li>
+<li>
+<p>There must (as always) also be a [db_session] section present to
+identify the user database.</p>
+</li>
+<li>
+<p>If you wish to preclude accessing, say, the production "jmdict"
+database from the development code, you can remove or not add a
+[db_jmdict] section.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Create a jmdictdb.log file in &lt;DEVDIR&gt;/web/lib/ (or wherever you
+you specified config.ini if you you overrode the default
+name or location in config.ini.</p>
+</div>
+<div class="paragraph">
+<p>Don&#8217;t forget to set the owner, group and permissions on the files:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>config-pvt.ini should not be world-readable but must be readable
+by the web server.</p>
+</li>
+<li>
+<p>The log file must be writable by the web server.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_3_3_check_access">3.3. Check access</h4>
+<div class="paragraph">
+<p>At this point you should be able to access the development database
+with the CGI web pages.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>\http://localhost/&lt;VDIR&gt;/cgi-bin/srchform.py?svc=&lt;DEVDB-SVC&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where &lt;VDIR&gt; is the web server virtual directory configured in
+step <a href="#vdir">3.1. Create a web server virtual directory</a> and &lt;DEVDB-SVC&gt; is the database access service
+for your development database that was added to config-pvt.ini
+in step <a href="#config_ini">3.2. Config and log files</a>.</p>
+</div>
+<div class="paragraph">
+<p>If you get an error, please check section
+<a href="install.html#errors">7. Common errors that may occur when trying to access a web page</a>
+in the <a href="install.html">Install documentation</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_4_tools">4. Tools</h3>
+<div class="paragraph">
+<p>Tools that may be useful during development activities are located
+in the tools/ directory.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>tools/dbversion.py&#8201;&#8212;&#8201;Will report if the current code is compatible
+with a given database.</p>
+</li>
+<li>
+<p>cgi/cgiinfo.py&#8201;&#8212;&#8201;A web page that will report details about the
+current development environment, most importantly where the library
+modules being used by the cgi scripts are coming from.  This can
+help diagnose subtle problems when the CGI scripts access installed
+(and possibly older) versions of library code rather than that
+from the development directory.  Available at the URL:
+<a href="http://localhost/&lt;VDIR&gt;/cgi-bin/cgiinfo.py?svc=&lt;SVC&gt" class="bare">http://localhost/&lt;VDIR&gt;/cgi-bin/cgiinfo.py?svc=&lt;SVC&gt</a>;
+where &lt;VDIR&gt; is the web server virtual directory configured in
+step 3.1 and &lt;DEVDB-SVC&gt; is the database access service defined
+in config-pct.ini in step <a href="#config_ini">3.2. Config and log files</a>.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2020-06-29 19:40:55 MDT
+</div>
+</div>
+</body>
+</html>

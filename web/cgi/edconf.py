@@ -1,27 +1,12 @@
 #!/usr/bin/env python3
-#######################################################################
-#  This file is part of JMdictDB.
-#  Copyright (c) 2008-2012 Stuart McGraw
-#
-#  JMdictDB is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published
-#  by the Free Software Foundation; either version 2 of the License,
-#  or (at your option) any later version.
-#
-#  JMdictDB is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with JMdictDB; if not, write to the Free Software Foundation,
-#  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-#######################################################################
+# Copyright (c) 2008-2012 Stuart McGraw
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 import sys, cgi, re, datetime, copy
-sys.path.extend (['../lib','../../python/lib','../python/lib'])
-import logger; from logger import L
-import jdb, jmcgi, jelparse, jellex, serialize, fmt
+try: import pkgpath.py  # Make jmdictdb package available on sys.path.
+except ImportError: pass
+from jmdictdb import logger; from jmdictdb.logger import L
+from jmdictdb import jdb, jmcgi, jelparse, jellex, serialize, submit, fmt
 
 def main (args, opts):
         logger.enable()
@@ -64,24 +49,24 @@ def main (args, opts):
 
         seq = url_int ('seq', form, errs)
         src = url_int ('src', form, errs)
-        notes = url_str ('notes', form)
-        srcnote = url_str ('srcnote', form)
+        notes = submit.clean (url_str ('notes', form))
+        srcnote = submit.clean (url_str ('srcnote', form))
 
           # These are the JEL (JMdict Edit Language) texts which
           # we will concatenate into a string that is fed to the
           # JEL parser which will create an Entr object.
-        kanj = (stripws (url_str ('kanj', form))).strip()
-        rdng = (stripws (url_str ('rdng', form))).strip()
-        sens = (url_str ('sens', form)).strip()
+        kanj = submit.clean ((stripws (url_str ('kanj', form))).strip())
+        rdng = submit.clean ((stripws (url_str ('rdng', form))).strip())
+        sens = submit.clean ((url_str ('sens', form)).strip())
         intxt = "\f".join ((kanj, rdng, sens))
         grpstxt = url_str ('grp', form)
 
           # Get the meta-edit info which will go into the history
           # record for this change.
-        comment = url_str ('comment', form)
-        refs    = url_str ('reference', form)
-        name    = url_str ('name', form)
-        email   = url_str ('email', form)
+        comment = submit.clean (url_str ('comment', form))
+        refs    = submit.clean (url_str ('reference', form))
+        name    = submit.clean (url_str ('name', form))
+        email   = submit.clean (url_str ('email', form))
 
         if errs: jmcgi.err_page (errs)
 
@@ -204,6 +189,7 @@ def main (args, opts):
         entr = jdb.add_hist (entr, pentr, sess.userid if sess else None,
                              name, email, comment, refs,
                              entr.stat==KW.STAT['D'].id)
+        if errs: jmcgi.err_page (errs)
         if not delete:
             check_for_errors (entr, errs)
             if errs: jmcgi.err_page (errs)
@@ -212,7 +198,7 @@ def main (args, opts):
 
           # The following all expect a list of entries.
         jmcgi.add_filtered_xrefs ([entr], rem_unap=False)
-        serialized = serialize.serialize ([entr])
+        serialized = serialize.serialize (entr, compress=True)
         jmcgi.htmlprep ([entr])
 
         entrs = [[entr, None]]  # Package 'entr' as expected by entr.jinja.

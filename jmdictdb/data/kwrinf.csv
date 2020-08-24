@@ -1,0 +1,14 @@
+id	kw	descr	ents
+1	gikun	gikun (meaning as reading) or jukujikun (special kanji reading)	
+2	ok	out-dated or obsolete kana usage	
+3	ik	word containing irregular kana usage	
+4	uK	word usually written using kanji alone	
+103	name	reading used only in names (nanori)	{"jmdict":0}
+104	rad	reading used as name of radical	{"jmdict":0}
+105	jouyou	approved reading for jouyou kanji	{"jmdict":0}
+106	kun	kun-yomi	{"jmdict":0}
+128	on	on-yomi	{"jmdict":0}
+129	kan	on-yomi, kan	{"jmdict":0}
+130	go	on-yomi, go	{"jmdict":0}
+131	tou	on-yomi, tou	{"jmdict":0}
+132	kanyou	on-yomi, kan\'you	{"jmdict":0}

@@ -1,27 +1,12 @@
 #!/usr/bin/env python3
-#######################################################################
-#  This file is part of JMdictDB.
-#  Copyright (c) 2008-2012 Stuart McGraw
-#
-#  JMdictDB is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published
-#  by the Free Software Foundation; either version 2 of the License,
-#  or (at your option) any later version.
-#
-#  JMdictDB is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with JMdictDB; if not, write to the Free Software Foundation,
-#  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-#######################################################################
+# Copyright (c) 2008-2012 Stuart McGraw
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 import sys
-sys.path.extend (['../lib','../../python/lib','../python/lib'])
-import logger; from logger import L
-import jdb, jmcgi, serialize, submit
+try: import pkgpath.py  # Make jmdictdb package available on sys.path.
+except ImportError: pass
+from jmdictdb import logger; from jmdictdb.logger import L
+from jmdictdb import jdb, jmcgi, serialize, submit
 
 def main( args, opts ):
         logger.enable()
@@ -38,10 +23,12 @@ def main( args, opts ):
         if not sess and disp:
             errs.append ("Only registered editors can approve or reject entries")
         if errs: jmcgi.err_page (errs)
-        try: entrs = serialize.unserialize (fv ("entr"))
+        try: entr = serialize.unserialize (fv ("entr"))
         except Exception:
             jmcgi.err_page (["Bad 'entr' parameter, unable to unserialize."])
-
+        entrs = [entr]  # 'unserialize() returns a single entry but formerly
+                        #  returned a list.  Wrap 'entr' in a list to minimize
+                        #  further code changes,
         added = []
           # Clear any possible transactions begun elsewhere (e.g. by the
           # keyword table read in jdb.dbOpen()).  Failure to do this will
@@ -51,12 +38,10 @@ def main( args, opts ):
         L('cgi.edsubmit.main').debug("starting transaction")
         dbh.connection.rollback()
         dbh.execute ("START TRANSACTION ISOLATION LEVEL SERIALIZABLE");
-          #FIXME: we unserialize the entr's xref's as they were resolved
-          #  by the edconf.py page.  Should we check them again here?
-          #  If target entry was deleted in meantime, attempt to add
-          #  our entr to db will fail with obscure foreign key error.
-          #  Alternatively an edited version of target may have been
-          #  created which wont have our xref pointing to it as it should.
+          # The entr's we deserialized have plain (un-augmented) xrefs
+          # so re-augment them.
+        xrefs = jdb.collect_xrefs (entrs)
+        jdb.augment_xrefs (dbh, xrefs)
         for entr in entrs:
               #FIXME: temporary hack...
             submit.Svc, submit.Sid = svc, sid

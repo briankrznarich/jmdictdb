@@ -1,131 +1,57 @@
 #!/usr/bin/env python3
-#######################################################################
-#  This file is part of JMdictDB.
-#  Copyright (c) 2008-2012 Stuart McGraw
-#
-#  JMdictDB is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published
-#  by the Free Software Foundation; either version 2 of the License,
-#  or (at your option) any later version.
-#
-#  JMdictDB is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with JMdictDB; if not, write to the Free Software Foundation,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
-#######################################################################
+# Copyright (c) 2008-2012,2020 Stuart McGraw
+# SPDX-License-Identifier: GPL-2.0-or-later
 
-# WARNING --  this file has only been partially converted to Python3.
-
-# This program build a complete XML file by combining a DTD
-# with a number of files containing one ot more XML elements.
+# This program builds a complete XML file by combining a DTD
+# with a number of files containing one or more XML elements.
 # It is used by the jmdictdb testing framework to generate
 # test files from components.
 # See also: jmextract.py -- Pulls subset of elements out of
 #   a jmdict or jmnedict file.
 
-import sys, os, inspect, pdb
-_ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
-_ = os.path.join (os.path.dirname(_), 'python', 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
+import sys, pdb
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import jdb, fmtxml
 
-def main (args, opts):
-        if sys.stdout.encoding != opts.encoding:
-            sys.stdout = open (sys.stdout.fileno(), 'w', encoding=opts.encoding)
-        parts = []
-        dtdfname = args.pop(0)
-        dtd = get_dtd (dtdfname, opts.orig_root, opts.root, opts.encoding)
-        sys.stdout.write (dtd)
-        sys.stdout.write ("<%s>\n" % opts.root)
-        for fname in args:
-            sec = open (fname, 'r', encoding='utf-8').read()
-            if sec[0] == '\uFEFF': sec = sec[1:]
-            sys.stdout.write (sec)
-        sys.stdout.write ("</%s>\n" % opts.root)
+def main():
+        KW = jdb.Kwds('')
+        args = parse_cmdline()
+        root = None
+        if args.dtd: root = args.dtd[0:2].upper() + args.dtd[2:]
+        dtd = fmtxml.get_dtd (KW, args.dtd)
+        outf = open (args.output, 'w') if args.output else sys.stdout
+        outf.write (dtd)
+        if root and args.date:
+            if args.date == 'now':
+                args.date = datetime.date.today().isoformat()
+            outf.write ("<!-- %s created: %s -->\n" % (root, args.date))
+        if root: outf.write ("<%s>\n" % root)
+        for fname in args.filenames:
+            with open (fname) as f:
+                outf.write (f.read())
+        if root: outf.write ("</%s>\n" % root)
 
-def get_dtd (dtdfname, origroot, newroot, newenc):
-        dtd = open (dtdfname, 'r').read()
-        if dtd[0] == '\uFEFF': dtd = dtd[1:]
-        if newenc != "UTF-8":
-            a = dtd.replace ('<?xml version="1.0" encoding="UTF-8"?>',
-                             '<?xml version="1.0" encoding="%s"?>' % newenc, 1)
-            if a == dtd:
-                a = dtd.replace ('<?xml version="1.0">',
-                                 '<?xml version="1.0" encoding="%s"?>' % newenc, 1)
-            if a == dtd:
-                print ("Unable to replace DTD encoding", file=sys.stderr)
-                sys.exit (1)
-            dtd = a
-        if newroot != origroot:
-            a = dtd.replace ('\n<!DOCTYPE %s [\n' % origroot,
-                             '\n<!DOCTYPE %s [\n' % newroot, 1)
-            if a == dtd:
-                print ("Unable to replace DTD doctype root declaration", file=sys.stderr)
-                sys.exit (1)
-            dtd = a
-            a = dtd.replace ('\n<!ELEMENT %s' % origroot,
-                             '\n<!ELEMENT %s' % newroot, 1)
-            if a == dtd:
-                print ("Unable to replace DTD root entity declaration", file=sys.stderr)
-                sys.exit (1)
-            dtd = a
-        return dtd
-
-from optparse import OptionParser, OptionGroup
-from pylib.optparse_formatters import IndentedHelpFormatterWithNL
-
+from argparse import ArgumentParser
 def parse_cmdline ():
-        u = \
-"""\n\t%prog [options] dtd-file [elements-file [elements-file [...]]
+        p = ArgumentParser (description="""\
+%(prog)s will create a full JMdict/JMnedict XML file by combining
+a DTD and the contents of zero or more XML file containing <entry>
+elements.  Note that the entities used in the DTD are from the
+standard kw*.csv file in jmdicttdb/data/, not from a database.""")
 
-%prog will combine a DTD file and a number of files containing xml
-elements into a single xml file that is written to stdout.
-The ENC and ROOT values given in the --encoding and --root options
-are substituted into the DTD, and all the elements read from the
-input files are wrapped in a root element with tag ROOT.  Note the
-input DTD is not actually parsed; rather the new ROOT and ENV values
-are replaced by string substitution, so the DTD must be formatted
-identically (including whitespace) to the stndard Monash JMdict or
-JMnedict XML files.
+        p.add_argument ('dtd',
+            help="Type of DTD to include: jmdict, jmnedict or jmex")
+        p.add_argument ('filenames', nargs='*',
+            help="Filename(s) of the xml snippets to be included.")
+        p.add_argument ('--date', '-d', default='2020-01-01',
+            help="Date to use in the datestamp comment line.  A "
+                "specific date can be given in the form: YYYY-MM-DD.  "
+                "May be \"now\" to use today's date or \"none\" to "
+                "suppress the datestamp line altogether.  The default "
+                "is \"2020-01-01\".")
+        p.add_argument ('--output', '-o',
+            help="Output file name.  If not given outpuut is to stdout.")
+        args = p.parse_args ()
+        return args
 
-Arguments:
-        dtd-file -- DTD file with substitutable encoding and root
-            (such as python/lib/dtd-jmdict.xml.)  You can also
-            use a dtd file with hardcoded encoding or root tag but
-            the output xml file will not be valid unless the values
-            given in --encoding and --root agree.
-        elements-file -- A file containing xml elements that will
-            be included under the root element in the output files.
-            All input files are assumed to be utf-8 encoded.
-            Caution: Some jmdictdb tools expect entry elements to
-            be in seq-number order.  This program simply concatentates
-            the input file entries so it is the user's responsibility
-            to provide appropriate input files in the right order
-            if ordered entries in the output file are wanted.
-            """
-
-        p = OptionParser (usage=u)
-
-        p.add_option ("-e", "--encoding", default="UTF-8",
-            metavar="ENC",
-            help="""Enoding to use in the output xml file (including
-                the encoding declaration in the DTD).  All input files
-                are presumed to be utf-8.)""")
-
-        p.add_option ("-r", "--root", default="JMdict",
-            help="""Name of root element to use in the output DTD.""")
-
-        p.add_option ("--orig-root", default="JMdict",
-            help="""Name of root element to be replaced in the input DTD.""")
-
-        opts, args = p.parse_args ()
-        if len(args) < 1: p.error ("Expected at least one input file.")
-        return args, opts
-
-if __name__ == '__main__':
-        args, opts = parse_cmdline()
-        main (args, opts)
-
+if __name__ == '__main__': main()

@@ -1,17 +1,9 @@
 #!/usr/bin/env python3
-
-
-"""
-Program to generate parser tables from the jelparse module.
-
-"""
+""" Program to generate parser tables from the jelparse module. """
 
 import sys, os, inspect, pdb
-_ = os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0])
-_ = os.path.join (os.path.dirname(_), 'python', 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
-
-import jdb, jellex, jelparse
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+from jmdictdb import jdb, jellex, jelparse
 
 def main():
         jdb.KW = jdb.Kwds (jdb.std_csv_dir())

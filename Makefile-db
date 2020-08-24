@@ -1,0 +1,268 @@
+# This makefile simplifies some of the tasks needed when loading
+# the JMdictDB databases.
+#
+# "make all" will print a summary of targets.
+#
+# The following variables can be adjusted based on your needs...
+# Alternatively, they can be overridden when "make" is run as in
+# the following example:
+#
+#    make JMDICTFILE=JMdict "LANGOPT=-g fre" ...
+#
+
+# Command used to run your Python interpreter.  Note that JMdictDB
+# will not run under python2.
+PYTHON = python3
+
+# The JMdict file to download.  Choice is usually between JMdict
+# which contains multi-lingual glosses, and JMdict_e that contains
+# only English glosses but is 25% smaller and parses faster.
+JMDICTFILE = JMdict_e
+#JMDICTFILE = JMdict
+
+# Parse out only glosses of the specified language.  If not
+# supplied, all glosses will be parsed, regardless of language.
+# Language specified using ISO-639-2 3-letter abbreviation.
+#LANGOPT = -g eng
+
+# Name of database to load new data into.  The new data is loaded
+# into this database first, without changing the in-service
+# production database, for any testing needed.  When the database
+# has been verified, in can be moved into the production database
+# usng the makefile target "activate".
+DB = jmnew
+
+# Name of the production database...
+DBACT = jmdict
+
+# Name of previous production database (saved when newly
+# created database is moved to production status...
+DBOLD = jmold
+
+# Postgresql user that will be used to create the jmdictdb
+# tables and other objects.  Users defined in the
+# config.ini file should match.
+USER = jmdictdb
+
+# Postgresql user that has select-only (i.e. read-only access
+# to the database.  Used only for creating this user in target
+# 'jminit'.  Users defined in the config.ini file
+# should match.
+RO_USER = jmdictdbv
+
+# A Postgresql user that has superuser database privs.
+PG_SUPER = postgres
+
+# Name of the machine hosting the Postgresql database server.
+# If blank, localhost will be used.
+HOST =
+
+# Location of JMdictDB commands that will be used when loading
+# databases.  If empty, the installed versions of the commands 
+# will be used.  If not empty, it is the path to the commands 
+# and MUST end with a slash ("/").  "bin/" will use the commands
+# in the current checkout.
+BINDIR = bin/
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# You should not need to change anything below here.
+
+ifeq ($(HOST),)
+  PG_HOST =
+  JM_HOST =
+else
+  PG_HOST = -h $(HOST)
+  JM_HOST = -r $(HOST)
+endif
+
+#====== Rules ==========================================================
+
+all:
+	@echo 'You must supply an explicit target with this makefile.'
+	@echo
+	@echo '  newdb -- Create an empty database named "jmnew".'
+	@echo '  jmnew -- Create a database named "jmnew" with jmdictdb tables and '
+	@echo '    jmdictdb objects created but no data loaded.'
+	@echo
+	@echo '  data/jmdict.xml -- Get latest jmdict xml file from Monash.'
+	@echo '  data/jmdict.pgi -- Create intermediate file from jmdict.xml file.'
+	@echo '  loadjm -- Load jmdict into existing database "jmnew".'
+	@echo
+	@echo '  data/jmnedict.xml -- Get latest jmnedict xml file from Monash.'
+	@echo '  data/jmnedict.pgi -- Create intermediate file from jmdict.xml file.'
+	@echo '  loadne -- Load jmnedict into existing database "jmnew".'
+	@echo
+	@echo '  data/examples.txt -- Get latest Examples file from Monash.'
+	@echo '  data/examples.pgi -- Create intermediate file from examples.xml file.'
+	@echo '  loadex -- Load examples into the existing database "jmnew".'
+	@echo
+	@echo '  data/kanjidic2.xml -- Get latest kanjidic2.xml file from Monash.'
+	@echo '  data/kanjidic2.pgi -- Create intermediate file from examples.xml file.'
+	@echo '  loadkd -- Load kanjidic into the existing database "jmnew".'
+	@echo '   * WARNING: kanjidic2 support is usable but incomplete.'
+	@echo
+	@echo '  loadall -- Initialize database "jmnew" and load jmdict, jmnedict'
+	@echo '    and examples.'
+	@echo '  activate -- Rename the "jmnew" database to "jmdict".'
+	@echo
+	@echo '  * NOTE: "make loadall" will do all needed database initialization.'
+	@echo '  To load a subset of loadall (eg only loadjm and loadne), you should'
+	@echo '  do "make jmnew", then "make loadjm", "make loadne", etc as desired,'
+	@echo '  then the last step should be "make postload".'
+
+#------ Create jmsess and jmdictdb users ---------------------------------
+
+    # Run this target only once when creating a jmdictdb server
+    # installation.  Creates a jmsess database and two dedicated
+    # users that the jmdictdb app will use to access the database.
+
+init:
+    # Assume any errors from 'createuser' are due to the user
+    # already existing and ignore them.
+	-createuser $(PG_HOST) -U $(PG_SUPER) -SDRP $(USER)
+	-createuser $(PG_HOST) -U $(PG_SUPER) -SDRP $(RO_USER)
+    # Don't automatically drop old session database due to risk
+    # of unintentionally loosing user logins and passwords.  If
+    # it exists, the subsequent CREATE  DATABASE command will
+    # fail and require the user to manually drop the session
+    # database or otherwise manually correct the situation.
+	psql $(PG_HOST) -U $(PG_SUPER) -d postgres -c 'create database jmsess'
+	psql $(PG_HOST) -U $(PG_SUPER) -d jmsess -c "CREATE EXTENSION IF NOT EXISTS pgcrypto"
+	cd db && psql $(PG_HOST) -U $(USER) -d jmsess -f mksess.sql
+	@echo 'Remember to add jmdictdb editors to the jmsess "users" table.'
+
+#------ Create a blank jmnew database ----------------------------------
+#
+# This may be useful when loading a dump of a jmdictdb database, e.g:
+#   make newdb                       # Create blank jmnew database
+#   pg_restore -O jmdictdb -d jmnew  # Restore the dump into jmnew.
+#   make activate                    # Rename jmnew to jmdict.
+
+newdb:
+	psql $(PG_HOST) -U $(PG_SUPER) -d postgres -c 'drop database if exists $(DB)'
+	psql $(PG_HOST) -U $(PG_SUPER) -d postgres -c "create database $(DB) owner $(USER) template template0 encoding 'utf8'"
+
+#------ Create a new jmnew database with empty jmdictdb objects --------
+
+jmnew: newdb
+	cd db && psql $(PG_HOST) -U $(USER) -d $(DB) -f schema.sql
+
+#------ Move installation database to active ----------------------------
+
+activate:
+	psql $(PG_HOST) -U $(PG_SUPER) -d $(DB) -c 'SELECT 1' >/dev/null # Check existance.
+	psql $(PG_HOST) -U $(PG_SUPER) -d postgres -c 'drop database if exists $(DBOLD)'
+	-psql $(PG_HOST) -U $(PG_SUPER) -d postgres -c 'alter database $(DBACT) rename to $(DBOLD)'
+	psql $(PG_HOST) -U $(PG_SUPER) -d postgres -c 'alter database $(DB) rename to $(DBACT)'
+
+#------ Restore foreign key and index definitions -----------------------
+
+postload:
+	psql $(PG_HOST) -U $(PG_SUPER) -d $(DB) -f 'db/syncseq.sql'
+	  # Resolving xrefs below is lookup intensive so make sure we have good stats...
+	psql $(PG_HOST) -U $(PG_SUPER) -d $(DB) -c 'vacuum analyze'
+	  # Try to resolve unresolved xrefs.  Running these multiple times is innocuous.
+	$(BINDIR)xresolv.py -d postgres://$(USER)@$(HOST)/$(DB) -i \
+	   -sjmdict   -tjmdict   -verror >data/jmdict_xresolv.log 2>&1
+	$(BINDIR)xresolv.py -d postgres://$(USER)@$(HOST)/$(DB) -i \
+	   -sjmnedict -tjmnedict -verror >data/jmnedict_xresolv.log 2>&1
+	$(BINDIR)xresolv.py -d postgres://$(USER)@$(HOST)/$(DB) -i \
+	   -sexamples -tjmdict   -verror >data/examples_xresolv.log 2>&1
+	psql $(PG_HOST) -U $(PG_SUPER) -d $(DB) -c 'vacuum analyze'
+	@echo 'Remember to check the log files for warning messages.'
+
+#------ Load JMdict -----------------------------------------------------
+
+data/jmdict.xml: data/.nobackup
+	rm -f $(JMDICTFILE).gz
+	wget ftp://ftp.monash.edu.au/pub/nihongo/$(JMDICTFILE).gz
+	gzip -d $(JMDICTFILE).gz
+	mv $(JMDICTFILE) data/jmdict.xml
+
+data/jmdict.pgi: data/jmdict.xml
+	$(BINDIR)jmparse.py $(LANGOPT) -l data/jmdict.log -o data/jmdict.pgi data/jmdict.xml
+
+loadjm: data/jmdict.pgi
+	rm -f data/jmdict_xresolv.log
+	$(BINDIR)pgload.py -U $(USER) -d $(DB) data/jmdict.pgi
+
+#------ Load JMnedict ----------------------------------------------------
+
+# Assumes the jmdict has been loaded into database already.
+
+data/jmnedict.xml: data/.nobackup
+	rm -f JMnedict.xml.gz
+	wget ftp://ftp.monash.edu.au/pub/nihongo/JMnedict.xml.gz
+	gzip -d JMnedict.xml.gz
+	mv JMnedict.xml data/jmnedict.xml
+
+data/jmnedict.pgi: data/jmnedict.xml
+	$(BINDIR)jmparse.py -q5000000,1 -l data/jmnedict.log -o data/jmnedict.pgi data/jmnedict.xml
+
+loadne: data/jmnedict.pgi
+	rm -f data/jmnedict_xresolv.log
+	$(BINDIR)pgload.py -U $(USER) -d $(DB) data/jmnedict.pgi
+
+#------ Load examples ---------------------------------------------------
+
+data/examples.txt: data/.nobackup
+	rm -f examples.utf.gz
+	wget ftp://ftp.monash.edu.au/pub/nihongo/examples.utf.gz
+	gzip -d examples.utf.gz
+	mv examples.utf data/examples.txt
+
+data/examples.pgi: data/examples.txt
+	$(BINDIR)exparse.py -o data/examples.pgi -l data/examples.log data/examples.txt
+
+loadex: data/examples.pgi
+	rm -f data/examples_xresolv.log
+	$(BINDIR)pgload.py -U $(USER) -d $(DB) data/examples.pgi
+
+#------ Load kanjidic2.xml ---------------------------------------------------
+
+data/kanjidic2.xml: data/.nobackup
+	rm -f kanjidic2.xml.gz
+	wget ftp://ftp.monash.edu.au/pub/nihongo/kanjidic2.xml.gz
+	gzip -d kanjidic2.xml.gz
+	mv kanjidic2.xml data/kanjidic2.xml
+
+data/kanjidic2.pgi: data/kanjidic2.xml
+	$(BINDIR)kdparse.py -g en -o data/kanjidic2.pgi -l data/kanjidic2.log data/kanjidic2.xml
+
+loadkd: data/kanjidic2.pgi
+	rm -f data/kanjidic2_xresolv.log
+	$(BINDIR)pgload.py -U $(USER) -d $(DB) data/kanjidic2.pgi
+
+#------ Load jmdict, jmnedict, examples -------------------------------------
+
+loadall: jmnew loadjm loadne loadkd loadex postload
+	@echo 'Remember to check the log files for warning messages.'
+
+reloadall: loadclean loadall
+	@echo 'Remember to check the log files for warning messages.'
+
+loadclean:
+	-cd data && rm jmdict.pgi jmdict.log jmdict_xresolv.log \
+	  jmnedict.pgi jmnedict.log jmnedict_xresolv.log \
+	  examples.pgi examples.log examples_xresolv.log \
+	  kanjdic2.pgi kanjdic2.log
+
+data/.nobackup:
+	mkdir -p data
+	touch data/.nobackup
+
+#------ Other ----------------------------------------------------------
+
+.DELETE_ON_ERROR:
+
+subdirs:
+	cd db/ && $(MAKE)
+	cd jmdictdb/ && $(MAKE)
+
+clean:
+	rm -f jmdict.tgz
+	find -name '*.log' -type f -print0 | xargs -0 /bin/rm -f
+	find -name '*~' -type f -print0 | xargs -0 /bin/rm -f
+	find -name '*.tmp' -type f -print0 | xargs -0 /bin/rm -f
+	find -name '\#*' -type f -print0 | xargs -0 /bin/rm -f
+	find -name '\.*' -type f -print0 | xargs -0 /bin/rm -f
