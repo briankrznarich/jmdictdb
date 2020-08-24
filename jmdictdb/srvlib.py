@@ -28,8 +28,10 @@
 ########################################################################
 
 import sys, os, re, datetime, dateutil.parser, pdb
-import flask; from flask import session as Session, g as G, request as Rq
-import jinja2, rest, jdb, srch
+import flask, jinja2
+from flask import session as Session, g as G, request as Rq
+from jmdictdb import jdb
+from jmdictdb import rest, srch
 import logging; L = logging.getLogger;
 # Note: some import statements are inside functions below.
 

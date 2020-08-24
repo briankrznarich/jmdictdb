@@ -18,8 +18,8 @@
 #######################################################################
 
 import sys, os, pdb
-import jdb, logger, db
-from logger import L
+from jmdictdb import jdb, logger, db
+from jmdictdb.logger import L
 
 def validate_user (dburi, username, pw):
         '''-------------------------------------------------------------------

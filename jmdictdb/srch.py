@@ -17,8 +17,9 @@
 #  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 #######################################################################
 
-import jdb, datetime, re
-from db import QueryCanceledError
+import datetime, re
+from jmdictdb import jdb
+from jmdictdb.db import QueryCanceledError
 
 class TimeoutError (RuntimeError): pass
 

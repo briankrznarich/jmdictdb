@@ -43,6 +43,13 @@ def setLevel (level):  # Set overall logging level.
         if logging.lastResort:
             logging.lastResort.setLevel (levelnum (level))
 
+def log_config_from_cfg (cfg, timestamps=True):
+        filters = ((cfg['logging']['LOG_FILTERS']).strip()).split('\n')
+        config (cfg['logging']['LOG_LEVEL'],
+                cfg['logging']['LOG_FILENAME'],
+                timestamps, filters)
+
+
 def config (level="warning", filename=None, ts=None, fmt=None, filters=None):
         '''------------------------------------------------------------------
         level -- One of: "critical", "error", "warning", "info", "debug".

@@ -19,16 +19,16 @@
 #######################################################################
 
 import sys, os, io, inspect, pdb
-_ = os.path.join (os.path.abspath(os.path.dirname(__file__)), 'lib')
-if _ not in sys.path: sys.path.insert(0, _)
+_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
 
 import flask
 from flask import Flask, request as Rq, session as Session, g as G, \
         Response, redirect as Redirect, url_for as Url, \
         render_template as Render,  _app_ctx_stack
-import jdb, logger, jinja, config
-import srvlib, rest; from srvlib import vLogEntry, fv, fvn
-from logger import L
+from jmdictdb import jdb, logger, jinja, config
+from jmdictdb import srvlib, rest
+from jmdictdb.srvlib import vLogEntry, fv, fvn
+from jmdictdb.logger import L
 
 def main():
         App.jinja_env.auto_reload = True
@@ -38,7 +38,11 @@ def main():
 def app_config (app):
         app.session_cookie_name = 'jmapp'
         app.secret_key = 'secret'
-        try: cfg = config.cfgRead ('config.ini', 'config-pvt.ini')
+        try: cfg = config.cfgRead ('cfgapp.ini', 'cfgapp-pvt.ini',
+                                     # Path to above files given relative
+                                     # to location of this script.  cwd
+                                     # is irrelevant.
+                                   '../web/lib/')
         except IOError:
             print ("Unable to load config.ini file(s)", file=sys.stderr)
             flask.abort (500)
@@ -129,7 +133,7 @@ def login():
 @App.route ('/conj.py')
 def conj():
         vLogEntry()
-        from lib.views.conj import view
+        from jmdictdb.views.conj import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
@@ -138,7 +142,7 @@ def conj():
 @App.route ('/edconf.py')
 def edconf():
         vLogEntry()
-        from lib.views.edconf import view
+        from jmdictdb.views.edconf import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
@@ -147,7 +151,7 @@ def edconf():
 @App.route ('/edform.py')
 def edform():
         vLogEntry()
-        from lib.views.edform import view
+        from jmdictdb.views.edform import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
@@ -156,7 +160,7 @@ def edform():
 @App.route ('/entr.py')
 def entr():
         vLogEntry()
-        from lib.views.entr import view
+        from jmdictdb.views.entr import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
@@ -165,7 +169,7 @@ def entr():
 @App.route ('/edhelp.py')
 def edhelp():
         vLogEntry()
-        from lib.views.edhelp import view
+        from jmdictdb.views.edhelp import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
@@ -179,7 +183,7 @@ def edhelpq():
 @App.route ('/groups.py')
 def groups():
         vLogEntry()
-        from lib.views.groups import view
+        from jmdictdb.views.groups import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
@@ -188,7 +192,7 @@ def groups():
 @App.route ('/srchform.py')
 def srchform():
         vLogEntry()
-        from lib.views.srchform import view
+        from jmdictdb.views.srchform import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
@@ -197,7 +201,7 @@ def srchform():
 @App.route ('/srchformq.py')
 def srchformq():
         vLogEntry()
-        from lib.views.srchformq import view
+        from jmdictdb.views.srchformq import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
@@ -206,7 +210,7 @@ def srchformq():
 @App.route ('/srchres.py')
 def srchres():
         vLogEntry()
-        from lib.views.srchres import view
+        from jmdictdb.views.srchres import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
             return render ('error.jinja', errs=errs, cssclass='errormsg')
@@ -225,7 +229,7 @@ def srchsql():
 @App.route ('/submit.py', methods=['POST'])
 def submit():
         vLogEntry()
-        from lib.views.submit import view
+        from jmdictdb.views.submit import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.form)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
@@ -234,7 +238,7 @@ def submit():
 @App.route ('/updates.py')
 def updates():
         vLogEntry()
-        from lib.views.updates import view
+        from jmdictdb.views.updates import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
@@ -247,7 +251,7 @@ def updates():
 @App.route ('/user.py')
 def user():
         vLogEntry()
-        from lib.views.user import view
+        from jmdictdb.views.user import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
@@ -256,7 +260,7 @@ def user():
 @App.route ('/users.py')
 def users():
         vLogEntry()
-        from lib.views.users import view
+        from jmdictdb.views.users import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
@@ -265,7 +269,7 @@ def users():
 @App.route ('/userupd.py', methods=['POST'])
 def userupd():
         vLogEntry()
-        from lib.views.userupd import view
+        from jmdictdb.views.userupd import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.form)
         if errs:
              return render ('error.jinja', **errs, cssclass='errormsg')
