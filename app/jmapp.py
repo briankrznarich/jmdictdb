@@ -164,6 +164,7 @@ def entr():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
+        data['sid'] = 'xxx'
         return render ('entr.jinja', this_page=path(), **data)
 
 @App.route ('/edhelp.py')
@@ -196,6 +197,7 @@ def srchform():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
+        data['sid'] = 'xxx'
         return render ('srchform.jinja', this_page=path(), **data)
 
 @App.route ('/srchformq.py')
@@ -214,6 +216,7 @@ def srchres():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
             return render ('error.jinja', errs=errs, cssclass='errormsg')
+        data['sid'] = 'xxx'
         if len(data['results']) == 1 and Rq.args.get('p0',0,type=int)==0:
               # Show the entry itself rather than search results if there
               # is only one result *and* this is the first page.

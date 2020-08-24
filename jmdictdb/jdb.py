@@ -360,7 +360,7 @@ def entr_data (dbh, crit, args=None, ord=None, tables=None):
                 L('jdb.entr_data.db.sql').log(5,"sql: "+sql)
                 L('jdb.entr_data.db.sql').log(5,"args: %r"%(args,))
                 t[tbl].extend (dbread (dbh, sql, args, cls=cls))
-                L('jdb.entr_data.db.time').log(5,"table %s read time: %s"%(round(tbl,time()-time_last,6)))
+                L('jdb.entr_data.db.time').log(5,"table %s read time: %s"%(tbl,round(time()-time_last,6)))
                 time_last = time()
             except (psycopg2.ProgrammingError) as e:
                 L('jdb.entr_data').error(str(e))
