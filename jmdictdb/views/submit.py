@@ -14,9 +14,10 @@ def view (svc, cfg, user, dbh, form):
         if not jmcgi.is_editor(user) and disp:
             errs.append ("Only logged in editors can approve or reject entries")
             return {}, errs
-        try: entrs = serialize.unserialize (fv ("entr"))
+        try: entr = serialize.unserialize (fv ("entr"))
         except Exception:
             return {}, ["Bad 'entr' parameter, unable to unserialize."]
+        entrs = [entr]
 
         added = []
           # Clear any possible transactions begun elsewhere (e.g. by the

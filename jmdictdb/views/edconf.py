@@ -191,7 +191,7 @@ def view (svc, cfg, user, cur, form):
 
           # The following all expect a list of entries.
         jmcgi.add_filtered_xrefs ([entr], rem_unap=False)
-        serialized = serialize.serialize ([entr])
+        serialized = serialize.serialize (entr)
         jmcgi.htmlprep ([entr])
 
         entrs = [[entr, None]]  # Package 'entr' as expected by entr.jinja.
