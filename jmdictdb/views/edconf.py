@@ -41,24 +41,24 @@ def view (svc, cfg, user, cur, form):
 
         seq = url_int ('seq', form, errs)
         src = url_int ('src', form, errs)
-        notes = url_str ('notes', form)
-        srcnote = url_str ('srcnote', form)
+        notes = submit.clean (url_str ('notes', form))
+        srcnote = submit.clean (url_str ('srcnote', form))
 
           # These are the JEL (JMdict Edit Language) texts which
           # we will concatenate into a string that is fed to the
           # JEL parser which will create an Entr object.
-        kanj = (stripws (url_str ('kanj', form))).strip()
-        rdng = (stripws (url_str ('rdng', form))).strip()
-        sens = (url_str ('sens', form)).strip()
+        kanj = submit.clean ((stripws (url_str ('kanj', form))).strip())
+        rdng = submit.clean ((stripws (url_str ('rdng', form))).strip())
+        sens = submit.clean ((url_str ('sens', form)).strip())
         intxt = "\f".join ((kanj, rdng, sens))
         grpstxt = url_str ('grp', form)
 
           # Get the meta-edit info which will go into the history
           # record for this change.
-        comment = url_str ('comment', form)
-        refs    = url_str ('reference', form)
-        name    = url_str ('name', form)
-        email   = url_str ('email', form)
+        comment = submit.clean (url_str ('comment', form))
+        refs    = submit.clean (url_str ('reference', form))
+        name    = submit.clean (url_str ('name', form))
+        email   = submit.clean (url_str ('email', form))
 
         if errs: jmcgi.err_page (errs)
 
@@ -183,6 +183,7 @@ def view (svc, cfg, user, cur, form):
         entr = jdb.add_hist (entr, pentr, user.userid if user else None,
                              name, email, comment, refs,
                              entr.stat==KW.STAT['D'].id)
+        if errs: jmcgi.err_page (errs)
         if not delete:
             check_for_errors (entr, errs)
             if errs: return {}, errs
@@ -191,7 +192,7 @@ def view (svc, cfg, user, cur, form):
 
           # The following all expect a list of entries.
         jmcgi.add_filtered_xrefs ([entr], rem_unap=False)
-        serialized = serialize.serialize (entr)
+        serialized = serialize.serialize (entr, compress=True)
         jmcgi.htmlprep ([entr])
 
         entrs = [[entr, None]]  # Package 'entr' as expected by entr.jinja.

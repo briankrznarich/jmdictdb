@@ -17,8 +17,9 @@ def view (svc, cfg, user, dbh, form):
         try: entr = serialize.unserialize (fv ("entr"))
         except Exception:
             return {}, ["Bad 'entr' parameter, unable to unserialize."]
-        entrs = [entr]
-
+        entrs = [entr]  # 'unserialize() returns a single entry but formerly
+                        #  returned a list.  Wrap 'entr' in a list to minimize
+                        #  further code changes.
         added = []
           # Clear any possible transactions begun elsewhere (e.g. by the
           # keyword table read in jdb.dbOpen()).  Failure to do this will
@@ -28,12 +29,10 @@ def view (svc, cfg, user, dbh, form):
         L('cgi.edsubmit.main').debug("starting transaction")
         dbh.connection.rollback()
         dbh.execute ("START TRANSACTION ISOLATION LEVEL SERIALIZABLE");
-          #FIXME: we unserialize the entr's xref's as they were resolved
-          #  by the edconf.py page.  Should we check them again here?
-          #  If target entry was deleted in meantime, attempt to add
-          #  our entr to db will fail with obscure foreign key error.
-          #  Alternatively an edited version of target may have been
-          #  created which wont have our xref pointing to it as it should.
+          # The entr's we deserialized have plain (un-augmented) xrefs
+          # so re-augment them.
+        xrefs = jdb.collect_xrefs (entrs)
+        jdb.augment_xrefs (dbh, xrefs)
         for entr in entrs:
               #FIXME: temporary (I hope) hack...
             submit.Svc = svc

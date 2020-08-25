@@ -39,11 +39,11 @@ def view (svc, cfg, user, cur, params):
             try: condlist = srch.so2conds (so)
             except ValueError as e:
                 return None, [str(e)]
-            if not condlist: return None, ["No search criteria given"]
               # FIXME: [IS-115] Following will prevent kanjidic entries from
               #  appearing in results.  Obviously hardwiring id=4 is a hack.
             #condlist.append (('entr e', 'e.src!=4', []))
-            sql, sql_args = jdb.build_search_sql (condlist)
+            sql, sql_args = jdb.build_search_sql (condlist,
+                                                  allow_empty=True)
         else: # A search using raw sql is requested.
               # 'sqlp' is a SQL statement string that allows an arbitrary
               # search.  Because arbitrary sql can also do other things
@@ -92,10 +92,6 @@ def extract_srch_params (params):
         so.grp   = srch.grpsparse (fv('grp'))
         so.src   = fl('src');   so.stat  = fl('stat');  so.unap = fl('appr')
         so.nfval = fv('nfval'); so.nfcmp = fv('nfcmp')
-          # Search using gA freq criterion no longer supported.  See
-          # the comments in srch._freqcond() but code left here for
-          # reference.
-        so.gaval = fv('gaval'); so.gacmp = fv('gacmp')
           # Sense notes criteria.
         so.snote = (fv('snote') or ''), fvi('snotem')
           # Next 5 items are History criteria...

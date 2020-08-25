@@ -35,7 +35,7 @@ def view (svc, cfg, user, cur, params):
              # values (the "1", "2", in "ichi1" etc), we create the expanded
              # values here.  We also supply the "descr" value which will provide
              # tool tips on web page.
-           if x.kw!='nf' and x.kw!='gA': freq.extend ([Kwfreq(x.kw+'1', x.descr),
-                                                       Kwfreq(x.kw+'2', x.descr)])
+           if x.kw!='nf': freq.extend ([Kwfreq(x.kw+'1', x.descr),
+                                        Kwfreq(x.kw+'2', x.descr)])
         return dict(pos=pos, misc=misc, stat=stat, fld=fld, dial=dial,
                     kinf=kinf, rinf=rinf, src=src, freq=freq, KW=jdb.KW), []
