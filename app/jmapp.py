@@ -137,6 +137,7 @@ def conj():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
+        data['sid'] = 'xxx'
         return render ('conj.jinja', this_page=path(), **data)
 
 @App.route ('/edconf.py')
@@ -146,6 +147,7 @@ def edconf():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
+        data['sid'] = 'xxx'
         return render ('edconf.jinja', this_page=path(), **data)
 
 @App.route ('/edform.py')
@@ -155,6 +157,7 @@ def edform():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
+        data['sid'] = 'xxx'
         return render ('edform.jinja', this_page=path(), **data)
 
 @App.route ('/entr.py')
@@ -174,6 +177,7 @@ def edhelp():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
+        data['sid'] = 'xxx'
         return render ('edhelp.jinja', this_page=path(), **data)
 
 @App.route ('/edhelpq.py')
@@ -188,6 +192,7 @@ def groups():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
+        data['sid'] = 'xxx'
         return render ('groups.jinja', this_page=path(), **data)
 
 @App.route ('/srchform.py')
@@ -207,6 +212,7 @@ def srchformq():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
+        data['sid'] = 'xxx'
         return render ('srchformq.jinja', this_page=path(), **data)
 
 @App.route ('/srchres.py')
@@ -236,6 +242,7 @@ def submit():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.form)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
+        data['sid'] = 'xxx'
         return render ('submitted.jinja', **data)
 
 @App.route ('/updates.py')
@@ -249,6 +256,7 @@ def updates():
           # data can be for either of two pages; the name of the one to
           # use is returned in data['page'] and will be either "updates"
           # or "entr".
+        data['sid'] = 'xxx'
         return render (data['page']+'.jinja', this_page=path(), **data)
 
 @App.route ('/user.py')
@@ -258,6 +266,7 @@ def user():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
+        data['sid'] = 'xxx'
         return render ('user.jinja', this_page=path(), **data)
 
 @App.route ('/users.py')
@@ -267,6 +276,7 @@ def users():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
+        data['sid'] = 'xxx'
         return render ('users.jinja', this_page=path(), **data)
 
 @App.route ('/userupd.py', methods=['POST'])
@@ -276,6 +286,7 @@ def userupd():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.form)
         if errs:
              return render ('error.jinja', **errs, cssclass='errormsg')
+        data['sid'] = 'xxx'
         if 'result' in data:
           # Queue a confirmation message for display on the next page.
           # 'result' is a category like "success" or "error" and is

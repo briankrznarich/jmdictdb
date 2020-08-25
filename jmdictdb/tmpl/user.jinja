@@ -25,6 +25,7 @@
 
 {%- block page_content %}
     <!-- user.jinja, part of JMdictDB.  Copyright (c) 2018 Stuart McGraw -->
+    {% set dbg=0 if dbg is not defined %}
     <div class="item">
     {%- if not session %}
       <p>Sorry!  This page is only available to logged in users. </p>

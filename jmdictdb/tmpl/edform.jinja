@@ -14,6 +14,7 @@
 {%- block body_attrs %} class="srchfrm" onload="sf()"{%endblock%}
 
 {%- block page_content %}
+  {% set dbg=none if dbg is not defined %}
   {%- for e in entrs %}
     
       {#- This form requires a modified form of Entr object.  It has three

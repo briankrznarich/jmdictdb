@@ -2,8 +2,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import sys, pdb
-try: import pkgpath.py  # Make jmdictdb package available on sys.path.
-except ImportError: pass
 from jmdictdb import logger; from jmdictdb.logger import L
 from jmdictdb import jdb, fmtxml, fmtjel, xslfmt, jmcgi
 

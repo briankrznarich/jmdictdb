@@ -1,21 +1,5 @@
-#######################################################################
-#  This file is part of JMdictDB.
-#  Copyright (c) 2008-2012 Stuart McGraw
-#
-#  JMdictDB is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published
-#  by the Free Software Foundation; either version 2 of the License,
-#  or (at your option) any later version.
-#
-#  JMdictDB is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with JMdictDB; if not, write to the Free Software Foundation,
-#  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-#######################################################################
+# Copyright (c) 2008-2012 Stuart McGraw
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # This page will present a form for entering new entries to
 # and for modifying existing entries.  Multiple entries can
@@ -105,10 +89,9 @@
 #       sid -- Session id number if already logged in.
 
 import sys, pdb
-sys.path.extend (['../lib','../../python/lib','../python/lib'])
-import logger; from logger import L
-import jdb, jmcgi, fmtjel, serialize, edparse
-from srvlib import fv, fvn as fl
+from jmdictdb import logger; from jmdictdb.logger import L
+from jmdictdb import jdb, jmcgi, fmtjel, serialize, edparse
+from jmdictdb.srvlib import fv, fvn as fl
 
 def view (svc, cfg, user, cur, parms):
         errs = []; entrs =[]
