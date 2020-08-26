@@ -1,22 +1,27 @@
 #!/usr/bin/python3
-#######################################################################
-#  This file is part of JMdictDB.
-#  Copyright (c) 2019 Stuart McGraw
+# Copyright (c) 2019 Stuart McGraw
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+# jmapp -- WSGI application for JMdictDB.
+# Please see the installation documention for information about
+# configuring a WSGI webserver.
 #
-#  JMdictDB is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published
-#  by the Free Software Foundation; either version 2 of the License,
-#  or (at your option) any later version.
+# This file can be run as a standalone program in which case it will
+# use Flask's built-in http server running in debug mode.  This is
+# only appropriate for development in a secure ennvironment.
 #
-#  JMdictDB is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# For production use, this file is imported by a WSGI server and
+# the server will call its methods in response to http requests
+# it receives.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with JMdictDB; if not, write to the Free Software Foundation,
-#  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
-#######################################################################
+# In both case one of the first things jmapp does is to read the
+# configuration files(s) since through them other resources are located.
+# Please see installation documentation and the source files web/lib/-
+# config-sample.ini and config-pvt-sample.ini for details on their
+# contents.  The location of the operational files may be set via the
+# environment variable: JMAPP_CFGDIR.  If this is not set the default
+# location is "../web/lib/" when running jmapp standalone or
+# "/usr/local/etc/jmdictdb/" when run via a WSGI server.
 
 import sys, os, io, inspect, pdb
 _=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
@@ -31,28 +36,31 @@ from jmdictdb.srvlib import vLogEntry, fv, fvn
 from jmdictdb.logger import L
 
 def main():
+        global Config_dir
+        Config_dir = os.environ.get('JMAPP_CFGDIR') or "../web/lib/"
         App.jinja_env.auto_reload = True
         App.config['TEMPLATES_AUTO_RELOAD'] = True
         App.run (host='0.0.0.0', debug=True)
 
-def app_config (app):
+def app_config (app, config_dir):
         app.session_cookie_name = 'jmapp'
         app.secret_key = 'secret'
         try: cfg = config.cfgRead ('cfgapp.ini', 'cfgapp-pvt.ini',
-                                     # Path to above files given relative
-                                     # to location of this script.  cwd
-                                     # is irrelevant.
-                                   '../web/lib/')
+                                   config_dir)
         except IOError:
             print ("Unable to load config.ini file(s)", file=sys.stderr)
             flask.abort (500)
         app.config['CFG'] = cfg
         logger.log_config_from_cfg (cfg)
+        #logger.config (level='info')
         jinja.init (jinja_env=app.jinja_env)
 
 App = flask.Flask (__name__, static_folder='./static',
                              template_folder='./tmpl')
-app_config (App)
+if __name__ == '__main__': config_default = "../web/lib/"
+else: config_default = "/usr/local/etc/jmdictdb/"
+Config_dir = os.environ.get('JMAPP_CFGDIR') or config_default
+app_config (App, Config_dir)
 
 def render (tmpl, **data):
         '''-------------------------------------------------------------------
@@ -108,8 +116,8 @@ def before_request():
 
 #=============================================================================
 #  View functions.
-#  The functions below are executed in response to Flask receiving 
-#  an HTTP request using the URL path given in each @App.route 
+#  The functions below are executed in response to Flask receiving
+#  an HTTP request using the URL path given in each @App.route
 #  decorator.
 #=============================================================================
 
