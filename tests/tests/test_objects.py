@@ -122,10 +122,12 @@ def attrchk (_, o, exp_attrs):
           # any attributes starting with "_" (but not "__") are lists.
 
         o_attrs = set ((a for a in dir (o) if not a.startswith('__')))
-        o_attrs -= set (('new','copy'))         # Attributes from DbRow base class.
+          # Ignore attributes from DbRow base class.
+        o_attrs -= set (('new','copy','_tolist','_totuple','_todict'))
         _.assertEqual (o_attrs, set (exp_attrs))
         for attr in [a for a in dir (o) if a.startswith ('_')
-                                           and not a.startswith ('__')]:
+                                           and not a.startswith ('__')
+                                           and a not in ('_tolist','_totuple','_todict')]:
             _.assertIsInstance (getattr (o, attr), list)
 
 if __name__ == '__main__': unittest.main()
