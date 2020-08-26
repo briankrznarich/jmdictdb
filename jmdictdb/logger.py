@@ -45,9 +45,9 @@ def setLevel (level):  # Set overall logging level.
 
 def log_config_from_cfg (cfg, timestamps=True):
         filters = ((cfg['logging']['LOG_FILTERS']).strip()).split('\n')
-        config (cfg['logging']['LOG_LEVEL'],
-                cfg['logging']['LOG_FILENAME'],
-                timestamps, filters)
+        config (level=cfg['logging']['LOG_LEVEL'],
+                filename=cfg['logging']['LOG_FILENAME'],
+                ts=timestamps, filters=filters)
 
 
 def config (level="warning", filename=None, ts=None, fmt=None, filters=None):

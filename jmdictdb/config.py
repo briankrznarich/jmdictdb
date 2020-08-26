@@ -22,7 +22,7 @@ DEFAULTS = {
         'MIN_ENTRIES_PER_PAGE': 1,
         'GAHOH_URL': '', },
     'logging': {
-        'LOG_FILENAME': '../lib/jmdictdb.log',  # Relative to web/cgi/.
+        'LOG_FILENAME': '',    # Write to stderr.
         'LOG_LEVEL': 'warning',
         'LOG_FILTERS': '', },
     'search': {
@@ -91,9 +91,13 @@ def find_config_file (name, location):
             and either return the absolute filename if it exists and is
             readable or raise an IOError exception if not. '''
 
-        script = os.path.abspath (sys.argv[0])
-        d = os.path.dirname (script)
+        if location and location.startswith ('/'): d = ''
+        else:
+            script = os.path.abspath (sys.argv[0])
+            d = os.path.dirname (script)
+            #print ("script dir is %s" % d, file=sys.stderr)
         fname = os.path.normpath (os.path.join (d, location, name))
         if not os.access (fname, os.R_OK):
-            raise IOError (2, "File not found", fname)
+            msg = fname + " (cwd is %s)" % os.getcwd()
+            raise IOError (2, "File not found", msg)
         return fname
