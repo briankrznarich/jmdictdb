@@ -14,9 +14,12 @@
 {%- block body_attrs %} class="srchfrm" onload="sf()"{%endblock%}
 
 {%- block page_content %}
-  {% set dbg=none if dbg is not defined %}
-  {%- for e in entrs %}
-    
+      {#- Following three statements are for jmapp compatibility.  #}
+      {% set dbg = dbg|default(0,true) %}
+      {% set sid = sid|default('',true) %}
+      {% if user is defined %}{% set session=user %}{% endif %}
+      {%- for e in entrs %}
+
       {#- This form requires a modified form of Entr object.  It has three
       additional attributes: ktxt, rtxt, stxt.  The values of these are
       JEL formatted text strings that will be used to intialize the Kanji

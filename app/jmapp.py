@@ -148,14 +148,13 @@ def conj():
         data['sid'] = 'xxx'
         return render ('conj.jinja', this_page=path(), **data)
 
-@App.route ('/edconf.py')
+@App.route ('/edconf.py', methods=['GET','POST'])
 def edconf():
         vLogEntry()
         from jmdictdb.views.edconf import view
-        data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
+        data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.values)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
-        data['sid'] = 'xxx'
         return render ('edconf.jinja', this_page=path(), **data)
 
 @App.route ('/edform.py')
@@ -165,7 +164,6 @@ def edform():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
-        data['sid'] = 'xxx'
         return render ('edform.jinja', this_page=path(), **data)
 
 @App.route ('/entr.py')
