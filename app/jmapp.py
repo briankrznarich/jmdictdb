@@ -101,6 +101,7 @@ def prereq():
 @App.before_request
 def before_request():
         L('view.before_request').debug("For endpoint %s" % Rq.endpoint)
+        if Rq.endpoint in ('cgiinfo'): return
         G.cfg = App.config['CFG']
         if not Rq.path.startswith ('/static'):
             down = srvlib.check_status (G.cfg)
@@ -137,6 +138,13 @@ def login():
 
 # See lib/views/README.txt for a description of the conventions
 # used in the following views.
+
+@App.route ('/cgiinfo.py')
+def cgiinfo():
+        vLogEntry()
+        from jmdictdb.views.cgiinfo import view
+        html = view (Rq.values)
+        return html
 
 @App.route ('/conj.py')
 def conj():

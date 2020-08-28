@@ -36,7 +36,7 @@ DEFAULTS = {
   # of the running script (which normally will be the cgi directory.)
 LOCATION = '../lib'
 
-def cfgRead (cfgname, pvtname, loc=LOCATION):
+def cfgRead (cfgname, pvtname, loc=None):
         # Open and parse a config file and optional pvt config
         # file returning the results as a config.Config() object.
         # If 'cfgname' contains a path separator character (either
@@ -51,6 +51,7 @@ def cfgRead (cfgname, pvtname, loc=LOCATION):
         # convention that we expect the 'pvtname' file to be used
         # for the "db_*" sections.
 
+        if loc is None: loc = LOCATION
           # find_config_file() will raise IOError if unable to find.
         cfg_files = [find_config_file (cfgname, loc)]
         try: pvtfn = find_config_file (pvtname, loc)
