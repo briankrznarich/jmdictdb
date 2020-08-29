@@ -41,6 +41,12 @@ def initcgi (cfgfile):
         loglevel = cfg.get ('logging', 'LOG_LEVEL')
         filters = parse_cfg_logfilters (
                    cfg.get ('logging', 'LOG_FILTERS'))
+          # Logfile path is relative to the config file directory.
+          # If 'logfname' is an absolute path, os.path.join() will
+          # ignore the preceeding directory so no need for us to check.
+          # Access the cfg in dict form because we want a KeyError if
+          # the cfg_dir info is unexpectedly not present.
+        logfname = os.path.join (cfg['status']['cfg_dir'], logfname)
         logger.log_config (level=loglevel, filename=logfname, filters=filters)
         return cfg
 

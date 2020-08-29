@@ -30,37 +30,35 @@ import flask
 from flask import Flask, request as Rq, session as Session, g as G, \
         Response, redirect as Redirect, url_for as Url, \
         render_template as Render,  _app_ctx_stack
-from jmdictdb import jdb, logger, jinja, config
+from jmdictdb import jdb, logger, jinja, jmcgi
 from jmdictdb import srvlib, rest
 from jmdictdb.srvlib import vLogEntry, fv, fvn
 from jmdictdb.logger import L
 
 def main():
-        global Config_dir
-        Config_dir = os.environ.get('JMAPP_CFGDIR') or "../web/lib/"
+        global Cfgfile
         App.jinja_env.auto_reload = True
         App.config['TEMPLATES_AUTO_RELOAD'] = True
         App.run (host='0.0.0.0', debug=True)
 
-def app_config (app, config_dir):
+def app_config (app, cfgfile):
         app.session_cookie_name = 'jmapp'
         app.secret_key = 'secret'
-        try: cfg = config.cfgRead ('cfgapp.ini', 'cfgapp-pvt.ini',
-                                   config_dir)
+        try: cfg = jmcgi.initcgi (cfgfile)
         except IOError:
-            print ("Unable to load config.ini file(s)", file=sys.stderr)
+              #FIXME: this is not very graceful...
+            print ("Unable to load config file(s)", file=sys.stderr)
             flask.abort (500)
         app.config['CFG'] = cfg
-        logger.log_config_from_cfg (cfg)
-        #logger.config (level='info')
         jinja.init (jinja_env=app.jinja_env)
 
 App = flask.Flask (__name__, static_folder='./static',
                              template_folder='./tmpl')
-if __name__ == '__main__': config_default = "../web/lib/"
-else: config_default = "/usr/local/etc/jmdictdb/"
-Config_dir = os.environ.get('JMAPP_CFGDIR') or config_default
-app_config (App, Config_dir)
+
+if __name__ == '__main__': cfg_default = "../web/lib/cfgapp.ini"
+else: cfg_default = "/usr/local/etc/jmdictdb/cfgapp.ini"
+cfgfile = os.environ.get('JMAPP_CFGFILE') or cfg_default
+app_config (App, cfgfile)
 
 def render (tmpl, **data):
         '''-------------------------------------------------------------------

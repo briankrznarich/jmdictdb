@@ -14,7 +14,7 @@ from jmdictdb import jdb
 
 DEFAULTS = {
     'config': {
-        'PVT': '' },
+        'PRIVATE': '' },
     'web': {
         'STATUS_DIR': '.',
         ##'CONTACT_EMAIL': 'admin@localsite.example',
@@ -34,7 +34,7 @@ DEFAULTS = {
 
 def cfgRead (cfgname):
         # Open and parse a config file.  The config file has a 
-        # "config" section with a "PVT" value, that file too will
+        # "config" section with a "PRIVATE" value, that file too will
         # be read.  A config.Config() object is returned.
 
         cfg = configparser.ConfigParser (interpolation=None)
@@ -45,14 +45,17 @@ def cfgRead (cfgname):
         files = []
         with open (cfgname) as fl:
             cfg.read_file (fl);  files.append (cfgname)
-        cfgpvt = cfg.get ('config', 'PVT')
         op = os.path
-        if cfgpvt and not op.isabs (cfgpvt):
-            cfgpvtfn = op.normpath (op.join (op.dirname (cfgname), cfgpvt))
+        cfgdir = op.normpath (op.dirname (cfgname))
+        cfgpvt = cfg.get ('config', 'PRIVATE')
         if cfgpvt:
+              # If 'cfgpvt' is an absolute path, op.join() will ignore
+              # the 'cfgdir' value.
+            cfgpvtfn = op.normpath (op.join (cfgdir, cfgpvt))
             with open (cfgpvtfn) as fl:
                 cfg.read_file (fl);  files.append (cfgpvtfn)
         cfg.add_section ('status')
         cfg_files = '\n  '.join((os.path.abspath(x) for x in files))
         cfg.set ('status', 'cfg_files', cfg_files)
+        cfg.set ('status', 'cfg_dir', cfgdir)
         return cfg
