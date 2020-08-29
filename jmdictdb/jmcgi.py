@@ -7,7 +7,11 @@ from jmdictdb import jdb, config, fmt
 from jmdictdb import jinja; from markupsafe import Markup, escape as Escape
 from jmdictdb import logger; from jmdictdb.logger import L
 
-def initcgi (cfgfilename, authfilename=None):
+  # Path to the config file relative to the current working directory
+  # of the web server (which for Apache2/CGI is the web/cgi/ directory.)
+CONFIG_FILE = "../lib/config.ini"
+
+def initcgi (cfgfile):
         """
         Does three things:
         1. Fixes any url command line argument so that it is usable by
@@ -32,7 +36,7 @@ def initcgi (cfgfilename, authfilename=None):
           # it is looked for in a directory on sys.path.  If it does have
           # a separator in it it is treated as a normal relative or
           # absolute path.
-        cfg = config.cfgRead (cfgfilename, authfilename)
+        cfg = config.cfgRead (cfgfile)
         logfname = cfg.get ('logging', 'LOG_FILENAME')
         loglevel = cfg.get ('logging', 'LOG_LEVEL')
         filters = parse_cfg_logfilters (
@@ -73,15 +77,9 @@ def parseform (readonly=False):
         """
 
           # Read config files and initialize logging.
-          # "config.ini" must exist and be on sys.path.
-          # "config-pvt.ini" also must be on sys.path but is optional.
-          # It is intended for database auth details which must have
-          # restricted access, allowing broader permissions on the main
-          # config.ini file.  If config-pvt.ini does not exist the db
-          # auth info should be provided in the main config.ini file.
           #FIXME: ini file names shouldn't be hardwired, maybe an
           #  environment variable or something?
-        cfg = initcgi ("config.ini", "config-pvt.ini")
+        cfg = initcgi (CONFIG_FILE)
         L('lib.jmcgi.parseform').debug("called in %s" % sys.modules['__main__'].__file__)
         errs=[]; sess=None; sid=''; cur=None; svc=None
         def_svc = cfg['web'].get ('DEFAULT_SVC', 'jmdict')
