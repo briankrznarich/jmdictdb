@@ -2,6 +2,10 @@
 {%- block title %}Editing Quickstart{% endblock%}
 {%- block page_content %}
 <!-- edhelpq.jinja, part of JMdictDB.  Copyright (c) 2008 Stuart McGraw -->
+  {#- Following three statements are for jmapp compatibility.  #}
+  {% set dbg = dbg|default(0,true) %}
+  {% set sid = sid|default('',true) %}
+  {% if user is defined %}{% set session=user %}{% endif %}
     <div class="item">
       <h3>Getting Started</h3>
       This is a short introduction to submitting corrections to the JMdict/Edict

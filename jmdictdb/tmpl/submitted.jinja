@@ -2,6 +2,10 @@
 {% block title %}Submission successful{% endblock %}
 {%- block page_content %}
 <!-- submitted.jinja, part of JMdictDB.  Copyright (c) 2018 Stuart McGraw -->
+  {#- Following three statements are for jmapp compatibility.  #}
+  {% set dbg = dbg|default(0,true) %}
+  {% set sid = sid|default('',true) %}
+  {% if user is defined %}{% set session=user %}{% endif %}
     <div class="item">
       <p><b><i>Thank you for your contribution!</i></b></p>
 

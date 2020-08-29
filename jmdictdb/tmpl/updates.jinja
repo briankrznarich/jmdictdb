@@ -1,7 +1,11 @@
 {%- extends "layout.jinja" %}
 {%- block title %}Recent Updates{% endblock%}
 {%- block page_content %}
-    <!-- updates.jinja, part of JMdictDB.  Copyright (c) 2018 Stuart McGraw -->
+<!-- updates.jinja, part of JMdictDB.  Copyright (c) 2018 Stuart McGraw -->
+  {#- Following three statements are for jmapp compatibility.  #}
+  {% set dbg = dbg|default(0,true) %}
+  {% set sid = sid|default('',true) %}
+  {% if user is defined %}{% set session=user %}{% endif %}
     <div class="item"> 
       <br/>Use this page to view the additions and amendments to the JMdictDB
       database for particular days. Dates used are in Coordinated Universal Time (UTC, 

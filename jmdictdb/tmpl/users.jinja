@@ -8,11 +8,11 @@
 {%- block title %}User list{% endblock %}
 
 {%- block page_content %}
+<!-- users.jinja, part of JMdictDB.  Copyright (c) 2018 Stuart McGraw -->
   {#- Following three statements are for jmapp compatibility.  #}
   {% set dbg = dbg|default(0,true) %}
   {% set sid = sid|default('',true) %}
   {% if user is defined %}{% set session=user %}{% endif %}
-    <!-- users.jinja, part of JMdictDB.  Copyright (c) 2018 Stuart McGraw -->
     <div class="item">
     {%- if result|d == 'success' %}
       <div class="flash success">Thank you, the user settings have been updated.</div> 

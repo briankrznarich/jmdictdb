@@ -24,7 +24,11 @@
 {%- block body_attrs %} class="srchfrm" onload="sf()"{%endblock%}
 
 {%- block page_content %}
-    <!-- srchformq.jinja, part of JMdictDB.  Copyright (c) 2018 Stuart McGraw -->
+<!-- srchformq.jinja, part of JMdictDB.  Copyright (c) 2018 Stuart McGraw -->
+  {#- Following three statements are for jmapp compatibility.  #}
+  {% set dbg = dbg|default(0,true) %}
+  {% set sid = sid|default('',true) %}
+  {% if user is defined %}{% set session=user %}{% endif %}
     <form action="srchres.py" name="srchres" method="get">
       <table class="item" width="100%">
         <tr>

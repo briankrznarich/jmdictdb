@@ -51,7 +51,11 @@
 {%- block body_attrs %} class="srchfrm" onload="sf()"{%endblock%}
 
 {%- block page_content %}
-    <!-- srchform.jinja, part of JMdictDB.  Copyright (c) 2018 Stuart McGraw -->
+<!-- srchform.jinja, part of JMdictDB.  Copyright (c) 2018 Stuart McGraw -->
+  {#- Following three statements are for jmapp compatibility.  #}
+  {% set dbg = dbg|default(0,true) %}
+  {% set sid = sid|default('',true) %}
+  {% if user is defined %}{% set session=user %}{% endif %}
     <form action="srchres.py" name="srchres" method="get">
       {%+ if svc %}<input type="hidden" name="svc" value="{{svc}}">{%endif%}
       {% if sid %}<input type="hidden" name="sid" value="{{sid}}">{%endif%}
