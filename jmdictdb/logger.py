@@ -43,6 +43,13 @@ def setLevel (level):  # Set overall logging level.
         if logging.lastResort:
             logging.lastResort.setLevel (levelnum (level))
 
+def log_config_from_cfg (cfg, timestamps=True):
+        filters = ((cfg['logging']['LOG_FILTERS']).strip()).split('\n')
+        config (level=cfg['logging']['LOG_LEVEL'],
+                filename=cfg['logging']['LOG_FILENAME'],
+                ts=timestamps, filters=filters)
+
+
 def config (level="warning", filename=None, ts=None, fmt=None, filters=None):
         '''------------------------------------------------------------------
         level -- One of: "critical", "error", "warning", "info", "debug".
@@ -68,7 +75,8 @@ def config (level="warning", filename=None, ts=None, fmt=None, filters=None):
             compared with each filter in the order given looking for a
             match: the message's log level is greater or equal to the
             filter's log level and message's source (logger name) matches
-            the filter's regex.
+            the filter's regex.  Matching is not "anchored"; e.g., if you
+            want to match messages starting with "abc", use "^abc".
           - If the matched filter was not preceeded with a "!" the log
             message will be printed and no further filters will be compared.
           - If the matched filter was preceeded with a "!" the log message
@@ -130,7 +138,7 @@ def config (level="warning", filename=None, ts=None, fmt=None, filters=None):
                                   '\n  (cwd: %s)') % (filename, cwd))
             logging.disable (logging.CRITICAL)
         elif filters:
-            try: filter = parse_filter_list (filters, L().getEffectiveLevel())
+            try: filter = parse_filter_list (filters or None, L().getEffectiveLevel())
             except ValueError as e:
                 L('lib.logger').error("Bad filter: '%s'" % str (e))
             else:

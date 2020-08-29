@@ -41,7 +41,7 @@ def main (args, opts):
                 user = jmcgi.get_user (userid, svc, cfg)
                 L('cgi.user').debug("read user data: %s" % (sanitize_o(user),))
         L('cgi.user').debug("rendering template, new=%r" % new) 
-        jmcgi.jinja_page ("user.jinja", user=user, result=fv('result'),
+        jmcgi.jinja_page ("user.jinja", subject=user, result=fv('result'),
                           session=sess, cfg=cfg, parms=parms, new=new,
                           svc=svc, sid=sid, dbg=dbg, this_page='user.py')
 

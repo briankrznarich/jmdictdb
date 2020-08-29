@@ -1,6 +1,7 @@
 /* General */
+body            {font-family: arial;}
 .item	        /* Green box used on most pages... */
-                {font-family: arial; font-size: 100%; background: #E8FFF0; 
+                {background: #E8FFF0;
 		 border-style: solid; border-width: thin; 
 		 margin: 5px; padding: 10px}
 .caution	{color: #FF0000}

@@ -9,6 +9,11 @@
 {%- block title %}Entries{% endblock %}
 
 {%- block page_content %}
+    {#- Following three statements are for jmapp compatibility.  #}
+    {% set dbg = dbg|default(0,true) %}
+    {% set sid = sid|default('',true) %}
+    {% if user is defined %}{% set session=user %}{% endif %}
+
     {% block edconf_preface %}{% endblock %}
 
     <!-- entry.jinja, part of JMdictDB.  Copyright (c) 2018 Stuart McGraw -->
