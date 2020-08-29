@@ -120,6 +120,11 @@ def before_request():
 #  The functions below are executed in response to Flask receiving
 #  an HTTP request using the URL path given in each @App.route
 #  decorator.
+#
+#  In order to keep this file skeletal, the heavy lifting for each
+#  view is done in a separate module (one per view) in jmdictdb/view/.
+#  The views code in this file are shims to call the view module and
+#  render the data it returns.
 #=============================================================================
 
 @App.route ('/')
@@ -153,7 +158,6 @@ def conj():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
-        data['sid'] = 'xxx'
         return render ('conj.jinja', this_page=path(), **data)
 
 @App.route ('/edconf.py', methods=['GET','POST'])
@@ -181,7 +185,6 @@ def entr():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
-        data['sid'] = 'xxx'
         return render ('entr.jinja', this_page=path(), **data)
 
 @App.route ('/edhelp.py')
@@ -191,7 +194,6 @@ def edhelp():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
-        data['sid'] = 'xxx'
         return render ('edhelp.jinja', this_page=path(), **data)
 
 @App.route ('/edhelpq.py')
@@ -206,7 +208,6 @@ def groups():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
-        data['sid'] = 'xxx'
         return render ('groups.jinja', this_page=path(), **data)
 
 @App.route ('/srchform.py')
@@ -216,7 +217,6 @@ def srchform():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
-        data['sid'] = 'xxx'
         return render ('srchform.jinja', this_page=path(), **data)
 
 @App.route ('/srchformq.py')
@@ -236,7 +236,6 @@ def srchres():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
             return render ('error.jinja', errs=errs, cssclass='errormsg')
-        data['sid'] = 'xxx'
         if len(data['results']) == 1 and Rq.args.get('p0',0,type=int)==0:
               # Show the entry itself rather than search results if there
               # is only one result *and* this is the first page.
@@ -256,7 +255,6 @@ def submit():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.form)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
-        data['sid'] = 'xxx'
         return render ('submitted.jinja', **data)
 
 @App.route ('/updates.py')
@@ -270,7 +268,6 @@ def updates():
           # data can be for either of two pages; the name of the one to
           # use is returned in data['page'] and will be either "updates"
           # or "entr".
-        data['sid'] = 'xxx'
         return render (data['page']+'.jinja', this_page=path(), **data)
 
 @App.route ('/user.py')
@@ -280,7 +277,6 @@ def user():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
              return render ('error.jinja', errs=errs, cssclass='errormsg')
-        data['sid'] = 'xxx'
         return render ('user.jinja', this_page=path(), **data)
 
 @App.route ('/users.py')
