@@ -76,7 +76,7 @@ psql  -U jmdictdb -d $DBNAME -f ../db/schema.sql
   # Parse the xml file to generate a .pgi file 
 ../bin/jmparse.py  -l $TMPLOG -o $TMPPGI $INPFILE
   # Load the .pgi file into the new database.
-../bin/pgload.py -U jmdictdb $DBNAME $TMPPGI
+../bin/pgload.py -U jmdictdb -d $DBNAME $TMPPGI
   # Post-load cleanup.
 psql -U postgres -d $DBNAME -f ../db/syncseq.sql
 psql -U postgres -d $DBNAME -c 'vacuum analyze'

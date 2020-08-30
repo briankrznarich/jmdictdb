@@ -110,7 +110,7 @@ def kwsrc_from_db (dbconn):
         rs = db.query (dbconn, "SELECT * FROM public.kwsrc")
         results = []
         for r in rs:
-            srcid,corp,_,_,_,_,_,_,_,ctype = r.__list__
+            srcid,corp,_,_,_,_,_,_,_,ctype = r._tolist()
             results.append ((srcid,corp,ctype))
         return results
 
