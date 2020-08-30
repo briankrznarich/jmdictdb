@@ -159,8 +159,9 @@ def parse_cmdline():
             help="Name of file to write log messages to.  If not given, "
                 "log mesages will be written stderr.")
 
-        p.add_argument ("-L", "--level", default="info",
-            help="Logging level: error, summary, warn, info, debug.")
+        p.add_argument ("-L", "--level", default="warn",
+            help="Logging level: error, summary, warn, info, debug.  "
+                "Default is \"warn\".")
 
         p.add_argument ("-p", "--progress", nargs='?',
                         default="percent", const=None,
