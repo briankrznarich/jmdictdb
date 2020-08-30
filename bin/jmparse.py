@@ -11,7 +11,7 @@ from jmdictdb.pylib import progress_bar
 def main():
         global KW
         args, cfg = parse_cmdline(), {}
-        if args.debug: cfg['level'] = args.debug
+        if args.level: cfg['level'] = args.level
         if args.logfile:
             open (args.logfile, 'w').close()  # logger needs file to pre-exist.
             cfg['filename'] = args.logfile
@@ -42,7 +42,7 @@ def main():
         defcorp = xmltype or args.corpus
 
         inpf = jmxml.JmdictFile( open( args.filename ))
-        tmpfiles = pgi.initialize (args.tempdir)
+        pgio = pgi.PgiWriter (args.tempdir)
         eid = 0;  counts = collections.Counter()
         jmparser = jmxml.Jmparser (KW, xmltype)
         for typ, entr in jmparser.parse_file (
@@ -54,20 +54,20 @@ def main():
                 eid += 1; entr.idx = entr.id
                 if pbar: pbar (eid)
                 jdb.setkeys (entr, eid)
-                pgi.wrentr (entr, tmpfiles)
+                pgio.wrentr (entr)
                 counts[entr.src] += 1
             elif typ == 'grpdef':
-                pgi.wrgrpdef (entr, tmpfiles)
+                pgio.wrgrpdef (entr)
             elif typ == 'root':
                   # Note that 'entr' here is actually the tag name of the
                   # top-level element in the xml file, typically either
                   # "JMdict" or "JMnedict".
                 pass
         if args.progress: print()
-        pgi.wrcorpora (jmparser.corpora, defcorp, xmltype, tmpfiles)
-        pgi.finalize (tmpfiles, args.output, not args.keep)
+        pgio.wrcorpora (jmparser.corpora, defcorp, xmltype)
+        pgio.finalize (args.output, not args.keep)
         rpt = report_counts (counts, jmparser.corpora, defcorp)
-        print (rpt, file=sys.stderr)
+        L().sum(rpt)
 
 def parse_seq_opt (s):
         q = [int(x or 1) for x in s.split (',')]
@@ -155,12 +155,12 @@ def parse_cmdline():
                 "option has no effect on entries with a sequence number in "
                 "the XML.  ")
 
-        p.add_argument ("-k", "--keep", default=False, action="store_true",
-            help="Do not delete temporary files after program exits.")
-
         p.add_argument ("-l", "--logfile", default=None,
             help="Name of file to write log messages to.  If not given, "
                 "log mesages will be written stderr.")
+
+        p.add_argument ("-L", "--level", default="info",
+            help="Logging level: error, summary, warn, info, debug.")
 
         p.add_argument ("-p", "--progress", nargs='?',
                         default="percent", const=None,
@@ -172,16 +172,20 @@ def parse_cmdline():
                  Progress bar output is written to stderr."""\
                 .replace("\n"+(" "*16),''))  # See Note-1 below.
 
-        p.add_argument ("-T", "--tempdir", default=".",
-            help="Directory in which to create temporary files.")
+        p.add_argument ("-T", "--tempdir", default=None,
+            help="Directory in which to create temporary files.  "
+                "If not given temporary files will be buffered in memory "
+                "rather than on disk.  This option may be need on machines "
+                "with limited memory to force the use of disk.")
+
+        p.add_argument ("-k", "--keep", default=False, action="store_true",
+            help="Do not delete temporary files after program exits.  "
+                "Ignored if -T/--tmpdir is not also given.")
 
         p.add_argument ("-d", "--database",
             help="URI for a JMdictDB database to get tag infomation "
                 "from.  If not given, the standard built-in tags will "
                 "be used.")
-
-        p.add_argument ("-D", "--debug",
-            help="Debug level: warn, summary, info, debug.")
 
         # Note-1: Help text in triple quotes contains the embedded
         # leading space characters.  These are removed with the

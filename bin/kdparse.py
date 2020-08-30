@@ -45,9 +45,9 @@ def main (args, opts):
         global Lineno; Lineno = 1
         global KW
 
-        jdb.KW = KW = jdb.Kwds (jdb.std_csv_dir())
+        jdb.KW = KW = jdb.Kwds('')
 
-        if opts.l: opts.l = open (opts.l, "w", encoding=opts.e)
+        if opts.l: opts.l = open (opts.l, "w")
         else: opts.l = sys.stderr
         if not opts.o:
             fn = (os.path.split (args[0]))[1]
@@ -57,7 +57,7 @@ def main (args, opts):
             opts.o = None
         if opts.g: langs = [KW.LANG[iso639_1_to_2[x]].id for x in opts.g.split(',')]
         else: langs = None
-        workfiles = pgi.initialize (opts.t)
+        pgio = pgi.PgiWriter()
 
         pbar = None
         if opts.progbar:
@@ -70,11 +70,10 @@ def main (args, opts):
         srcid = 1    # This id, which will reference kwsrc.id after import,
                      # will be adjusted when data is imported into database
                      # so its value is arbitrary here.
-        srcdate = parse_xmlfile (args[0], srcid, workfiles, opts.b, opts.c, langs, pbar)
-        srcrec = jdb.Obj (id=srcid, kw=opts.corpus, dt=srcdate,
-                          seq='seq_'+opts.corpus, srct=KW.SRCT['kanjidic'].kw)
-        pgi._wrrow (srcrec, workfiles['kwsrc'])
-        pgi.finalize (workfiles, opts.o, not opts.k)
+        srcdate = parse_xmlfile (pgio, args[0], srcid,
+                                 opts.b, opts.c, langs, pbar)
+        pgio.wrcorpora ({opts.corpus:('kanjidic',srcid)}, other={'dt':srcdate})
+        pgio.finalize (opts.o)
         if not pbar: print ("\nDone!", file=sys.stderr)
 
 class LnFile:
@@ -86,7 +85,7 @@ class LnFile:
         s = self.source.readline();  self.lineno += 1
         return s
 
-def parse_xmlfile (infn, srcid, workfiles, start, count, langs, pbar):
+def parse_xmlfile (pgio, infn, srcid, start, count, langs, pbar):
 
         global Lineno
 
@@ -97,7 +96,7 @@ def parse_xmlfile (infn, srcid, workfiles, start, count, langs, pbar):
         # of the entry, and then write_entry() to do the actual
         # writing to the database.
 
-        inpf = LnFile( open (infn, encoding='utf-8'))
+        inpf = LnFile( open (infn))
         context = iter(ElementTree.iterparse( inpf, ("start","end")))
         event, root = next(context)
         if start and start>1: print ("Skipping initial entries...", file=sys.stderr)
@@ -153,7 +152,7 @@ def parse_xmlfile (infn, srcid, workfiles, start, count, langs, pbar):
 
                 entr = do_chr (elem, srcid, langs)
                 jdb.setkeys (entr, cntr)
-                pgi.wrentr (entr, workfiles)
+                pgio.wrentr (entr)
 
                 # Update the progress bar (if using one.)
                 if pbar: pbar (cntr)
@@ -429,21 +428,13 @@ arguments:
         p.add_option("--no-progress",
             dest="progbar", action="store_false", default=True,
             help="Don't show the progress bar.")
-        p.add_option ("-e", "--encoding",
-             type="str", dest="e", default="utf-8",
-             help="If --logfile given, write to it using this encoding.")
-        p.add_option ("-k", "--keep",
-             action="store_true", dest="k", default=False,
-             help="Do not delete the workfiles when finished.  This "
-                "can be useful for debugging.")
-        p.add_option ("-t", "--tempdir",
-             type="str", dest="t", default=".",
-             help="Create the work files in this directory.")
         opts, args = p.parse_args ()
-        if len(args) < 1: p.error("Too few arguments, expected name of kanjidic xml file."
-                                "\nUse --help for more info")
-        if len(args) > 1: p.error("Too many arguments, expected only name of kanjidic xml file"
-                                "\nUse --help for more info")
+        if len(args) < 1:
+            p.error("Too few arguments, expected name of kanjidic xml file."
+                    "\nUse --help for more info")
+        if len(args) > 1:
+            p.error("Too many arguments, expected only name of kanjidic xml"
+                    " file\nUse --help for more info")
         return args, opts
 
 if __name__ == '__main__':

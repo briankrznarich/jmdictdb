@@ -63,10 +63,7 @@ def main (args, opts):
 
         fin = ABPairReader (args[0])
           # FIXME: following gives localtime, change to utc or lt+tz.
-        mtime = datetime.date.fromtimestamp(os.stat(args[0])[8])
-        tmpfiles = pgi.initialize (opts.tempdir)
-        if not opts.noaction:
-            tmpfiles = pgi.initialize (opts.tempdir)
+        pgio = pgi.PgiWriter (opts.tempdir if not opts.noaction else None)
         srcid = 1    # This id, which will reference kwsrc.id after import,
                      # will be adjusted when data is imported into database
                      # so its value is arbitrary here.
@@ -74,14 +71,12 @@ def main (args, opts):
             entr.src = srcid
             if not opts.noaction:
                 jdb.setkeys (entr, eid+1)
-                pgi.wrentr (entr, tmpfiles)
+                pgio.wrentr (entr)
             if pbar: pbar (eid)
             if opts.count and eid+1 >= opts.count: break
-        srcrec = jdb.Obj (id=srcid, kw=opts.corpus, dt=mtime,
-                          seq='seq_'+opts.corpus, srct=KW.SRCT['examples'].kw)
-        pgi._wrrow (srcrec, tmpfiles['kwsrc'])
-        if not opts.noaction: pgi.finalize (tmpfiles, opts.output,
-                                            not opts.keep)
+        mtime = datetime.date.fromtimestamp(os.stat(args[0])[8]).isoformat()
+        pgio.wrcorpora ({opts.corpus:('examples',srcid)}, other={'dt':mtime})
+        if not opts.noaction: pgio.finalize (opts.output, not opts.keep)
 
 def parse_ex (fin, begin):
         # This is a generator function that will process one (A and B) pair
@@ -295,17 +290,19 @@ Arguments:
         p.add_option ("-s", "--corpus", default="examples",
             help='Corpus name to use for entries.  Default is "examples".')
 
-        p.add_option ("-k", "--keep", default=False,
-            dest="keep", action="store_true",
-            help="Do not delete temporary files after program exits.")
-
         p.add_option ("-l", "--logfile",
             dest="logfile", metavar="FILENAME",
             help="Name of file to write log messages to.")
 
-        p.add_option ("-t", "--tempdir", default=".",
-            dest="tempdir", metavar="DIRPATH",
-            help="Directory in which to create temporary files.")
+        p.add_option ("-T", "--tempdir", default=None,
+            help="Directory in which to create temporary files.  "
+                "If not given temporary files will be buffered in memory "
+                "rather than on disk.  This option may be need on machines "
+                "with limited memory to force the use of disk.")
+
+        p.add_option ("-k", "--keep", default=False, action="store_true",
+            help="Do not delete temporary files after program exits.  "
+                "Ignored if -T/--tmpdir is not also given.")
 
         p.add_option("--no-progress",
             dest="progbar", action="store_false", default=True,
