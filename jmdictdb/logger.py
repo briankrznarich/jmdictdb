@@ -202,7 +202,7 @@ def _logmsg_filter (rec, regexes, lvllimit):
   # This function can be used as the sys.excepthook handler by CGI
   # scripts to present an error message in HTML format.
 def handler( ex_cls, ex, tb ):
-        import jmcgi
+        from jmdictdb import jmcgi
         errid = datetime.datetime.now().strftime("%y%m%d-%H%M%S")\
                 + '-' + str(os.getpid())
         logging.critical( '{0}: {1}'.format(ex_cls, ex) )
