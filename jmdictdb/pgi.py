@@ -5,65 +5,18 @@
 Module: Functions for writing Postgres "COPY" data to ".pgi" files.
 """
 import sys, os, operator, datetime
+from jmdictdb import logger; from jmdictdb.logger import L
 from jmdictdb import jdb
 
-def wrentr (e, workfiles):
-        _wrrow (e, workfiles['entr'])
-        for r in getattr (e, '_rdng', []):
-            _wrrow (r, workfiles['rdng'])
-            for x in getattr (r, '_inf',   []): _wrrow (x, workfiles['rinf'])
-            for x in getattr (r, '_freq',  []): _wrrow (x, workfiles['freq'])
-            for x in getattr (r, '_restr', []): _wrrow (x, workfiles['restr'])
-            for x in getattr (r, '_snd',   []): _wrrow (x, workfiles['rdngsnd'])
-        for k in getattr (e, '_kanj', []):
-            _wrrow (k, workfiles['kanj'])
-            for x in getattr (k, '_inf',   []): _wrrow (x, workfiles['kinf'])
-            for x in getattr (k, '_freq',  []):
-                if not x.rdng: _wrrow (x, workfiles['freq'])
-        for s in getattr (e, '_sens', []):
-            _wrrow (s, workfiles['sens'])
-            for x in getattr (s, '_gloss', []): _wrrow (x, workfiles['gloss'])
-            for x in getattr (s, '_pos',   []): _wrrow (x, workfiles['pos'])
-            for x in getattr (s, '_misc',  []): _wrrow (x, workfiles['misc'])
-            for x in getattr (s, '_fld',   []): _wrrow (x, workfiles['fld'])
-            for x in getattr (s, '_dial',  []): _wrrow (x, workfiles['dial'])
-            for x in getattr (s, '_lsrc',  []): _wrrow (x, workfiles['lsrc'])
-            for x in getattr (s, '_stagr', []): _wrrow (x, workfiles['stagr'])
-            for x in getattr (s, '_stagk', []): _wrrow (x, workfiles['stagk'])
-            for x in getattr (s, '_xref',  []): _wrrow (x, workfiles['xref'])
-            for x in getattr (s, '_xrer',  []): _wrrow (x, workfiles['xref'])
-            for x in getattr (s, '_xrslv', []): _wrrow (x, workfiles['xresolv'])
-        for x in getattr (e, '_snd',   []): _wrrow (x, workfiles['entrsnd'])
-        for x in getattr (e, '_hist',  []): _wrrow (x, workfiles['hist'])
-        for x in getattr (e, '_grp',   []): _wrrow (x, workfiles['grp'])
-        for x in getattr (e, '_krslv', []): _wrrow (x, workfiles['krslv'])
-        if e.chr is not None:
-            _wrrow (e.chr, workfiles['chr'])
-            for x in e.chr._cinf: _wrrow (x, workfiles['cinf'])
-
-def wrcorpora (corpora, defcorp, deftype, workfiles):
-        for cname, (ctype, id) in corpora.items():
-            if not cname: cname = defcorp
-            if not ctype: ctype = deftype
-            rowobj = jdb.Obj (id=id, kw=cname, seq='seq_'+cname, srct=ctype)
-            _wrrow (rowobj, workfiles['kwsrc'])
-
-def wrgrpdef (rowobj, workfiles):
-        _wrrow (rowobj, workfiles['kwgrp'])
-
-def wrsnd (cur, workfiles):
-        vols = jdb.dbread (cur, "SELECT * FROM sndvol")
-        for v in vols:
-            _wrrow (x, workfiles['sndvol'])
-            sels = jdb.dbread (cur, "SELECT * FROM sndfile s WHERE s.vol=%s", [v.id])
-            for s in sels:
-                _wrrow (x, workfiles['sndfile'])
-                clips = jdb.dbread (cur, "SELECT * FROM snd c WHERE c.file=%s", [s.id])
-                for c in clips:
-                    _wrrow (x, workfiles['snd'])
-
-def initialize (tmpdir):
-        data = (
+class PgiWriter:
+    def __init__ (self, tmpdir=None):
+        self.tmpdir = tmpdir
+        self.ftmpl = os.path.join (tmpdir or "", "_jm-%s.tmp")
+        self.tables = {}
+        self.out = {}
+        tables = (
+            # Order of tables is significant: tables with foreign keys must occur
+            # after the table(s) the foreign keys refer to.
           ('kwsrc',  ['id','kw','descr','dt','notes','seq','sinc','smin','smax','srct']),
           ('kwgrp',  ['id','kw','descr']),
           ('entr',   ['id','src','stat','seq','dfrm','unap','srcnote','notes','idx']),
@@ -95,38 +48,126 @@ def initialize (tmpdir):
           ('entrsnd',['entr','ord','snd']),
           ('rdngsnd',['entr','rdng','ord','snd']),
           )
+          # Index the table data above in a dict for easier lookup.  The order
+          # value 'n' goes first because we will sort the items later.
+        for n,(name,cols) in enumerate (tables): self.tables[name] = (n, cols)
 
-        workfiles = {}
-        for n,(t,v) in enumerate (data):
-            fn = "%s/_jm_%s.tmp" % (tmpdir, t)
-            workfiles[t] = jdb.Obj (ord=n, tbl=t, file=None, fn=fn, cols=v)
-        return workfiles
+    def wrentr (self, e):
+        "Write Entr instance 'e' to the .pgi files."
+        self.addrow (e, 'entr')
+        for r in getattr (e, '_rdng', []):
+            self.addrow (r, 'rdng')
+            for x in getattr (r, '_inf',   []): self.addrow (x, 'rinf')
+            for x in getattr (r, '_freq',  []): self.addrow (x, 'freq')
+            for x in getattr (r, '_restr', []): self.addrow (x, 'restr')
+            for x in getattr (r, '_snd',   []): self.addrow (x, 'rdngsnd')
+        for k in getattr (e, '_kanj', []):
+            self.addrow (k, 'kanj')
+            for x in getattr (k, '_inf',   []): self.addrow (x, 'kinf')
+            for x in getattr (k, '_freq',  []):
+                if not x.rdng: self.addrow (x, 'freq')
+        for s in getattr (e, '_sens', []):
+            self.addrow (s, 'sens')
+            for x in getattr (s, '_gloss', []): self.addrow (x, 'gloss')
+            for x in getattr (s, '_pos',   []): self.addrow (x, 'pos')
+            for x in getattr (s, '_misc',  []): self.addrow (x, 'misc')
+            for x in getattr (s, '_fld',   []): self.addrow (x, 'fld')
+            for x in getattr (s, '_dial',  []): self.addrow (x, 'dial')
+            for x in getattr (s, '_lsrc',  []): self.addrow (x, 'lsrc')
+            for x in getattr (s, '_stagr', []): self.addrow (x, 'stagr')
+            for x in getattr (s, '_stagk', []): self.addrow (x, 'stagk')
+            for x in getattr (s, '_xref',  []): self.addrow (x, 'xref')
+            for x in getattr (s, '_xrer',  []): self.addrow (x, 'xref')
+            for x in getattr (s, '_xrslv', []): self.addrow (x, 'xresolv')
+        for x in getattr (e, '_snd',   []): self.addrow (x, 'entrsnd')
+        for x in getattr (e, '_hist',  []): self.addrow (x, 'hist')
+        for x in getattr (e, '_grp',   []): self.addrow (x, 'grp')
+        for x in getattr (e, '_krslv', []): self.addrow (x, 'krslv')
+        if e.chr is not None:
+            self.addrow (e.chr, 'chr')
+            for x in e.chr._cinf: self.addrow (x, 'cinf')
 
-def finalize (workfiles, outfn, delfiles=True, transaction=True):
-        # Close all the temp files, merge them all into a single
-        # output file, and delete them (if 'delfiles is true).
+    def wrcorpora (self, corpora, defcorp=None, deftype=None, other={}):
+        '''-------------------------------------------------------------------
+        corpora -- (dict) Each key is a corpus name (used for the value
+            of kwsrc.kw); each value is a 2-tuple of corpus type (one of:
+            "jmdict", "jmnedict","kanjidic" or "examples"; used for the
+            value of kwsrc.srct) and an id number (used for the value
+            of kwsrc.id).
+        defcorp -- (str) Value to use for corpus name for a key of None.
+            Used for the value of kwsrc.kw
+        deftype -- (str) value to use for the corpus type if the first item
+            of the 2-tuple in None.  Used for the value of kwsrc.srct.
+        other -- (dict) Other kwsrc fields to set.  Each item is the name
+            and value of a kwsrc table field.
+        If the 'other' parameter is not supplied the corpus (kwsrc) record
+        written will contain only the fields "id", "kw", "srct" and "seq",
+        the latter constructed from "kw".
+        -------------------------------------------------------------------'''
+        for cname, (ctype, id) in corpora.items():
+            if not cname: cname = defcorp
+            if not cname: raise ValueError ("No value for corpus name")
+            if not ctype: ctype = deftype
+            if not ctype: raise ValueError ("No value for corpus type")
+            rowobj = jdb.Obj (id=id, kw=cname, seq='seq_'+cname, srct=ctype)
+            for k,v in other.items():
+                if k not in self.tables['kwsrc'][1]:
+                    raise ValueError ("Invalid kwsrc field: %s" % k)
+                setattr (rowobj, k, v)
+            self.addrow (rowobj, 'kwsrc')
 
-        if outfn: fout = open (outfn, "w", encoding='utf-8')
+    def wrgrpdef (self, rowobj):
+        self.addrow (rowobj, 'kwgrp')
+
+    def wrsnd (self, cur):
+        vols = jdb.dbread (cur, "SELECT * FROM sndvol")
+        for v in vols:
+            self.addrow (x, 'sndvol')
+            sels = jdb.dbread (cur, "SELECT * FROM sndfile s WHERE s.vol=%s", [v.id])
+            for s in sels:
+                self.addrow (x, 'sndfile')
+                clips = jdb.dbread (cur, "SELECT * FROM snd c WHERE c.file=%s", [s.id])
+                for c in clips:
+                    self.addrow (x, self, 'snd')
+
+    def finalize (self, outfn, delfiles=True, transaction=True):
+          # Close all the temp files, merge them all into a single
+          # output file, and delete them (if 'delfiles is true).
+
+        if outfn: fout = open (outfn, "w")
         else: fout = sys.stdout
         if transaction:
             print ("\\set ON_ERROR_STOP 1\nBEGIN;\n", file=fout)
-        for v in sorted (list(workfiles.values()), key=operator.attrgetter('ord')):
-            if not v.file: continue
-            v.file.close()
-            fin = open (v.fn, encoding='utf-8')
-            print ("COPY %s(%s) FROM STDIN;" % (v.tbl,','.join(v.cols)), file=fout)
-            for ln in fin: print (ln, end='', file=fout)
+        for table,(_,cols) in sorted (self.tables.items(), key=lambda x:x[1]):
+            try: o = self.out[table]
+            except KeyError:
+                L('pgi').info("table %s: no records" % table)
+                continue
+            if isinstance (o, list):
+                for ln in o: print (ln, file=fout)
+            else:   # if not a list, assume it's a file.
+                o.close()
+                with open (o.name) as fin:
+                   for ln in fin: print (ln, end='', file=fout)
+                if delfiles: os.unlink (o.name)
             print ('\\.\n', file=fout)
-            fin.close()
-            if delfiles: os.unlink (v.fn)
         if transaction: print ('COMMIT', file=fout)
         if fout != sys.stdout: fout.close()
 
-def _wrrow (rowobj, workfile):
-        if not workfile.file:
-            workfile.file = open (workfile.fn, "w", encoding='utf-8')
-        s = "\t".join ([pgesc(getattr (rowobj, x, None)) for x in workfile.cols])
-        print (s, file=workfile.file)
+    def addrow (self, rowobj, table):
+        cols = self.tables[table][1]
+        s = "\t".join ([pgesc(getattr (rowobj, x, None)) for x in cols])
+        if table not in self.out:
+            hdr = "COPY %s(%s) FROM STDIN;" % (table,','.join(cols))
+        if self.tmpdir:
+            if table not in self.out:
+                self.out[table] = open (self.ftmpl % table, "w")
+                print (hdr, file=self.out[table])
+            print (s, file=self.out[table])
+        else:
+            if table not in self.out:
+                self.out[table] = [hdr]
+            self.out[table].append (s)
 
 def pgesc (s):
           # Escape characters that are special to the Postgresql COPY
