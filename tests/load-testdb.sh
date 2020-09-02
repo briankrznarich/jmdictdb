@@ -19,7 +19,7 @@ dbfile=$1
 
 fullfn=`realpath "$dbfile"`
 hash=`sha1sum "$dbfile" | cut -d' ' -f1`
-dbname=`basename "$dbfile" .sql`
+dbname=${dbname:-`basename "$dbfile" .sql`}
 export PGOPTIONS="-c client-min-messages=warning"
 export PGOPTIONS="--client-min-messages=warning"
 dropdb --if-exists $dbname
