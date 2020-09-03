@@ -1469,7 +1469,7 @@ CREATE VIEW public.sr_valid AS
 ALTER TABLE public.sr_valid OWNER TO jmdictdb;
 
 --
--- Name: testsrc; Type: TABLE; Schema: public; Owner: stuart
+-- Name: testsrc; Type: TABLE; Schema: public; Owner: jmdictdb
 --
 
 CREATE TABLE public.testsrc (
@@ -1479,7 +1479,7 @@ CREATE TABLE public.testsrc (
 );
 
 
-ALTER TABLE public.testsrc OWNER TO stuart;
+ALTER TABLE public.testsrc OWNER TO jmdictdb;
 
 --
 -- Name: vconj; Type: VIEW; Schema: public; Owner: jmdictdb
@@ -6056,11 +6056,11 @@ COPY public.stagr (entr, sens, rdng) FROM stdin;
 
 
 --
--- Data for Name: testsrc; Type: TABLE DATA; Schema: public; Owner: stuart
+-- Data for Name: testsrc; Type: TABLE DATA; Schema: public; Owner: jmdictdb
 --
 
 COPY public.testsrc (filename, method, hash) FROM stdin;
-/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	dd94ac7b0af4ac13158e4964f53c97338c08d41b
+tests/data/jmtest01.sql	sha1	dd94ac7b0af4ac13158e4964f53c97338c08d41b
 \.
 
 

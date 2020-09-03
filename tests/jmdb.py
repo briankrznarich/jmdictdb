@@ -20,7 +20,7 @@ from jmdictdb import jdb, db
 # well as the situation that many tests are more functional tests
 # than pure unit tests.
 #
-# The main user callable method of DBmanager is
+# The main user-callable method of DBmanager is
 #
 #    .use (dbname, filename)
 #
@@ -38,6 +38,7 @@ from jmdictdb import jdb, db
 # A failure when loading will result in an exception.
 
 HASH_METHOD = 'sha1'
+PGUSER = 'jmdictdb'  # Postgresql user to create database objects as.
 
 class _DBmanager():
     def __init__ (self): pass
@@ -116,11 +117,11 @@ class _DBmanager():
           # on, exiting with status 0 unless the error is fatal.
         run ("psql -d %s -f %s -v 'ON_ERROR_STOP=1'" % (dbname, absfn))
         run ('PGOPTIONS="--client-min-messages=warning" '
-                'psql -d %s -c '
+                'psql -U %s -d %s -c '
                 '"DROP TABLE IF EXISTS testsrc;'
                 ' CREATE TABLE testsrc (filename TEXT, method TEXT, hash TEXT);'
                 ' INSERT INTO testsrc VALUES(\'%s\', \'%s\', \'%s\');"'
-                % (dbname, os.path.abspath (filename), HASH_METHOD, hash))
+                % (PGUSER, dbname, filename, HASH_METHOD, hash))
     def hash (self, method, filename):
         with open (filename, 'rb') as f:
             h = hashlib.new (method, f.read())
