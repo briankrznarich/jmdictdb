@@ -15,7 +15,7 @@ class SearchItems (jdb.Obj):
     def __setattr__ (self, name, val):
         if name not in ('idtyp','idnum','src','txts','pos','misc',
                         'fld','dial','freq','kinf','rinf','grp','stat','unap',
-                        'nfval','nfcmp','gaval','gacmp','snote', 'ts','smtr',
+                        'nfval','nfcmp','snote', 'ts','smtr',
                         'cmts', 'refs', 'mt',):
             raise AttributeError ("'%s' object has no attribute '%s'"
                                    % (self.__class__.__name__, name))
@@ -167,9 +167,7 @@ def so2conds (o):
         conds.extend (_boolcond (o, 'unap',"entr e","e.unap", 'unappr'))
         conds.extend (_freqcond (getattr (o, 'freq', []),
                                  getattr (o, 'nfval', None),
-                                 getattr (o, 'nfcmp', None),
-                                 getattr (o, 'gaval', None),
-                                 getattr (o, 'gacmp', None)))
+                                 getattr (o, 'nfcmp', None)))
         conds.extend (_snotecond (getattr (o, 'snote', None)))
         conds.extend (_histcond (getattr (o, 'ts',    None),
                                  getattr (o, 'smtr',  None),
@@ -237,7 +235,7 @@ def _histcond (ts, smtr, cmts, refs, mt):
             if int(mt) == -1: conds.append (('hist', "hist=(SELECT COUNT(*) FROM hist WHERE hist.entr=e.id)", []))
         return conds
 
-def _freqcond (freq, nfval, nfcmp, gaval, gacmp):
+def _freqcond (freq, nfval, nfcmp):
         # Create a pair of 3-tuples (build_search_sql() "conditions")
         # that build_search_sql() will use to create a sql statement
         # that will incorporate the freq-of-use criteria defined by
@@ -246,13 +244,6 @@ def _freqcond (freq, nfval, nfcmp, gaval, gacmp):
         # $freq -- List of indexes from a freq option checkboxe, e.g. "ichi2".
         # $nfval -- String containing an "nf" number ("1" - "48").
         # $nfcmp -- String containing one of ">=", "=", "<=".
-        #   NOTE: The gA freq number was a from a database of Google
-        #     "hits" for various words.  The data was unreliable at the
-        #     time it was collected in the early 2000's and is of little
-        #     use anymore.  The search forms no longer support gA as a
-        #     search criterion but the code is left in here for reference.
-        # gaval -- String containing a gA number.
-        # gacmp -- Same as nfcmp.
 
         # Freq items consist of a scale (such as "ichi" or "nf")
         # and a value (such as "1" or "35").
@@ -273,7 +264,6 @@ def _freqcond (freq, nfval, nfcmp, gaval, gacmp):
             match = re.search (r'^([A-Za-z_-]+)(\d*)$', f)
             scale, value = match.group(1,2)
             if scale == 'nf': have_nf = True
-            elif scale == 'gA': have_gA = True
             else:
                   # Append this value to the scale list.
                 x.setdefault (scale, []).append (value)
@@ -313,14 +303,6 @@ def _freqcond (freq, nfval, nfcmp, gaval, gacmp):
             elif nfcmp == '≥': nfcmp = '>='
             whr.append (
                 "(freq.kw=%s AND freq.value%s%s)" % (kwid, nfcmp, nfval))
-
-          # Handle any "gAxx" item specially here.
-
-        if gaval:
-            kwid = KW.FREQ['gA'].id
-              # Build list of "where" clause parts using the requested comparison and value.
-            whr.append (
-                "(freq.kw=%s AND freq.value%s%s)" % (kwid, gacmp, gaval))
 
           # If there were no freq related conditions...
         if not whr: return []
