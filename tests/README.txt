@@ -8,8 +8,10 @@ relatively complex behavior; there are not enough development
 resources available to do the analysis and creation of mock objects
 required for "pure" unit tests.
 
-The testing infrastructure code is in this directory, the test
-modules in tests/, data for the tests in data/.
+The testing infrastructure code is in this directory.  Tests are
+python modules in the tests/tests/ directory whose names start with
+either "test_' or "T".  Test cases are methods in the test classes
+whose names start with "t".  Data for the tests is in data/.
 
 Running tests
 =============
@@ -19,7 +21,7 @@ command line interface, e.g:
 or
   cd python/tests; python3 -m unittest discover -s tests
 
-a test runner program, runtests.py, was written that provides more
+A test runner program, runtests.py, was written that provides more
 control of the tests run and the results format than the unittest
 module does (or did, when runtests.py was written.)
 
@@ -71,8 +73,8 @@ simpler than the alternative of a hierarchy of test case subclasses
 possibly with multiple inheritance mixins.
 
 Because most tests do not adhere to unit testing principles, isolation
-between tests is not a high priority.  Consequently, caching is used
-extensively to avoid time consuming operations such as database creation.
+between tests is not a high priority.  Consequently, caching is often
+used to avoid time consuming operations such as database creation.
 Database connections and things like JEL parser instances are created
 once per test runner execution and rused for multiple tests.
 
@@ -125,8 +127,15 @@ consuming reload.  This of course presumes that tests do not make any
 modifications to the database that would invalidate it for subsequent
 tests.  If that is not the case the test should invalidate the database
 hash to force a reload the next times tests are run.  This can be done
-by dropping table testsrc; deleting the row(s) in testsrc; or by updating
-testsrc.hash to ''.
+by deleting the row(s) in testsrc or by updating testsrc.hash to an
+invalid value like ''.
+
+Manually forcing a reload of the test database
+==============================================
+The script ./load_testdb.sh can be used to unconditionally force a
+reload of the test database.  This is useful, for example, before
+making and saving changes to the test database to assure the changes
+are made to a clean, unmodified version of the database.
 
 Updating test databases
 =======================

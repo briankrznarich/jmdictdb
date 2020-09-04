@@ -22,11 +22,14 @@ def main (args, opts):
         suites = []
         testsdir = "tests"
         if not args:
-            test_file_pattern = testsdir+('/' if testsdir else '')+"test_*.py"
-            test_files = glob.glob (test_file_pattern)
+            pat1 = testsdir+('/' if testsdir else '')+"test_*.py"
+            pat2 = testsdir+('/' if testsdir else '')+"T*.py"
+            test_files = glob.glob (pat1)
+            test_files.extend (glob.glob (pat2))
             for filename in test_files:
                 args.append ((filename[:-3]).replace('/', '.'))
 
+        unittest.defaultTestLoader.testMethodPrefix = 't'
         for testset in args:
             if '/' in testset:
                 testset = testset.replace('./', '')
