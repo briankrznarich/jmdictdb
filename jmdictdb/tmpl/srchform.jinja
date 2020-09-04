@@ -215,23 +215,23 @@
                   {#- Checkbox names and ids in the section  are determined by the
                       needs of the freq_p_set() javascript function (see above.)  #}
                   <a class="helplink" target="edhelp" href="edhelp.py?svc={{svc}}&amp;sid={{sid}}#kw_freq">help</a><br/>
+                  <span class="optgroup" title="Set or clear all Edict 'P' freq values">
+                    <input type="checkbox" id="freq_p" onclick="freq_p_set()">P
+                    </span>&nbsp;
                   {%- for z in freq %}
                   <span class="optgroup" title="{{z.descr}}">
                     <input type="checkbox" name="freq" value="{{z.kw}}" id="freq_{{z.kw}}">{{z.kw}}
                     </span>
                     {%-endfor%}
                   <span class="optgroup" title="{{KW.FREQ.nf.descr}}">
-                    <input type="checkbox" name="freq" value="nf" id="freq_nf">nf
+                    &nbsp;&nbsp; nf&nbsp;
                     <select name="nfcmp">
-                      <option selected="selected">&le;</option>
+                      <option selected="selected"></option>
+                      <option>&le;</option>
                       <option>=</option>
                       <option>&ge;</option>
                       </select>
-                    <input name="nfval" size="2">
-                    </span>
-                  &nbsp;&nbsp;
-                  <span class="optgroup" title="Set or clear all Edict 'P' freq values">
-                    <input type="checkbox" id="freq_p" onclick="freq_p_set()">P
+                    <input name="nfval" size="2" placeholder="0">
                     </span>
                   </td>
                 </tr>

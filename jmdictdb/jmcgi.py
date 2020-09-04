@@ -1047,7 +1047,7 @@ def _freqcond (freq, nfval, nfcmp):
             if scale == 'nf': have_nf = True
             else:
                   # Append this value to the scale list.
-                x.setdefault (scale, []).append (value)
+                x.setdefault (scale, []).append (int(value))
 
         # Now process each scale and it's list of values...
 
@@ -1076,11 +1076,17 @@ def _freqcond (freq, nfval, nfcmp):
             else: raise ValueError ("No numeric value in freq item")
 
           # Handle any "nfxx" item specially here.
-        if nfval:
+        if nfcmp:
             kwid = KW.FREQ['nf'].id
-            # Build list of "where" clause parts using the requested comparison and value.
-            if nfcmp == '≤': nfcmp = '<='
-            elif nfcmp == '≥': nfcmp = '>='
+              # Build list of "where" clause parts using the requested
+              # comparison and value.  Validate 'nfcmp' and 'nfval' to
+              # avoid SQL injection.
+            try: nfcmp = {'=':'=', '≤':'<=', '≥':'>='}[nfcmp]
+            except KeyError:
+                raise ValueError ('Invalid value for "nfcmp": %r' % nfcmp)
+            try: nfval = int (nfval or 0)
+            except ValueError:
+                raise ValueError ('Invalid value for "nfval": %r' % nfval)
             whr.append (
                 "(freq.kw=%s AND freq.value%s%s)" % (kwid, nfcmp, nfval))
 
