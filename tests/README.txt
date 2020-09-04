@@ -133,9 +133,10 @@ invalid value like ''.
 Manually forcing a reload of the test database
 ==============================================
 The script ./load_testdb.sh can be used to unconditionally force a
-reload of the test database.  This is useful, for example, before
-making and saving changes to the test database to assure the changes
-are made to a clean, unmodified version of the database.
+reload of the test database (see also Note 2 below).  This is useful,
+for example, before making and saving changes to the test database
+to assure the changes are made to a clean, unmodified version of the
+database.
 
 Updating test databases
 =======================
@@ -149,23 +150,26 @@ Postgresql and using the JMdictDB web or commandline tools or using
 the usual Postgresql tools (e.g. psql).  If using the web pages to
 edit/add/delete entries you'll need to add a "service" section to
 the active config.ini (or config_pvt.ini) file to make the test
-database accessible via the svc=..." url parameter.
-
-To load a test database into Postgresql you can use the Postgresql
-tools (database name can be anything):
-
-  $ dropdb --if-exists jmtemp
-  $ createdb -O jmdictdb jmtemp
-  $ psql -d jmtemp -f python/tests/data/jmtest01.sql
+database accessible to the web UI via the svc=..." url parameter.
 
 To update the test database to the current JMdictDB database version:
+
+Load a fresh copy of the test database:
+
+  $ cd tests
+  $ ./load-testdb.sh data/jmtest01.sql
+
+[The load-testdb.sh script is a simple script that automates the
+steps described in Note 2 below.]
+
+The apply the latest database updates to as you would to the main
+"jmdict" database:
 
   $ psql -d jmtemp -U jmdictdb -f patches/nnn-xxxxxx.sql
 
 And when all changes are complete, save it:
 
   $ pg_dump -d jmtemp > python/tests/data/jmtest01.sql
-
 
 ========================================================================
 Note 1:
@@ -196,3 +200,16 @@ using Postgresql's pg_dump tool.  The process was:
 
 The file python/tests/data/data/jmtest01.seq is the list of entry
 sequence numbers that was determined to be needed by the tests.
+
+------------------------------------------------------------------------
+Note 2:
+To load a test database into Postgresql you can use the shell script
+tests/load-testdb.sh or perform the same steps by hand using the usual
+Postgresql tools:
+
+  $ dropdb --if-exists jmtemp01
+  $ createdb -O jmdictdb jmtemp01
+  $ psql -d jmtemp -f python/tests/data/jmtest01.sql
+
+Note that the database that is created and loaded from data/jmtest01.sql
+can be named anything you want.
