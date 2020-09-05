@@ -169,7 +169,7 @@ CREATE TABLE kwsrct (
     kw VARCHAR(20) NOT NULL UNIQUE,
     descr VARCHAR(255));
 
--- The tables that contain corpra entry data are defined in a
+-- The tables that contain corpora entry data are defined in a
 -- separate file since they created both by this file when creating
 -- a new JMdictDB database, and by imptabs.sql when creating a
 -- separate schema for use during bulk loading.

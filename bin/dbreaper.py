@@ -43,7 +43,7 @@ def find_entries (cur, stat, sopts='', interval='30 days'):
         #       4 is "deleted", 6 is "rejected".
         # interval -- A string giving a Postgresql interval spec.
         # sopts -- A string, described in the help for --corpus,
-        #       giving the corpra to be processed.
+        #       giving the corpora to be processed.
 
         sclause = parse_corpus_opt (sopts, 'e.src')
         sql = "SELECT e.id "\
