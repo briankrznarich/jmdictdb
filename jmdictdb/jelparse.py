@@ -178,9 +178,9 @@ def p_tagitem_3(p):
 
 def p_tagitem_4(p):
     '''tagitem : QTEXT'''
-    # FIXME: why isn''t a QTEXT already cleaned up by jellex?
+    #FIXME: why isn''t a QTEXT already cleaned up by jellex?
     txt = jellex.qcleanup (p[1][1:-1])
-      # FIXME: we should check for ascii text here and treat
+      #FIXME: we should check for ascii text here and treat
       #  that as TEXT above.
     if jdb.jstr_keb (txt): p[0] = [['RESTR', None, txt]]
     else:                  p[0] = [['RESTR', txt, None]]
@@ -246,7 +246,7 @@ def p_tagitem_10(p):
             try: corpus = KW.SRC[corpus].id
             except KeyError: perror (p, "Unknown corpus: %s" % corpus)
         if tag in [x.kw for x in KW.recs('XREF')]:
-              # FIXME: instead of using XREF kw''s directly, do we want to
+              #FIXME: instead of using XREF kw''s directly, do we want to
               #  change to an lsrc syntax like, "xref=cf:..."
               #  (possibly keeping "see" and "ant" as direct keywords)?
             if len (dotlist) == 1:
@@ -364,14 +364,14 @@ def p_snums_1(p):
     '''snums : NUMBER'''
     n = int(p[1])
     if n<1 or n>99:
-        perror (p, "Invalid sense number: '%s' % n")
+        perror (p, "Invalid sense number: '%s'" % n)
     p[0] = [n]
 
 def p_snums_2(p):
     '''snums : snums COMMA NUMBER'''
     n = int(p[3])
     if n<1 or n>99:
-        perror (p, "Invalid sense number: '%s' % n")
+        perror (p, "Invalid sense number: '%s'" % n)
     p[0] = p[1] + [n]
 
 # -------------- RULES END ----------------
@@ -844,7 +844,7 @@ def fmt_xitem (xitem):
 def parse_grp (grpstr):
         rv = [];  KWGRP = jdb.KW.GRP
         if not grpstr.strip(): return rv
-          # FIXME: Handle grp.notes which is currently ignored.
+          #FIXME: Handle grp.notes which is currently ignored.
         for g in grpstr.split (';'):
             grp, x, ord = g.strip().partition ('.')
             if grp.isdigit(): grp = int(grp)
