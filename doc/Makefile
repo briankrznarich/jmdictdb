@@ -29,13 +29,15 @@ install.html: src/install.asc
 dev.html: src/dev.asc
 tags.html: src/tags.asc
 
-schema: schema.png schema.pdf schema.html
+schema: schema.png schema.pdf
 schema.png: src/schema.dia
 	dia --export $@ -s 1500x $?
 schema.pdf: src/schema.odt
 	/usr/bin/libreoffice --headless --convert-to pdf $?
-schema.html: src/schema.odt
-	/usr/bin/libreoffice --headless --convert-to html $?
+  # Have been unable to generate reasonable quality html output from 
+  # LO Writer so dropping support for that for now.
+#schema.html: src/schema.odt
+#	/usr/bin/libreoffice --headless --convert-to html $?
 
 updates: 2020-06-changes.html 2020-06-update.html
 2020-06-changes.html: src/2020-06-changes.asc

@@ -13,29 +13,60 @@
 -- the public schema.
 
 CREATE TABLE kwsrc (
+        -- Each row represents a corpus to which zero or more entries
+        -- belong.
     id SMALLINT PRIMARY KEY,
     kw VARCHAR(20) NOT NULL UNIQUE,
     descr VARCHAR(255),
     dt DATE,
+        -- Available for recording a timestamp associated with the corpus.
     notes VARCHAR(255),
-    seq VARCHAR(20) NOT NULL,   -- Name of sequence to create for entr.seq default values.
-    sinc SMALLINT,		-- Sequence INCREMENT value used when creating seq.
-    smin BIGINT,		-- Sequence MINVALUE value used when creating seq.
-    smax BIGINT,		-- Sequence MAXVALUE value used when creating seq.
+        -- Ad hoc nore regarding this corpus.
+    seq VARCHAR(20) NOT NULL,
+        -- Name of Postgresql sequence thar will supply entr.seq default
+        -- values.  The sequence will be automatically created (by the 
+        -- kwsrc_updseq() trigger in mktables.sql) when a row in inserted
+        -- in kwsrc.  
+    sinc SMALLINT,  -- Sequence INCREMENT value used when creating seq.
+    smin BIGINT,    -- Sequence MINVALUE value used when creating seq.
+    smax BIGINT,    -- Sequence MAXVALUE value used when creating seq.
     srct TEXT NOT NULL REFERENCES kwsrct(kw));
+        -- Corpus type as defined in table "kwsrct".  This will be by
+        -- default one of: 'jmdict', 'jmnedict', 'kanjidic', 'examples'.
 
 CREATE TABLE entr (
     id SERIAL PRIMARY KEY,
+        -- Arbitrary and unique integer to identify entries within
+        -- the database.  We don't want to use seq as the PK because
+        -- the database may include entries from non-JMdict sources
+        -- (such as JMnedict) in the future and those source may not
+        -- have seq numbers.
+        -- All rows in other tables related to an entry will have a
+        -- foreign key pointing to the entry's id value.
     src SMALLINT NOT NULL
       REFERENCES kwsrc(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        -- Indicates he corpus this entry belongs to.
     stat SMALLINT NOT NULL
       REFERENCES kwstat(id),
+        -- Indicates the status of this entry.  Will be 2 (active),
+        -- 4 (deleted) or 6 (rejected).
+        -- "rejected”, etc.
     seq BIGINT NOT NULL CHECK(seq>0),
+        -- Sequence number.  This number maps to the <ent_seq>
+        -- element of the JMdict XML file, and is intended
+        -- to be a stable identifier of a particular word.
     dfrm INT
       REFERENCES entr(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        -- If not NULL is a reference to another entry that was the
+        -- edit source for this entry.
     unap BOOLEAN NOT NULL,
+        -- If TRUE, this entry has not been approved by an editor yet.
     srcnote VARCHAR(255) NULL,
+        -- Additional ad-hoc information about the source of this
+        -- entry.
     notes TEXT,
+        -- Arbitrary textual information about this entry.  Intended 
+        -- for display by applications.
     idx INT);
 CREATE INDEX ON entr(seq);
 CREATE INDEX ON entr(stat) WHERE stat!=2;
@@ -47,103 +78,167 @@ CREATE INDEX ON entr(unap) WHERE unap;
 CREATE UNIQUE INDEX ON entr (src,seq) WHERE stat=2 AND NOT unap;
 
 CREATE TABLE rdng (
-    entr INT NOT NULL REFERENCES entr(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        -- Contains the readings associated with each entry.  Maps to
+        -- the JMdict XML element <re_ele>.
+    entr INT NOT NULL
+      REFERENCES entr(id) ON DELETE CASCADE ON UPDATE CASCADE,
     rdng SMALLINT NOT NULL CHECK (rdng>0),
-      PRIMARY KEY (entr,rdng),
+        -- Disambiguates and orders multiple readings in an entry.
+    PRIMARY KEY (entr,rdng),
     txt VARCHAR(2048) NOT NULL);
+        -- Reading text.
 CREATE INDEX ON rdng(txt);
 CREATE UNIQUE INDEX ON rdng(entr,txt);
 CREATE INDEX ON rdng(txt varchar_pattern_ops); --For fast LIKE 'xxx%'
 
 CREATE TABLE kanj (
-    entr INT NOT NULL REFERENCES entr(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        -- Contains the kanji associated with each entry.  Maps to
+        -- the JMdict XML element <ke_ele>.
+    entr INT NOT NULL
+      REFERENCES entr(id) ON DELETE CASCADE ON UPDATE CASCADE,
     kanj SMALLINT NOT NULL CHECK (kanj>0),
-      PRIMARY KEY (entr,kanj),
+        -- Disambiguates and orders multiple kanji in an entry.
+    PRIMARY KEY (entr,kanj),
     txt VARCHAR(2048) NOT NULL);
+        -- Kanji text.
 CREATE INDEX ON kanj(txt);
 CREATE UNIQUE INDEX ON kanj(entr,txt);
 CREATE INDEX ON kanj(txt varchar_pattern_ops); --For fast LIKE 'xxx%'
 
 CREATE TABLE sens (
-    entr INT NOT NULL REFERENCES entr(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        -- Contains the sense items associated with each entry.
+        -- Has no information of its own beyond a sense note but serves
+        -- as an anchor for other tables to reference.
+    entr INT NOT NULL
+      REFERENCES entr(id) ON DELETE CASCADE ON UPDATE CASCADE,
     sens SMALLINT NOT NULL CHECK (sens>0),
-      PRIMARY KEY (entr,sens),
+        -- Disambiguates and orders multiple sense in an entry.
+    PRIMARY KEY (entr,sens),
     notes TEXT);
+        -- Sense note.  Corresponds to the <s_inf> element in JMdict.
 
 CREATE TABLE gloss (
+      -- Contain the gloss items associated with each sense.
     entr INT NOT NULL,
-    sens SMALLINT NOT NULL,
-      FOREIGN KEY (entr,sens) REFERENCES sens(entr,sens) ON DELETE CASCADE ON UPDATE CASCADE,
+    sens SMALLINT NOT NULL, 
+    FOREIGN KEY (entr,sens)
+      REFERENCES sens(entr,sens) ON DELETE CASCADE ON UPDATE CASCADE,
     gloss SMALLINT NOT NULL CHECK (gloss>0),
-      PRIMARY KEY (entr,sens,gloss),
-    lang SMALLINT NOT NULL DEFAULT 1
-      REFERENCES kwlang(id),
-    ginf SMALLINT NOT NULL DEFAULT 1
-      REFERENCES kwginf(id),
+        -- Disambiguates and orders multiple gloss in a sense.
+    PRIMARY KEY (entr,sens,gloss),
+    lang SMALLINT NOT NULL DEFAULT 1 REFERENCES kwlang(id),
+        -- The language of the gloss.
+    ginf SMALLINT NOT NULL DEFAULT 1 REFERENCES kwginf(id),
+        -- Type of gloss (equivalent, literal, figurative, etc.)
     txt VARCHAR(2048) NOT NULL);
+        -- Gloss text.
 CREATE INDEX ON gloss(txt);
 CREATE UNIQUE INDEX ON gloss(entr,sens,lang,txt);
 CREATE INDEX ON gloss(lower(txt) varchar_pattern_ops); --For case-insensitive LIKE 'xxx%'
 CREATE INDEX ON gloss(lower(txt)); 		    --For case-insensitive '='
 
 CREATE TABLE xref (
+        -- Models various types of cross-references between entries (or
+        -- more accurately, between senses of entries.)  Maps approximately
+        -- to JMdict XML elements <xref> and <ant>.
     entr INT NOT NULL,
     sens SMALLINT NOT NULL,
-      FOREIGN KEY (entr,sens) REFERENCES sens(entr,sens) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (entr,sens) REFERENCES sens(entr,sens)
+      ON DELETE CASCADE ON UPDATE CASCADE,
     xref SMALLINT NOT NULL CHECK (xref>0),
-    typ SMALLINT NOT NULL
-      REFERENCES kwxref(id),
+        -- Disambiguates and orders multiple xrefs in a sense.
+    typ SMALLINT NOT NULL REFERENCES kwxref(id),
+        -- The type of xref (synonym, antonym, etc).
     xentr INT NOT NULL CHECK (xentr!=entr),
     xsens SMALLINT NOT NULL,
-      FOREIGN KEY (xentr,xsens) REFERENCES sens(entr,sens) ON DELETE CASCADE ON UPDATE CASCADE,
+        -- xentr,xsens identify the target entry and sense of the cross-
+        -- reference.
+    FOREIGN KEY (xentr,xsens) REFERENCES sens(entr,sens)
+      ON DELETE CASCADE ON UPDATE CASCADE,
     rdng SMALLINT,
-      CONSTRAINT xref_rdng_fkey FOREIGN KEY (xentr,rdng) REFERENCES rdng(entr,rdng) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT xref_rdng_fkey FOREIGN KEY (xentr,rdng)
+      REFERENCES rdng(entr,rdng) ON DELETE CASCADE ON UPDATE CASCADE,
+        -- Identifies a particular reading in the target entry to use when
+        -- displaying this cross-reference.
     kanj SMALLINT CHECK (kanj IS NOT NULL OR rdng IS NOT NULL),
-      CONSTRAINT xref_kanj_fkey FOREIGN KEY (xentr,kanj) REFERENCES kanj(entr,kanj) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT xref_kanj_fkey FOREIGN KEY (xentr,kanj)
+      REFERENCES kanj(entr,kanj) ON DELETE CASCADE ON UPDATE CASCADE,
+        -- Identifies a particular kanji in the target entry to use when
+        -- displaying this cross-reference.
     notes TEXT,
-    nosens BOOLEAN NOT NULL DEFAULT FALSE,  -- No specific target sense preferred.
-    lowpri BOOLEAN NOT NULL DEFAULT FALSE,  -- Low priority xref.
-      PRIMARY KEY (entr,sens,xref,xentr,xsens));
+       -- Ad hoc note associated with this cross-referernce.
+    nosens BOOLEAN NOT NULL DEFAULT FALSE,
+       -- Indicates that no specific sense should be considered the target
+       -- of the cross-reference; that is the xref should be treated as if
+       -- was to the entire target entry.  If 'nosens' is True, 'xsens'
+       -- should always be 1 although this is not enforced by constraint. 
+    lowpri BOOLEAN NOT NULL DEFAULT FALSE,
+       -- Low priority xref.  Used by Examples entries to denote xrefs that
+       -- are not "priority" xrefs.
+    PRIMARY KEY (entr,sens,xref,xentr,xsens));
 CREATE INDEX ON xref(xentr,xsens);
-    --## The following index disabled because it is violated by Examples file xrefs.
-    --CREATE UNIQUE INDEX xref_entr_unq ON xref(entr,sens,typ,xentr,xsens);
+    --## The following index is disabled because it is violated by Examples
+    --## file xrefs.
+--CREATE UNIQUE INDEX xref_entr_unq ON xref(entr,sens,typ,xentr,xsens);
 
 CREATE TABLE hist (
+        -- This table maintains a series of history records for each
+        -- entry that document significant changes to the entry.
     entr INT NOT NULL
       REFERENCES entr(id) ON DELETE CASCADE ON UPDATE CASCADE,
     hist SMALLINT NOT NULL CHECK (hist>0),
-    stat SMALLINT NOT NULL
-      REFERENCES kwstat(id),
+        -- Disambiguates and orders multiple xrefs in a sense.
+    stat SMALLINT NOT NULL REFERENCES kwstat(id),
+        -- Status (entr.stat) of entry after the change this record
+        -- documents was made.
     unap BOOLEAN NOT NULL,
+        -- Approval status (entr.unap) of entry after this change was
+        -- made.
     dt TIMESTAMP NOT NULL DEFAULT NOW(),
+        -- Date and time this history record was added.
     userid VARCHAR(20),
+        -- Userid of logged in editor (or NULL if not logged in).
     name VARCHAR(60),
+        -- Name given on submission form.
     email VARCHAR(120),
+        -- Email address given on submission form.
     diff TEXT,
+        -- Unix-style 'diff' between the XML of the pre- and post-edit
+        -- changes. 
     refs TEXT,
+        -- User provided text from the "References" field on the
+        -- submission form. 
     notes TEXT,
-      PRIMARY KEY (entr,hist));
+        -- User provided text from the "Comments" field on the
+        -- submission form. 
+    PRIMARY KEY (entr,hist));
 CREATE INDEX ON hist(dt);
 CREATE INDEX ON hist(email);
 CREATE INDEX ON hist(userid);
 
 CREATE TABLE dial (
-    entr INT NOT NULL,
-    sens INT NOT NULL,
+      -- Provides lists of dialects for senses.  This information
+      -- corresponds to the JMdict XML <dial> element.
+    entr INT NOT NULL,    -- The entry (entr.id) and
+    sens INT NOT NULL,    --  sense (sens.sens) this tag appliers to.
       FOREIGN KEY (entr,sens) REFERENCES sens(entr,sens) ON DELETE CASCADE ON UPDATE CASCADE,
+      -- Order of this tag among other "dial" tags.
     ord SMALLINT NOT NULL,
-    kw SMALLINT NOT NULL DEFAULT 1
-      REFERENCES kwdial(id),
-      PRIMARY KEY (entr,sens,kw));
+      -- Identifies the specific dialect tag.
+    kw SMALLINT NOT NULL DEFAULT 1 REFERENCES kwdial(id),
+    PRIMARY KEY (entr,sens,kw));
 
 CREATE TABLE fld (
-    entr INT NOT NULL,
-    sens SMALLINT NOT NULL,
+      -- Provides lists of fields of application for senses.  This
+      -- information corresponds to the JMdict XML <field> element.
+    entr INT NOT NULL,          -- The entry (entr.id) and sense
+    sens SMALLINT NOT NULL,     --  (sens.sens) this tag appliers to.
       FOREIGN KEY (entr,sens) REFERENCES sens(entr,sens) ON DELETE CASCADE ON UPDATE CASCADE,
+      -- Order of this tag among other "fld" tags.
     ord SMALLINT NOT NULL,
-    kw SMALLINT NOT NULL
-      REFERENCES kwfld(id),
-      PRIMARY KEY (entr,sens,kw));
+      -- Identifies the specific field tag.
+    kw SMALLINT NOT NULL REFERENCES kwfld(id),
+    PRIMARY KEY (entr,sens,kw));
 
 CREATE TABLE freq (
     entr INT NOT NULL,
@@ -173,23 +268,32 @@ CREATE TABLE freq (
 CREATE TABLE kinf (
     entr INT NOT NULL,
     kanj SMALLINT NOT NULL,
-      FOREIGN KEY (entr,kanj) REFERENCES kanj(entr,kanj) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (entr,kanj) REFERENCES kanj(entr,kanj)
+      ON DELETE CASCADE ON UPDATE CASCADE,
     ord SMALLINT NOT NULL,
+        -- Order of this tag among other "lsrc" tags.
     kw SMALLINT NOT NULL
       REFERENCES kwkinf(id),
       PRIMARY KEY (entr,kanj,kw));
 
 CREATE TABLE lsrc (
+        -- Provides the foreign language word and language for each
+        -- sense for imported words.  This information corresponds to
+        -- the JMdict XML <lsource> element.
     entr INT NOT NULL,
     sens SMALLINT NOT NULL,
       FOREIGN KEY (entr,sens) REFERENCES sens(entr,sens) ON DELETE CASCADE ON UPDATE CASCADE,
     ord SMALLINT NOT NULL,
-    lang SMALLINT NOT NULL DEFAULT 1
-      REFERENCES kwlang(id),
+        -- Order of this tag among other "lsrc" tags.
+    lang SMALLINT NOT NULL DEFAULT 1 REFERENCES kwlang(id),
+        -- Language of the source word.  
     txt VARCHAR(250) NOT NULL,
-      PRIMARY KEY (entr,sens,lang,txt),
+        -- Text of the source word.
+    PRIMARY KEY (entr,sens,lang,txt),
     part BOOLEAN DEFAULT FALSE,
+        -- Corresponds to <lsource> "ls_wasei" attribute in the JMdict XML.
     wasei BOOLEAN DEFAULT FALSE);
+        -- Corresponds to <lsource> "ls_type" attribute in the JMdict XML.
 
 CREATE TABLE misc (
     entr INT NOT NULL,
@@ -251,6 +355,9 @@ CREATE TABLE grp (
 CREATE INDEX grp_kw ON grp(kw);
 
 CREATE TABLE xresolv (
+        -- Similar to table "xref" but holds cross-references before
+        -- they are resolved to a specific other entry and while they
+        -- are identified only by reading and/or kanji texts.
     entr INT NOT NULL,		-- Entry xref occurs in.
     sens SMALLINT NOT NULL,	-- Sense number xref occurs in.
       FOREIGN KEY (entr,sens) REFERENCES sens(entr,sens) ON DELETE CASCADE ON UPDATE CASCADE,
