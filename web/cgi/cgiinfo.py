@@ -5,7 +5,7 @@
 # This web page will show some details about the CGI/Python execution
 # environment and is useful for diagnosing library location confusions.
 
-import sys, cgi, cgitb, os
+import sys, cgi, cgitb, html, os
 try: import pkgpath.py  # Make jmdictdb package available on sys.path.
 except ImportError: pass
 
@@ -36,7 +36,7 @@ def main():
             ('Pkg location', os.path.dirname (os.path.abspath (jdb.__file__))),
             ('sys.path',     '%r' % sys.path), ]
         row_tmpl = "    <tr><td>%s:</td><td>%s</td></tr>"
-        rows = [row_tmpl%(title.replace(' ','&nbsp;'),cgi.escape(value))
+        rows = [row_tmpl%(title.replace(' ','&nbsp;'),html.escape(value))
                          for title, value in data]
         html = Page % '\n'.join (rows)
         print ("Content-type: text/html\n\n", html)

@@ -1,7 +1,8 @@
 # Copyright (c) 2008-2019 Stuart McGraw
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-import sys, re, cgi, urllib.request, urllib.parse, urllib.error, os, os.path
+import sys, os, os.path, re, cgi, html
+import urllib.request, urllib.parse, urllib.error
 import random, time, http.cookies, datetime, time, copy
 from jmdictdb import jdb, config, fmt
 from jmdictdb import jinja; from markupsafe import Markup, escape as Escape
@@ -408,7 +409,7 @@ def safe (s):
         raise ValueError ()
 
 def txt2html (s, ):
-        s = cgi.escape (s)
+        s = html.escape (s)
         s = s.replace ('\n', '<br/>\n')
         return s
 
