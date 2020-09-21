@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 #
 # This script compares the entities in an XML DTD file with
 # the corresponding values in the JMdictDB kw* tables (from

@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # Tool to replace GPL license text embedded in JMdictDB files with
 # an SPDX id.  `tools.lic-replace.py --help` for usage details.

@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # A tool and supporting functions for mapping between hg and git
 # revision numbers after a hg->git conversion by "fast-export".

@@ -1,4 +1,4 @@
-#! /usr/bin/python3
+#!/usr/bin/env python3
 # Compare db updates required by code with updates in database.
 
 import sys, os, re, unittest, pdb
