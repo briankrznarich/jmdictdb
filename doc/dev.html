@@ -86,20 +86,22 @@ with "jm".</p>
 <div class="sect3">
 <h4 id="_2_1_make_a_copy_of_the_current_jmdict_database">2.1. Make a copy of the current jmdict database</h4>
 <div class="paragraph">
-<p>This will be a database you for use while doing development work</p>
+<p>This will create a temporary, throw-away database to use while doing
+development work.</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>$ createdb -Ojmdictdb &lt;DEVDB&gt;    # That's -Oh, not -zero.
+<pre>$ dropdb --if-exists &lt;DEVDB&gt;     # In case there is a old version.
+$ createdb -Ojmdictdb &lt;DEVDB&gt;    # That's -Oh, not -zero.
 $ pg_dump jmdict | psql -d &lt;DEVDB&gt;</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>This is not strictly necessary; you can access any database from
-your development code as long as the database version is compatible
-but if your work involves database changes such as adding tags or
-schema changes you&#8217;ll want to develop and test them in a separate
-database.</p>
+<p>It is not strictly necessary to create a separate database for
+development work; you can access any database from your development
+code as long as the database version is compatible but if your work
+involves database changes such as adding tags or schema changes
+you&#8217;ll want to develop and test them in a separate database.</p>
 </div>
 </div>
 <div class="sect3">
@@ -313,7 +315,7 @@ in config-pct.ini in step <a href="#config_ini">3.2. Config and log files</a>.</
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-06-29 19:40:55 MDT
+Last updated 2020-09-21 10:10:43 MDT
 </div>
 </div>
 </body>
