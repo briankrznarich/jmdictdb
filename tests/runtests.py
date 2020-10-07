@@ -15,7 +15,7 @@ import unittest_extensions
   # want to import.)
 _ = sys.path
 if '..' not in _[0]: _[:0] = [_[0] + ('/' if _[0] else '') + '..']
-
+ 
 def main (args, opts):
           # Following raises an exception if wrong jmdictdb pkg was imported.
         chk_import ('jmdictdb', '..')
@@ -29,7 +29,6 @@ def main (args, opts):
             for filename in test_files:
                 args.append ((filename[:-3]).replace('/', '.'))
 
-        unittest.defaultTestLoader.testMethodPrefix = 't'
         for testset in args:
             if '/' in testset:
                 testset = testset.replace('./', '')
