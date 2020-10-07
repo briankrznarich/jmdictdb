@@ -1,4 +1,4 @@
-import sys, unittest, datetime, pdb
+import sys, unittest, contextlib, datetime, io, re, pdb
 from jmdictdb import jdb, db
 from jmdictdb.objects import *
 from jmdictdb import fmtxml
@@ -430,5 +430,37 @@ class Compat (unittest.TestCase):
             </sense>
             </entry>'''.replace (' '*12,'')
         _.assertEqual (expect, got)
+
+class Tags (unittest.TestCase):
+    def setUp(_):
+        jdb.KW = jdb.Kwds('')   # Add a jmnedict src entry to KW.
+          # Use a big id number to avoid interfering with any typically
+          # low-numbered entries that may be present.
+        jdb.KW.add ('SRC', db.Obj(id=200, kw='jmnedict',srct='jmnedict'))
+
+    def test001000(_):
+          # Check that if there is a JMdict-exclusive tag (such as
+          # 'abbr' (Misc(kw=2)) in a JMnedict entry that it, 1) will
+          # not be output in the XML, 2) will produce an appropriate
+          # warning message to stderr, and 3) won't interfere with
+          # or suppress a valid JMnedict tag (e.g. "place").
+
+          # Create a minimal entry with two MISC tags: "abbr" (kw=2) and
+          # "place" (kw=182).
+        e = Entr(id=33, seq=1000111, src=98, stat=2, unap=False,
+                 _sens=[Sens(sens=1,_misc=[Misc(kw=2),Misc(kw=182)])])
+        test_stderr = io.StringIO()
+        with contextlib.redirect_stderr (test_stderr):
+            got = fmtxml.entr(e, compat='jmnedict')
+        expect = '''\
+            <entry>
+            <ent_seq>1000111</ent_seq>
+            <trans>
+            <name_type>&place;</name_type>
+            </trans>
+            </entry>'''.replace (' '*12,'')
+        _.assertEqual (expect, got)
+        _.assertRegex (test_stderr.getvalue(),
+                       r'Illegal tag for DTD.*jmnedict.*abbr')
 
 if __name__ == '__main__': unittest.main()

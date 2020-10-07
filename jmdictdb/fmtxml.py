@@ -5,10 +5,12 @@
 Functions for generating XML descriptions of entries.
 
 """
-import re, os, difflib
+import sys, os, re, difflib
 from xml.sax.saxutils import escape as esc, quoteattr as esca
 from jmdictdb import jdb
 global KW
+
+class TagError (KeyError): pass
 
 def entr (entr, compat='jmex', geninfo=True, genhists=True,
                 genxrefs=True, wantlist=False):
@@ -51,7 +53,7 @@ def entr (entr, compat='jmex', geninfo=True, genhists=True,
 
         global KW; KW = jdb.KW
         if compat == 'jmex': compat = None
-        fmt= entrhdr (entr, compat)
+        fmt = entrhdr (entr, compat)
 
         kanjs = getattr (entr, '_kanj', [])
         for k in kanjs: fmt.extend (kanj (k, compat))
@@ -533,10 +535,18 @@ def ents (parent, attr, domain, elem_name, sort=False, dtd="jmdict"):
           # For brevity make a temporary function that returns only
           # the entity name.
         ent_name = lambda id: entity(KW,domain,id,dtd)[0]
-        kwlist = ['<%s>&%s;</%s>'
-                    # Note that x.kw is the tag id number.
-                  % (elem_name, ent_name(x.kw), elem_name)
-                  for x in nlist]
+        kwlist = []
+        for x in nlist:
+              # Note that x.kw below is the tag id number.
+              # ent_name(), a wrapper around entity(), might raise a
+              # TagError if the tag is known but not valid for the
+              # given DTD.  We want to print a warning message in this
+              # case but otherwise ignore it and contiue processing any
+              # valid tags in 'nlist'.
+            try: xmlent = '<%s>&%s;</%s>' \
+                          %(elem_name, ent_name(x.kw), elem_name)
+            except TagError as e: warn ("\nEntry %s: %s" % (parent.entr,str(e)))
+            else: kwlist.append (xmlent)
         if sort: kwlist.sort()
         return kwlist
 
@@ -572,7 +582,7 @@ def entity (kwds, domain, id, dtd):
               # entities by default and hence if there is no rec.ents
               # value, raise an error.
             if dtd not in ('jmdict', 'jmex'):
-                raise KeyError(msg % (dtd, rec.kw))
+                raise TagError(msg % (dtd, rec.kw))
         else:
             entinfo = rec.ents[dtd]
             if not isinstance (entinfo, dict):
@@ -580,7 +590,7 @@ def entity (kwds, domain, id, dtd):
                   # a scalar whose bool value indicates when true that the
                   # tag's 'kw'/'descr' values are the same as the entity,
                   # or when false, the tag is disallowed.
-                if not entinfo: raise KeyError(msg % (dtd, rec.kw))
+                if not entinfo: raise TagError(msg % (dtd, rec.kw))
             else:
                   # If the entity info is a dict, then it's "e" item, if
                   # present, is the entity name.  If not present the entity
@@ -707,6 +717,8 @@ def entr_diff (eold, enew, n=2):
         if len(diffs) >= 2: diffs = diffs[2:]
         diffstr = '\n'.join (diffs)
         return diffstr
+
+def warn (msg): print (msg, file=sys.stderr)
 
 def _main():
         import sys
