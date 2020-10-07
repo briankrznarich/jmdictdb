@@ -12,11 +12,13 @@
 -- Should be a random 6-digit hexidecimal string.  One way to generate
 -- is with:
 --   python -c 'import random;print("%06.6x"%random.randint(0,16777215))'
---
--- When changing updateid don't forget to change python/lib/dbver.py to
+-- If multiple version ids are needed, separate them with commas inside
+-- the triple quotes, eg:
+--   \set updateids '''8fac2c,e4aa1c'''
+-- When changing updateids don't forget to change python/lib/dbver.py to
 -- tell the JMdictDB API to expect the new version.
 
-\set updateid '''8fac2c'''
+\set updateids '''8fac2c'''
 
 -- This is a function for the benefit of psql scripts that can be
 -- conditionally called to generate an error in order to stop the
@@ -51,25 +53,35 @@ CREATE OR REPLACE FUNCTION vchk(need text) RETURNS setof VOID AS $$
     $$ LANGUAGE plpgsql;
 
 -- Database updates table.
--- Updates made subsequent to creation will add additional rows to
--- this table.  The 'id's should be psuedo-random numbers.  Update
--- dependencies (eg, update Y requires update X to be applied first)
--- are maintained externally.
--- The 'active' value indicates if the update is current.  Usually,
--- an update will replace an earlier update by setting the earlier
--- update's 'active' value to false.  However, if an update is
--- independent of other updates (addition of an experimental feature
--- that does not affect the rest of the schema for example) that
--- update row may have a true 'active' value in addition to any
--- other rows that are also active.
--- View 'dbx' shows the 'id' values in the hex number form used
--- ouside the database and is for convenience.
+-- Changes to the database made subsequent to initial database creation
+-- will add additional rows to this table.  The 'id' numbers are chosen
+-- randomly.  A new row with a new id number and 'active'=True is added
+-- when there is a change to the database schema or static contents (eg
+-- tag tables).  The 'active' value indicates that the update is current;
+-- rows with active=False are historical information.
+-- Usually, the update process will set earlier updates' 'active' values
+-- to false.  However, if an update is not dependent on specific earlier
+-- updates and does not impose a requirement on the JMdictDB code version
+-- (for example, tag table content updates), the update process may leave
+-- earlier rows set to active resulting in multiple updates that are active.
+-- The update process uses the db table to determine if an update's
+-- prerequisite updates have been applied, and the JMdictDB code uses it
+-- to determine if the database is at an update version that it understands.
+-- View 'dbx' shows the 'id' values in the hex number form used ouside
+-- the database and is for convenience.
 
 CREATE TABLE db (
     id INT PRIMARY KEY,
     active BOOLEAN DEFAULT TRUE,
     ts TIMESTAMP DEFAULT NOW());
-INSERT INTO db(id) VALUES(x:updateid::INT);
+
+-- Populate the "db" table using the current database update id number(s)
+-- in psql variable ':updateids'.  It is a string containing the id number
+-- as a six-digit hexadecimal number or multiple comma-separated hex numbers.
+-- The sql below splits them into separate rows and converts them to decimal
+-- before insertion.
+INSERT INTO db(id) (SELECT (
+  'x'||lpad(unnest(string_to_array(:updateids,',')),8,'0'))::BIT(32)::INT);
 
 -- Presents table "db" with hexadecimal id numbers for convenience.
 CREATE OR REPLACE VIEW dbx AS (
