@@ -107,8 +107,8 @@ CHECKS = [
         " for the examples or kanjdic corpora so those are excluded"
         " from this check.",
       "SELECT e.id FROM entr e "
-          "JOIN kwsrc c ON c.id=e.src JOIN kwsrct t ON t.id=c.srct "
-          "WHERE stat=2 AND t.kw IN ('jmdict','jmnedict') "
+          "JOIN kwsrc c ON c.id=e.src "
+          "WHERE stat=2 AND c.srct IN ('jmdict','jmnedict') "
             "AND NOT EXISTS (SELECT 1 FROM rdng r WHERE r.entr=e.id) "
           "ORDER BY e.id"),
 
@@ -116,8 +116,8 @@ CHECKS = [
       "Every entry other than those in the kanjidic corpus must have"
         " at least one sense.",
       "SELECT e.id FROM entr e "
-          "JOIN kwsrc c ON c.id=e.src JOIN kwsrct t ON t.id=c.srct "
-          "WHERE t.kw NOT IN ('kanjidic') "
+          "JOIN kwsrc c ON c.id=e.src "
+          "WHERE c.srct NOT IN ('kanjidic') "
             "AND NOT EXISTS (SELECT 1 FROM sens s WHERE s.entr=e.id) "
           "ORDER BY e.id"),
 
@@ -134,8 +134,8 @@ CHECKS = [
         # We report only the entry id numbers.  To report the sens
         # numbers too use ""SELECT e.id,s.sens FROM..."
       "SELECT DISTINCT e.id FROM entr e JOIN sens s ON s.entr=e.id "
-          "JOIN kwsrc c ON c.id=e.src JOIN kwsrct t ON t.id=c.srct "
-          "WHERE t.kw='jmdict' AND NOT EXISTS "
+          "JOIN kwsrc c ON c.id=e.src "
+          "WHERE c.srct='jmdict' AND NOT EXISTS "
           "(SELECT 1 FROM pos p WHERE p.entr=s.entr AND p.sens=s.sens) "
           "ORDER BY e.id"),
 
@@ -336,7 +336,7 @@ to stderr and %(prog)s will exit will a status of 1."""
         p.add_argument ("-l", "--list", action="store_true", default=False,
             help="List a brief summary of each available test and exit.")
 
-        p.add_argument ("-c", "--corpus", default=None,
+        p.add_argument ("-s", "--corpus", default=None,
             help="Limit checks to one particular corpus.")
 
         p.add_argument ("--limit", type=int, default=30,
