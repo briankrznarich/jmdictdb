@@ -746,19 +746,19 @@ def make_enttab (KW, dtd):
                      # Note that if 'ent' is None by virtue of it not
                      # being present in .ents at all, it is also deleted.
                      # Only when dtd=="jmdict" are recs kept by default.
-                   if not ent: kwds.upd (attr, r.id)
+                   if not ent: kwds.upd (attr, r.id)    # Delete.
                else:   # 'ent' is a dict() whose 'e' item if present gives
                      # and alternative entity name, 'v' item if present
                      # gives and alternative entity value.
-                   id, kw, descr = r.id, None, None
-                   if 'e' in ent: kw = ent['e']
-                   if 'v' in ent: descr = ent['v']
-                   if kw or descr: kwds.upd (attr, id, kw, descr)
-                   else:   # An empty dict is not allowed.
+                   id, args = r.id, {}
+                   if 'e' in ent: args['kw'] = ent['e']
+                   if 'v' in ent: args['descr'] = ent['v']
+                   if not args:
                        m = "KW table %s (%s,'%s'): %s:"\
                            "must have a 'e' or 'v' item."\
                            % (attr, r.id, r.kw, dtd)
                        raise ValueError (m)
+                   kwds.upd (attr, id, **args)
         return kwds
 
 def sniff (filename):

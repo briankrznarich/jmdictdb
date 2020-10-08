@@ -27,6 +27,8 @@ except ImportError: DBVERS = []
 
 global KW
 Debug = {}
+NONE = object()  # Sentinel for missing fuction call args
+                 # used in some functions and methods.
 
 class AuthError (Exception): pass
 
@@ -1698,23 +1700,25 @@ class Kwds:
         shortname = '%s_%s' % (attr, row.kw.replace ('-', '_'))
         setattr (self, shortname, row.id)
 
-    def upd (self, attr, id_or_kw, kw=None, descr=None):
+    def upd (self, attr, id_or_kw, kw=NONE, descr=NONE, ents=NONE):
         # Update or delete a row.
         #   attrs -- Identifies the keyword set (eg, 'DIAL', 'POS', etc.
         #   is_or_kw -- Identifies the row in the keyword set.
-        #   kw, descr -- New value for the given field.  If neither are
-        #     given (ie, both are None) the row will be deleted.
+        #   kw, descr, ents -- New value for the given field.  If none
+        #     are given the row will be deleted.
         kwtab = getattr (self, attr)
         r = kwtab[id_or_kw]
-        if kw is None and descr is None:
+        if (kw, descr, ents) == (NONE,NONE,NONE):
             del kwtab[r.id]; del kwtab[r.kw]
-        else:
-            if descr is not None and descr != r.descr:
-                kwtab[r.id].descr = descr
-            if kw is not None and kw != r.kw:
-                del kwtab[r.kw]
-                kwtab[r.id].kw = kw
-                kwtab[kw] = kwtab[r.id]
+            return
+        if descr is not NONE and descr != r.descr:
+            kwtab[r.id].descr = descr
+        if ents is not NONE and ents != r.ents:
+            kwtab[r.id].ents = ents
+        if kw is not NONE and kw != r.kw:
+            del kwtab[r.kw]
+            kwtab[r.id].kw = kw
+            kwtab[kw] = kwtab[r.id]
 
     def attrs( self ):
         # Return list of attr name strings for attributes that contain
@@ -2308,18 +2312,6 @@ def rmdups (recs, key=None):
             if unique (k, dupchk): uniq.append (x)
             else: dups.append (x)
         return uniq, dups
-
-def crossprod (*args):
-        """
-        Return the cross product of an arbitrary number of lists.
-        """
-        # From http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/159975
-        # N.B. Could be replaced by itertools.product() in Python-2.6+.
-        result = [[]]
-        for arg in args:
-            result = [x + [y] for x in result for y in arg]
-        return result
-
 
 def reset_encoding (file, encoding='utf-8'):
         # As of Python-3.3, this seems to be the best (if still

@@ -147,7 +147,7 @@ class Loaddb (unittest.TestCase):
 class Upd (unittest.TestCase):
     def setUp (_):
         _.kwds = jdb.Kwds()
-        _.row = db.Obj(id=3,kw='v1',descr="Ichidan verb")
+        _.row = db.Obj(id=3,kw='v1',descr="Ichidan verb", ents=None)
         _.kwds.add ('POS', _.row)
     def test001(_):                      # Verify setUp() did what we thought.
         _.assertIs (_.row, _.kwds.POS[3])
@@ -158,29 +158,36 @@ class Upd (unittest.TestCase):
     def test002(_):                                          # Check deletion.
         _.kwds.upd ('POS', 3)
         _.assertEqual (0, len (_.kwds.POS))
-    def test003(_):                                               # Update kw.
+    def test003(_):                                          # Update kw.
         _.kwds.upd ('POS', 3, kw='a')
         _.assertIs (_.row, _.kwds.POS[3])
         _.assertIs (_.row, _.kwds.POS['a'])
         _.assertEqual (3, _.row.id)
         _.assertEqual ('a', _.row.kw)
         _.assertEqual ("Ichidan verb", _.row.descr)
-    def test004(_):                                            # Update descr.
+    def test004(_):                                          # Update descr.
         _.kwds.upd ('POS', 3, descr="v1 verb")
         _.assertIs (_.row, _.kwds.POS[3])
         _.assertIs (_.row, _.kwds.POS['v1'])
         _.assertEqual (3, _.row.id)
         _.assertEqual ('v1', _.row.kw)
         _.assertEqual ("v1 verb", _.row.descr)
+    def test005(_):                                          # Update ents.
+        _.kwds.upd ('POS', 3, ents={'jmdict':0})
+        validate_rec (_, _.kwds, 'POS', 3, 'v1',
+                      descr="Ichidan verb", ents={'jmdict':0})
+    def test006(_):                                  # Update descr to None.
+        _.kwds.upd ('POS', 3, descr=None)
+        validate_rec (_, _.kwds, 'POS', 3, 'v1', descr=None, ents=None)
 
 class Missing: pass
-def validate_rec (_, o, domain, idx, kw, descr=Missing):
+def validate_rec (_, o, domain, idx, kw, descr=Missing, ents=Missing):
           # Lookup a Kwds record and confirm that it matches
           # expectations: that the same record is found by
           # id number or kw string lookup, and the that id
-          # number, kw string, and (optionally) descr in the
-          # found record match what is expected (as given in
-          # the arguments).
+          # number, kw string, and (optionally) descr and
+          # ents in the found record match what is expected
+          # (as given in the arguments).
 
         r1 = getattr (o, domain)[idx]
         r2 = getattr (o, domain)[kw]
@@ -189,5 +196,7 @@ def validate_rec (_, o, domain, idx, kw, descr=Missing):
         _.assertEqual (r1.kw, kw)
         if descr is not Missing:
             _.assertEqual (r1.descr, descr)
+        if ents is not Missing:
+            _.assertEqual (r1.ents, ents)
 
 if __name__ == '__main__': unittest.main()
