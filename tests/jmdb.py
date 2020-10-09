@@ -38,7 +38,6 @@ from jmdictdb import jdb, db
 # A failure when loading will result in an exception.
 
 HASH_METHOD = 'sha1'
-PGUSER = 'jmdictdb'  # Postgresql user to create database objects as.
 
 class _DBmanager():
     def __init__ (self): pass
@@ -46,9 +45,10 @@ class _DBmanager():
         if force_reload or not self.is_loaded (dbname, filename):
             print ('Loading database "%s" from %s' % (dbname, filename),
                    file=sys.stderr)
-              # self.load() will raise CalledProcessError if it fails
+              # load() will raise CalledProcessError if it fails
               # which we let propagate up to our caller.
-            self.load (dbname, filename)
+            loaddb (dbname, filename)
+            reset_testsrc (dbname, filename, HASH_METHOD)
         cur = jdb.dbOpen (dbname)
         return cur
     def is_loaded (self, dbname, filename):
@@ -78,11 +78,12 @@ class _DBmanager():
         #if rs[0][0] != os.path.abspath (filename):
         #    print ("jmdb: filename mismatch", file=sys.stderr)
         #    return False
-        if rs[0][2] != self.hash (HASH_METHOD, filename):
+        if rs[0][2] != hash (HASH_METHOD, filename):
             print ("jmdb: hash mismatch", file=sys.stderr)
             return False
         return True
-    def load (self, dbname, filename):
+
+def loaddb (dbname, filename):
           # Reload a fresh copy of a test database into the postgresql
           # database server.  After loading the database we store the
           # a hash of the load file's contents in a table, "testsrc",
@@ -100,13 +101,6 @@ class _DBmanager():
         if not dbname.startswith ("jmtest"):
             raise RuntimeError ('jmdb: dbname must start with "jmtest"')
         absfn = os.path.abspath (filename)
-        hash = self.hash (HASH_METHOD, filename)
-        def run (cmd):
-              # The "stdout" argument will send stdout to /dev/null; we
-              # want to supress all the notice-level messages from psql
-              # but errors will be written to stderr so they will be shown.
-            subprocess.run (cmd, shell=True, check=True,
-                                 stdout=subprocess.DEVNULL)
           # The PGOPTIONS environment variable used below supresses some
           # Postgresql NOTICE messages that would otherwise appear.
         run ('PGOPTIONS="--client-min-messages=warning" '
@@ -116,16 +110,35 @@ class _DBmanager():
           # status 3 if there is an error.  Without it, psql will trudge
           # on, exiting with status 0 unless the error is fatal.
         run ("psql -d %s -f %s -v 'ON_ERROR_STOP=1'" % (dbname, absfn))
-        run ('PGOPTIONS="--client-min-messages=warning" '
-                'psql -U %s -d %s -c '
-                '"DROP TABLE IF EXISTS testsrc;'
-                ' CREATE TABLE testsrc (filename TEXT, method TEXT, hash TEXT);'
-                ' INSERT INTO testsrc VALUES(\'%s\', \'%s\', \'%s\');"'
-                % (PGUSER, dbname, filename, HASH_METHOD, hash))
-    def hash (self, method, filename):
+
+def reset_testsrc (dbname, filename, hash_method):
+          # Replace any records (normally only one) in table "testsrc"
+          # with a new record with the hash value of the file the database
+          # was loaded from.  If the table doesn't exist we attempt to 
+          # create it.
+        hashval = hash (hash_method, filename)
+        dbconn = db.open (dbname)
+        try: db.ex (dbconn, 'DELETE FROM testsrc')
+        except db.DatabaseError as e:
+            if 'relation "testsrc" does not exist' not in str(e): raise
+            dbconn.rollback()   # Clear the existing failed transaction.
+            sql = "CREATE TABLE testsrc(filename TEXT,method TEXT,hash TEXT);"
+            db.ex (dbconn, sql)
+        sql = " INSERT INTO testsrc VALUES(%s,%s,%s)"
+        db.ex (dbconn, sql, (filename, hash_method, hashval))
+        dbconn.commit()
+
+def hash (method, filename):
         with open (filename, 'rb') as f:
             h = hashlib.new (method, f.read())
         return (h.digest()).hex()
+
+def run (cmd):
+      # The "stdout" argument will send stdout to /dev/null; we
+      # want to supress all the notice-level messages from psql
+      # but errors will be written to stderr so they will be shown.
+    subprocess.run (cmd, shell=True, check=True,
+                         stdout=subprocess.DEVNULL)
 
   # Create a single instance of _DBmanager that will be shared by
   # all tests run in a single invocation of a unittest test program.
@@ -196,3 +209,10 @@ class JelParser:
                 jdb.add_xsens_lists (xrefs)
                 jdb.mark_seq_xrefs (dbcursor, xrefs)
         return entr
+
+
+def main():
+        dbmgr = DBmanager.use ('jmtest01', 'data/jmtest01.sql')
+        pass
+
+if __name__ == '__main__': main()
