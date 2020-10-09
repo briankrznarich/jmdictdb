@@ -283,7 +283,7 @@ particular site and that affects only that site.</p>
 </li>
 <li>
 <p>a SQL database update script to propagate the changes to any
-existent databases (section <a href="#sec2_4">2.4. Write a database update file to update existent databases</a>).</p>
+existent databases (section <a href="#sec2_4">2.4. Write an update script to update existent databases</a>).</p>
 </li>
 </ul>
 </div>
@@ -292,7 +292,41 @@ existent databases (section <a href="#sec2_4">2.4. Write a database update file 
 <a href="dev.html">Development Environment</a>.</p>
 </div>
 <div class="sect2">
-<h3 id="_2_1_create_a_git_branch_for_the_tag_changes_work">2.1. Create a git branch for the tag changes work</h3>
+<h3 id="_list_of_steps_details_below">List of steps (details below)</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><a href="#sec2_1">Create a new Git branch</a></p>
+</li>
+<li>
+<p><a href="#sec2_2">Run the tests</a></p>
+</li>
+<li>
+<p><a href="#sec2_3">Update the necessary kw*.csv file(s) in jmdictdb/data/</a></p>
+</li>
+<li>
+<p><a href="#sec2_4">Write an update script in db/updates/</a></p>
+</li>
+<li>
+<p><a href="#sec2_5">Update the database version id in db/mktables.sql</a></p>
+</li>
+<li>
+<p><a href="#sec2_6">Test the database update script</a></p>
+</li>
+<li>
+<p><a href="#sec2_7">Update and save the test database</a></p>
+</li>
+<li>
+<p><a href="#sec2_8">Commit the changes</a></p>
+</li>
+<li>
+<p><a href="#sec2_9">Update the production database and code</a></p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sec2_1">2.1. Create a git branch for the tag changes work</h3>
 <div class="literalblock">
 <div class="content">
 <pre>$ cd &lt;your development directory&gt;
@@ -314,7 +348,7 @@ $ git checkout -b newtags</pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_2_2_run_the_tests">2.2. Run the tests.</h3>
+<h3 id="sec2_2">2.2. Run the tests.</h3>
 <div class="literalblock">
 <div class="content">
 <pre>$ cd tests
@@ -384,7 +418,7 @@ trailing ones) when saving rather than replacing them with spaces.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="sec2_4">2.4. Write a database update file to update existent databases</h3>
+<h3 id="sec2_4">2.4. Write an update script to update existent databases</h3>
 <div class="paragraph">
 <p>The csv files contain the canonical tag definitions and are
 loaded into a jmdictdb database when it is first created but changes
@@ -418,7 +452,7 @@ is not true, additional steps are required that are beyond the scope
 of these instructions.</p>
 </div>
 <div class="sect3">
-<h4 id="_2_4_1_procedure">2.4.1 Procedure</h4>
+<h4 id="sec2_4_1">2.4.1 Procedure</h4>
 <div class="paragraph">
 <p>Create a new database update file in db/updates/ named:</p>
 </div>
@@ -476,12 +510,47 @@ a partially applied update.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_2_5_apply_the_database_update_to_the_test_database">2.5. Apply the database update to the test database:</h3>
+<h3 id="sec2_5">2.5. Update the db/mktables.sql version number</h3>
+<div class="paragraph">
+<p>Find the line near the top of db/mktables.sql that looks like:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>\set updateids '''zzzzzz'''</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where "zzzzzz" is a 6-digit hexadecimal string, or possibly several
+such strings separated by commas, and update it to the same "xxxxxx"
+hex number used in section <a href="#sec2_4_1">2.4.1 Procedure</a> above.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sec2_6">2.6. Test the database update script</h3>
+<div class="paragraph">
+<p>You&#8217;ll waant to test the database update script on both the
+test database (confirming all the tests still pass) and on
+copy of the production database.</p>
+</div>
+<div class="sect3">
+<h4 id="_2_6_1_test_with_the_test_database">2.6.1. Test with the test database</h4>
+<div class="paragraph">
+<p>First, load a fresh, clean copy of the test database:</p>
+</div>
 <div class="literalblock">
 <div class="content">
 <pre>$ cd tests
-$ ./load-testdb.py data/jmtest01.sql
-$ psql -d jmtest01 -Ujmdictdb -f ../db/updates/nnn-xxxxxx.sql</pre>
+$ git status
+[confirm that file data/jmtest01.sql has not been modified]
+$ ./load-testdb.sh data/jmtest01.sql</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Apply the database update to it:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ psql -d jmtest01 -Ujmdictdb -f ../db/updates/nnn-xxxxxx.sql</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -504,23 +573,65 @@ were any errors, restore the original test database file:</p>
 </div>
 <div class="paragraph">
 <p>Repeat the above steps until the update applies cleanly and all the
-tests pass.  Then, save the updated jmtest01 database:</p>
+tests pass.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_2_6_2_test_on_a_production_database_copy">2.6.2 Test on a production database copy</h4>
+<div class="paragraph">
+<p>Make a copy of the production database and test the database
+update script on it.  To make a copy of your production database
+see section 2.1 of the
+<a href="https://www.edrdg.org/~smg/doc/dev.html#_2_1_make_a_copy_of_the_current_jmdict_database">Dev Guide</a>.</p>
+</div>
+<div class="paragraph">
+<p>Apply the update script:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>$ pg_dump jmtest01 &gt;python/tests/data/jmtest01.sql</pre>
+<pre>$ psql -d &lt;db-copy-name&gt; -U jmdictdb -f db/updates/nnn-xxxxxx.sql</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can now access the database with the web UI, generate XML
+files, etc, to confirm the changes are as intended.</p>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_2_6_commit_the_changes">2.6. Commit the changes:</h3>
+<h3 id="sec2_7">2.7. Update and save the test database</h3>
+<div class="paragraph">
+<p>Since it is possible running the tests made changes to the test
+database which we don&#8217;t want preserve in the repository, reload
+it again and reapply the database update again:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ cd tests
+$ git status
+[confirm that file data/jmtest01.sql has not been modified]
+$ ./load-testdb.sh data/jmtest01.sql
+$ psql -d jmtest01 -Ujmdictdb -f ../db/updates/nnn-xxxxxx.sql</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And save it to the load file:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ pg_dump jmtest01 &gt;data/jmtest01.sql</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sec2_8">2.8. Commit the changes</h3>
 <div class="literalblock">
 <div class="content">
 <pre>$ git status</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>should list as modified any of the kw*.csv and dtd-*.xml files
+<p>should list as modified any of the kw*.csv files
 that were modified and the jmtest01.sql file.  It should also list
 the new nnn-xxxxxx.sql file as "untracked".
 Assuming there are no unexpected files listed:</p>
@@ -533,9 +644,13 @@ $ git commit
 [enter the commit message in the editor]</pre>
 </div>
 </div>
+<div class="paragraph">
+<p>At this point you may want to send a pull request to the JMdictDB maintainer or, if you are the maintainer, merge the development
+branch into the master branch.</p>
+</div>
 </div>
 <div class="sect2">
-<h3 id="_2_7_update_production_code_and_database">2.7. Update production code and database</h3>
+<h3 id="sec2_9">2.9. Update production code and database</h3>
 <div class="paragraph">
 <p>After the I&#8217;ve pulled the changes I&#8217;ll update the edrdg branch on
 GitLab and the production database can be updated:</p>
@@ -800,7 +915,7 @@ value will be <code><code>male given name or forename.</code></code></p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-09-04 20:26:33 MDT
+Last updated 2020-10-08 20:04:07 MDT
 </div>
 </div>
 </body>
