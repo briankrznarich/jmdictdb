@@ -1,32 +1,67 @@
 id	kw	descr	ents
-1	Buddh	Buddhist term	
-2	comp	computer term	
-3	food	food term	
-4	geom	geometry term	
-5	ling	linguistics term	
-6	MA	martial arts term	
+1	Buddh	Buddhism	
+2	comp	computing	
+3	food	food, cooking	
+4	geom	geometry	
+5	ling	linguistics	
+6	MA	martial arts	
 7	math	mathematics	
 8	mil	military	
-9	physics	physics term	
-10	chem	chemistry term	
-11	archit	architecture term	
-12	astron	astronomy, etc. term	
-13	baseb	baseball term	
-14	biol	biology term	
-15	bot	botany term	
-16	bus	business term	
-17	econ	economics term	
-18	engr	engineering term	
-19	finc	finance term	
-20	geol	geology, etc. term	
-21	law	law, etc. term	
-22	med	medicine, etc. term	
-23	music	music term	
-24	Shinto	Shinto term	
-25	sports	sports term	
-26	sumo	sumo term	
-27	zool	zoology term	
-28	anat	anatomical term	
-29	mahj	mahjong term	
-30	shogi	shogi term	
-31	Christn	Christian term	
+9	physics	physics	
+10	chem	chemistry	
+11	archit	architecture, building	
+12	astron	astronomy	
+13	baseb	baseball	
+14	biol	biology	
+15	bot	botany	
+16	bus	business	
+17	econ	economics	
+18	engr	engineering	
+19	finc	finance	
+20	geol	geology	
+21	law	law	
+22	med	medicine	
+23	music	music	
+24	Shinto	Shinto	
+25	sports	sports	
+26	sumo	sumo	
+27	zool	zoology	
+28	anat	anatomy	
+29	mahj	mahjong	
+30	shogi	shogi	
+31	Christn	Christianity	
+32	phil	philosophy	
+33	physiol	physiology	
+34	pharm	pharmacy	
+35	elec	electricity, elec. eng.	
+36	ent	entomology	
+37	biochem	biochemistry	
+38	met	climate, weather	
+39	tradem	trademark	
+40	gramm	grammar	
+41	electr	electronics	
+42	psych	psychology, psychiatry	
+43	photo	photography	
+44	grmyth	Greek mythology	
+45	archeol	archeology	
+46	logic	logic	
+47	golf	golf	
+48	cryst	crystallography	
+49	pathol	pathology	
+50	paleo	paleontology	
+51	ecol	ecology	
+52	art	art, aesthetics	
+53	genet	genetics	
+54	horse	horse-racing	
+55	embryo	embryology	
+56	geogr	geography	
+57	fish	fishing	
+58	gardn	gardening, horticulture	
+59	telec	telecommunications	
+60	mech	mechanical engineering	
+61	aviat	aviation	
+62	stat	statistics	
+63	agric	agriculture	
+64	print	printing	
+65	go	go (game)	
+66	hanaf	hanafuda	

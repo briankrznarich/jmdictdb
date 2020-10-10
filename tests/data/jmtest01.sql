@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.12 (Ubuntu 10.12-0ubuntu0.18.04.1)
--- Dumped by pg_dump version 10.12 (Ubuntu 10.12-0ubuntu0.18.04.1)
+-- Dumped from database version 10.14 (Ubuntu 10.14-0ubuntu0.18.04.1)
+-- Dumped by pg_dump version 10.14 (Ubuntu 10.14-0ubuntu0.18.04.1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1469,7 +1469,7 @@ CREATE VIEW public.sr_valid AS
 ALTER TABLE public.sr_valid OWNER TO jmdictdb;
 
 --
--- Name: testsrc; Type: TABLE; Schema: public; Owner: jmdictdb
+-- Name: testsrc; Type: TABLE; Schema: public; Owner: stuart
 --
 
 CREATE TABLE public.testsrc (
@@ -1479,7 +1479,7 @@ CREATE TABLE public.testsrc (
 );
 
 
-ALTER TABLE public.testsrc OWNER TO jmdictdb;
+ALTER TABLE public.testsrc OWNER TO stuart;
 
 --
 -- Name: vconj; Type: VIEW; Schema: public; Owner: jmdictdb
@@ -3369,6 +3369,7 @@ COPY public.db (id, active, ts) FROM stdin;
 273560	f	2020-08-02 13:03:51.029015
 9415724	t	2020-08-19 21:28:17.442967
 12840591	f	2020-08-06 17:50:01.913543
+14985756	t	2020-10-08 20:15:24.672514
 \.
 
 
@@ -4170,37 +4171,72 @@ COPY public.kwdial (id, kw, descr, ents) FROM stdin;
 --
 
 COPY public.kwfld (id, kw, descr, ents) FROM stdin;
-1	Buddh	Buddhist term	\N
-3	food	food term	\N
-4	geom	geometry term	\N
-6	MA	martial arts term	\N
+1	Buddh	Buddhism	\N
+2	comp	computing	\N
+3	food	food, cooking	\N
+4	geom	geometry	\N
+5	ling	linguistics	\N
+6	MA	martial arts	\N
 7	math	mathematics	\N
 8	mil	military	\N
-10	chem	chemistry term	\N
-11	archit	architecture term	\N
-12	astron	astronomy, etc. term	\N
-13	baseb	baseball term	\N
-14	biol	biology term	\N
-15	bot	botany term	\N
-16	bus	business term	\N
-17	econ	economics term	\N
-18	engr	engineering term	\N
-19	finc	finance term	\N
-20	geol	geology, etc. term	\N
-21	law	law, etc. term	\N
-22	med	medicine, etc. term	\N
-23	music	music term	\N
-24	Shinto	Shinto term	\N
-25	sports	sports term	\N
-26	sumo	sumo term	\N
-27	zool	zoology term	\N
-28	anat	anatomical term	\N
-29	mahj	mahjong term	\N
-30	shogi	shogi term	\N
-31	Christn	Christian term	\N
-2	comp	computer term	\N
-5	ling	linguistics term	\N
-9	physics	physics term	\N
+9	physics	physics	\N
+10	chem	chemistry	\N
+11	archit	architecture, building	\N
+12	astron	astronomy	\N
+13	baseb	baseball	\N
+14	biol	biology	\N
+15	bot	botany	\N
+16	bus	business	\N
+17	econ	economics	\N
+18	engr	engineering	\N
+19	finc	finance	\N
+20	geol	geology	\N
+21	law	law	\N
+22	med	medicine	\N
+23	music	music	\N
+24	Shinto	Shinto	\N
+25	sports	sports	\N
+26	sumo	sumo	\N
+27	zool	zoology	\N
+28	anat	anatomy	\N
+29	mahj	mahjong	\N
+30	shogi	shogi	\N
+31	Christn	Christianity	\N
+32	phil	philosophy	\N
+33	physiol	physiology	\N
+34	pharm	pharmacy	\N
+35	elec	electricity, elec. eng.	\N
+36	ent	entomology	\N
+37	biochem	biochemistry	\N
+38	met	climate, weather	\N
+39	tradem	trademark	\N
+40	gramm	grammar	\N
+41	electr	electronics	\N
+42	psych	psychology, psychiatry	\N
+43	photo	photography	\N
+44	grmyth	Greek mythology	\N
+45	archeol	archeology	\N
+46	logic	logic	\N
+47	golf	golf	\N
+48	cryst	crystallography	\N
+49	pathol	pathology	\N
+50	paleo	paleontology	\N
+51	ecol	ecology	\N
+52	art	art, aesthetics	\N
+53	genet	genetics	\N
+54	horse	horse-racing	\N
+55	embryo	embryology	\N
+56	geogr	geography	\N
+57	fish	fishing	\N
+58	gardn	gardening, horticulture	\N
+59	telec	telecommunications	\N
+60	mech	mechanical engineering	\N
+61	aviat	aviation	\N
+62	stat	statistics	\N
+63	agric	agriculture	\N
+64	print	printing	\N
+65	go	go (game)	\N
+66	hanaf	hanafuda	\N
 \.
 
 
@@ -6056,11 +6092,11 @@ COPY public.stagr (entr, sens, rdng) FROM stdin;
 
 
 --
--- Data for Name: testsrc; Type: TABLE DATA; Schema: public; Owner: jmdictdb
+-- Data for Name: testsrc; Type: TABLE DATA; Schema: public; Owner: stuart
 --
 
 COPY public.testsrc (filename, method, hash) FROM stdin;
-tests/data/jmtest01.sql	sha1	dd94ac7b0af4ac13158e4964f53c97338c08d41b
+/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	11a228fa67da46d1230b46a85a4c269c32a06eef
 \.
 
 
