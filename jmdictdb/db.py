@@ -276,7 +276,7 @@ def make_pguri (connargs):
                                     query,''))
         return uri
 
-def require (dbconn, want, table='db'):
+def require (dbconn, want, table='db', ret_dbver=False):
         ''' Given a list of update id numbers, return a subset of
         those numbers that are *not* present in the "db" table.
         These will usuable represent database updates that the
@@ -287,19 +287,25 @@ def require (dbconn, want, table='db'):
 
         want -- A list or set of update numbers that we require
             to be in the database's "db" table and have the
-            "active" value set.  May be either 6-digit hexidecimal
+            "active" value set.  May be either 6-digit hexadecimal
             strings or ints.
-        Returns: A set of update id (int) numbers in <want> that
-            are not in the database "db" table.'''
+        ret_dbver -- Determines return value, see below.
+        Returns:
+          If 'ret_dbver' is false (default): A set of update id (int)
+            numbers in <want> that are not in the database "db" table.
+          If 'ret_dbver' is true: A 2-tuple where the first item is
+            as described above for the ret_dbver==false case, and the
+            second item is a set of update values in the database.'''
 
         cursor = dbconn.cursor()
         want_i = [int(x,16) if isinstance(x, str) else int(x) for x in want]
-        sql = "SELECT id FROM %s WHERE id IN %%s AND active" % table
+        sql = "SELECT id FROM %s WHERE active" % table
         try: cursor.execute (sql, (tuple(want_i),))
         except dbapi.ProgrammingError as e:
             raise ValueError ("No table '%s', wrong database?" % table)
         have = [x[0] for x in cursor.fetchall()]
         missing = set(want_i) - set(have)
+        if ret_dbver: return missing, have
         return missing
 
 def rowget (dbconn, tblname, pkey, cols=None):

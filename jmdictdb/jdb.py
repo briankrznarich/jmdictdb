@@ -1591,6 +1591,11 @@ class Kwds:
         # As a convenience, using an empty string ("") for
         # 'cursor_or_dirname' is equivalent to std_csv_dir().
 
+          # This will be set to a database uri or csv file directory
+          # path when kw datadata is loaded from either of those
+          # sources.
+        self.source = None
+
           # Add a set of standard attributes to this instance and
           # initialize each to an empty dict.
         failed = []
@@ -1615,7 +1620,9 @@ class Kwds:
 
     def loaddb( self, cursor, tables=None ):
         # Load instance from database kw* tables.
-
+          #FIXME: should set .source to full uri, not just db name.
+        try: self.source = cursor.connection.info.dbname
+        except AttributeError: pass
         failed = []
         if tables is None: tables = self.Tables
         for attr,table in list(tables.items()):
@@ -1648,6 +1655,7 @@ class Kwds:
         if tables is None: tables = self.Tables
         if dirname[-1] != '/' and dirname[-1] != '\\' and len(dirname) > 1:
             dirname += '/'
+        self.source = dirname
         failed = []
         dialect = {'delimiter':'\t', 'quoting':csv.QUOTE_NONE}
         for attr,table in list(tables.items()):
