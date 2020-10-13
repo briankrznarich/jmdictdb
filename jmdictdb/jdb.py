@@ -171,7 +171,7 @@ def entrList (dbh, crit=None, args=None, ord='', tables=None, ret_tuple=False):
         # crit -- Criteria that specifies the entries to be
         #   retrieved and returned.  Is one of three forms:
         #
-        #   1. Tmptbl object returned from a call to Find()
+        #   1. Tmptbl object returned from a call to entrFind()
         #   2. A sql statement that will give a results set
         #       with one column named "id" containing the entr
         #       id numbers of the desired entries.  The sql
@@ -238,7 +238,7 @@ def entr_data (dbh, crit, args=None, ord=None, tables=None):
         #       The table named must exist and contain at least a
         #       column named "id" containing entry id numbers of
         #       the entries to be fetched.
-        #       jdb.entr.Find() is one way to create such a table.
+        #       jdb.entrFind() is one way to create such a table.
         #
         #    2. Select statement (in parenthesis).  'crit' starts
         #       with a "(" character.

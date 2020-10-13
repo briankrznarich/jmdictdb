@@ -94,11 +94,6 @@ def main():
 
 def read_entries (cur, sql_base, seqlist, count, blksize):
     # This is a generator that reads and yields successive blocks of entries.
-    # Prior to rev 200120-0c649f6 this program allowed extracting entries
-    # in different corpora together.  In the aforementioned revision that
-    # feature was removed, but primarily from the UI; this function retains
-    # the ability to process entries with different 'src' (corpora) values
-    # should the desire to restore that ability reappear.
 
         seqlist_loc, lastsrc, lastseq, lastid = 0, 0, 0, 0
         while count is None or count > 0:
@@ -397,8 +392,9 @@ def parse_cmdline ():
                 "or in the file specified by --seqfile but not both.")
 
         p.add_argument ("-s", "--corpus",
-            help="Extract entries belonging to this corpus.  May be "
-                "given as either a corpus name or id number.")
+            help="One or more comma-separated corpus names or id numbers "
+                "to output.  May be prefixed with \"!\" to output all "
+                "corpora except the ones given.")
 
         p.add_argument ("-o", "--output", default=None,
             help="Filename to write XML to.  If not given, output is "
