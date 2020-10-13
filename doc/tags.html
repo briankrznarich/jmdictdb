@@ -150,7 +150,7 @@ described in <a href="#appendix_b">Appendix B</a>.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_1_2_making_the_changes">1.2. Making the changes</h3>
+<h3 id="sec1_2">1.2. Making the changes</h3>
 <div class="admonitionblock caution">
 <table>
 <tr>
@@ -426,33 +426,57 @@ made to the csv files afterwards are not automatically propagated
 to existing databases&#8201;&#8212;&#8201;that is done by the script you write here.</p>
 </div>
 <div class="paragraph">
-<p>Generally, adding a new tag or changing a tag&#8217;s description text
-or entities (ents) value is simple.
-Changing a tag&#8217;s name (aka keyword) or deleting a tag is
-more complicated because a history record needs to be created for
-any entries that use the tag.  Were that not done, someone looking
-at an entry&#8217;s history in the future could be confused by the absence
-of a tag that was shown as added in the past, or presence of a tag
-with no earlier history showing its addition.
-The cause may be obvious in the case of a single tag change but with
-multiple changes over time it could be impossible to determine the
-entry&#8217;s history accurately.
-Even if it is known that a particular database doesn&#8217;t have any
-entries using the tag, the update script has to be usable on <strong>any</strong>
-database.</p>
+<p>Generally, making changes to tags is similar to
+the procedure described in <a href="#sec1_2">section 1.2</a>, using the SQL
+statements described in <a href="#apendix_a">Appendix A</a>.  The difference
+is that the SQL script produced will follow some additional
+conventions described below and it will be packaged for distribution
+with the rest of the JMdictDB code.</p>
 </div>
 <div class="paragraph">
 <p>After the database has been updated the tag changes will automatically
 appear in the Search and Help pages.</p>
 </div>
+<div class="sect3">
+<h4 id="sec2_4_1">2.4.1 Database update numbers</h4>
 <div class="paragraph">
-<p>This procedure applies only to the change of tag changes that don&#8217;t
-require any change to the database schema or jmdictdb code.  If that
-is not true, additional steps are required that are beyond the scope
-of these instructions.</p>
+<p>Each JMdictDB database has a table that contains one or more
+numbers, generally expressed in hexadecimal, that indicate
+what updates have been applied to that database.  When JMdictDB
+code accesses a database it will check the update numbers to
+determine if they are updates it understands how to work with.</p>
+</div>
+<div class="paragraph">
+<p>When the database schema is changed or tables' contents are
+changed in a way that would break older JMdictDB code, a new
+update number is added and existing update numbers deactivated.
+This effectively <strong>replaces</strong> the previous update number(s) with
+a new one and prevents older code that doesn&#8217;t understand the
+newer database changes from attempting to access it.</p>
+</div>
+<div class="paragraph">
+<p>However, the addition of most tags does not affect the ability
+of the code to work with the database.  So what we do is to
+add an <strong>additional</strong> update number.  The earlier update number
+remains active and controls api access to the database but the
+additional number provides supplementary information that the
+tag update has been applied to the database.</p>
+</div>
+<div class="paragraph">
+<p>The procedure described in this section assumes that the tag
+changes being made do not require any concomitant code or
+schema changes and that providing an additional update
+number rather than a replacement one is thus appropriate.</p>
+</div>
+<div class="paragraph">
+<p>For more information on the database update numbers (also
+called database version numbers or version id&#8217;s) see the
+comments in db/mktables.sql for the table "db" and the view
+"dbx".</p>
+</div>
 </div>
 <div class="sect3">
-<h4 id="sec2_4_1">2.4.1 Procedure</h4>
+<h4 id="sec2_4_2">2.4.2 Procedure</h4>
 <div class="paragraph">
 <p>Create a new database update file in db/updates/ named:</p>
 </div>
@@ -462,9 +486,10 @@ of these instructions.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>where nnn is a sequential 3-digit decimal number (use the next highest
-number from the update files already in db/updates/) and "xxxxxx" is
-a random 6-digit hexadecimal number.  On way of generating it is to
+<p>where nnn is a sequential 3-digit decimal number (use the next
+highest number from the update files already in db/updates/) and
+"xxxxxx" is a random 6-digit hexadecimal number.  This number will
+become the database update number.  On way of generating it is to
 use the command:</p>
 </div>
 <div class="literalblock">
@@ -521,14 +546,19 @@ a partially applied update.</p>
 </div>
 <div class="paragraph">
 <p>where "zzzzzz" is a 6-digit hexadecimal string, or possibly several
-such strings separated by commas, and update it to the same "xxxxxx"
-hex number used in section <a href="#sec2_4_1">2.4.1 Procedure</a> above.</p>
+such strings separated by commas, and add "xxxxxx" to its end (the
+same "xxxxxx" hex number used in section <a href="#sec2_4_2">2.4.2 Procedure</a> above):</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>\set updateids '''zzzzzz,xxxxxx'''</pre>
+</div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="sec2_6">2.6. Test the database update script</h3>
 <div class="paragraph">
-<p>You&#8217;ll waant to test the database update script on both the
+<p>You&#8217;ll want to test the database update script on both the
 test database (confirming all the tests still pass) and on
 copy of the production database.</p>
 </div>
@@ -572,8 +602,8 @@ were any errors, restore the original test database file:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Repeat the above steps until the update applies cleanly and all the
-tests pass.</p>
+<p>Repeat the above steps until the update applies cleanly and all
+the tests pass.</p>
 </div>
 </div>
 <div class="sect3">
@@ -915,7 +945,7 @@ value will be <code><code>male given name or forename.</code></code></p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-10-08 20:04:07 MDT
+Last updated 2020-10-13 16:31:33 MDT
 </div>
 </div>
 </body>
