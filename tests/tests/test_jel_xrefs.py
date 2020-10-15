@@ -155,12 +155,12 @@ class Issues (unittest.TestCase):
           #FIXME? q2833910 is a single deleted entry, correctly no xrefs
           # are generated but an unresolved xref is -- without any kanji
           # or reading, since none were given.  Is this behavior useful?
-        check (_, jel, [], [V(3,1,1)])
+        check (_, jel, [], [V(3,None,None)])
     def test0030(_):
         jel = '\fＸ\f[1] test [see=2833920]'
           #FIXME? same as test0020 above but with rejected rather than
           # deleted entry.
-        check (_, jel, [], [V(3,1,1)])
+        check (_, jel, [], [V(3,None,None)])
 
 #===== Create dynamically added tests ========================================
 

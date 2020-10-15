@@ -77,138 +77,138 @@ class Xrslv (unittest.TestCase):
 
     def test000110(_):
         jel = "\fＸ\f[1] vref test [see=わわわ]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt=None, rtxt='わわわ',
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt=None, rtxt='わわわ',
                       vsrc=None, vseq=None, tsens=None, prio=None)]])
     def test000120(_):
         jel = "\fＸ\f[1] vref test [see=和わ和]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt='和わ和', rtxt=None,
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt='和わ和', rtxt=None,
                       vsrc=None, vseq=None, tsens=None, prio=None)]])
     def test000121(_):
         jel = "\fＸ\f[1] vref test [ant=和わ和]"
-        chkv (_, jel, v=[[dict(typ=ANT, ord=1, ktxt='和わ和', rtxt=None,
+        chkv (_, jel, v=[[dict(typ=ANT, ord=None, ktxt='和わ和', rtxt=None,
                       vsrc=None, vseq=None, tsens=None, prio=None)]])
     def test000130(_):
         jel = "\fＸ\f[1] vref test [see=和わ和・わわわ]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt='和わ和', rtxt='わわわ',
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt='和わ和', rtxt='わわわ',
                       vsrc=None, vseq=None, tsens=None, prio=None)]])
     def test000140(_):
         jel = "\fＸ\f[1] vref test [see=9999999]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt=None, rtxt=None,
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt=None, rtxt=None,
                       vsrc=None, vseq=9999999, tsens=None, prio=None)]])
     def test000150(_):
         jel = "\fＸ\f[1] vref test [see=9999999・わわわ]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt=None, rtxt='わわわ',
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt=None, rtxt='わわわ',
                       vsrc=None, vseq=9999999, tsens=None, prio=None)]])
     def test000160(_):
         jel = "\fＸ\f[1] vref test [see=9999999・和わ和]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt='和わ和', rtxt=None,
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt='和わ和', rtxt=None,
                       vsrc=None, vseq=9999999, tsens=None, prio=None)]])
     def test000170(_):
         jel = "\fＸ\f[1] vref test [see=9999999・和わ和・わわわ]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt='和わ和', rtxt='わわわ',
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt='和わ和', rtxt='わわわ',
                       vsrc=None, vseq=9999999, tsens=None, prio=None)]])
 
   # Basic forms above with target sense numbers.
 
     def test000210(_):
         jel = "\fＸ\f[1] vref test [see=わわわ[1]]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt=None, rtxt='わわわ',
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt=None, rtxt='わわわ',
                       vsrc=None, vseq=None, tsens=1, prio=None)]])
     def test000220(_):
         jel = "\fＸ\f[1] vref test [see=和わ和[2]]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt='和わ和', rtxt=None,
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt='和わ和', rtxt=None,
                       vsrc=None, vseq=None, tsens=2, prio=None)]])
     def test000230(_):
         jel = "\fＸ\f[1] vref test [see=和わ和・わわわ[3]]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt='和わ和', rtxt='わわわ',
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt='和わ和', rtxt='わわわ',
                       vsrc=None, vseq=None, tsens=3, prio=None)]])
     def test000240(_):
         jel = "\fＸ\f[1] vref test [see=9999999[4]]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt=None, rtxt=None,
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt=None, rtxt=None,
                       vsrc=None, vseq=9999999, tsens=4, prio=None)]])
     def test000250(_):
         jel = "\fＸ\f[1] vref test [see=9999999・わわわ[5]]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt=None, rtxt='わわわ',
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt=None, rtxt='わわわ',
                       vsrc=None, vseq=9999999, tsens=5, prio=None)]])
     def test000260(_):
         jel = "\fＸ\f[1] vref test [see=9999999・和わ和[6]]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt='和わ和', rtxt=None,
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt='和わ和', rtxt=None,
                       vsrc=None, vseq=9999999, tsens=6, prio=None)]])
     def test000270(_):
         jel = "\fＸ\f[1] vref test [see=9999999・和わ和・わわわ[7]]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt='和わ和', rtxt='わわわ',
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt='和わ和', rtxt='わわわ',
                       vsrc=None, vseq=9999999, tsens=7, prio=None)]])
     def test000280(_):
         jel = "\fＸ\f[1] vref test [see=和わ和[2,5]]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt='和わ和', rtxt=None,
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt='和わ和', rtxt=None,
                       vsrc=None, vseq=None, tsens=2, prio=None),
-                          dict(typ=SEE, ord=2, ktxt='和わ和', rtxt=None,
+                          dict(typ=SEE, ord=None, ktxt='和わ和', rtxt=None,
                       vsrc=None, vseq=None, tsens=5, prio=None)]])
 
   # Cross-corpus xrefs, without senses.
 
     def test000710(_):
         jel = "\fＸ\f[1] vref test [see=わわわ test]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt=None, rtxt='わわわ',
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt=None, rtxt='わわわ',
                       vsrc=99, vseq=None, tsens=None, prio=None)]])
     def test000720(_):
         jel = "\fＸ\f[1] vref test [see=和わ和 test]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt='和わ和', rtxt=None,
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt='和わ和', rtxt=None,
                       vsrc=99, vseq=None, tsens=None, prio=None)]])
     def test000730(_):
         jel = "\fＸ\f[1] vref test [see=和わ和・わわわ test]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt='和わ和', rtxt='わわわ',
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt='和わ和', rtxt='わわわ',
                       vsrc=99, vseq=None, tsens=None, prio=None)]])
     def test000740(_):
         jel = "\fＸ\f[1] vref test [see=9999999 test]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt=None, rtxt=None,
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt=None, rtxt=None,
                       vsrc=99, vseq=9999999, tsens=None, prio=None)]])
     def test000750(_):
         jel = "\fＸ\f[1] vref test [see=9999999 test・わわわ]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt=None, rtxt='わわわ',
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt=None, rtxt='わわわ',
                       vsrc=99, vseq=9999999, tsens=None, prio=None)]])
     def test000760(_):
         jel = "\fＸ\f[1] vref test [see=9999999 test・和わ和]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt='和わ和', rtxt=None,
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt='和わ和', rtxt=None,
                       vsrc=99, vseq=9999999, tsens=None, prio=None)]])
     def test000770(_):
         jel = "\fＸ\f[1] vref test [see=9999999 test・和わ和・わわわ]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt='和わ和', rtxt='わわわ',
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt='和わ和', rtxt='わわわ',
                       vsrc=99, vseq=9999999, tsens=None, prio=None)]])
 
   # Cross-corpus xrefs, with senses.
 
     def test000810(_):
         jel = "\fＸ\f[1] vref test [see=わわわ[1] test]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt=None, rtxt='わわわ',
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt=None, rtxt='わわわ',
                       vsrc=99, vseq=None, tsens=1, prio=None)]])
     def test000820(_):
         jel = "\fＸ\f[1] vref test [see=和わ和[2,3] test]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt='和わ和', rtxt=None,
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt='和わ和', rtxt=None,
                       vsrc=99, vseq=None, tsens=2, prio=None),
-                          dict(typ=SEE, ord=2, ktxt='和わ和', rtxt=None,
+                          dict(typ=SEE, ord=None, ktxt='和わ和', rtxt=None,
                       vsrc=99, vseq=None, tsens=3, prio=None)]])
     def test000830(_):
         jel = "\fＸ\f[1] vref test [see=和わ和・わわわ[3,2] test]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt='和わ和', rtxt='わわわ',
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt='和わ和', rtxt='わわわ',
                       vsrc=99, vseq=None, tsens=3, prio=None),
-                          dict(typ=SEE, ord=2, ktxt='和わ和', rtxt='わわわ',
+                          dict(typ=SEE, ord=None, ktxt='和わ和', rtxt='わわわ',
                       vsrc=99, vseq=None, tsens=2, prio=None)]])
     def test000840(_):
         jel = "\fＸ\f[1] vref test [see=9999999 test[4]]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt=None, rtxt=None,
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt=None, rtxt=None,
                       vsrc=99, vseq=9999999, tsens=4, prio=None)]])
     def test000850(_):
         jel = "\fＸ\f[1] vref test [see=9999999 test・わわわ[5]]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt=None, rtxt='わわわ',
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt=None, rtxt='わわわ',
                       vsrc=99, vseq=9999999, tsens=5, prio=None)]])
     def test000860(_):
         jel = "\fＸ\f[1] vref test [see=9999999 test・和わ和[6]]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt='和わ和', rtxt=None,
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt='和わ和', rtxt=None,
                       vsrc=99, vseq=9999999, tsens=6, prio=None)]])
     def test000870(_):
         jel = "\fＸ\f[1] vref test [see=9999999 test・和わ和・わわわ[7]]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt='和わ和', rtxt='わわわ',
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt='和わ和', rtxt='わわわ',
                       vsrc=99, vseq=9999999, tsens=7, prio=None)]])
 
 
@@ -217,36 +217,36 @@ class Xrslv (unittest.TestCase):
     def test000910(_):
         jel = "\fＸ\f[1] vref test [see=9999999 test・わわわ[5]] "\
                                   "[ant=和わ和[1,2]]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt=None, rtxt='わわわ',
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt=None, rtxt='わわわ',
                       vsrc=99, vseq=9999999, tsens=5, prio=None),
-                          dict(typ=ANT, ord=2, ktxt='和わ和', rtxt=None,
+                          dict(typ=ANT, ord=None, ktxt='和わ和', rtxt=None,
                       vsrc=None, vseq=None, tsens=1, prio=None),
-                          dict(typ=ANT, ord=3, ktxt='和わ和', rtxt=None,
+                          dict(typ=ANT, ord=None, ktxt='和わ和', rtxt=None,
                       vsrc=None, vseq=None, tsens=2, prio=None)]])
 
     def test000920(_):  # Xrefs in multiple senses
         jel = "\fＸ\f[1] vref test [see=9999999・わわわ] "\
                     "[3] vref test "\
                     "[2] vref test [see=和わ和][see=わわわ test]"
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt=None, rtxt='わわわ',
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt=None, rtxt='わわわ',
                       vsrc=None, vseq=9999999, tsens=None, prio=None)],
                          [],  # no xrefs in sense #2.
-                         [dict(typ=SEE, ord=1, ktxt='和わ和', rtxt=None,
+                         [dict(typ=SEE, ord=None, ktxt='和わ和', rtxt=None,
                       vsrc=None, vseq=None, tsens=None, prio=None),
-                          dict(typ=SEE, ord=2, ktxt=None, rtxt='わわわ',
+                          dict(typ=SEE, ord=None, ktxt=None, rtxt='わわわ',
                       vsrc=99, vseq=None, tsens=None, prio=None)]])
 
   # Miscellaneous conditions...
  
     def test001010(_):  # Target with embedded middot (requires quotes).
         jel = '\fＸ\f[1] vref test [see="ドア・マン"]'
-        chkv (_, jel, v=[[dict(typ=SEE, ord=1, ktxt=None, rtxt="ドア・マン",
+        chkv (_, jel, v=[[dict(typ=SEE, ord=None, ktxt=None, rtxt="ドア・マン",
                       vsrc=None, vseq=None, tsens=None, prio=None)]])
 
     def test001020(_):  # Target rdng,kanj both with middot.
        jel='\fＸ\f[1] vref test '\
              '[see="アジア・太平洋戦争"・"アジア・たいへいようせんそう"]'
-       chkv (_, jel, v=[[dict(typ=SEE, ord=1,
+       chkv (_, jel, v=[[dict(typ=SEE, ord=None,
                       ktxt="アジア・太平洋戦争", rtxt="アジア・たいへいようせんそう",
                       vsrc=None, vseq=None, tsens=None, prio=None)]])
 

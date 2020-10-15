@@ -1144,47 +1144,54 @@ def addentr (cur, entr):
         return eid, entr.seq, entr.src
 
 def setkeys (e, id=0):
-          # Set the foreign and primary key values in each record
-          # in the entry, 'e'.  If 'id' is provided, it will be used
-          # as the entry id number.  Otherwise, it is assumed that
-          # the id number has already been set in 'e'.
-          # Please note that this function assumes that items with
-          # multiple parents such as '_freq', '_restr', etc, are
-          # listed under both parents.
-        if id!=0: e.id = id
-        else: id = e.id
-        for n,r in enumerate (e._rdng):
-            n += 1;                          r.entr, r.rdng = id, n
-            for p,x in enumerate (r._inf):   x.entr, x.rdng, x.ord = id, n, p+1
-            for x in r._freq:                x.entr, x.rdng = id, n
-            for x in r._restr:               x.entr, x.rdng = id, n
-            for m,x in enumerate (r._snd):   x.entr, x.rdng, x.ord = id, n, m+1
-        for n,k in enumerate (e._kanj):
-            n += 1;                          k.entr, k.kanj = id, n
-            for p,x in enumerate (k._inf):   x.entr, x.kanj, x.ord = id, n, p+1
-            for x in k._freq:                x.entr, x.kanj = id, n
-        for n,s in enumerate (e._sens):
-            n += 1;                          s.entr, s.sens = id, n
-            for m,x in enumerate (s._gloss): x.entr,x.sens,x.gloss = id, n, m+1
-            for p,x in enumerate (s._pos):   x.entr, x.sens, x.ord = id, n, p+1
-            for p,x in enumerate (s._misc):  x.entr, x.sens, x.ord = id, n, p+1
-            for p,x in enumerate (s._fld):   x.entr, x.sens, x.ord = id, n, p+1
-            for p,x in enumerate (s._dial):  x.entr, x.sens, x.ord = id, n, p+1
-            for p,x in enumerate (s._lsrc):  x.entr, x.sens, x.ord = id, n, p+1
-            for x in s._stagr:               x.entr, x.sens = id, n
-            for x in s._stagk:               x.entr, x.sens = id, n
-            for m,x in enumerate (s._xrslv): x.entr, x.sens, x.ord  = id, n, m+1
-            for m,x in enumerate (s._xref):  x.entr, x.sens, x.xref = id, n, m+1
-            for x in s._xrer:                x.xentr, x.xsens = id, n
-        for n,x in enumerate (e._snd):       x.entr, x.ord = id, n+1
-        for n,x in enumerate (e._hist):      x.entr, x.hist = id, n+1
-          # Note: do not set grp.ord; order is based on position in grp
-          #  table, not entr._grp list.
-        for x in e._grp:                     x.entr = id
+          # Set the foreign and primary key values in each record in the
+          # entry, 'e'.  If 'id' is provided, it will be used as the entry
+          # id number.  Otherwise, it is assumed that the id number has
+          # already been set in 'e'.
+          # None is a valid value for 'id' and will be propagated to child
+          # elements like other values but in addition the enumerated parts
+          # of the foreign key values will also be set to None.  A None
+          # value in e.id is propagated but the enumerated parts are set
+          # as for a non-None 'id' value.
+
+        enum = enumerate
+        if id is None:
+            def enum (iterable, start=0):
+                for x in iterable: yield None, x
+        elif id == 0: id = e.id
+        else: e.id = id
+        for n,r in enum (e._rdng, 1):
+            r.entr, r.rdng = id, n
+            for p,x in enum (r._inf, 1):   x.entr, x.rdng, x.ord = id, n, p
+            for x in r._freq:                   x.entr, x.rdng = id, n
+            for x in r._restr:                  x.entr, x.rdng = id, n
+            for m,x in enum (r._snd, 1):   x.entr, x.rdng, x.ord = id, n, m
+        for n,k in enum (e._kanj, 1):
+            k.entr, k.kanj = id, n
+            for p,x in enum (k._inf, 1):   x.entr, x.kanj, x.ord = id, n, p
+            for x in k._freq:                   x.entr, x.kanj = id, n
+        for n,s in enum (e._sens, 1):
+            s.entr, s.sens = id, n
+            for m,x in enum (s._gloss, 1): x.entr,x.sens,x.gloss = id, n, m
+            for p,x in enum (s._pos, 1):   x.entr, x.sens, x.ord = id, n, p
+            for p,x in enum (s._misc, 1):  x.entr, x.sens, x.ord = id, n, p
+            for p,x in enum (s._fld, 1):   x.entr, x.sens, x.ord = id, n, p
+            for p,x in enum (s._dial, 1):  x.entr, x.sens, x.ord = id, n, p
+            for p,x in enum (s._lsrc, 1):  x.entr, x.sens, x.ord = id, n, p
+            for x in s._stagr:                  x.entr, x.sens = id, n
+            for x in s._stagk:                  x.entr, x.sens = id, n
+            for m,x in enum (s._xrslv, 1): x.entr, x.sens, x.ord  = id, n, m
+            for m,x in enum (s._xref, 1):  x.entr, x.sens, x.xref = id, n, m
+            for x in s._xrer:                   x.xentr, x.xsens = id, n
+        for n,x in enum (e._snd, 1):       x.entr, x.ord = id, n
+        for n,x in enum (e._hist, 1):      x.entr, x.hist = id, n
         if e.chr:
             c = e.chr;  c.entr = id
-            for x in c._cinf:                x.entr = id
-        for x in e._krslv:                   x.entr = id
+            for x in c._cinf:                   x.entr = id
+        for x in e._krslv:                      x.entr = id
+          # Note: do not set grp.ord; order is based on position in grp
+          #  table, not entr._grp list.
+        for x in e._grp:                        x.entr = id
 
 #-------------------------------------------------------------------
 # The following functions deal with searches.
