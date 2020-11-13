@@ -180,7 +180,7 @@ def get_entr_cands (dbconn, xref_src, targ_src, start=None, stop=None,
         c1, args1 = src_clause (xref_src, targ_src)
         c2, args2 = idrange_clause (start, stop)
           #FIXME: should not hardwire 'stat' value.
-        c3 = "v.stat=2 AND NOT v.unapp" if active else ""
+        c3 = "v.stat=2 AND NOT v.unap" if active else ""
           # Disallow resolution to deleted or rejected entries.
           #FIXME: should not hardwire 'stat' value.
         c4 = "(tstat=2 OR tstat IS NULL)"
@@ -297,7 +297,10 @@ def del_xresolv (dbconn, xref_src=[], targ_src=None, start=None, stop=None,
              " AND v.typ=x.typ AND v.ord=x.xref"
         c1, args1 = src_clause (xref_src, targ_src)
         c2, args2 = idrange_clause (start, stop)
-        c3 = "v.stat=2 AND NOT v.unapp" if active else ""
+          # 'c3' is not quite the same as in get_entr_cands() because 
+          # that is based on view "rslv" but this query is based on 
+          # table "xresolv".
+        c3 = "x.stat=2 AND NOT x.unap" if active else ""
         c4 = "(tstat=2 OR tstat IS NULL)"
         c6 = "stat=2"
         c5 = "" #"NOT tunap" if appr_targ else "")
