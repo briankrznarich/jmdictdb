@@ -41,4 +41,4 @@ COMMIT;
 \echo   psql -U postgres -d [database-name] -c 'DROP SCHEMA IF EXISTS imp'
 \echo Note that a NOTICE message that the schema does not exist is not a
 \echo failure.
-DROP SCHEMA IF EXISTS imp;
+DROP SCHEMA IF EXISTS imp CASCADE;
