@@ -31,6 +31,17 @@ id	kw	descr	ents
 86	dated	dated term	
 87	hist	historical term	
 88	litf	literary or formal term	
+160	fict	fiction	{"jmnedict":1}
+161	myth	mythology	{"jmnedict":1}
+162	leg	legend	{"jmnedict":1}
+170	relig	religion	{"jmnedict":1}
+171	serv	service	{"jmnedict":1}
+172	ev	event	{"jmnedict":1}
+173	obj	object	{"jmnedict":1}
+174	char	character	{"jmnedict":1}
+175	creat	creature	{"jmnedict":1}
+176	dei	deity	{"jmnedict":1}
+177	oth	other	{"jmnedict":1}
 181	surname	family or surname	{"jmnedict":1}
 182	place	place name	{"jmnedict":1}
 183	unclass	unclassified name	{"jmnedict":1}

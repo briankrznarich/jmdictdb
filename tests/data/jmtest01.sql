@@ -4237,6 +4237,9 @@ COPY public.kwfld (id, kw, descr, ents) FROM stdin;
 64	print	printing	\N
 65	go	go (game)	\N
 66	hanaf	hanafuda	\N
+67	audvid	audio-visual	\N
+68	vidg	video game	\N
+69	ornith	ornithology	\N
 \.
 
 
@@ -4825,6 +4828,17 @@ COPY public.kwmisc (id, kw, descr, ents) FROM stdin;
 190	station	railway station	{"jmnedict": 1}
 191	organization	organization name	{"jmnedict": 1}
 192	work	work of art, literature, music, etc. name	{"jmnedict": 1}
+160	fict	fiction	{"jmnedict": 1}
+161	myth	mythology	{"jmnedict": 1}
+162	leg	legend	{"jmnedict": 1}
+170	relig	religion	{"jmnedict": 1}
+171	serv	service	{"jmnedict": 1}
+172	ev	event	{"jmnedict": 1}
+173	obj	object	{"jmnedict": 1}
+174	char	character	{"jmnedict": 1}
+175	creat	creature	{"jmnedict": 1}
+176	dei	deity	{"jmnedict": 1}
+177	oth	other	{"jmnedict": 1}
 \.
 
 
@@ -6096,7 +6110,7 @@ COPY public.stagr (entr, sens, rdng) FROM stdin;
 --
 
 COPY public.testsrc (filename, method, hash) FROM stdin;
-/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	11a228fa67da46d1230b46a85a4c269c32a06eef
+/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	a151888b3fe362751b025d31ad086da79a6af492
 \.
 
 

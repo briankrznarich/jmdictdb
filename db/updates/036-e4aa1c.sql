@@ -1,8 +1,8 @@
 \set ON_ERROR_STOP
 BEGIN;
 
--- Update existing, and create new, field tags.
--- These changes are from Jim Breen @edrdg.org verbatim.
+-- Update tags.
+-- These are three sets of tag changes from Jim Breen @edrdg.org.
 
 \set dbversion  '''e4aa1c'''  -- Additional version applied by this update.
 \set require    '''8fac2c'''  -- These updates(s) must be active.
@@ -17,7 +17,8 @@ INSERT INTO db(id) VALUES(x:dbversion::INT);   -- Make this version active.
 
 -- Do the update.
 
--- Update existing tag descriptions.
+-- 2020-10-05
+-- Update existing FLD tag descriptions.
 UPDATE kwfld SET descr='Buddhism' WHERE id=1;
 UPDATE kwfld SET descr='computing' WHERE id=2;
 UPDATE kwfld SET descr='food, cooking' WHERE id=3;
@@ -49,8 +50,7 @@ UPDATE kwfld SET descr='anatomy' WHERE id=28;
 UPDATE kwfld SET descr='mahjong' WHERE id=29;
 UPDATE kwfld SET descr='shogi' WHERE id=30;
 UPDATE kwfld SET descr='Christianity' WHERE id=31;
-
--- Add new tags.
+-- Add new FLD tags.
 INSERT INTO kwfld VALUES(32,'phil','philosophy');
 INSERT INTO kwfld VALUES(33,'physiol','physiology');
 INSERT INTO kwfld VALUES(34,'pharm','pharmacy');
@@ -86,5 +86,23 @@ INSERT INTO kwfld VALUES(63,'agric','agriculture');
 INSERT INTO kwfld VALUES(64,'print','printing');
 INSERT INTO kwfld VALUES(65,'go','go (game)');
 INSERT INTO kwfld VALUES(66,'hanaf','hanafuda');
+
+-- 2020-11-04
+INSERT INTO kwfld VALUES(67,'audvid','audio-visual');
+INSERT INTO kwfld VALUES(68,'vidg','video game');
+INSERT INTO kwfld VALUES(69,'ornith','ornithology');
+
+-- 2020-11-10
+INSERT INTO kwmisc VALUES(160,'fict','fiction','{"jmnedict": 1}');
+INSERT INTO kwmisc VALUES(161,'myth','mythology','{"jmnedict": 1}');
+INSERT INTO kwmisc VALUES(162,'leg','legend','{"jmnedict": 1}');
+INSERT INTO kwmisc VALUES(170,'relig','religion','{"jmnedict": 1}');
+INSERT INTO kwmisc VALUES(171,'serv','service','{"jmnedict": 1}');
+INSERT INTO kwmisc VALUES(172,'ev','event','{"jmnedict": 1}');
+INSERT INTO kwmisc VALUES(173,'obj','object','{"jmnedict": 1}');
+INSERT INTO kwmisc VALUES(174,'char','character','{"jmnedict": 1}');
+INSERT INTO kwmisc VALUES(175,'creat','creature','{"jmnedict": 1}');
+INSERT INTO kwmisc VALUES(176,'dei','deity','{"jmnedict": 1}');
+INSERT INTO kwmisc VALUES(177,'oth','other','{"jmnedict": 1}');
 
 COMMIT;
