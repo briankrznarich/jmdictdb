@@ -55,7 +55,6 @@ def view (svc, cfg, user, cur, params):
             etxts = ['' for e in entries]
         jmcgi.htmlprep (entries)
         jmcgi.add_encodings (entries)    # For kanjidic entries.
-        if disp == 'ed': etxts = [jmcgi.txt2html (x) for x in etxts]
         jmcgi.add_filtered_xrefs (entries, rem_unap=True)
         entrs = list (zip (entries, etxts))
         return dict(entries=entrs, disp=disp), []

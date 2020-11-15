@@ -7,7 +7,7 @@ this is used with the "to_edit2.xsl" stylesheet to get a Edict2
 formmated version of an entry.
 
 """
-import sys, re, lxml
+import sys, re, html, lxml
 from io import StringIO
 from lxml import etree
 from jmdictdb import jdb, fmtxml
@@ -46,11 +46,26 @@ def entr (entr, xslfile=None, xslt=[], want_utf8=False):
             if not isinstance (entr, str):
                 xml = fmtxml.entr (entr, compat='jmdict')
             else: xml = entr
-              # Replace entities.
-            xml = re.sub (r'&([a-zA-Z0-9-]+);', r'\1', xml)
+              # De-entityize any entities in 'xml' by removing the leading "&"
+              # and trailing ";".  The function _ent_repl() is used to do the
+              # replacement because it skips entities like "&quot;" which we
+              # dont want to change.
+            pat = '&[a-zA-Z0-9-]+;'
+            xml = re.sub (pat, _ent_repl, xml)
             xml = "<JMdict>%s</JMdict>" % xml
               # Apply the xsl to the xml, result is utf-8 encoded.
             edicttxt = str (xslt[0](etree.parse (StringIO (xml)))).rstrip('\n\r')
-            if want_utf8:  # Convert to utf-8 to unicode.
+            edicttxt = html.unescape (edicttxt)
+            if want_utf8:  # Convert to utf-8.
                 edicttxt = edicttxt.encode('utf-8')
         return edicttxt
+
+def _ent_repl (mo):
+          # This func is used by the re.sub() call in entry() above to
+          # replace all but the standard xml entities with ordinary text
+          # strings.
+	  #FIXME: this same function is also used in jmxml.py; that one
+          # and this should be combined somewhere (jdb?)
+        orig = mo.group(0)
+        if orig in ('&lt;','&gt;','&amp;','&quot;'): return orig
+        return orig[1:-1]
