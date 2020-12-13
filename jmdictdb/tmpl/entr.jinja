@@ -80,7 +80,7 @@
       <table class="senses">
         {%- for s in e._sens %}
         <tr class="sense">
-          <td valign="top">{{s.sens}}.</td>
+          <td valign="top">{{loop.index}}.</td>
           <td colspan="2">
             {%- if s._STAG|d %}
             <span class="stag">
