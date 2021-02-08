@@ -49,7 +49,7 @@ def main (args, opts):
         cur.close()
         disp = form.getfirst ('disp')
         if disp == 'xml':
-            etxts = [fmtxml.entr (e) for e in entries]
+            etxts = [fmtxml.entr (e, mail=False) for e in entries]
         elif disp == 'jm':
             etxts = [fmtxml.entr (e, compat='jmdict') for e in entries]
         elif disp == 'jmne':

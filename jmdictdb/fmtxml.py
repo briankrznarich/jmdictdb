@@ -13,7 +13,7 @@ global KW
 class TagError (KeyError): pass
 
 def entr (entr, compat='jmex', geninfo=True, genhists=True,
-                genxrefs=True, wantlist=False):
+                genxrefs=True, wantlist=False, mail=True):
         '''
         Generate an XML description of entry 'entr'.
         Parameters:
@@ -49,6 +49,11 @@ def entr (entr, compat='jmex', geninfo=True, genhists=True,
                 with embedded newline characters.  If true, return a
                 list of strings, one line per string, with no embedded
                 newlines.
+          mail -- If true (default), include <audit>.<upd_email>
+                elements (which contain submitters' email addresses)
+                in the output xml.  If false, these elements will be
+                suppressed; this is appropriate in cases where the xml
+                will be made publically available.
         '''
 
         global KW; KW = jdb.KW
@@ -68,7 +73,7 @@ def entr (entr, compat='jmex', geninfo=True, genhists=True,
             for x in senss:
                 fmt.extend (sens (x, kanjs, rdngs, compat, entr.src, genxrefs))
 
-        if not compat: fmt.extend (info (entr, compat, geninfo, genhists))
+        if not compat: fmt.extend (info (entr, compat,geninfo,genhists,mail))
         if not compat: fmt.extend (audio (entr))
         if not compat: fmt.extend (grps (entr))
         fmt.append ('</entry>')
@@ -391,7 +396,7 @@ def xrslvs (xrslvs, src):
             fmt.append ("<%s%s>%s</%s>" % (elname, attrs, xreftxt, elname))
         return fmt
 
-def info (entr, compat, geninfo, genhists):
+def info (entr, compat, geninfo, genhists, mail):
         if compat or not geninfo: return []
         fmt = []
         x = getattr (entr, 'srcnote', None)
@@ -400,13 +405,13 @@ def info (entr, compat, geninfo, genhists):
         if x: fmt.append ('<notes>%s</notes>' % esc(entr.notes))
         if genhists:
             for n, x in enumerate (getattr (entr, '_hist', [])):
-                fmt.extend (audit (x, compat))
+                fmt.extend (audit (x, compat, mail))
         if fmt:
             fmt.insert (0, '<info>')
             fmt.append ('</info>')
         return fmt
 
-def audit (h, compat=None):
+def audit (h, compat=None, mail=True):
         if compat: return []  # Generate <audit> elements only for "jmex".
         fmt = [];  attrs = []
         dt = h.dt.isoformat (' ', 'seconds')
@@ -418,7 +423,8 @@ def audit (h, compat=None):
         fmt.append ('<audit%s>' % attrs)
         if h.userid:fmt.append ('<upd_uid>%s</upd_uid>'     % esc(h.userid))
         if h.name:  fmt.append ('<upd_name>%s</upd_name>'   % esc(h.name))
-        if h.email: fmt.append ('<upd_email>%s</upd_email>' % esc(h.email))
+        if h.email: fmt.append ('<upd_email>%s</upd_email>' \
+           % (esc(h.email) if mail else "...address hidden..."))
         if h.notes: fmt.append ('<upd_detl>%s</upd_detl>'   % esc(h.notes))
         if h.refs:  fmt.append ('<upd_refs>%s</upd_refs>'   % esc(h.refs))
         if h.diff:  fmt.append ('<upd_diff>%s</upd_diff>'   % esc(h.diff))
