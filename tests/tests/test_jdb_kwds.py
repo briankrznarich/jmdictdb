@@ -60,7 +60,7 @@ class Loadcsv (unittest.TestCase):
         validate_rec (_, _.o, 'KINF', 27, 'yy')
         validate_rec (_, _.o, 'KINF', 8, 'qq-r')
         validate_rec (_, _.o, 'GINF', 1, 'equ',  'equivalent')
-        validate_rec (_, _.o, 'GINF', 2, 'lit',  'literaly')
+        validate_rec (_, _.o, 'GINF', 2, 'lit',  'literally')
         validate_rec (_, _.o, 'GINF', 3, 'fig',  'figuratively')
         validate_rec (_, _.o, 'GINF', 4, 'expl', 'explanatory')
           # Check handling of double-quotes in descr fields.
@@ -87,7 +87,7 @@ class Loadcsv (unittest.TestCase):
 
     def test004 (_):
           # Check GINF records.
-        expect = set (((1,'equ','equivalent'),(2,'lit','literaly'),
+        expect = set (((1,'equ','equivalent'),(2,'lit','literally'),
                        (3,'fig','figuratively'),(4,'expl','explanatory')))
         recs = _.o.recs('GINF')
         _.assertEqual (len(recs), 4)
@@ -137,7 +137,7 @@ class Loaddb (unittest.TestCase):
         _.o = jdb.Kwds (Cursor)
 
     def test001 (_):
-        expect = set (((1,'equ','equivalent'),(2,'lit','literaly'),
+        expect = set (((1,'equ','equivalent'),(2,'lit','literally'),
                        (3,'fig','figuratively'),(4,'expl','explanatory')))
         recs = _.o.recs('GINF')
         _.assertEqual (len(recs), 4)

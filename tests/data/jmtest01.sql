@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.14 (Ubuntu 10.14-0ubuntu0.18.04.1)
--- Dumped by pg_dump version 10.14 (Ubuntu 10.14-0ubuntu0.18.04.1)
+-- Dumped from database version 10.15 (Ubuntu 10.15-0ubuntu0.18.04.1)
+-- Dumped by pg_dump version 10.15 (Ubuntu 10.15-0ubuntu0.18.04.1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -3370,6 +3370,7 @@ COPY public.db (id, active, ts) FROM stdin;
 9415724	t	2020-08-19 21:28:17.442967
 12840591	f	2020-08-06 17:50:01.913543
 14985756	t	2020-10-08 20:15:24.672514
+4601165	t	2021-02-09 21:11:50.102646
 \.
 
 
@@ -4262,9 +4263,9 @@ COPY public.kwfreq (id, kw, descr) FROM stdin;
 
 COPY public.kwginf (id, kw, descr) FROM stdin;
 1	equ	equivalent
-2	lit	literaly
 3	fig	figuratively
 4	expl	explanatory
+2	lit	literally
 \.
 
 
@@ -6110,7 +6111,7 @@ COPY public.stagr (entr, sens, rdng) FROM stdin;
 --
 
 COPY public.testsrc (filename, method, hash) FROM stdin;
-/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	a151888b3fe362751b025d31ad086da79a6af492
+/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	d0c30ffc4e3ae0da33060c7c1efffdc4662ca937
 \.
 
 
