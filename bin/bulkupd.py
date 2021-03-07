@@ -91,7 +91,8 @@ def apply (cur, edits, src, seqnums, hist):
                 if Args.delay is not None:
                     D("pausing for %s mS")
                     time.sleep (Args.delay/1000.0)
-                try: stat = submit (cur, entr, Args.userid, Args.noaction)
+                try: stat = submit (cur, entr, Args.approve, Args.userid,
+                                               Args.noaction)
                 except UpdateError as e:
                     E(e);  failed += 1
                 else:
@@ -118,14 +119,15 @@ def parse_cmdfile (cmdfile, initial_corpus):
             if not ln: continue                 # Skip blank lines.
             if re.match (r'\s*#', ln): continue # Skip comment lines.
             if ln[0] in "0123456789":
-                cmdtxt = 'seq';  rest = ln
+                if cmdtxt not in ('seq', 'id'): cmdtxt = 'seq'
+                rest = ln
             else:
                 try: cmdtxt, rest = ln.split (maxsplit=1)
                 except ValueError:
                     E("line %d: Invalid directive line" % (lnnum))
                     errors += 1; continue
-            if cmdtxt in ('corpus', 'seq'):
-                  # A "seq" or "corpus" command ends the previous batch
+            if cmdtxt in ('corpus', 'seq', 'id'):
+                  # A "seq", "id" or "corpus" command ends the previous batch
                   # of edits and starts a new one.  Save the seqence numbers
                   # and edits already collected.
                 if edits:
@@ -136,13 +138,15 @@ def parse_cmdfile (cmdfile, initial_corpus):
                     except KeyError:
                         E("line %d: Unknown corpus: '%s'" % (lnnum, rest))
                         errors += 1; corpus = None
-                else: #cmdtxt == 'seq'
+                else:  # cmdtxt == 'seq' or cmdtxt == 'id'
+                    typ = cmdtxt[0]
                     for seqtxt in rest.split():
                         try: seq = int (seqtxt)
                         except ValueError:
-                            E("line %d: Bad seq number: '%s'" % (lnnum, seqtxt))
+                            E("line %d: Bad %s number: '%s'" % (lnnum, cmdtxt, seqtxt))
                             errors += 1; seq = None
-                        else: seqnums.append (seq)
+                        else: seqnums.append ((typ, seq))
+
             else: #'cmdtxt' is other than "corpus' or "seq".
                 try: cmd = Cmd (cmdtxt, rest)
                 except ParseError as e:
@@ -213,16 +217,30 @@ def clean_quoted_string (s):
         s = (s.replace (r'\"', '"'))[1:-1]
         return s
 
-def getentries (cur, seqnums, src):
+def getentries (cur, numlist, src):
+        seqnums, idnums = [], []
+        for t, num in numlist:
+            if t == 'i': idnums.append (num)
+            elif t == 's': seqnums.append (num)
+            else: raise ValueError ("Bad value in 'numlist': %s" % t)
+        entrs1 = getentries_by_seq (cur, seqnums, src)
+        entrs2 = getentries_by_id (cur, idnums)
+        return entrs1 + entrs2
+        #filtered = []
+        #for e in entrs1 + entrs2:
+        #    if not e.dfrm: filtered.append (e)
+        #    else: E("Entry %s (id=%s) has dependent edited entry"
+        #            % ((e.seq, e.id)))
+        #return filtered
+
+def getentries_by_seq (cur, seqnums, src):
         # cur -- An open DBAPI cursor to a JMdictDB database.
         # seqnums -- List of sequence number of entries to retrieve.
         # src -- Corpus id number of entry to retrieve.
 
-          # Read the entry.  If we get more than one, bail
-          # and let the user fix the right version manually.
-          # And the same of course if we find no entry.  We
-          # ignore entries that are rejected, or are deleted-
-          # approved.
+        if not seqnums: return []
+          # Read the entries.  We only get entries that are active-approved
+          # or deleted-unapproved.
         KW = jdb.KW
         sql = "SELECT id FROM entr WHERE seq IN %%s AND src=%%s "\
                 "AND ((stat=%s and NOT unap) OR (stat=%s and unap))"\
@@ -242,12 +260,30 @@ def getentries (cur, seqnums, src):
                 if seq in missing:
                     W("Entry %s not found" % seq)
         jdb.augment_xrefs (cur, raw['xref'])
-          # Remove and entries with children.
-        filtered = []
-        for e in entries:
-            if not e.dfrm: filtered.append (e)
-            else: E("Entry %s has dependent edited entry" % e.seq)
-        return filtered
+        return entries
+
+def getentries_by_id (cur, idnums):
+        # cur -- An open DBAPI cursor to a JMdictDB database.
+        # idnums -- List of sequence number of entries to retrieve.
+
+        if not idnums: return []
+        KW = jdb.KW
+        entries, raw = jdb.entrList (cur, None, (tuple(idnums)),
+                                     ret_tuple=True)
+        if len (entries) > len (idnums):
+            raise RetrievalError (
+              "More entries received (%s) than requested (%s)"
+              % (len(entries), len(seqnums)))
+        missing = set (idnums) - set ([e.id for e in entries])
+        D("Read %d entries, expected %d, %d missing"
+                 % (len(entries), len(idnums), len(missing)))
+        if missing:
+               # Print missing entries in same order they occur in 'idnums'.
+            for id in idnums:
+                if id in missing:
+                    W("Entry id %s not found" % id)
+        jdb.augment_xrefs (cur, raw['xref'])
+        return entries
 
 def doedit (entr, hist, cmd):
         # entr -- A jdb.Entr() instance to be edited.
@@ -339,26 +375,35 @@ def kw2id (operand, new, old):
             if old: old = jdb.KW.DIAL[old].id
         return new, old
 
-def submit (cur, entr, userid, noaction):
+def submit (cur, entr, appr, userid, noaction):
         # cur -- An open DBAPI cursor to a JMdictDB database.
-        # entr -- Modified entry that will replace current db version of entry.
-        #    We assume that any desired Hist() record has already been appended.
-        # userid -- userid string of a editor listed in jmsess or None.
-        #    The former implies submitting the changes as "approved" (if
-        #    the parent entry was also "approved"); the latter implies
-        #    submitting the entr as "unapproved".  Note that 'userid' is
-        #    not valiated or checked against the jmsess database.
-        # noaction -- Boolean which will if true will rollback any changes.
+        # entr -- Modified entry that will replace current db version
+        #    of entry.  We assume that any desired Hist() record has
+        #    already been appended.
+        # appr -- One of None, True, False:
+        #    None: submit with same approval state as orioginal entry.
+        #    False: submit as unapproved.
+        #    True: submit as approved.
+        #    If 'userid' (below) is not provided, 'appr' is ignored and
+        #    the entry always submitted as unapproved.
+        # userid -- Userid string of an editor listed in jmsess or None.
+        #    If this is not provided (is None), the entry will be submitted
+        #    as unapproved.  Otherwise the approval status will be controlled
+        #    by 'appr' (above).  Note that 'userid' is not valiated or
+        #    checked against the jmsess database.
+        # noaction -- Boolean which if true will rollback any changes.
 
           # Add the bulk update tag to the end of the history comments.
         entr._hist[-1].notes += ('\n' if entr._hist[-1].notes else '') \
                                + BULKUPD_TAG
 
           # Maintain the same approval state in the updated entry
-          # as existed in the original entry.  'action' is passed
-          # to submission() below.
-        action = "" if entr.unap or not bool (userid) else "a"
-
+          # as existed in the original entry.
+          #FIXME: I don't think this is right for rejected entries.
+        if appr is None:
+            disp = '' if entr.unap or not bool (userid) else 'a'
+        else:
+            disp = 'a' if appr else ''
         entr.dfrm = entr.id   # This tells submission() that we are editing an
                               #  existing entry, not creating a new entry.
 
@@ -367,11 +412,11 @@ def submit (cur, entr, userid, noaction):
           # record and removing the superceded entry properly.
 
         I("Submitting %s entry %s (%s) with userid='%s'"
-                % ("approved" if action=='a' else "unapproved",
+                % ("approved" if disp=='a' else "unapproved",
                    entr.seq, jdb.KW.SRC[entr.src].kw, userid))
         errs = []
         cur.execute ("BEGIN")
-        try: entrid,_,_ = submission (cur, entr, action, errs,
+        try: entrid,_,_ = submission (cur, entr, disp, errs,
                                       is_editor=bool(userid), userid=userid)
         except psycopg2.DatabaseError as e: errs.append (str(e))
         if entrid: D("Added entry id=%s" % entrid)
@@ -475,6 +520,14 @@ def parse_cmdline (cmdargs):
                 "database by the user executing this program is sufficient to allow "
                 "any changes including approval of the updated entry.  ")
 
+        p.add_argument ("--approve", default=None, choices=['yes','no'],
+            help="Set the updated entries to approved or unapproved as "
+                "indicated.  If this option is not given at all, approval "
+                "status of the updated entries will remain the same as each "
+                "parent entry if --userid was also given or will be set to "
+                "unapproved if --userid was not given.  Giving --approve "
+                "without --userid is an error.")
+
         p.add_argument ("--delay", type=int, default=None,
             help="Pause for this number of milliseconds between each update"
                 "operation.  This allows for lightening the load on the "
@@ -517,6 +570,12 @@ Directives:
         a line starting with a number is assumed to be a "seq" line.  Multiple
         seq lines can occur in succession and the following edit directives
         will apply to all of given entries.
+    id <entry-id-number> [<entry-id-number>...]
+        Set the current entry set to given entry id numbers.  The directives
+        following will apply to these entries.  Multiple id lines can occur in
+        succession and the following edit directives will apply to all of given
+        entries.  The 'corpus' value is ignored when processing entries
+        identified by id number.
     add <operand> [<sense#>] <new-value>
         <operand> may be any of:
           kanj, rdng, gloss, pos, misc, fld, dial, comment, refs
@@ -595,6 +654,12 @@ There is no way at present to do the following:
   * Use multi-line comments or refs in the command file.
 """
         args = p.parse_args (cmdargs[1:])
+        if args.approve and not args.userid:
+            p.error ("--approve requires --userid")
+          # 'args.approve' will be either None, "yes", or "no".
+          # Convert the latter two to True and False respectively.
+        if args.approve is not None:
+            args.approve = args.approve == 'yes'
         return args
 
 if __name__ == '__main__': main()
