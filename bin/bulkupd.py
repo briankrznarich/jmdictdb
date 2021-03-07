@@ -113,7 +113,7 @@ def parse_cmdfile (cmdfile, initial_corpus):
         except KeyError:
             E("Unknown corpus: '%s'" % initial_corpus)
             return None
-        cmds = [];  seqnums = [];  edits = []
+        cmds = [];  seqnums = [];  edits = [];  cmdtxt = None
         for lnnum, ln in enumerate (cmdfile, start=1):
             ln = ln.strip()
             if not ln: continue                 # Skip blank lines.
