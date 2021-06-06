@@ -24,37 +24,54 @@ recognized by the JMdictDB system:</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Local changes made at a particular site.</p>
+<p>Local changes made at a particular site <a href="#sec1">(section 1)</a>.</p>
 </li>
 <li>
-<p>Changes made to the JMdictDB software for distribution to all users.</p>
+<p>Changes made to the JMdictDB software for distribution to all users
+<a href="#sec2">(section 2)</a>.</p>
 </li>
 </ul>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_1_local_changes_to_the_tags">1. Local changes to the tags</h2>
+<h2 id="sec1">1. Local changes to the tags</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>During normal operation of the JMdictDB system the tags known to
 the system (accepted when submitting edits, used in XML output, etc)
 are stored in a set of database tables with names prefixed with
-"kw" and collectively referred to as the "kw*" tables or "tag tables".
-These tables are loaded when the JMdictDB system is installed and
-updated from time to time via the normal JMdictDB upgrade process.</p>
+"kw" and collectively referred to as the "kw*" (keyword) tables
+or "tag tables".  These tables are loaded when the JMdictDB system
+is installed and updated from time to time via the normal JMdictDB
+upgrade process.</p>
 </div>
 <div class="paragraph">
 <p>A site can make localized custom changes to these tags by changing
 the data in the tables.  Changes can be made by direct SQL manipulation
-of the kw* tables' contents, or with the help of a tool that will
-generate the necessary SQL statements from a CSV listing of the
-changes to be made.</p>
+of the kw* tables' contents.</p>
+</div>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+Not all tags can be changed by simply by changing the
+values in the database tables.  References to some
+tags are hardwired in the JMdictDB code and that code must also
+be changed when the tag&#8217;s 'id' or 'kw' value is changed or the
+entire row deleted.
+See <a href="#appendix_a">Appendix A</a> for a list of those tags.
+</td>
+</tr>
+</table>
 </div>
 <div class="sect2">
 <h3 id="_1_1_contents_of_the_kw_tables">1.1. Contents of the kw* tables</h3>
 <div class="paragraph">
-<p>There are six database tables that contain editable tag information.</p>
+<p>There are seven database tables that contain editable tag information.</p>
 </div>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
@@ -75,6 +92,12 @@ changes to be made.</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock">&lt;dial&gt;</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">sense</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">dialect</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">kwginf</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;gloss gtype=&#8230;&#8203;&gt;</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">gloss</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">gloss type</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">kwfld</p></td>
@@ -144,7 +167,7 @@ will occur as an entity in an XML DTD, this will also be the
 <li>
 <p>ents&#8201;&#8212;&#8201;A JSON string that controls how and in which XML files the
 tag will appear as an entity.  This contents of this field are
-described in <a href="#appendix_b">Appendix B</a>.</p>
+described in <a href="#appendix_c">Appendix C</a>.</p>
 </li>
 </ul>
 </div>
@@ -185,7 +208,7 @@ applying your changes to it.
 the <a href="https://www.edrdg.org/~smg/doc/dev.html#_2_1_make_a_copy_of_the_current_jmdict_database">Dev Guide</a>.</p>
 </div>
 <div class="paragraph">
-<p><a href="#appendix_a">Appendix A</a> describes the SQL statements needed to make
+<p><a href="#appendix_b">Appendix B</a> describes the SQL statements needed to make
 various kinds of changes to the tags.  Use that as a guide to write
 the SQL statements you need to make the changes you want.</p>
 </div>
@@ -241,7 +264,7 @@ a tag id number or name conflicts with a locally added tag.</p>
 <p>In this case you will need to change the locally modified tag to
 avoid the conflict.  The process for changing tag names has already
 been described.  A conflict between id numbers is unlikely if
-you followed the advice in <a href="#appendix_a">Appendix A</a> to start
+you followed the advice in <a href="#appendix_b">Appendix B</a> to start
 local id numbers at some high value like 500.</p>
 </div>
 <div class="paragraph">
@@ -260,10 +283,52 @@ one; i.e. they will appear unchanged and continue to have the
 tag applied.</p>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_1_4_migrating_local_tag_changes_to_the_jmdictdb_project">1.4. Migrating local tag changes to the JMdictDB project</h3>
+<div class="paragraph">
+<p>The steps needed to implement tag changes for distribution by
+the JMdictDB project are described below in <a href="#sec2">section 2</a>
+but two core steps are to update the tags in the kw*.csv files
+and to write a SQL script to update other existent databases.</p>
+</div>
+<div class="paragraph">
+<p>tools/kwcmp.py is a tool that can help with these two steps
+by comparing your modified database tag tables with the (presumed)
+unmodified CSV files and generating two output files:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A Unix diff file that can be applied by the Unix "patch" utility
+to update the CSV files to match the database tag tables.  This
+can expedite the CSV file updates required in <a href="#sec2_3">step 2.3</a>.</p>
+<div class="literalblock">
+<div class="content">
+<pre>$ tools/kwcmp.py -fdiff jmdict &gt; update.patch</pre>
+</div>
+</div>
+</li>
+<li>
+<p>A SQL script that will apply the changes you made to you database
+tag tables to a different unmodified database.  This script can
+be used as the core of the db/updates/ script required in
+<a href="#sec2_4">step 2.4</a>.</p>
+<div class="literalblock">
+<div class="content">
+<pre>$ tools/kwcmp.py -fsqlx jmdict &gt; update.sql</pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For more information on kwcmp.py see <a href="#appendix_d">Appendix D</a>.</p>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_2_jmdictdb_tag_changes_for_distribution">2. JMdictDB tag changes for distribution</h2>
+<h2 id="sec2">2. JMdictDB tag changes for distribution</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>This section describes the procedure for implementing a "global"
@@ -385,36 +450,45 @@ ents -- Modififcations to the tag for use in an XML file.
   kwkinf.csv, kwmisc.csv kwpos.csv and kwrinf.csv.</pre>
 </div>
 </div>
-<div class="paragraph">
-<p>If you are changing an existing tag, edit the appropriate
-line.  Caution: in general the "descr" can be changed arbitrarily
-but you should be cautious about changing the "kw" field
-value as it may be referenced in the code and need corresponding
-changes there are well.  A grep through all the .py
-files for the text "XXX['kkk']" or "XXX_kkk" (where XXX is the
-tag type, eg FREQ, POS, etc, and kw is the short abbreviation of
-the tag (the value you want to change) may (but is not guaranteed to)
-turn up such cases.</p>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+Not all tags can be changed by simply by changing the
+values in the database tables and csv files.  References to some
+tags are hardwired in the JMdictDB code and that code must also
+be changed when the tag&#8217;s 'id' or 'kw' value is changed or the
+entire row deleted.
+See <a href="#appendix_a">Appendix A</a> for a list of those tags.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
-<p>In particular the following tags are known to be referenced in the
-jmdictdb code:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>FREQ (all), GINF ('eql','lit'), LANG ('eng'), MISC ('male','fem'),
-STAT (all), SRCT (all), XREF('see','ant')</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>There may be others.</p>
-</div>
-<div class="paragraph">
-<p>For more details on the "ents" value, see <a href="#apendix_b">Appendix B</a>.</p>
+<p>For more details on the "ents" value, see <a href="#appendix_c">Appendix C</a>.</p>
 </div>
 <div class="paragraph">
 <p>Be careful that your editor is set to preserve tabs (including
 trailing ones) when saving rather than replacing them with spaces.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+If a database already exists in which the tag changes have
+been applied as local changes (see <a href="#sec1">section 1</a>), you can
+use the kwcmp.py tool to extract those changes in the form of
+a Unix "diff" file that can be used to update the CSV files using
+the Unix "patch" utility.  See <a href="#appendix_d">Appendix D</a>.
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect2">
@@ -428,7 +502,7 @@ to existing databases&#8201;&#8212;&#8201;that is done by the script you write h
 <div class="paragraph">
 <p>Generally, making changes to tags is similar to
 the procedure described in <a href="#sec1_2">section 1.2</a>, using the SQL
-statements described in <a href="#apendix_a">Appendix A</a>.  The difference
+statements described in <a href="#appendix_b">Appendix B</a>.  The difference
 is that the SQL script produced will follow some additional
 conventions described below and it will be packaged for distribution
 with the rest of the JMdictDB code.</p>
@@ -436,6 +510,22 @@ with the rest of the JMdictDB code.</p>
 <div class="paragraph">
 <p>After the database has been updated the tag changes will automatically
 appear in the Search and Help pages.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+If a database already exists in which the tag changes have
+been applied as local changes (see <a href="#sec1">section 1</a>), you can
+use the kwcmp.py tool to extract those changes in the form of a
+SQL scipt that can be used as the core of the database update
+script.  See <a href="#appendix_d">Appendix D</a>.
+</td>
+</tr>
+</table>
 </div>
 <div class="sect3">
 <h4 id="sec2_4_1">2.4.1 Database update numbers</h4>
@@ -515,7 +605,7 @@ INSERT INTO db(id) VALUES(x:dbversion::INT);
 -- Do the update...
 
 [SQL statements to implement the update, as described in
-Appendix A, go here.]
+Appendix B, go here.]
 
 COMMIT;</code></pre>
 </div>
@@ -571,7 +661,9 @@ copy of the production database.</p>
 <div class="content">
 <pre>$ cd tests
 $ git status
-[confirm that file data/jmtest01.sql has not been modified]
+[confirm that file data/jmtest01.sql has not been modified;
+if it has, restore the unmodified version from git before
+continuing.]
 $ ./load-testdb.sh data/jmtest01.sql</pre>
 </div>
 </div>
@@ -702,7 +794,99 @@ $ git branch -d newtags   # You can delete your branch since your
 </div>
 </div>
 <div class="sect1">
-<h2 id="appendix_a">Appendix A&#8201;&#8212;&#8201;SQL to add, change or delete tags</h2>
+<h2 id="appendix_a">Appendix A&#8201;&#8212;&#8201;Tags to avoid changes to</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following table lists the tag tables and specific tags that you
+should avoid changes to because the existing values of those tags
+are referenced from within the JMdictDB code and those references
+will need to also need to be updated.  The recommendation against
+changes applies only to row deletion and the 'id' and 'kw' fields;
+the 'descr' and 'ent' fields (if present) generally may be changed
+even for the tags listed below.</p>
+</div>
+<div class="paragraph">
+<p>Tables not listed may have any of their tags modified as needed.</p>
+</div>
+<div class="paragraph">
+<p>Please note that if a tag is deleted from a table the tag will also
+be silently deleted from any entries that use that tag.  Entries in
+an XML file that use the tag and will also have the tag dropped and
+a warning message generated when the file is loaded into a database.</p>
+</div>
+<div class="paragraph">
+<p>There may be other tags in use in the JMdictDB code that have not
+been found and documented yet.</p>
+</div>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Table</th>
+<th class="tableblock halign-left valign-top">Tags</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">kwfreq</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">(all)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">kwginf</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">equ, lit</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">kwlang</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">eng [*1]</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">kwmisc</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">male, fem, uk</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">kwrinf</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">nanori</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">kwpos</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">n</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">kwstat</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">(all)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">kwsrc</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">(all)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">kwsrct</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">(all)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">kwxref</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">see, ant [*2]</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>[*1] Although only the 'eng' tag is referenced from the JMdictDB
+code and the other tags are in principle changable, this data is
+generated from and documented to conform to ISO-639-2 and thus
+the whole table should probably considered off-limits.</p>
+</div>
+<div class="paragraph">
+<p>[*2] Although the kwxref table has a number of other xref type tags,
+JMdict and JMnedict XML generation and parsing use only the 'see'
+and 'ant' tags which require additional code updates to change.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="appendix_b">Appendix B&#8201;&#8212;&#8201;SQL to add, change or delete tags</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>This section provides SQL statements that can be composed in a
@@ -772,7 +956,7 @@ in the JMdict XML DTD.</td>
 <tr>
 <td><i class="conum" data-value="6"></i><b>6</b></td>
 <td>&lt;ents&gt;&#8201;&#8212;&#8201;A JSON string that controls how and in which XML files
-the tag will appear.  See <a href="#appendix_b">Appendix B</a> for more information.</td>
+the tag will appear.  See <a href="#appendix_c">Appendix C</a> for more information.</td>
 </tr>
 </table>
 </div>
@@ -783,7 +967,7 @@ the tag will appear.  See <a href="#appendix_b">Appendix B</a> for more informat
 <p>Regarding the "ents" field, the short version is: if "ents" is empty
 (NULL) the tag will appear as an entity in the JMdict XML but not in
 the JMnedict XML.  If you want something different then it&#8217;s time to
-read <a href="#appendix_b">Appendix B</a>.</p>
+read <a href="#appendix_c">Appendix C</a>.</p>
 </div>
 <div class="paragraph">
 <p>If there are any single quote characters (') in any of the fields,
@@ -850,7 +1034,7 @@ a single statement, for example:</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="appendix_b">Appendix B&#8201;&#8212;&#8201;The "ents" field</h2>
+<h2 id="appendix_c">Appendix C&#8201;&#8212;&#8201;The "ents" field</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>The "ents" column of the kw* tables and CSV files that have one
@@ -912,7 +1096,7 @@ JMnedict XML.</p>
 <div class="content">
 <pre> id  |   kw    |       descr       |      ents
 -----+---------+-------------------+-----------------
- 181 | surname | family or surname | {"jmnedict": 1}</pre>
+ 181 | surname | family or surname | {"jmnedict":1}</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -926,8 +1110,8 @@ excluded with "jmdict":0.</p>
 <pre> id |  kw  |            descr               ents
 ----+------+------------------------------+----
  15 | male | male term, language, or name |
-   {"jmdict": {"v": "male term or language"},
-    "jmnedict": {"e": "masc", "v": "male given name or forename"}}
+   {"jmdict":{"v":"male term or language"},
+    "jmnedict":{"e":"masc", "v":"male given name or forename"}}
 
   [Note: above is line-wrapped for this document; would be a
    single line in the kwmisc.csv file.]</pre>
@@ -942,10 +1126,66 @@ value will be <code><code>male given name or forename.</code></code></p>
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="appendix_d">Appendix D&#8201;&#8212;&#8201;Tag tools</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This section decribes programs (currently just one) in the tools/
+directory that may be useful when making changes to tags.  Run
+the program(s) with the --help option for full usage details.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">tools/kwcmp.py</dt>
+<dd>
+<p>Compares CSV files to tag tables in a database and
+generates various kinds of scripts that will bring one into conformance
+with the other.  Specifically it can:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Create a SQL script that will make the database tables match
+the CSV files.</p>
+</li>
+<li>
+<p>Create a SQL script that will make database tables that were
+created from the CSV files match the given database tables.
+(Useful as the basis for a db/updates/ script.)</p>
+</li>
+<li>
+<p>Create a diff file that can be applied (with the Unix "patch"
+utility) to the CSV files to make them match the database tables.
+(Useful for updating the CSV files after tag updates have been
+applied to a development database.)</p>
+</li>
+<li>
+<p>Rewrite the CSV files from scratch from the database tables.</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>The tool can be useful when a set of tag changes have been applied
+locally to a database (see <a href="#sec1">section 1</a>) and one wishs to
+incorporate them into the JMdictDB code (see <a href="#sec2">section 2</a>):</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ tools/kwcmp.py -fdiff dev-database &gt;kw-changes.diff
+$ patch -p1 &lt;kw-changes.diff
+$ tools/kwcmp.py -fdiff &lt;dev-database&gt; &gt;kw-changes.sql
+[Write the db/updates/ script per section 2.4 above and use
+kw-changes.sql as the body of the script.]</pre>
+</div>
+</div>
+</div>
+</div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-10-13 16:31:33 MDT
+Last updated 2021-06-06 14:30:19 MDT
 </div>
 </div>
 </body>
