@@ -138,9 +138,10 @@ class Loaddb (unittest.TestCase):
 
     def test001 (_):
         expect = set (((1,'equ','equivalent'),(2,'lit','literally'),
-                       (3,'fig','figuratively'),(4,'expl','explanatory')))
+                       (3,'fig','figuratively'),(4,'expl','explanatory'),
+                       (5,'tm','trademark')))
         recs = _.o.recs('GINF')
-        _.assertEqual (len(recs), 4)
+        _.assertEqual (len(recs), 5)
         comparable_recs = set ((tuple(x) for x in recs))
         _.assertEqual (comparable_recs, expect)
 

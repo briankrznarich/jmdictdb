@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.15 (Ubuntu 10.15-0ubuntu0.18.04.1)
--- Dumped by pg_dump version 10.15 (Ubuntu 10.15-0ubuntu0.18.04.1)
+-- Dumped from database version 10.17 (Ubuntu 10.17-0ubuntu0.18.04.1)
+-- Dumped by pg_dump version 10.17 (Ubuntu 10.17-0ubuntu0.18.04.1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -3367,10 +3367,11 @@ COPY public.db (id, active, ts) FROM stdin;
 16133514	f	2020-08-02 13:03:25.646392
 11173099	f	2020-08-02 13:03:35.893273
 273560	f	2020-08-02 13:03:51.029015
-9415724	t	2020-08-19 21:28:17.442967
 12840591	f	2020-08-06 17:50:01.913543
-14985756	t	2020-10-08 20:15:24.672514
-4601165	t	2021-02-09 21:11:50.102646
+13831421	t	2021-06-06 16:17:54.116385
+9415724	f	2020-08-19 21:28:17.442967
+14985756	f	2020-10-08 20:15:24.672514
+4601165	f	2021-02-09 21:11:50.102646
 \.
 
 
@@ -4164,6 +4165,7 @@ COPY public.kwdial (id, kw, descr, ents) FROM stdin;
 11	nab	Nagano-ben	\N
 12	hob	Hokkaido-ben	\N
 1	std	Tokyo-ben (std)	{"jmdict": 0}
+13	bra	Brazilian	\N
 \.
 
 
@@ -4182,7 +4184,6 @@ COPY public.kwfld (id, kw, descr, ents) FROM stdin;
 8	mil	military	\N
 9	physics	physics	\N
 10	chem	chemistry	\N
-11	archit	architecture, building	\N
 12	astron	astronomy	\N
 13	baseb	baseball	\N
 14	biol	biology	\N
@@ -4209,11 +4210,9 @@ COPY public.kwfld (id, kw, descr, ents) FROM stdin;
 35	elec	electricity, elec. eng.	\N
 36	ent	entomology	\N
 37	biochem	biochemistry	\N
-38	met	climate, weather	\N
 39	tradem	trademark	\N
 40	gramm	grammar	\N
 41	electr	electronics	\N
-42	psych	psychology, psychiatry	\N
 43	photo	photography	\N
 44	grmyth	Greek mythology	\N
 45	archeol	archeology	\N
@@ -4225,7 +4224,6 @@ COPY public.kwfld (id, kw, descr, ents) FROM stdin;
 51	ecol	ecology	\N
 52	art	art, aesthetics	\N
 53	genet	genetics	\N
-54	horse	horse-racing	\N
 55	embryo	embryology	\N
 56	geogr	geography	\N
 57	fish	fishing	\N
@@ -4238,9 +4236,16 @@ COPY public.kwfld (id, kw, descr, ents) FROM stdin;
 64	print	printing	\N
 65	go	go (game)	\N
 66	hanaf	hanafuda	\N
-67	audvid	audio-visual	\N
-68	vidg	video game	\N
 69	ornith	ornithology	\N
+70	rail	railway	\N
+71	psy	psychiatry	\N
+72	cloth	clothing	\N
+11	archit	architecture	\N
+38	met	meteorology	\N
+42	psych	psychology	\N
+54	horse	horse racing	\N
+67	audvid	audiovisual	\N
+68	vidg	video games	\N
 \.
 
 
@@ -4266,6 +4271,7 @@ COPY public.kwginf (id, kw, descr) FROM stdin;
 3	fig	figuratively
 4	expl	explanatory
 2	lit	literally
+5	tm	trademark
 \.
 
 
@@ -4284,9 +4290,10 @@ COPY public.kwgrp (id, kw, descr) FROM stdin;
 COPY public.kwkinf (id, kw, descr, ents) FROM stdin;
 1	iK	word containing irregular kanji usage	\N
 2	io	irregular okurigana usage	\N
-3	oK	word containing out-dated kanji	\N
 4	ik	word containing irregular kana usage	\N
 5	ateji	ateji (phonetic) reading	\N
+6	rK	rarely-used kanji form	\N
+3	oK	word containing out-dated kanji or kanji usage	\N
 \.
 
 
@@ -4815,7 +4822,6 @@ COPY public.kwmisc (id, kw, descr, ents) FROM stdin;
 85	net-sl	Internet slang	\N
 86	dated	dated term	\N
 87	hist	historical term	\N
-88	litf	literary or formal term	\N
 9	fem	female term, language, or name	{"jmdict": {"v": "female term or language"}, "jmnedict": {"v": "female given name or forename"}}
 15	male	male term, language, or name	{"jmdict": {"v": "male term or language"}, "jmnedict": {"e": "masc", "v": "male given name or forename"}}
 82	aphorism	aphorism (pithy saying)	{"jmdict": 0}
@@ -4840,6 +4846,9 @@ COPY public.kwmisc (id, kw, descr, ents) FROM stdin;
 175	creat	creature	{"jmnedict": 1}
 176	dei	deity	{"jmnedict": 1}
 177	oth	other	{"jmnedict": 1}
+178	doc	document	{"jmnedict": 1}
+179	group	group	{"jmnedict": 1}
+88	form	formal or literary term	\N
 \.
 
 
@@ -6111,7 +6120,7 @@ COPY public.stagr (entr, sens, rdng) FROM stdin;
 --
 
 COPY public.testsrc (filename, method, hash) FROM stdin;
-/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	d0c30ffc4e3ae0da33060c7c1efffdc4662ca937
+/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	242b532f1688d49356ab1eb2b6a4101784957ec9
 \.
 
 

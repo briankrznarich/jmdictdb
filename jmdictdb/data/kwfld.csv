@@ -9,7 +9,7 @@ id	kw	descr	ents
 8	mil	military	
 9	physics	physics	
 10	chem	chemistry	
-11	archit	architecture, building	
+11	archit	architecture	
 12	astron	astronomy	
 13	baseb	baseball	
 14	biol	biology	
@@ -36,11 +36,11 @@ id	kw	descr	ents
 35	elec	electricity, elec. eng.	
 36	ent	entomology	
 37	biochem	biochemistry	
-38	met	climate, weather	
+38	met	meteorology	
 39	tradem	trademark	
 40	gramm	grammar	
 41	electr	electronics	
-42	psych	psychology, psychiatry	
+42	psych	psychology	
 43	photo	photography	
 44	grmyth	Greek mythology	
 45	archeol	archeology	
@@ -52,7 +52,7 @@ id	kw	descr	ents
 51	ecol	ecology	
 52	art	art, aesthetics	
 53	genet	genetics	
-54	horse	horse-racing	
+54	horse	horse racing	
 55	embryo	embryology	
 56	geogr	geography	
 57	fish	fishing	
@@ -65,6 +65,9 @@ id	kw	descr	ents
 64	print	printing	
 65	go	go (game)	
 66	hanaf	hanafuda	
-67	audvid	audio-visual	
-68	vidg	video game	
+67	audvid	audiovisual	
+68	vidg	video games	
 69	ornith	ornithology	
+70	rail	railway	
+71	psy	psychiatry	
+72	cloth	clothing	
