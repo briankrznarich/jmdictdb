@@ -8,20 +8,21 @@
 #
 # This file can be run as a standalone program in which case it will
 # use Flask's built-in http server running in debug mode.  This is
-# only appropriate for development in a secure ennvironment.
+# only appropriate for development in a secure environment.
 #
 # For production use, this file is imported by a WSGI server and
 # the server will call its methods in response to http requests
 # it receives.
 #
-# In both case one of the first things jmapp does is to read the
+# In both cases one of the first things jmapp.py does is to read the
 # configuration files(s) since through them other resources are located.
 # Please see installation documentation and the source files web/lib/-
 # config-sample.ini and config-pvt-sample.ini for details on their
 # contents.  The location of the operational files may be set via the
 # environment variable: JMAPP_CFGDIR.  If this is not set the default
-# location is "../web/lib/" when running jmapp standalone or
-# "/usr/local/etc/jmdictdb/" when run via a WSGI server.
+# location is "../web/lib/" when running jmapp standalone (i.e. with
+# Flask's debug webserver) or "/usr/local/etc/jmdictdb/" when run via
+# a WSGI server.
 
 import sys, os, io, inspect, pdb
 _=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
@@ -44,6 +45,7 @@ def main():
 def app_config (app, cfgfile):
         app.session_cookie_name = 'jmapp'
         app.secret_key = 'secret'
+        # print ("Loading config file: %s" % cfgfile, file=sys.stderr) ##DEBUG
         try: cfg = jmcgi.initcgi (cfgfile)
         except IOError:
               #FIXME: this is not very graceful...
@@ -55,6 +57,7 @@ def app_config (app, cfgfile):
 App = flask.Flask (__name__, static_folder='./static',
                              template_folder='./tmpl')
 
+#print ("Using: %s" % jmcgi.__file__, file=sys.stderr)                 ##DEBUG
 if __name__ == '__main__': cfg_default = "../web/lib/cfgapp.ini"
 else: cfg_default = "/usr/local/etc/jmdictdb/cfgapp.ini"
 cfgfile = os.environ.get('JMAPP_CFGFILE') or cfg_default
@@ -99,7 +102,7 @@ def prereq():
 @App.before_request
 def before_request():
         L('view.before_request').debug("For endpoint %s" % Rq.endpoint)
-        if Rq.endpoint in ('cgiinfo'): return
+        if Rq.endpoint and Rq.endpoint in ('cgiinfo'): return
         G.cfg = App.config['CFG']
         if not Rq.path.startswith ('/static'):
             down = srvlib.check_status (G.cfg)
@@ -146,7 +149,7 @@ def login():
 def cgiinfo():
         vLogEntry()
         from jmdictdb.views.cgiinfo import view
-        html = view (Rq.values)
+        html = view (App.config, Rq.values)
         return html
 
 @App.route ('/conj.py')

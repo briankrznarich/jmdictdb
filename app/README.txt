@@ -21,7 +21,8 @@ directory.  The server will be available at:
 
 Please note that the development server is not suitable for
 production use and is started in "debug" mode which is not
-secure -- access should be limited to trusted users.
+secure -- when running the development server you must arrange
+for access to be limited to trusted developers and users only.
 
 By default the jmapp server will look for its configuration
 file(s) in web/lib/cfgapp.ini and web/lib/cfgapp-pvt.ini.
@@ -68,8 +69,8 @@ will be available at:
 
 After a change is made to the jmapp code, the wsgi daemon
 process(es) can be restarted to make the server aware of the
-changes (without the need to restart the entire server) by
-'touch'ing jmapp.wsgi.
+changes (without the need to restart the entire Apache server)
+by 'touch'ing jmapp.wsgi.
 
 When run by a WSGI server, jmapp looks for its configuration
 file(s) in /usr/local/etc/jmdictdb/cfgapp.ini and cfgapp-pvt.ini.

@@ -43,6 +43,7 @@ def cfgRead (cfgname):
           # Set default values.
         cfg.read_dict (DEFAULTS)
         files = []
+        #print ("config: opening %s" % cfgname, file=sys.stderr)       ##DEBUG
         with open (cfgname) as fl:
             cfg.read_file (fl);  files.append (cfgname)
         op = os.path
@@ -52,6 +53,7 @@ def cfgRead (cfgname):
               # If 'cfgpvt' is an absolute path, op.join() will ignore
               # the 'cfgdir' value.
             cfgpvtfn = op.normpath (op.join (cfgdir, cfgpvt))
+            #print ("config: opening %s" % cfgpvtfn, file=sys.stderr)  ##DEBUG
             with open (cfgpvtfn) as fl:
                 cfg.read_file (fl);  files.append (cfgpvtfn)
         cfg.add_section ('status')
