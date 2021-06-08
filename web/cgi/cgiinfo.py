@@ -16,11 +16,14 @@ except ImportError:
         print ("Current directory is: %s" % os.getcwd())
         print ("sys.path is: %r" % sys.path)
         sys.exit(0)
-from jmdictdb import jdb, config, dbver
+from jmdictdb import jdb, config, jmcgi, dbver
 
 def main():
         errs = []; data = {}
-        cfg = config.cfgRead ('config.ini', 'config-pvt.ini')
+          # The canonical definition the CGI config file location is
+          # defined by the variable CONFIG_FILE in module jmcgi.
+        CONFIG_FILE = jmcgi.CONFIG_FILE
+        cfg = config.cfgRead (CONFIG_FILE)
         def_svc = cfg['web'].get ('DEFAULT_SVC', 'jmdict')
         if def_svc.startswith ('db_'): def_svc = def_svc[3:]
         form = cgi.FieldStorage()
@@ -38,8 +41,8 @@ def main():
         row_tmpl = "    <tr><td>%s:</td><td>%s</td></tr>"
         rows = [row_tmpl%(title.replace(' ','&nbsp;'),html.escape(value))
                          for title, value in data]
-        html = Page % '\n'.join (rows)
-        print ("Content-type: text/html\n\n", html)
+        htmltxt = Page % (CONFIG_FILE, '\n'.join (rows))
+        print ("Content-type: text/html\n\n", htmltxt)
 
 Page = '''<!DOCTYPE html>
 <html lang="en">
@@ -48,6 +51,7 @@ Page = '''<!DOCTYPE html>
   <title>JMdictDB - Configuration details</title>
   </head>
 <body>
+  Using config file %s<br><br>
   <table>
     %s
     </table>'''
