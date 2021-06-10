@@ -21,7 +21,7 @@ import sys, os, pdb
 try: import pkgpath.py  # Make jmdictdb package available on sys.path.
 except ImportError: pass
 
-def view (app_config, params):
+def view (app, params):
         '''-------------------------------------------------------------------
         app_config -- The value of the Flask.Application instance's
                       .config attribute.
@@ -36,50 +36,41 @@ def view (app_config, params):
             return Page % content
         from jmdictdb import jdb
 
-        env = []
-        env.append (('cwd', os.getcwd()))
-        env.append (('View location',
-                     os.path.dirname (os.path.abspath (__file__))))
-        env.append (('Pkg location',
-                     os.path.dirname (os.path.abspath (jdb.__file__))))
-        env.append (('sys.path', '%r' % sys.path))
         row_tmpl = "    <tr><td>%s</td><td>%s</td></tr>"
+
+        exdata = []
+        exdata.append (('cwd', os.getcwd()))
+        exdata.append (('View location',
+                     os.path.dirname (os.path.abspath (__file__))))
+        exdata.append (('Pkg location',
+                     os.path.dirname (os.path.abspath (jdb.__file__))))
+        exdata.append (('sys.path', '%r' % sys.path))
+        ex_rows = '\n'.join ([row_tmpl % (key.replace(' ','&nbsp;'), value)
+                              for key,value in exdata])
+
+        cfgdata, cfg = [], app.config['CFG']
+        cfgdata.append (('config dir', cfg.get ('status', 'cfg_dir')))
+        cfgdata.append (('config files',
+                        cfg.get ('status', 'cfg_files').replace('\n','<br>')))
+        cfg_rows = '\n'.join ([row_tmpl % (key.replace(' ','&nbsp;'), value)
+                              for key,value in cfgdata])
+
+        appdata = []
+        appdata.append (('name', app.name))
+        appdata.append (('root_path', app.root_path))
+        appdata.append (('static_folder', app.static_folder))
+        appdata.append (('static_url_path', app.static_url_path))
+        appdata.append (('template_folder', app.template_folder))
+        appdata.append (('instance_path', app.instance_path))
+        app_rows = '\n'.join ([row_tmpl % (key.replace(' ','&nbsp;'), value)
+                              for key,value in appdata])
+
         env_rows = '\n'.join ([row_tmpl % (key.replace(' ','&nbsp;'), value)
-                              for key,value in env])
+                              for key,value in sorted (os.environ.items())])
 
-        #pdb.set_trace()
-        cfg = app_config['CFG']
-        cfgtxt = cfgrender (cfg, show='db')
-
-        html = Page % (env_rows, cfgtxt)
+        html = Page % (ex_rows, cfg_rows, app_rows, env_rows)
         return html
 
-def cfgrender (cfg, show=''):
-        '''-------------------------------------------------------------------
-        cfg -- A configparser.ConfigParser instance.
-        show -- One of '', 'db', 'pw'.
-          '': Show only non-database sections.
-          'db': Show the names of the database sections but not any contents.
-          'pw': Show the database sections with contents.  Note that the
-             contents contain credentials for accessing the database so
-             this oprion should not be used except when access to the web-
-             server is limited to only trusted personel.
-        -------------------------------------------------------------------'''
-          #FIXME: The values in the config file have no indication whether
-          # they were read from the main config file or the private one.
-          # Although we supress the db_ sections, someone might put other
-          # settings in the private config and they will be revealed here.
-        t = []
-        for sec in cfg.sections():
-            dbsec = sec.startswith ('db')
-            if dbsec and show not in ('db', 'pw'): continue 
-            t.append ("[%s]%s" % (sec, (' ...\n'
-                                        if dbsec and show=='db' else '')))
-            if dbsec and show != 'pw': continue
-            for k,v in cfg.items (sec):
-                t.append ("  %s = %s" % (k, v))
-            t.append ('')
-        return '\n'.join (t)
 
 Page = '''<!DOCTYPE html>
 <html lang="en">
@@ -89,10 +80,20 @@ Page = '''<!DOCTYPE html>
   <style>.err {color:red;} td {vertical-align: top;} .pre {white-space: pre;}</style>
   </head>
 <body>
-  <p>Environment info:
+  <p>Execution info:
   <table border=1>
     %s
     </table>
   <p>Config info:<br>
-    <span class="pre">%s</span>
+  <table border=1>
+    %s
+    </table>
+  <p>App info:<br>
+  <table border=1>
+    %s
+    </table>
+  <p>Environment info:<br>
+  <table border=1>
+    %s
+    </table>
 '''
