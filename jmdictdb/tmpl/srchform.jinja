@@ -17,7 +17,7 @@
 {%- extends "layout.jinja" %}
 {%- block title %}Advanced Search{% endblock %}
 {%- block page_scripts %}
-  <script type="text/javascript"> 
+  <script type="text/javascript">
     function sf(){document.getElementById('t1').focus();}
     </script>
   <script type="text/javascript">
@@ -27,13 +27,13 @@
       - All the controlled boxes must have name="freq".
       - The controlled checkboxes have an id of "freq_xxxx" where "xxxx"
         is the frequency tag, e.g. "ichi1", "news2", etc.
-      - The controlling checkbox has id="freq_p" and does NOT have a 
+      - The controlling checkbox has id="freq_p" and does NOT have a
         name="freq".
       When the P checkbox is cleared, all the name="freq" checkboxes will
       be cleared.  When the P checkbox is set, all the name="freq" check-
       boxes with an id matching the set of P tags will be set, the others
       will be cleared.  (An earlier version of this function set and cleared
-      only the checkboxes in the set of P tags leaving the others unchanged 
+      only the checkboxes in the set of P tags leaving the others unchanged
       but it was felt that checking the P checkbox should provide the search
       criteria that matched the meaning of P without being perturbed by
       other pre-existing settings.)  #}
@@ -45,7 +45,7 @@
       var freqs = document.getElementsByName ('freq');
       for (i=0; i<freqs.length; i++) {
         var is_p = -1 != plist.indexOf ("|"+freqs[i].id.substring(5)+"|");
-        freqs[i].checked = newstate && is_p } } 
+        freqs[i].checked = newstate && is_p } }
     </script>
   {% endblock %}
 {%- block body_attrs %} class="srchfrm" onload="sf()"{%endblock%}

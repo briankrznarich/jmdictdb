@@ -15,10 +15,10 @@
   {% if user is defined %}{% set session=user %}{% endif %}
     <div class="item">
     {%- if result|d == 'success' %}
-      <div class="flash success">Thank you, the user settings have been updated.</div> 
+      <div class="flash success">Thank you, the user settings have been updated.</div>
       {%- endif %}
     {%- if result|d == 'nochange' %}
-      <div class="flash warn">No user setting changes were found.</div> 
+      <div class="flash warn">No user setting changes were found.</div>
       {%- endif %}
     {%- if not session or session.priv!='A' %}
       <p>Sorry, only admistrator users may view this page.</p>

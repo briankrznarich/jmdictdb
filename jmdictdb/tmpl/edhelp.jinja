@@ -29,7 +29,7 @@
       <a href="edhelpq.py?svc={{svc|d}}&sid={{sid|d}}">
         Quick Overview</a>
       of JEL available for getting started.
-      Please read and follow the 
+      Please read and follow the
       <a href="http://www.edrdg.org/wiki/index.php/Editorial_policy">
         JMdict/EDICT Editorial Policy</a>
       when making submissions.
@@ -697,7 +697,7 @@
               (2) SEQ is the sequence number of the of the cross reference
                 target.
                 CORP is the corpus name containing the cross reference target
-                and is only needed if different than the entry being edited. 
+                and is only needed if different than the entry being edited.
                 KK is the kanji of the cross reference target, RR is
                 its reading.  sense-nums is the specific sense(s) in the target
                 being referenced. At least one of SEQ, KK, or RR must be
@@ -728,7 +728,7 @@
               (8) When an entry is displayed, it will show cross references
                 to other entries with a right-pointing arrow (⇒).  These cross
                 references will appear as [see=...] or [ant=...] tags in the
-                edit page and can be edited directly.  Cross references shown 
+                edit page and can be edited directly.  Cross references shown
                 with a left-pointing arrow (⇐) are references to this entry
                 from another one and won't appear on the edit page.  To change
                 these, edit the other entry.  A bi-directional arrow (⇔) indicates
@@ -754,7 +754,7 @@
           <tr><td colspan="3"><br></td></tr>
           <tr id="kw_rinf"><td colspan="3">Rinf -- reading info</td></tr>
           <tr><td colspan="3"><hr></td></tr>
-          {%- for kwrec in kwhash.RINF %} 
+          {%- for kwrec in kwhash.RINF %}
           <tr>
             <td>{{kwrec.kw}}</td>
             <td>{{kwrec.descr}}</td>
@@ -837,17 +837,17 @@
           <tr><td colspan="3"><br></td></tr>
           <tr id="kw_lang"><td colspan="3">Lang -- language
             <br><span class="status">These three-letter codes are the
-            same as those defined in 
+            same as those defined in
             <a href="https://www.loc.gov/standards/iso639-2/php/code_list.php">ISO-639-2</a>.
             Any of the ISO 639-2 codes may be used in JMdictDB (use the B
             version when there is a choice).
             The table below lists only those codes currently in use in
-            JMdictDB.  
+            JMdictDB.
             </span>
             </a></td></tr>
           <tr><td colspan="3"><hr></td></tr>
           {%- for kwrec in kwhash.LANG %}
-          <tr> 
+          <tr>
             <td>{{kwrec.kw}}</td>
             <td>{{kwrec.descr}}</td>
             <td>{{kwrec.id}}</td>

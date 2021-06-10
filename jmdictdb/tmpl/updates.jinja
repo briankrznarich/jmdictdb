@@ -6,9 +6,9 @@
   {% set dbg = dbg|default(0,true) %}
   {% set sid = sid|default('',true) %}
   {% if user is defined %}{% set session=user %}{% endif %}
-    <div class="item"> 
+    <div class="item">
       <br/>Use this page to view the additions and amendments to the JMdictDB
-      database for particular days. Dates used are in Coordinated Universal Time (UTC, 
+      database for particular days. Dates used are in Coordinated Universal Time (UTC,
       formerly GMT).  Select a date and click on "View":<br/>
       <form action="updates.py" method="get">
         <select name="y">
@@ -22,7 +22,7 @@
           <option value="{{'%0.2d'|format(mi)}}" {{(mi==1)|a('selected')}}> {{'%0.2d'|format(mi)}}</option>
           {% endfor %}
           </select>
- 
+
         <select name="d">
         {%- for di in range (1,32) %}
           <option value="{{'%0.2d'|format(di)}}" {{(di==1)|a('selected')}}> {{'%0.2d'|format(di)}}</option>
@@ -55,7 +55,7 @@
             it at the end of every iteration.  So instead we save the value
             of the previous month by mutating a dictionary.
             Alternatively and probably more simply, we could use Jinja's groupby
-            filter, but the current arrangement is the most direct translation 
+            filter, but the current arrangement is the most direct translation
             from the original TAL template code.  #}
       {%- set prev = {'month':''} %}
       {%- for s in days %}

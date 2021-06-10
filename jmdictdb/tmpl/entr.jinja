@@ -2,7 +2,7 @@
     NOTE:
     - This template is used to display one of more JMdictDB entries.
       It is also used as the base for the edconf.jinja template when
-      displaying new or updated entries for confirmation prior to 
+      displaying new or updated entries for confirmation prior to
       submission.
 -#}
 {%- extends "layout.jinja" %}
@@ -32,7 +32,7 @@
         (parent: <a href="entr.py?svc={{svc}}&amp;sid={{sid}}&amp;e={{e.dfrm}}">{{e.dfrm}}</a>)
         {%-endif%}
         </span>
-      {%- if e.id %}<span class="pkid">(id: 
+      {%- if e.id %}<span class="pkid">(id:
          <a href="entr.py?svc={{svc}}&amp;sid={{sid}}&amp;e={{e.id}}">{{e.id}}</a>)
          </span> {%endif%}
 
@@ -66,7 +66,7 @@
           {%- if r._RESTR|d %}
       <span class="restr">({% for z in r._RESTR %}{{'' if loop.first else ', '}}{{z}}{%endfor%})</span>
           {%-endif%}
-        {%- if  r._inf or r._freq %}  
+        {%- if  r._inf or r._freq %}
       <span class="rattrs">[
           {%- if r._inf %}<span class="rinf">{{r|TALabbrs('RINF','_inf')|safe}}</span>{%endif-%}
           {{'/' if r._inf and r._freq else ''}}
@@ -330,7 +330,7 @@
                    set cls = ... if loop.index>5 ...
                    set dsp=(loop.index > 5)
                    if loop/index0 == 5
-                 in the statements below to the number desired.  Zero is a 
+                 in the statements below to the number desired.  Zero is a
                  valid value. #}
               {%- set cls = "hist_"+(e.id|string) if loop.index>5 else "" %}
               {%- set dsp = (loop.index>5) %}
@@ -378,7 +378,7 @@
         </div> {#- class="hist" #}
       {%endif%}{# etxt #}
                                                                           {#-#}
-    {% if e.id|d %} {#- Can't present alternate format links if there is no 
+    {% if e.id|d %} {#- Can't present alternate format links if there is no
                         id number (the case for new or updated entries being
                         shown by edconf.jinja.) #}
       <br><div class="notes">
