@@ -85,6 +85,7 @@ CGI_FILES = cgiinfo.py \
         edhelp.py \
         edhelpq.py \
         edsubmit.py \
+        jmapp.wsgi \
         srchform.py \
         srchformq.py \
         srchres.py \

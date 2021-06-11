@@ -6,7 +6,7 @@ with open ("README.md", "r") as fh:
 
 setuptools.setup (
         name="jmdictdb",
-        version="2020.06.01",
+        version="2021.06.01",
         author="Stuart McGraw",
         author_email="jmdictdb@mtneva.com",
         description="A Postgresql database, Python API and web CGI front-end"\
@@ -14,9 +14,12 @@ setuptools.setup (
         long_description=long_description,
         long_description_content_type="text/markdown",
         url="https://gitlab.com/yamagoya/jmdictdb",
-        packages=['jmdictdb', 'jmdictdb.pylib'],
-        package_data={'jmdictdb': ['tmpl/*.jinja', 'data/*.csv',
-                                   'data/dtd-*.xml', 'data/*.xsl']},
+        packages=['jmdictdb', 'jmdictdb.pylib', 'jmdictdb.views'],
+        package_data={'jmdictdb': ['tmpl/*.jinja',  # templates for CGI.
+                                   'tmpla/*.jinja', # templates for WSGI.
+                                   'data/*.csv',    # tag table files.
+                                   'data/dtd-*.xml',# DTD templates.
+                                   'data/*.xsl']},  # XSL for edict.
         zip_safe = False,
         classifiers=[
             "Programming Language :: Python :: 3",

@@ -36,12 +36,6 @@ from jmdictdb import srvlib, rest
 from jmdictdb.srvlib import vLogEntry, fv, fvn
 from jmdictdb.logger import L
 
-def main():
-        global Cfgfile
-        App.jinja_env.auto_reload = True
-        App.config['TEMPLATES_AUTO_RELOAD'] = True
-        App.run (host='0.0.0.0', debug=True)
-
 def app_config (app, cfgfile):
         app.session_cookie_name = 'jmapp'
         app.secret_key = 'secret'
@@ -54,8 +48,8 @@ def app_config (app, cfgfile):
         app.config['CFG'] = cfg
         jinja.init (jinja_env=app.jinja_env)
 
-App = flask.Flask (__name__, static_folder='./static',
-                             template_folder='./tmpl')
+App = flask.Flask (__name__, static_folder='/static',
+                             template_folder='tmpla')
 
 #print ("Using: %s" % jmcgi.__file__, file=sys.stderr)                 ##DEBUG
 if __name__ == '__main__': cfg_default = "../web/lib/cfgapp.ini"
@@ -149,7 +143,7 @@ def login():
 def cgiinfo():
         vLogEntry()
         from jmdictdb.views.cgiinfo import view
-        html = view (App.config, Rq.values)
+        html = view (App, Rq.values)
         return html
 
 @App.route ('/conj.py')
@@ -311,5 +305,3 @@ def userupd():
           # For non-Admin user, send them back to their own user page.
         else: redir_to = 'user'
         return Redirect (Url (redir_to, svc=G.svc, **data))
-
-if __name__ == '__main__': main()

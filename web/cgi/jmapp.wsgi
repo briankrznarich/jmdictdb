@@ -1,20 +1,24 @@
-# This is the wsgi shim between the app and the server.
+# This is the wsgi shim between web server server and the jmapp app.
 # The Apache server should be configured to point to this file
 # with something like the following in it's configuration file(s).
 #
-#  WSGIDaemonProcess jmapp processes=1 threads=5
-#  WSGIProcessGroup jmapp
-#  WSGIScriptAlias /jmapp /home/stuart/devel/jdb/jmapp/app/jmapp.wsgi
-#  <Directory /home/stuart/devel/jdb/jmapp/app/>
-#    Require all granted
-#    </Directory>
+#   WSGIDaemonProcess jmapp processes=2 threads=4 \
+#                       display-name=apache2-jmapp \
+#                       locale=en_US.UTF-8 lang=en_US.UTF-8
+#   WSGIProcessGroup jmapp
+#   WSGIScriptAlias /jmapp  <<directory>>\
+#                   process-group=jmapp
 #
-# The two instances of the directory:
-#   /home/stuart/devel/jdb/jmapp/app/
-# shown ABOVE should be changed to the directory where this
-# jmapp.wsgi file actually resides.
+# <<directory>> should be replaced the full path to this (jmapp.wsgi)
+# file, e.g., /srv/jmdictdb/cgi-bin/jmapp.wsgi.
+# Note that the directory must be configured in Apache to allow
+# access just like any other script directory to avoid a 403 (permission
+# denied) error.
 
-import sys, os
-appdir, _ = os.path.split (os.path.abspath(__file__))
-sys.path.insert (0, appdir)
-from jmapp import App as application
+# When mod_wsgi starts a jmapp Python process, it imports a callable
+# named "application" from us.  Our job is to provide an application
+# object for it to import.  We get one from the system-installed
+# jmdictdb package.
+
+import jmdictdb
+from jmdictdb.jmapp import App as application
