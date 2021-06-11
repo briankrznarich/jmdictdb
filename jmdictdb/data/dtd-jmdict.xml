@@ -131,7 +131,7 @@
 <!ELEMENT re_pri (#PCDATA)>
         <!-- See the comment on ke_pri above. -->
 <!--                                                                   -->
-<!ELEMENT sense (stagk*, stagr*, pos*, xref*, ant*, field*, misc*, s_inf*, lsource*, dial*, gloss*)>
+<!ELEMENT sense (stagk*, stagr*, pos*, xref*, ant*, field*, misc*, s_inf*, lsource*, dial*, gloss*, example*)>
         <!-- The sense element will record the translational equivalent
         of the Japanese word, plus other related information. Where there
         are several distinctly different meanings of the word, multiple
@@ -227,6 +227,19 @@
         be to indicate such things as level of currency of a sense, the
         regional variations, etc.
         -->
+<!ELEMENT example (ex_srce,ex_text,ex_sent+)>
+    <!-- The example elements contain a Japanese sentence using the term
+    associated with the entry, and one or more translations of that sentence.
+    Within the element, the ex_srce element will indicate the source of the
+    sentences (typically the sequence number in the Tatoeba Project), the
+    ex_text element will contain the form of the term in the Japanese
+    sentence, and the ex_sent elements contain the example sentences.
+    -->
+<!ELEMENT ex_srce (#PCDATA)>
+<!ELEMENT ex_text (#PCDATA)>
+<!ELEMENT ex_sent (#PCDATA)>
+<!ATTLIST ex_sent xml:lang CDATA "eng">
+<!ATTLIST ex_srce exsrc_type CDATA #IMPLIED>
 <!-- The following entity codes are used for common elements within the
 various information fields.
 -->
