@@ -69,7 +69,8 @@ CSS_DIR = $(WEBROOT)
 
 CSS_FILES = jmdict.css \
         status_maint.html \
-        status_load.html
+        status_load.html \
+        status_blocked.html
 WEB_CSS = $(addprefix web/,$(CSS_FILES))
 
 LIB_FILES = .htaccess \
