@@ -40,17 +40,28 @@ OPERATION
 =========
 
 Web access to the JMdictDB system can be suspended temporarily
-by creating a control file in the installed CGI directory named
-"status_maint" or "status_load".  If either file exists, any
-web access to a CGI script will result in a redirect to
-"status_maint.html" or "status_load.html" which present the
-user with a message that the system is unavailable due to
-maintenance or excessive load, respectively.
+by creating a control file in a directory designated as the
+status directory.  The location of the status directory is
+set in the configuration file by the STATUS_DIR setting.
+By default it is the CGI script directory.
 
-The directory in which the CGI scripts look for the control
-files can be set in the config.ini file.  The location of the
-html files is not customizable although you can of course
-modify their contents.
+The control files are named "status_maint", "status_load" or
+"status_blocked".  If either of the first two exist (contents
+are ignored), any web access to a CGI script will result in a
+redirect to the pages "status_maint.html" or "status_load.html"
+which present the user with a message that the system is
+unavailable due to maintenance or excessive load, respectively.
+
+If the "status_blocked" control file exists, it should contain
+ip addresses, one per line, and a redirect to the page
+"status_blocked.html" will be sent if the remote host's ip
+address matches one in the file.  Lines not matching an ip
+address are ignored as is any text after the first word on a
+line and may be used for comments.
+
+The names of the control files and the location of the html
+files are not customizable although you can modify the contents
+of the html files.
 
 It is up to you to create and and remove the control files as
 appropriate.

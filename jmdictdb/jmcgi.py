@@ -92,7 +92,8 @@ def parseform (readonly=False):
         errs=[]; sess=None; sid=''; cur=None; svc=None
         def_svc = cfg['web'].get ('DEFAULT_SVC', 'jmdict')
         if def_svc.startswith ('db_'): def_svc = def_svc[3:]
-        check_server_status (cfg.get ('web', 'STATUS_DIR'))
+        check_server_status (cfg.get ('web', 'STATUS_DIR'),
+                                      os.environ.get('REMOTE_ADDR'))
 
         form = cgi.FieldStorage()
         L('lib.jmcgi').debug("query_string: %s" % os.environ.get('QUERY_STRING'))
@@ -139,16 +140,33 @@ def parseform (readonly=False):
 
         return form, svc, dbg, cur, sid, sess, parms, cfg
 
-def check_server_status (status_file_dir):
+def check_server_status (status_file_dir, ipaddr):
         location = None
         sfd = status_file_dir
-        if os.access (os.path.join (sfd, 'status_maint'), os.F_OK):
+        if check_blocked (status_file_dir, ipaddr):
+            location = 'status_blocked.html'
+        elif os.access (os.path.join (sfd, 'status_maint'), os.F_OK):
             location = 'status_maint.html'
         elif os.access (os.path.join (sfd, 'status_load'), os.F_OK):
             location = 'status_load.html'
         if location:
             print ("Location: %s\n" % ('../' + location))
             sys.exit (0)
+
+def check_blocked (status_file_dir, ipaddr):
+        if not ipaddr: return False
+        try:
+            with open (os.path.join (status_file_dir, 'status_blocked')) as f:
+                lines = f.readlines()
+        except OSError: return False
+        for ln in lines:
+              # Comment lines allowed but need no special check since
+              # they won't match an IP address.
+              # Look at only the first word, allowing ip address to be
+              # followed by comment.
+            words = ln.strip().split()
+            if words and words[0] == ipaddr: return True
+        return False
 
 COOKIE_NAME = 'jmdictdb_sid'
 SESSION_TIMEOUT = '2 hour'
