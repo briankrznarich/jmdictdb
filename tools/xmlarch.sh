@@ -6,6 +6,16 @@
 # It may be run conveniently in a nightly cron script to monitor
 # an xml file and keep an ongoing history of DTD changes.
 #
+# NOTE: Before this script is run for the first time on a particular
+#   'xml-file', an initial copy of that file should be manually
+#   copied into the 'arch-dir' directory.
+#
+# WARNING: Because archive file copies are distinguished only by
+#   date (not time) in the filename, running this twice in the same
+#   day with a change to the monitored file in between will result
+#   in the archive copy and diff file of the first change being
+#   overwritten and lost.
+#
 # Usage:  xmlarch.sh arch-dir xml-file
 #   arch-dir -- Directory in which the saved .xml and .diff
 #     files will be kept.  A trailing slash is optional.  Use "."
@@ -24,13 +34,14 @@ distfile=$2       # The file being monitored.
 BASENAME=`basename $distfile`
 BASENAME="${BASENAME%.*}"
 
-  # Check the number of files present in the archive directory
-  # and warn if more than a fixed limit.  This is in case an
-  # error in this script results in excessively frequent archiving.
-  #FIXME: obviously this number should not be hardwired.
-filecnt=`ls -1 $archloc | wc -l`
-if [ $filecnt -gt 15 ]; then
-  echo "xmlarch.sh: Warning Will Robinson! $filecnt files present">&2; fi
+  # Generate a warning if there are more than 5 saved files dated within
+  # the last 8 days.  This is in case an error in this script results in
+  # excessively frequent archiving.
+filecnt=`find -mtime -8 -path "${archloc}/${BASENAME}-*.xml" \
+           -o -mtime -8 -path "${archloc}/${BASENAME}-*.xml.gz" \
+         | wc -l`
+if [ $filecnt -gt 5 ]; then
+  echo "xmlarch.sh: Warning Will Robinson! too many ($filecnt) files present">&2; fi
 
   # Extract the DTD from the latest distribution file.
 dtdlen=`grep -n ']>' $distfile | sed -s 's/:.*//'`
