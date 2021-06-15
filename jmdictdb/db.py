@@ -276,6 +276,17 @@ def make_pguri (connargs):
                                     query,''))
         return uri
 
+  # Note: psycopg2 contains some attributes and functions related
+  # to Postgresql connection strings (as an alternative to URIs).
+  #   extensions.make_dsn() -- Turn a set of connection parameters
+  #     into a connection string.
+  #     arguments into a conection string.
+  #   extensions.parse_dsn() -- Turn a connection string into a
+  #     set of connection parameters.
+  #   Connection.get_dsn_parameters() -- Return a connection's
+  #     connection parameters.
+  #   Connection.dsn -- Return a connection's connection string.
+
 def require (dbconn, want, table='db', ret_dbver=False):
         ''' Given a list of update id numbers, return a subset of
         those numbers that are *not* present in the "db" table.

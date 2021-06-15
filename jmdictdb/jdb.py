@@ -2103,73 +2103,13 @@ def dbrequire (dbconn, require):
         if missing: raise KeyError ("Database missing required update(s): %s"
                                     % ','.join(["%06.6x"%r for r in missing]))
 
-import urllib.parse
-
-def parse_pguri (uri_string, allow_params=False):
-        '''
-        Parse a Postgresql URI connection string and return a dict() suitable
-        for use as the **kwds argument to psycopg2,connect() or jdb.dbOpen()
-        functions.
-        For URI syntax see the Postgresql libpq docs for "Connection URIs" in:
-          http://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-PARAMKEYWORDS
-
-        Examples:
-          postgresql:///jmdict
-          pg://localhost:5678/jmdict
-        (Note: Allowing "pg" as an abbreviation for "postgresql" on the URI
-        scheme designator is our own local enhancement.)
-
-        If <allow_params> is true, any query string in the URI will also be
-        parsed and the keyword,value pairs included in the output dict and
-        will subsequently be interpreted as additional Postgresql libpq
-        keyword,value pairs when passed to Pssycopg2's connect() function
-        bt dbOpen().  This in general should only be done if the URI is
-        from a trusted source as such parameters can affect things like
-        connection timeouts and ssl modes.
-        If <allow_params> is false, any query string part of the URI will be
-        ignored.
-        '''
-
-        result = urllib.parse.urlsplit (uri_string)
-        query = urllib.parse.parse_qs (result.query)
-        scheme = result.scheme
-        if not scheme: scheme = 'postgresql'
-        if scheme not in ('pg', 'postgresql','postgres'):
-            raise ValueError ("Bad scheme name ('%s') in URI: %s" % (result.scheme, uri_string))
-          # Add query items to results dict first so that uri parameters added
-          #  sencond will overwrite if there are duplicates.
-        connargs = query if allow_params else {}
-        if result.username: connargs['user']     = result.username
-        if result.password: connargs['password'] = result.password
-        if result.path:     connargs['database'] = result.path.lstrip('/')
-        if result.hostname: connargs['host']     = result.hostname
-        if result.port:     connargs['port']     = result.port
-        return connargs
-
-def make_pguri (connargs):
-        '''
-        Convert dict of connection arguments such as is returned from jdb.parse_pguri()
-        into a URI string.   The result will always have a scheme, "postgresql:"
-        '''
-        # Postgresql URI syntax:
-        #   postgresql://[user[:password]@][netloc][:port][/dbname][?param1=value1&...]
-
-        # Why, oh why, does urllib not provide better support for this??
-        # Its urlunsplit() function does not seem to have any way to accept username
-        # password, port, etc.
-        auth = connargs.get('user','')
-        if auth and connargs.get ('password'): auth += ':' + connargs['password']
-        host = connargs.get('host','')
-        if connargs.get('port'): host += ':' + str(connargs['port'])
-        if auth: host = auth + '@' + host
-        q = []
-        for k,v in connargs.items():
-            if k in ('user','password','database','host','port',): continue
-            if not isinstance (v, (list,tuple)): v = [v]
-            for vx in v: q.append ("%s=%s" % (k,vx))
-        query = '&'.join (q)
-        uri = urllib.parse.urlunsplit (('postgresql',host,connargs.get('database',''),query,''))
-        return uri
+  # The functions parse_pguri() and make_pguri() were moved to the 'db'
+  # module.  We keep the function signatures here as comments in case
+  # someone greps for them.
+parse_pguri = db.parse_pguri
+# def parse_pguri (uri_string, allow_params=False):
+make_pguri = db.make_pguri
+# def make_pguri (connargs):
 
 def dbexecute (cur, sql, sql_args):
         # Use this funtion rather than cur.execute() directly.
