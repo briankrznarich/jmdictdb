@@ -4,13 +4,19 @@
 # and content as the repacement file.
 
 usage() {
-    echo "$0 [-m mode][-v][-h] -t target-dir replacement-file ..."; }
+    echo \
+"$0 [-m mode][-n][-v][-h] -t target-dir replacement-file ...
+  -m mode -- The chmod mode to set the installed file to.
+  -n -- No action: print the command but don't actually execute it.
+  -v -- Verbose: print names of files skipped in addition to installed.
+  -h -- Print this usage message and exit."; }
 
-while getopts "m:t:vh" opt; do
+while getopts "m:t:nvh" opt; do
     case "$opt" in
     h|\?) usage; exit 0 ;;
     t)  targdir=$OPTARG ;;
     m)  mode=$OPTARG ;;
+    n)  noaction=1 ;;
     v)  verbose=1 ;; esac
     done
 shift $((OPTIND-1))
@@ -29,7 +35,7 @@ for src in $*; do
         elif ! diff -q $targ $src >/dev/null; then inst=yes; fi; fi
     if [ "$inst" = yes ]; then
         echo  "install -pm $mode -t $targdir $src"
-        install -pm $mode -t $targdir $src
+        if [ -z "$noaction" ]; then install -pm $mode -t $targdir $src; fi
     elif [ -n "$verbose" ]; then
         echo "skipping $src"
         fi
