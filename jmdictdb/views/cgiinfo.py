@@ -17,7 +17,7 @@
 # A restart of the Python subinterpreter can be requested without a full
 # webserver restart by 'touch'ing the jmapp.wsgi file.
 
-import sys, os, pdb
+import sys, configparser, html, os, pdb
 try: import pkgpath.py  # Make jmdictdb package available on sys.path.
 except ImportError: pass
 
@@ -45,14 +45,18 @@ def view (app, params):
         exdata.append (('Pkg location',
                      os.path.dirname (os.path.abspath (jdb.__file__))))
         exdata.append (('sys.path', '%r' % sys.path))
-        ex_rows = '\n'.join ([row_tmpl % (key.replace(' ','&nbsp;'), value)
+        ex_rows = '\n'.join ([row_tmpl % (key.replace(' ','&nbsp;'), html.escape(value))
                               for key,value in exdata])
 
         cfgdata, cfg = [], app.config['CFG']
-        cfgdata.append (('config dir', cfg.get ('status', 'cfg_dir')))
-        cfgdata.append (('config files',
-                        cfg.get ('status', 'cfg_files').replace('\n','<br>')))
-        cfg_rows = '\n'.join ([row_tmpl % (key.replace(' ','&nbsp;'), value)
+        if True:  # Maintain same indent as cgi version to reduce diff noise.
+            cfgdata.append (('config dir', cfg.get ('status', 'cfg_dir')))
+            cfgdata.append (('config files',
+                            cfg.get ('status', 'cfg_files')))
+            cfgdata.append (cfg_get (cfg, 'logging', 'LOG_FILENAME'))
+            cfgdata.append (cfg_get (cfg, 'web', 'STATUS_DIR'))
+        cfg_rows = '\n'.join ([row_tmpl % (key.replace(' ','&nbsp;'),
+                                           html.escape(value).replace("\n","<br>"))
                               for key,value in cfgdata])
 
         appdata = []
@@ -65,12 +69,18 @@ def view (app, params):
         app_rows = '\n'.join ([row_tmpl % (key.replace(' ','&nbsp;'), value)
                               for key,value in appdata])
 
-        env_rows = '\n'.join ([row_tmpl % (key.replace(' ','&nbsp;'), value)
+        env_rows = '\n'.join ([row_tmpl % (key.replace(' ','&nbsp;'), html.escape(value))
                               for key,value in sorted (os.environ.items())])
 
-        html = Page % (ex_rows, cfg_rows, app_rows, env_rows)
-        return html
+        htmltxt = Page % (ex_rows, cfg_rows, app_rows, env_rows)
+        return htmltxt
 
+def cfg_get (cfg, section, key):
+        tag = "[%s] %s" % (section, key)
+        try: value = cfg.get (section, key)
+        except (configparser.NoSectionError, configparser.NoOptionError) as e:
+            return tag, str(e)
+        return tag, value
 
 Page = '''<!DOCTYPE html>
 <html lang="en">

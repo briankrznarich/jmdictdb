@@ -18,7 +18,7 @@
 # A restart of the Python subinterpreter can be requested without a full
 # webserver restart by 'touch'ing the jmapp.wsgi file.
 
-import sys, html, os, pdb
+import sys, configparser, html, os, pdb
 try: import pkgpath.py  # Make jmdictdb package available on sys.path.
 except ImportError: pass
 
@@ -47,10 +47,15 @@ def main():
         cfgdata = []
           # The canonical definition the CGI config file location is
           # defined by the variable CONFIG_FILE in module jmcgi.
-        cfg = config.cfgRead (jmcgi.CONFIG_FILE)
-        cfgdata.append (('config dir', cfg.get ('status', 'cfg_dir')))
-        cfgdata.append (('config files',
-                        cfg.get ('status', 'cfg_files')))
+        try: cfg = config.cfgRead (jmcgi.CONFIG_FILE)
+        except Exception as e:
+            cfgdata.append ((jmcgi.CONFIG_FILE, str(e)))
+        else:
+            cfgdata.append (('config dir', cfg.get ('status', 'cfg_dir')))
+            cfgdata.append (('config files',
+                            cfg.get ('status', 'cfg_files')))
+            cfgdata.append (cfg_get (cfg, 'logging', 'LOG_FILENAME'))
+            cfgdata.append (cfg_get (cfg, 'web', 'STATUS_DIR'))
         cfg_rows = '\n'.join ([row_tmpl % (key.replace(' ','&nbsp;'),
                                            html.escape(value).replace("\n","<br>"))
                               for key,value in cfgdata])
@@ -60,6 +65,13 @@ def main():
 
         htmltxt = Page % (ex_rows, cfg_rows, env_rows)
         print ("Content-type: text/html\n\n", htmltxt)
+
+def cfg_get (cfg, section, key):
+        tag = "[%s] %s" % (section, key)
+        try: value = cfg.get (section, key)
+        except (configparser.NoSectionError, configparser.NoOptionError) as e:
+            return tag, str(e)
+        return tag, value
 
 Page = '''<!DOCTYPE html>
 <html lang="en">
