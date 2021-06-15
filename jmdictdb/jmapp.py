@@ -6,26 +6,23 @@
 # Please see the installation documention for information about
 # configuring a WSGI webserver.
 #
-# This file can be run as a standalone program in which case it will
-# use Flask's built-in http server running in debug mode.  This is
-# only appropriate for development in a secure environment.
+# For production use, the App object created here is imported by a WSGI
+# server and the server will call its methods in response to http requests
+# it receives.  For development it can be run with the Flask debug server
+# by the program bin/run-jmapp.py.
 #
-# For production use, this file is imported by a WSGI server and
-# the server will call its methods in response to http requests
-# it receives.
+# Note that a lot of what happens here (such as reading the configuration
+# files) happens when this module is imported.  An environment variable,
+# JMAPP_CFGFILE, *MUST* be defined and point to a readable configuration
+# file at import time.  Both cgi/jmapp.wsgi (run by Apache/mod_wsgi) and
+# bin/run-jmapp.py (runs the Flask debug server) do so.
 #
-# In both cases one of the first things jmapp.py does is to read the
-# configuration files(s) since through them other resources are located.
 # Please see installation documentation and the source files web/lib/-
-# config-sample.ini and config-pvt-sample.ini for details on their
-# contents.  The location of the operational files may be set via the
-# environment variable: JMAPP_CFGDIR.  If this is not set the default
-# location is "../web/lib/" when running jmapp standalone (i.e. with
-# Flask's debug webserver) or "/usr/local/etc/jmdictdb/" when run via
-# a WSGI server.
+# config-sample.ini and config-pvt-sample.ini for details on the
+# configuration file format and contents.
 
 import sys, os, io, inspect, pdb
-_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
+#_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
 
 import flask
 from flask import Flask, request as Rq, session as Session, g as G, \
@@ -40,21 +37,26 @@ def app_config (app, cfgfile):
         app.session_cookie_name = 'jmapp'
         app.secret_key = 'secret'
         # print ("Loading config file: %s" % cfgfile, file=sys.stderr) ##DEBUG
+          # We may get an OSError exception if the config file given by
+          # environment variable JMAPP_CFGFILE can not be opened for some
+          # reason.  We let the exception happen with th assumption if will
+          # end up in the webserver's log file.
         try: cfg = jmcgi.initcgi (cfgfile)
-        except IOError:
-              #FIXME: this is not very graceful...
-            print ("Unable to load config file(s)", file=sys.stderr)
-            flask.abort (500)
+        except OSError as e:
+            raise RuntimeError ("Unable to read configuration file")
         app.config['CFG'] = cfg
         jinja.init (jinja_env=app.jinja_env)
 
-App = flask.Flask (__name__, static_folder='/static',
+App = flask.Flask (__name__, static_folder='../web',
                              template_folder='tmpla')
 
-#print ("Using: %s" % jmcgi.__file__, file=sys.stderr)                 ##DEBUG
-if __name__ == '__main__': cfg_default = "../web/lib/cfgapp.ini"
-else: cfg_default = "/usr/local/etc/jmdictdb/cfgapp.ini"
-cfgfile = os.environ.get('JMAPP_CFGFILE') or cfg_default
+  # Environment variable identifying the config file MUST be set
+  # when this module is imported.
+try: cfgfile = os.environ['JMAPP_CFGFILE']
+except KeyError:
+    msg = "The JMAPP_CFGFILE environment variable was not set"
+    raise RuntimeError (msg) from None
+
 app_config (App, cfgfile)
 
 def render (tmpl, **data):
@@ -99,7 +101,7 @@ def before_request():
         if Rq.endpoint and Rq.endpoint in ('cgiinfo'): return
         G.cfg = App.config['CFG']
         if not Rq.path.startswith ('/static'):
-            down = srvlib.check_status (G.cfg)
+            down = srvlib.check_status (G.cfg, Rq.remote_addr)
             if down: return Redirect (Url('static', filename=down))
         G.svc = fv ('svc') or G.cfg.get('web','DEFAULT_SVC') or 'jmdict'
         if Rq.endpoint in ('login','logout','static'): return

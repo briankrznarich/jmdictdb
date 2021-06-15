@@ -100,16 +100,51 @@ def reshape (array, ncols, default=None):
             result[-1].extend ([default]*(ncols - len(result[-1])))
         return result
 
-def check_status (cfg):
-        # Server will respond with a "excessive load" or "maintence"
-        # page if the files "status_maint" or "'status_load" exist
-        # in the directory named in the configuration file key
-        # [web]/STATUS_DIR.
+def check_status (cfg, ipaddr):
+        '''-------------------------------------------------------------------
+        Checks the operator-controlled status of the server by checking for
+        the existence of a "flag" file and if present return the name of a
+        status html page that the caller should return to the requestor
+        rather than the originally requested page.
+        The flag files are looked for in the status file directory defined
+        in the  configuration file by the setting [web]/STATUS_DIR.
+        Three status conditions are possible:
+          _Condition_                  _Status file name_
+          Down for maintenance         status_maint
+          Down due to excessive load   status_load
+          IP address blocked           status_blocked
+        In the case of the first two files, the presence of the file is
+        sufficient to trigger the return of the corresponding status page.
+        For the third, the 'status_blocked' file is read and if the
+        requestor's IP address appears in it as the first white-space
+        delimited word on a line, the ip_blocked page will be returned.
+        Comments lines may be included in the 'status_blocked' file as
+        long as their first word in not an ip address, and comments can
+        follow ip addresses since only the first word on a line is matched.
+        If none of the three conditions obtain, None is returned.
+        -------------------------------------------------------------------'''
 
-        sfd = cfg.get ('web', 'STATUS_DIR')
+        sfd = cfg.get ('web', 'STATUS_DIR')  # Status file directory.
         page = None
-        if os.access (os.path.join (sfd, 'status_maint'), os.F_OK):
+        if check_blocked (sfd, ipaddr):
+            page = 'status_blocked.html'
+        elif os.access (os.path.join (sfd, 'status_maint'), os.F_OK):
             page = 'status_maint.html'
         elif os.access (os.path.join (sfd, 'status_load'), os.F_OK):
             page = 'status_load.html'
         return page
+
+def check_blocked (sfd, ipaddr):
+        if not ipaddr: return False
+        try:
+            with open (os.path.join (sfd, 'status_blocked')) as f:
+                lines = f.readlines()
+        except OSError: return False
+        for ln in lines:
+              # Comment lines allowed but need no special check since
+              # they won't match an IP address.
+              # Look at only the first word, allowing ip address to be
+              # followed by comment.
+            words = ln.strip().split()
+            if words and words[0] == ipaddr: return True
+        return False
