@@ -101,7 +101,7 @@ def before_request():
         if Rq.endpoint and Rq.endpoint in ('cgiinfo'): return
         G.cfg = App.config['CFG']
         if not Rq.path.startswith ('/static'):
-            down = srvlib.check_status (G.cfg)
+            down = srvlib.check_status (G.cfg, Rq.remote_addr)
             if down: return Redirect (Url('static', filename=down))
         G.svc = fv ('svc') or G.cfg.get('web','DEFAULT_SVC') or 'jmdict'
         if Rq.endpoint in ('login','logout','static'): return
