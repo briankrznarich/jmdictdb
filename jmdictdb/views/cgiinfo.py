@@ -38,11 +38,14 @@ def view (app, params):
 
         row_tmpl = "    <tr><td>%s</td><td>%s</td></tr>"
 
+  # NOTE: Be mindful of the distinction between cfg.get()
+  # and cfg_get() below.
+
         exdata = []
         exdata.append (('cwd', os.getcwd()))
-        exdata.append (('View location',
+        exdata.append (('view location',
                      os.path.dirname (os.path.abspath (__file__))))
-        exdata.append (('Pkg location',
+        exdata.append (('pkg location',
                      os.path.dirname (os.path.abspath (jdb.__file__))))
         exdata.append (('sys.path', '%r' % sys.path))
         ex_rows = '\n'.join ([row_tmpl % (key.replace(' ','&nbsp;'), html.escape(value))
@@ -55,6 +58,7 @@ def view (app, params):
                             cfg.get ('status', 'cfg_files')))
             cfgdata.append (cfg_get (cfg, 'logging', 'LOG_FILENAME'))
             cfgdata.append (cfg_get (cfg, 'web', 'STATUS_DIR'))
+            cfgdata.extend (cfg_svcs (cfg))
         cfg_rows = '\n'.join ([row_tmpl % (key.replace(' ','&nbsp;'),
                                            html.escape(value).replace("\n","<br>"))
                               for key,value in cfgdata])
@@ -82,28 +86,54 @@ def cfg_get (cfg, section, key):
             return tag, str(e)
         return tag, value
 
+def cfg_svcs (cfg):
+        results = [];  warns = []
+        default_svc = cfg.get ('web', 'DEFAULT_SVC')
+        results.append (('[web] DEFAULT_SVC', default_svc))
+        svcs = [x[3:] for x in cfg.sections() if x.startswith ('db_')]
+          # Report if 'db_session is missing but don't explicitly report
+          # its presence.
+        if 'session' in svcs: svcs.remove ('session')
+        else: warns.append (('WARNING', "'session' not in svc's"))
+        if default_svc not in svcs:
+            warns.append (('WARNING', "default svc not in svc's"))
+        results.append (("services", (', '.join(svcs))))
+        return results + warns
+
+  # Don't forget to double "%" characters below.
 Page = '''<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <title>JMdictDB - Configuration details</title>
-  <style>.err {color:red;} td {vertical-align: top;} .pre {white-space: pre;}</style>
+  <style>
+    body         {font-family: arial;}
+    .item        {background: #E8FFF0;
+                 border-style: solid; border-width: thin;
+                 margin: 5px; padding: 10px}
+    .notes      {font-size: 75%%;}
+    .err {color:red;} td {vertical-align: top;} .pre {white-space: pre;}
+    </style>
   </head>
 <body>
   <p>Execution info:
-  <table border=1>
+  <table class="item">
     %s
     </table>
   <p>Config info:<br>
-  <table border=1>
+  <table class="item">
     %s
     </table>
+    <span class="notes">Note: No <b>LOG_FILENAME</b> value means log
+      output to stderr.</span>
   <p>App info:<br>
-  <table border=1>
+  <table class="item">
     %s
     </table>
+    <span class="notes">Note: <b>static_folder</b> is not revevant if
+      static files are being served directly by the web server.</span>
   <p>Environment info:<br>
-  <table border=1>
+  <table class="item">
     %s
     </table>
 '''
