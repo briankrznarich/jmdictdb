@@ -137,7 +137,7 @@ def view (svc, cfg, user, cur, parms):
               # though no entries were given and displaying a blank edit
               # form, show an error message.
             errs.append ("No matching entries were found")
-        if errs: jmcgi.err_page (errs)
+        if errs: return {}, errs
 
         srcs = sorted (jdb.KW.recs('SRC'), key=lambda x: x.kw.lower())
         #srcs.insert (0, jdb.Obj (id=0, kw='', descr=''))

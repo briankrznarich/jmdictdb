@@ -60,7 +60,7 @@ def view (svc, cfg, user, cur, form):
         name    = submit.clean (url_str ('name', form))
         email   = submit.clean (url_str ('email', form))
 
-        if errs: jmcgi.err_page (errs)
+        if errs: return {}, errs
 
           # Parse the entry data.  Problems will be reported
           # by messages in 'perrs'.  We do the parse even if
@@ -183,7 +183,7 @@ def view (svc, cfg, user, cur, form):
         entr = jdb.add_hist (entr, pentr, user.userid if user else None,
                              name, email, comment, refs,
                              entr.stat==KW.STAT['D'].id)
-        if errs: jmcgi.err_page (errs)
+        if errs: return {}, errs
         if not delete:
             check_for_errors (entr, errs)
             if errs: return {}, errs
