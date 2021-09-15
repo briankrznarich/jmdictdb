@@ -43,6 +43,8 @@ def main():
                      os.path.dirname (os.path.abspath (__file__))))
         exdata.append (('pkg location',
                      os.path.dirname (os.path.abspath (jdb.__file__))))
+        exdata.append (('pkg version',
+                     getattr (jmdictdb, '__version__', '<none>')))
         exdata.append (('sys.path', '%r' % sys.path))
         ex_rows = '\n'.join ([row_tmpl % (key.replace(' ','&nbsp;'), html.escape(value))
                               for key,value in exdata])

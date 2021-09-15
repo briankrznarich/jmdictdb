@@ -146,6 +146,7 @@ install_: install-pkg install-web install-cmds
 #       in ~/.local/lib/.
 install-pkg:
 	@echo "Installing the jmdictdb python package..."
+	$(PYTHON) tools/upd-version.py
 	$(PYTHON) -m pip install $(PIPOPTS) --upgrade --no-deps .
 
 #------ Install command scripts to a bin/ location ---------------------

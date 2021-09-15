@@ -8,6 +8,7 @@ __pycache__/
 /data
 /build/
 /dist/
+/jmdictdb/__version__.py
 /jmdictdb.egg-info/
 /jmdictdb/parser.out
 /tests/tmp/
