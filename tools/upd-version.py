@@ -3,21 +3,23 @@
 # Set the JMdictDB package version number.
 #
 # This program will set the version number of the jmdictdb Python
-# package by writing it into jmdictdb/__version__.py.  The version
-# number is derived from the date and hash of the Git HEAD commit.
-# It is a text string with four "."-separated parts having the
-# format: "YY.MM.DD.vxxxxxxx" where YY, MM, DD are from the date
-# of the commit, "v" is a literal "v" character and "xxxxxxx" is
-# the 7-character hexadecimal commit hash.  It should be run to
-# update the version number before the JMdictDB package is built
-# or installed.
+# package by writing it into jmdictdb/__version__.py.  It should be
+# run to update the version number before the JMdictDB package is
+# built or installed.
+#
+# The version number is derived from the date and hash of the Git HEAD
+# commit.  It is a string having the format: "YYMMDD+xxxxxxx" where YY,
+# MM, DD are from the date of the commit and "xxxxxxx" is the 7-character
+# hexadecimal commit hash.  This format is intended to be compatible
+# with Python's PEP-440 and with local convention for identifying Git
+# revisions.
 #
 # This program may be used as Git post-commit and/or post-checkout
-# hook by creating symlink(s) to it in .git/hooks/.  However, this 
-# is likely to to be unreliable in many cases, eg when a branch or
-# revision in which this program doesn't exist is checked out and
-# so one should still check or update the version number before 
-# relying on it to be accurate.
+# hook by creating symlink(s) to it in .git/hooks/.  However, this is
+# likely to to be unreliable in some cases, eg when a branch or revision
+# in which this program doesn't exist is checked out and so one should
+# still check or update the version number before relying on it to be
+# accurate.
 #
 # The JMdictDB package should only be built or installed when there
 # are no uncommited changes; any uncommitted changes will be included
@@ -32,7 +34,7 @@ def main():
         upd_version (locate_vfile(), git_version())
 
 def git_version ():         # Determine the version number.
-        cmd = 'git log --date=format:%y.%m.%d --pretty=format:"%cd.v%h"'\
+        cmd = 'git log --date=format:%y%m%d --pretty=format:"%cd+%h"'\
               '|head -1'
         version = subprocess.check_output (cmd, shell=True).strip()
         return version.decode ('utf-8')
