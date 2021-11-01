@@ -169,12 +169,13 @@ def check_blocked (status_file_dir, ipaddr):
         return False
 
 COOKIE_NAME = 'jmdictdb_sid'
-SESSION_TIMEOUT = '2 hour'
+SESSION_TIMEOUT = 4 * 60   # In minutes; used in dblogin(), db_validate_sid(),
+                           #  db_del_old_sessions(), set_sid_cookie() below.
 
 def get_session (cur, action=None, sid=None, uname=None, pw=None):
         # Do the authentication action specified by 'action':
         #  None -- Lookup 'sid' and return a session if there is one.
-        #  "login" -- Create a new session authenicating with 'uname'
+        #  "login" -- Create a new session authenticating with 'uname'
         #       and 'pw'.  Return the session and its sid.
         #  "logout" -- Lookup session 'sid' and delete it.
         #
@@ -252,7 +253,7 @@ def dblogin (cur, userid, password):
         cur.execute (sql, (userid,))
         sid = cur.fetchone()[0]
         cur.connection.commit()
-        L('lib.jmcgi.dblogin').debug("%s: new session %s" % (userid, sid))
+        L('lib.jmcgi.dblogin').debug("%s: new session %s" % (userid,sid))
         sess = db_validate_sid (cur, sid)
         return sid, sess
 
@@ -266,6 +267,7 @@ def dblogout (cur, sid):
               "(SELECT s2.id FROM sessions s1"\
               " JOIN sessions s2 ON s1.userid=s2.userid"\
               " WHERE s1.id=%s)"
+        L('lib.jmcgi.dblogout').debug("sql=%s; sid=s1.id=%s" % (sql,sid))
         cur.execute (sql, (sid,))
         cur.connection.commit()
 
@@ -275,7 +277,7 @@ def db_validate_sid (cur, sid):
         sql = "SELECT s.id,s.userid,s.ts,u.fullname,u.email,u.priv" \
               " FROM sessions s JOIN users u ON u.userid=s.userid" \
               " WHERE id=%%s AND NOT u.disabled" \
-              "  AND (NOW()-ts)<'%s'::INTERVAL" \
+              "  AND (NOW()-ts)<'%s M'::INTERVAL" \
               % SESSION_TIMEOUT
         rs = jdb.dbread (cur, sql, (sid,))
         L('lib.jmcgi.db_validate_sid').debug("validating sid %s, result=%s" % (sid, len(rs)))
@@ -285,13 +287,15 @@ def db_validate_sid (cur, sid):
 def db_update_sid_ts (cur, sid):
         # Update the last-used timestamp for 'sid'.
         sql = "UPDATE sessions SET ts=DEFAULT WHERE id=%s"
+        L('lib.jmcgi.db_update_sid_ts').debug("sql=%s, id=sid=%s" % (sql,sid))
         cur.execute (sql, (sid,))
         cur.connection.commit()
 
 def db_del_old_sessions (cur):
         # Delete all sessions that are expired, for all users.
-        sql = "DELETE FROM sessions WHERE (NOW()-ts)>'%s'::INTERVAL" \
+        sql = "DELETE FROM sessions WHERE (NOW()-ts)>'%s M'::INTERVAL" \
                % SESSION_TIMEOUT
+        L('lib.jmcgi.db_del_old_sessions').debug("sql=%s" % (sql,))
         cur.execute (sql)
 
 def get_sid_from_cookie ():
@@ -310,8 +314,15 @@ def set_sid_cookie (sid, delete=False):
 
         c = http.cookies.SimpleCookie()
         c[COOKIE_NAME] = sid
-        c[COOKIE_NAME]['max-age'] = 0 if delete else 1*60*60
-        print (c.output())
+          # SESSION_TIMEOUT is in minutes but cookie needs time in seconds.
+        c[COOKIE_NAME]['max-age'] = 0 if delete else 60*SESSION_TIMEOUT
+          # Python earlier than 3.8 does not recognise the 'samesite' cookie
+          # attribute and will throw a CookieError if we try to add it as
+          # we added "max-age" above.  So instead, tack the appropriate text
+          # onto the end of the cookie header line before outputting it.
+        cookie_hdr = c.output() + "; SameSite=Strict"
+        L('lib.jmcgi.set_sid_cookie').debug("cookie=%s" % cookie_hdr)
+        print (cookie_hdr)
 
 def is_editor (sess):
         """Return a true value if the 'sess' object (which may be None)
