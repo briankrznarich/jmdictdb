@@ -47,8 +47,8 @@ def get_user (svc, session):
         u = session.get ('user_' + svc)
         if not u: return None
           # Convert the user info which is stored as a dict in the session
-          # object back to a DbRoe object since we still use former cgi code
-          # (e.g., jmcgi.is_editor()) tht expects a DbRow, not a dict.
+          # object back to a DbRow object since we still use former cgi code
+          # (e.g., jmcgi.is_editor()) that expects a DbRow, not a dict.
         userobj = db.DbRow (u)
         return userobj
 

@@ -12,7 +12,7 @@
 -- with insuffcient privilege.
 
 \set ON_ERROR_STOP
-\set updateid '''abd59d'''
+\set updateid '''04f177'''
 
 -- Database update table (see comments in mktables.sql).
 CREATE TABLE db (
@@ -42,7 +42,7 @@ CREATE TABLE sessions (
           translate (encode (gen_random_bytes (12), 'base64'), '+/', '-_'),
         userid VARCHAR(64)
           REFERENCES users(userid) ON DELETE CASCADE ON UPDATE CASCADE,
-        ts TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
+        ts TIMESTAMP DEFAULT NOW(),
         svc VARCHAR(64) DEFAULT NULL,
         state JSONB DEFAULT NULL);
 CREATE INDEX sessions_userid ON sessions(userid);
