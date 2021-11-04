@@ -1,7 +1,7 @@
 # Copyright (c) 2006-2014 Stuart McGraw
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-import sys, os, os.path, random, re, datetime, operator, csv, json
+import sys, os, os.path, random, re, datetime, operator, csv, json, html
 from time import time
 from collections import defaultdict
 from jmdictdb import db, fmtxml
@@ -517,11 +517,13 @@ def mup (attr, parents, pks, childs, fks, pattr=None):
 #-------------------------------------------------------------------
 
 def freq2txts (freqs, tt=False):
+          #FIXME: we really shouldn't be futzing with html in this module.
         flist = []
         for f in freqs:
             kwstr, descr = KW.FREQ[f.kw].kw, KW.FREQ[f.kw].descr
             fstr = ('%s%02d' if kwstr=='nf' else '%s%d') % (kwstr, f.value)
-            if tt: fstr = '<span class="abbr" title="%s">%s</span>' % (descr, fstr)
+            if tt: fstr = '<span class="abbr" title="%s">%s</span>'\
+                          % (html.escape (descr,quote=True), fstr)
             if fstr not in flist: flist.append (fstr)
         return sorted (flist)
 
