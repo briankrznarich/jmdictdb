@@ -233,9 +233,12 @@ def srchres():
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
             return render ('error.jinja', errs=errs, cssclass='errormsg')
-        if len(data['results']) == 1 and Rq.args.get('p0',0,type=int)==0:
+        if len(data['results']) == 1 and Rq.args.get('p0',0,type=int)==0 \
+            and Rq.args.get('srchres',0,type=int)==0:
               # Show the entry itself rather than search results if there
-              # is only one result *and* this is the first page.
+              # is only one result *and* this is the first page *and* the
+              # url parameter "srchres" (used to force showing the srchres
+              # page even if only one result) is not set.
             return Redirect (Url ('entr', e=data['results'][0].id))
         return render ("srchres.jinja", this_page=path(), **data)
 
