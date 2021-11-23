@@ -129,7 +129,7 @@
       <form action="edsubmit.py" method="{{'get' if dbg|d else 'post'}}">
         {%+ if svc|d %}<input type="hidden" name="svc" value="{{svc}}">{% endif %}
         {%+ if sid|d %}<input type="hidden" name="sid" value="{{sid}}">{% endif %}
-        <input type="hidden" name="entr"value="{{serialized}}">
+        <input type="hidden" name="entr" value="{{serialized}}">
         {%+ if dbg|d %}<input type="hidden" name="dbg" value="1">{% endif %}
         <input type="Submit" value="Submit">
         {%- if disp %}
