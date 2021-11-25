@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.5">
+<title>November 2021 Upgrade</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+</head>
+<body class="article">
+<div id="header">
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_november_2021_upgrade">November 2021 Upgrade</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_instructions_for_updating_a_production_jmdictdb_server">Instructions for updating a production JMdictDB server</h3>
+<div class="paragraph">
+<p>This document provides instructions to configure an existing JMdictDB
+site to utilize the new WSGI/Flask framework backend.  If you are
+installing JMdictDB for the first time please see
+<a href="INSTALL.html">INSTALL.html</a> instead.  Please note that the CGI
+backend remains fully functional for now but is deprecated and will
+be removed in a future update.</p>
+</div>
+<div class="paragraph">
+<p>With this update:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The CGI pages will continue working unchanged at their current
+URLs.  Access to the WSGI-served pages is provided by a different
+set of URLs.  (Note that logins are not shared, being logged in
+on a CGI page will not make you logged in on a WSGI page.)</p>
+</li>
+<li>
+<p>The WSGI code uses the same page templates and same "guts" code
+as the CGI pages; pages served via WSGI should look and act
+identically to the CGI versions.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>With CGI, when an HTTP request arrives at the web server the server
+starts a new instance of the Python interpreter to run the CGI script
+that handles that particular kind of request.  Because Python is a
+large, resource hungry program, starting it anew for every request
+is expensive in terms of both time and resources.</p>
+</div>
+<div class="paragraph">
+<p>With WSGI, a Python interpreter running the Flask framework is
+started when the web server starts.
+<sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="#_footnote_1" title="View footnote.">1</a>]</sup>
+Each incoming HTTP request is handled by, in effect, calling a
+function in the already running Python process which is much faster
+and less resource hungry than starting a new Python process each
+time.</p>
+</div>
+<div class="paragraph">
+<p>Additionally, the Flask web framework allows simplifying the
+JMdictDB server code and improving its security by providing
+better support for things like login/logout and cookies.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_1_upgrade_stages">1. Upgrade stages</h3>
+<div class="paragraph">
+<p>Complete transition from the CGI to the WSGI backend may be
+done in stages to gain confidence at each stage before moving to
+the next and to preserve fallback capability in case unforeseen
+problems are encountered.</p>
+</div>
+<div class="paragraph">
+<p>These instructions address only Stage 1; the timing and details of
+the other stages can be determined later.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Stage 1</dt>
+<dd>
+<p>Activate the WSGI backend on a new set of URLs, leaving
+the current CGI URLs unchanged.  The new URLs can be provided to
+users for testing and feedback while others continue to use the CGI
+URLs as they do now.</p>
+</dd>
+<dt class="hdlist1">Stage 2</dt>
+<dd>
+<p>After confidence has been established in the compatibility
+and reliability of the WSGI version, web server redirects can be put
+in place to redirect all users to the WSGI version via the existing
+CGI URLs.</p>
+</dd>
+<dt class="hdlist1">Stage 3</dt>
+<dd>
+<p>After a suitable advance notice period to allow users
+time to update bookmarks, etc., the redirects can be removed and
+the WSGI URLs will now provide the only access to the JMdictDB web
+backend.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_operational_and_user_visible_changes">2. Operational and user visible changes</h3>
+<div class="paragraph">
+<p>The following are the major differences from the CGI version that
+will be encountered with the WSGI version.</p>
+</div>
+<div class="sect3">
+<h4 id="_2_1_editors_required_to_enable_cookies">2.1 Editors required to enable cookies</h4>
+<div class="paragraph">
+<p>Logged in editors will have to have cookies enabled for the
+JMdictDB site in order to stay logged in.  Login/logout services
+are now provided by the Flask framework using secure, encrypted
+cookies to maintain session state; supplying SID values in the
+URL will no longer work.</p>
+</div>
+<div class="paragraph">
+<p>As before with CGI, cookies are not required for non-logged in
+users.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_2_2_code_changes_aren_t_immediately_effective">2.2 Code changes aren&#8217;t immediately effective</h4>
+<div class="paragraph">
+<p>When the JMdictDB code is upgraded or otherwise modified the changes
+will not be immediately visible because the actual code loaded and
+running in the web server is unchanged.  To put the changes into
+effect one can either:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Restart the Apache webserver</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>or, to avoid a full restart:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Change the "modified" date on the file
+{{WEBROOT}}/{{CGI}}/jmapp.wsgi
+with, for example, the 'touch' command.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This will cause a restart of only the jmapp Python processes.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_2_3_different_config_and_log_file_names">2.3 Different config and log file names.</h4>
+<div class="paragraph">
+<p>One can use the the same configuration and log files for the CGI
+and WSGI server versions but it can help avoid confusion if they
+are kept separate, at least initially.  The instructions below
+do that.  The format of the contents of both are the same though.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_installation">3. Installation</h3>
+<div class="paragraph">
+<p>In this section the following are used as placeholders and should
+be substituted with actual values.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>{{DEVDIR}}&#8201;&#8212;&#8201;The local directory into which the JMdictDB
+software has been cloned from the GitLab JMdictDB repository.
+Example: /home/me/jmdictdb-dev</p>
+</li>
+<li>
+<p>{{WEBROOT}}&#8201;&#8212;&#8201;The directory to which the JMdictDB web files are
+installed and from where the web server has been configured to
+serve them.  Example: /usr/local/apache2/jmdictdb</p>
+</li>
+<li>
+<p>{{CGI}}&#8201;&#8212;&#8201;The cgi directory under {{WEBROOT}}.  Example: cgi-bin</p>
+</li>
+<li>
+<p>{{URLROOT}}&#8201;&#8212;&#8201;The virtual directory in which the JMdictDB pages
+will appear in URL-space.  Example: jmapp (the URLs for the
+JMdictDB pages will, assuming a host name of edrdg.org for example,
+start with https://edrdg.org/jmapp/&#8230;&#8203;)</p>
+</li>
+</ul>
+</div>
+<div class="sect3">
+<h4 id="_3_1_perform_a_normal_code_upgrade">3.1. Perform a normal code upgrade.</h4>
+<div class="paragraph">
+<p>If you have a checkout of JMdictDB already:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>cd {{DEVDIR}}
+git checkout master
+git pull</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Otherwise you can clone the JMdictDB repository:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ git clone https://gitlab.com/yamagoya/jmdictdb.git {{DEVDIR}}
+$ cd {{DEVDIR}}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The following 'make' command needs to be run as root, either
+from a <strong>root login</strong> or via <strong>sudo</strong>.  It installs the JMdictDB Python
+package to the (Python determined) system-wide location, the
+command line programs to /usr/local/bin/, and updates any CGI
+and WSGI scripts.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre># cd {{DEVDIR}}
+# sudo make WEBROOT={{WEBROOT}} install-sys</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The WEBROOT=&#8230;&#8203; part can be left out if you want to install to
+the default location of /var/www/jmdictdb/.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_3_2_config_and_log_files">3.2 Config and log files</h4>
+<div class="paragraph">
+<p>While it is possible for both the CGI and WSGI backends to share
+the same log and configuration files, it is less confusing during
+the transition period to keep them separate.</p>
+</div>
+<div class="paragraph">
+<p>3.1.1. Create a new log file.  The name, "jmapp.log" may be changed
+to whatever name is preferred.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre># cd {{WEBROOT}}/lib/
+# touch jmapp.log
+# chgrp www-data jmapp.log
+# chmod 664 jmapp.log      # Can use 660 if preferred.</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>3.1.2. Copy the existing config.ini file.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre># cp config.ini cfgapp.ini</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>3.1.3. Edit cfgapp.ini and change the name of the log file to match
+what was chosen above.  The name of the private ini file can remain
+the same (ie, the private ini file can be shared by both the CGI and
+WSGI backends since we assume both will be accessing the same
+databases with the same credentials.)</p>
+</div>
+<div class="paragraph">
+<p>The name, "cfgapp.ini", can be changed to something else if desired
+in the file web/cgi/jmapp.wsgi.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_3_3_apache_web_server_configuration">3.3 Apache web server configuration</h4>
+<div class="paragraph">
+<p>Use the Apache configuaration directives below.  They can go either
+into a separate .conf file (e.g., jmapp.conf) in the Apache directory
+for such files, or can be added to an existing configuration file
+(you may have an existing jmdictdb.conf file for example.)</p>
+</div>
+<div class="paragraph">
+<p>Replace {{WEBROOT}} (3 occurences) with the same value used above in
+the  'make install-sys' command, e.g.: /usr/local/apache2/jmdictdb/.</p>
+</div>
+<div class="paragraph">
+<p>Replace {{CGI}} (1 occurrence) with the CGI directory
+name.  Example: cgi-bin (so that the full path with {{WEBROOT}}
+also replaced might be something like
+/usr/local/apache2/jmdictdb/cgi-bin/)</p>
+</div>
+<div class="paragraph">
+<p>Replace {{URLROOT}} (2 occurrences) with the top level virtual directory
+that the JMdictDB pages will be served under.  For example, using "/jmapp"
+will result in the JMdictDB pages being available at
+https://edrdg.org/jmapp/&#8230;&#8203;, etc.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>WSGIDaemonProcess jmapp processes=2 threads=10 \
+    display-name=apache2-jmapp locale=en_US.UTF-8 lang=en_US.UTF-8
+WSGIProcessGroup jmapp
+WSGIScriptAlias {{URLROOT}} {{WEBROOT}}/{{CGI}}/jmapp.wsgi \
+    process-group=jmapp
+
+  # Serve static files directly without using the app.
+Alias "{{URLROOT}}/web/" "{{WEBROOT}}"
+&lt;Directory {{WEBROOT}}&gt;
+    DirectoryIndex disabled
+    Require all granted
+    &lt;/Directory&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above file defines the URL for the WSGI versions of the JMdictDB
+pages in the Alias line.  Using a host name of edrdg.org for example,
+the WSGI version of the search page would be at
+ https://edrdg.org/jmapp/srchform.py</p>
+</div>
+<div class="paragraph">
+<p>The number of process and threads can be adjusted depending of server
+capacity (number of cores, amount of memory, etc) and expected request
+load.  For more information see the mod_wsgi documentation:
+<a href="https://modwsgi.readthedocs.io/en/latest/user-guides/processes-and-threading.html" class="bare">https://modwsgi.readthedocs.io/en/latest/user-guides/processes-and-threading.html</a></p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_4_restart_the_web_server">3.4 Restart the web server</h3>
+<div class="paragraph">
+<p>This is required to read the new configuration.  After the web
+server has been restarted pointing a browser to the URL (and again
+using a host name of edrdg.org as an example)</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>https://edrdg.org/jmapp/srchform.py</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>should result in the Advanced Search Page being shown.</p>
+</div>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Caution</div>
+</td>
+<td class="content">
+The WSGI pages do not access a test version of the database;
+changes made via the WSGI pages will appear in the production database
+just as if they&#8217;d been made through the CGI version.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+If the web server won&#8217;t restart, the web server error logs may
+have more information.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footnotes">
+<hr>
+<div class="footnote" id="_footnote_1">
+<a href="#_footnoteref_1">1</a>. Actually mod_wsgi in the web server will typically start several Python processes, each with several threads to which incoming requests are assigned but the idea and effect are the same.
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2021-11-24 15:38:42 MST
+</div>
+</div>
+</body>
+</html>

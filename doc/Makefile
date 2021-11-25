@@ -9,10 +9,10 @@ DOC_FILES = README.txt \
         dev.html \
         index.html \
         install.html \
-        schema.html \
         schema.pdf \
         schema.png \
         tags.html \
+        2021-11-update.html \
         2020-06-changes.html \
         2020-06-update.html
 
@@ -39,7 +39,8 @@ schema.pdf: src/schema.odt
 #schema.html: src/schema.odt
 #	/usr/bin/libreoffice --headless --convert-to html $?
 
-updates: 2020-06-changes.html 2020-06-update.html
+updates: 2021-11-update.html 2020-06-changes.html 2020-06-update.html
+2021-11-update.html: src/2021-11-update.asc
 2020-06-changes.html: src/2020-06-changes.asc
 2020-06-update.html: src/2020-06-update.asc
 

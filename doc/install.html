@@ -18,8 +18,9 @@
 <div class="sectionbody">
 <div class="paragraph">
 <p>Although this software was written and is maintained primarily
-to support Jim Breen&#8217;s JMdict and wwwjdic projects, you may
-wish to install a local copy of this software to:</p>
+to support Jim Breen&#8217;s JMdict and wwwjdic projects at
+link:[<a href="https://edrdg.org" class="bare">https://edrdg.org</a>], you may wish to install a local copy
+of this software to:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -43,15 +44,42 @@ a JMdictDB server including loading dictionary data.</p>
 <div class="paragraph">
 <p>The code is currently developed and tested on Ubuntu Linux using
 Apache as a web server and Postgresql as the database server.
-The webserver should be configured to run Python CGI scripts.</p>
+The webserver should be configured to to include the mod_wsgi
+module.</p>
 </div>
-<div class="paragraph">
-<p>Regarding Microsoft Windows:
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Earlier versions of this software generated web pages using
+CGI scripts rather than a WSGI application as is used currently.
+The CGI scripts are still present though unsupported.  For
+information on configuration for CGI, please see versions of
+this document prior to November 2021 (available in the Git
+repository).
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Regarding Microsoft Windows:
 Up to mid 2014 the code also ran and was supported on Microsoft
 Windows XP.  However, lack of access to a Windows machine
 has required dropping Windows support.  Please be aware that
 lingering references to Microsoft Windows in this and other
-documentation are outdated and unsupported.</p>
+documentation are outdated and unsupported.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>JMdictDB requires Python 3; Python 2 is no longer supported
@@ -69,11 +97,12 @@ earlier or later versions, but this has not been verified.</p>
 <pre>Python [3.6] (known not to work before 3.3).
 Additional Python packages:
   psycopg2-2.7.3 Python-Postgresql connector.
-    http://initd.org/projects/psycopg2/
+    https://initd.org/projects/psycopg2/
   ply-3.9 -- YACC'ish parser generator.
-    http://www.dabeaz.com/ply/
+    https://www.dabeaz.com/ply/
   lxml-4.0.0 -- XML/XSLT library.  Used by xslfmt.py for doing
     xml-&gt;edict2 conversion.
+  flask-2.0 -- Web framework
   jinja2-2.9.6 -- Template engine for generating web pages.
 Postgresql [10.3] -- Database server
 Apache [2.4] -- Web server
@@ -96,13 +125,17 @@ a "jmtest" database and so on.</p>
 </div>
 <div class="paragraph">
 <p>Any program that accesses the database server needs a username
-and possibly a password to do so.  The database server is
-accessed by the JMdictDB system in two contexts:</p>
+and possibly a password to do so.  Note that these passwords
+are distinct from the JMdictDB editor passwords discussed in the
+next section.  The database server is accessed by the JMdictDB
+system in two contexts:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>When cgi scripts are executed by the web server.</p>
+<p>When the web server receives an HTTP request for a JMdictDB
+page and accesses the database in the course of generating the
+web page response.</p>
 </li>
 <li>
 <p>When Postgresql and JMdictDB command line tools are run
@@ -112,9 +145,9 @@ during installation.</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>In the first case the cgi scripts will use database usernames
-and passwords defined in the config-pvt.ini file which will
-be described in more detail below.</p>
+<p>In the first case JMdictDB backend code will use database
+usernames and passwords defined in the config-pvt.ini file
+which will be described in more detail below.</p>
 </div>
 <div class="paragraph">
 <p>In the second case, the database username and password may be
@@ -122,7 +155,7 @@ given on the command line, environment variables, or a .pgpass
 file.  The last option is usually the most convenient and
 secure and is the method documented below.  A detailed discussion
 of Postgresql authentication methods is out of scope here but
-<a href="#note1">[note1]</a> provided some further references.</p>
+<a href="#note1">[note1]</a> provides some further references.</p>
 </div>
 </div>
 <div class="sect2">
@@ -130,13 +163,13 @@ of Postgresql authentication methods is out of scope here but
 <div class="paragraph">
 <p>JMdictDB provides a separate, application-level authentication
 scheme for web access.  Users can login as Admin, Editor or access
-the system anonymously by not logging in.  The CGI scripts allow
+the system anonymously by not logging in.  The web pages allow
 anonymous users to submit unapproved edited or new entries, but
 to approve or reject entries, a user must be logged in as an Editor.
 A user logged in as Admin can additionally manage other users.</p>
 </div>
 <div class="paragraph">
-<p>JMdictDB users and their access levels are store in a separate
+<p>JMdictDB users and their access levels are stored in a separate
 separate database named "jmsess".  This database need only be
 setup once.</p>
 </div>
@@ -166,13 +199,13 @@ into a local directory.</p>
 </li>
 <li>
 <p>Deploy the JMdictDB software.  This step installs the jmdictdb
-library package, command line programs and web/cgi scripts to
+library package, command line programs and web scripts to
 locations independent of the code in the download directory
 allowing the latter to be changed or deleted without affecting
 the operation of the installed version.</p>
 </li>
 <li>
-<p>Create a config.ini file for CGI settings</p>
+<p>Create a config.ini file for web page settings.</p>
 </li>
 </ol>
 </div>
@@ -184,8 +217,35 @@ instance, and that you have access to the database server&#8217;s
 "postgres" account or some account with enough privileges to
 create and drop databases.</p>
 </div>
+<div class="paragraph">
+<p>In this section the following placeholders should be replaced
+with actual values:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">{{DEVDIR}}</dt>
+<dd>
+<p>Directory where the JMdictDB code has been checked
+out to from Git.  Example value: ~/devel/jmdictdb/</p>
+</dd>
+<dt class="hdlist1">{{URLROOT}}</dt>
+<dd>
+<p>URL root that the Apache web server will be configured
+to serve the JMdictDB development pages under.  Example value:
+/jmdev (the web server will serve the JMdictDB pages under the
+URL https://localhost/jmdev/, e.g., https://localhost/jmdev/srchform.py)</p>
+</dd>
+<dt class="hdlist1">{{WEBROOT}}</dt>
+<dd>
+<p>The location to install the web component files to.
+and where the web server will be configured to look for them at.
+Example value: /usr/local/jmdictdb/.  The default value is
+/var/www/jmdictdb/.</p>
+</dd>
+</dl>
+</div>
 <div class="sect2">
-<h3 id="_1_getting_the_code">1. Getting the code</h3>
+<h3 id="_1_get_the_code">1. Get the code</h3>
 <div class="paragraph">
 <p>There are two main branches in the code:</p>
 </div>
@@ -205,11 +265,11 @@ should generally be based on.</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>$ git clone https://gitlab.com/yamagoya/jmdictdb.git &lt;DEV&gt;</pre>
+<pre>$ git clone https://gitlab.com/yamagoya/jmdictdb.git {{DEVDIR}}</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>or, you can download a tar or zip archive at:</p>
+<p>Or, you can download a tar or zip archive at:</p>
 </div>
 <div class="ulist none">
 <ul class="none">
@@ -285,7 +345,9 @@ the file.
 </div>
 </div>
 <div class="paragraph">
-<p>You will be prompted for the password to use for the new 'jmdictdb' database account.  Use the same passwords as entered above in the ~/.pgpass file.</p>
+<p>You will be prompted for the password to use for the new 'jmdictdb'
+database account.  Use the same passwords as entered above in the
+~/.pgpass file.</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -294,8 +356,8 @@ Enter it again: yyyyyy</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The same process is repeated for the 'jmdictdbv' account (use the zzzzzz
-password this time.)</p>
+<p>The same process is repeated for the 'jmdictdbv' account (use the
+zzzzzz password this time.)</p>
 </div>
 <div class="admonitionblock important">
 <table>
@@ -389,7 +451,7 @@ and rename the "jmnew" database that was just loaded to "jmdict".</p>
 <h3 id="deploy">4. Deploy the JMdictDB software</h3>
 <div class="paragraph">
 <p>At this point you have three ways to make make the database
-command line tools and and cgi web pages available:</p>
+command line tools and and web pages available:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -422,11 +484,16 @@ in the DEVELOPMENT document.</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre># make -f Makefile install-sys</pre>
+<pre># make -f  Makefile WEBROOT={{WEBROOT}} install-sys</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>and for you as an individual user by:</p>
+<p>The WEBROOT=&#8230;&#8203; part says where to install the web components and
+may be left out if installing to the default location of
+/var/www/jmdictdb/.</p>
+</div>
+<div class="paragraph">
+<p>Or, for you as an individual user by:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -460,7 +527,7 @@ locations:</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock">/var/www/jmdictdb/</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">CGI scripts</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CGI/WSGI scripts [*]</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">/var/www/jmdictdb/cgi-bin/</p></td>
 </tr>
 <tr>
@@ -473,7 +540,7 @@ locations:</p>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Python library modules</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">/usr/local/lib/pythonX.Y/dist-packages/ [*]</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">/usr/local/lib/pythonX.Y/dist-packages/ [**]</p></td>
 </tr>
 </tbody>
 </table>
@@ -498,7 +565,7 @@ locations:</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock">~/public_html/</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">CGI scripts</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CGI/WSGI scripts [*]</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">~/public_html/cgi-bin/</p></td>
 </tr>
 <tr>
@@ -511,31 +578,21 @@ locations:</p>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Python library modules</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">~/.local/lib/pythonX.Y/site-packages/jmdictdb/ [*]</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">~/.local/lib/pythonX.Y/site-packages/jmdictdb/ [**]</p></td>
 </tr>
 </tbody>
 </table>
 <div class="paragraph">
-<p><span class="small">[*]&#8201;&#8212;&#8201;The exact location is determined by Python.  X and Y are the major
-and minor version numbers of the installed Python.</span></p>
+<p><span class="small">[*]&#8201;&#8212;&#8201;The CGI scripts in here are deprecated and will
+be removed in a future version.  However the file jmapp.wsgi also
+lives in this directory and is required.</span></p>
+</div>
+<div class="paragraph">
+<p><span class="small">[**]&#8201;&#8212;&#8201;The exact location is determined by Python.  X and
+Y are the major and minor version numbers of the installed Python.</span></p>
 </div>
 </li>
 </ul>
-</div>
-<div class="paragraph">
-<p>For either target you can override the default locations by overriding
-the appropriate 'make' variable.  WEBROOT controls the location of the
-web components.  For example:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre># make WEBROOT=/srv/jmdictdb/ install-sys</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>will install the web components to /srv/jmdictdb/, srv/jmdictdb/cgi-bin/,
-etc.  The locations of the non-web components (command line programs,
-python library modules) are not altered.)</p>
 </div>
 <div class="paragraph">
 <p>Next you will need to tell the Apache web server where to
@@ -545,30 +602,42 @@ find the web components and at what URL to serve them.</p>
 <div class="sect2">
 <h3 id="apache_config">5. Configuring the Apache webserver</h3>
 <div class="paragraph">
-<p>For exposition we&#8217;ll assume the JMdictDB pages will be served at
-the url http://myhost.org/jpdicts/ and that the JMdictDB web
-components have been installed at the default location of
-/var/www/jmdictdb/.</p>
+<p>JMdictDB uses a WSGI application to serve pages via the Apache
+web server with the mod_wsgi module.  The location of the JMdictDB
+files and configuration parameters for mod_wsgi are provided to
+the Apache web server using normal Apache configuration directives.</p>
 </div>
 <div class="paragraph">
-<p>Create an Apache configuration section like the following:</p>
+<p>The following configuration directives can go in the main Apache
+configuration file, or at most sites, in a separate .conf file in
+a configuration directory.  Refer to the Apache documentation for
+specifics.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>WSGIDaemonProcess jmapp processes=2 threads=10 \
+    display-name=apache2-jmapp locale=en_US.UTF-8 lang=en_US.UTF-8
+WSGIProcessGroup jmapp
+WSGIScriptAlias {{URLROOT}} {{WEBROOT}}/web/cgi-bin/jmapp.wsgi \
+    process-group=jmapp
+
+  # Serve static files directly without using the app.
+Alias "{{URLROOT}}/web/" "{{WEBROOT}}/web/"
+&lt;Directory {{WEBROOT}}&gt;
+    DirectoryIndex disabled
+    Require all granted
+    &lt;/Directory&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The number of process and threads can be adjusted depending of server
+capacity (number of cores, amount of memory, etc) and expected request
+load.  For more information see:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>ScriptAlias /jpdicts/cgi/ /var/wwww/jmdictdb/cgi-bin/
-Alias       /jpdicts/     /var/wwww/jmdictdb/
-&lt;Directory /var/wwww/jmdictdb/&gt;
-  AllowOverride All
-  SetEnv LANG en_US.utf8
-  Options Includes FollowSymLinks ExecCGI
-  Require all granted
-&lt;/Directory&gt;</pre>
+<pre>https://modwsgi.readthedocs.io/en/latest/user-guides/processes-and-threading.html</pre>
 </div>
-</div>
-<div class="paragraph">
-<p>This can go in the main Apache configuration file, or at most
-sites, in a separate file in a configuration directory.  Refer
-to the Apache documentation for specifics.</p>
 </div>
 <div class="paragraph">
 <p>Restart the web server:</p>
@@ -580,23 +649,23 @@ to the Apache documentation for specifics.</p>
 </div>
 <div class="paragraph">
 <p>If you point your web browser to
-http://localhost/jpdicts/cgi/srchformq.py
+https://localhost/jpdicts/srchformq.py
 you should see a JMdictDB page with an error message about
 the config.ini file not being found.  Which is correct since
 we&#8217;ve not set up a config file yet.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="config_ini">6. CGI config.ini and log files</h3>
+<h3 id="config_ini">6. JMdictDB config.ini and log files</h3>
 <div class="sect3">
 <h4 id="_6_2_config_ini">6.2 config.ini</h4>
 <div class="paragraph">
-<p>The config.ini file contains settings used by the CGI scripts when
+<p>The config.ini file contains settings used by JMdictDB when
 serving web pages.  At a minimum you&#8217;ll need to provide settings
 that describe each database you want to be accessible via the web.</p>
 </div>
 <div class="paragraph">
-<p>There must be config.ini file.  There may also be a config-pvt.ini
+<p>There <strong>must</strong> be config.ini file.  There <strong>may</strong> also be a config-pvt.ini
 file.  The latter is intended for database access credentials that
 should have access limited to the system maintainer and the webserver.
 However the database access credentials can go into config.ini if
@@ -627,8 +696,8 @@ config-pvt.ini.</p>
 <h4 id="_6_2_log_file">6.2 Log file</h4>
 <div class="paragraph">
 <p>The $(WEBROOT)/lib/ directory is the default location for the
-cgi log file.  However both the name and location can be set in
-vonfig.ini.</p>
+JMdictDB log file.  However both the name and location can be
+set in config.ini.</p>
 </div>
 <div class="paragraph">
 <p>The log file must exist for logging to occur; it will not be
@@ -637,7 +706,7 @@ server process.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_6_3_verify_cgi_access">6.3 Verify CGI access</h4>
+<h4 id="_6_3_verify_web_access">6.3 Verify web access</h4>
 <div class="paragraph">
 <p>You should now be able to view any of the JMdictDB web pages
 in your web browser.</p>
@@ -647,7 +716,7 @@ in your web browser.</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>http://localhost/&lt;VDIR&gt;/cgi-bin/srchform.py</pre>
+<pre>https://localhost/&lt;VDIR&gt;/srchform.py</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -659,7 +728,7 @@ step 5 (jpdicts in that example).</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>http://localhost/~&lt;USERNAME&gt;/cgi-bin/srchform.py</pre>
+<pre>https://localhost/~&lt;USERNAME&gt;/srchform.py</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -678,7 +747,7 @@ default locations when installing.</p>
 <li>
 <p><em>Server Error</em></p>
 <p>Check the web server&#8217;s error log.  There will often be a Python
-stack dump from the cgi script that will identify the problem.</p>
+stack dump from the JMdictDB code that will identify the problem.</p>
 </li>
 <li>
 <p><em>file not found: &#8230;&#8203;/config.ini</em></p>
@@ -716,14 +785,14 @@ source files (eg JMdict XML).</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Check the web server&#8217;s error log file.  If a cgi script can&#8217;t
-open the error log for writing it will write a message to that
-effect to srderr which should appear in the web server error
-log file.</p>
+<p>Check the web server&#8217;s error log file.  If the JMdictDB
+log file can&#8217;t be opened for writing an error message to that
+effect will be written to stderr which should appear in the web
+server error log file.</p>
 </li>
 <li>
 <p>Check the config.ini file.  The default log file name and
-location is web/lib/jmdictdb.logbut can be overridden in
+location is web/lib/jmdictdb.logout can be overridden in
 the config.ini file.</p>
 </li>
 <li>
@@ -774,7 +843,7 @@ these are for Postgresql version 10.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-07-15 22:53:36 MDT
+Last updated 2021-11-23 13:40:36 MST
 </div>
 </div>
 </body>

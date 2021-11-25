@@ -19,10 +19,43 @@
 <div class="paragraph">
 <p>This document describes setting up an environment for doing development
 work on the JMdictDB code.  This environment will allow the Apache
-web server to access the CGI files directly
-in your development directory with a dedicated database allowing you
+web server serve the JMdictDB web pages directly from your
+development directory with a dedicated database allowing you
 to change the code and see the results without affecting deployed
 production code or database.</p>
+</div>
+<div class="paragraph">
+<p>In this document the following are placeholders which should be
+replaced with actual values:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">{{DEVDIR}}</dt>
+<dd>
+<p>Directory where the JMdictDB code has been checked
+out from Git.  Example value: ~/devel/jmdictdb/</p>
+</dd>
+<dt class="hdlist1">{{DEVDB}}</dt>
+<dd>
+<p>Name of a disposable database in Postgresql to use
+for development work.  Example value: jmdevel</p>
+</dd>
+<dt class="hdlist1">{{DEVDB-SVC}}</dt>
+<dd>
+<p>Database service name in config-pvt.ini that is
+configured to access {{DEVDB}}.  Example value: jmdevel.
+confi-pvt.ini will contains a section named "db_jmdevel" that
+contains credentials allowing access to the "jmdev" database in
+Postgresql.</p>
+</dd>
+<dt class="hdlist1">{{URLROOT}}</dt>
+<dd>
+<p>URL root that the Apache web server will be configured
+to serve the JMdictDB development pages under.  Example value:
+jmdev.  The web server will serve the development files in {{DEVDIR}}
+under the URL https://localhost/jmdev/.</p>
+</dd>
+</dl>
 </div>
 <div class="sect2">
 <h3 id="_1_get_the_jmdictdb_software">1. Get the JMdictDB software</h3>
@@ -50,14 +83,14 @@ normal cycle of upgrading to the latest code in "master".</p>
 <div class="sect3">
 <h4 id="_1_1_get_a_fresh_copy_or_update_the_jmdictdb_software">1.1. Get a fresh copy or update the JMdictDB software</h4>
 <div class="paragraph">
-<p>In the following we&#8217;ll use &lt;DEVDIR&gt; to denote the directory you
+<p>In the following we&#8217;ll use {{DEVDIR}} to denote the directory you
 want to use for the development code, and &lt;BRANCH&gt; for the name
 of your feature branch.</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>$ git clone https://gitlab.com/yamagoya/jmdictdb.git &lt;DEVDIR&gt;
-$ cd &lt;DEVDIR&gt;</pre>
+<pre>$ git clone https://gitlab.com/yamagoya/jmdictdb.git {{DEVDIR}}
+$ cd {{DEVDIR}}</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -77,7 +110,7 @@ can cd to it and do <code>git checkout master; git pull</code>.</p>
 <div class="sect2">
 <h3 id="_2_database">2. Database</h3>
 <div class="paragraph">
-<p>We&#8217;ll use &lt;DEVDB&gt; to denote the name of the database you&#8217;ll use
+<p>We&#8217;ll use {{DEVDB}} to denote the name of the database you&#8217;ll use
 for development work.  You can name it whatever you want but
 since the database server may serve other databases having nothing
 to do with JMdictDB the author&#8217;s convention is to use names prefixed
@@ -91,9 +124,9 @@ development work.</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>$ dropdb --if-exists &lt;DEVDB&gt;     # In case there is a old version.
-$ createdb -Ojmdictdb &lt;DEVDB&gt;    # That's -Oh, not -zero.
-$ pg_dump jmdict | psql -d &lt;DEVDB&gt;</pre>
+<pre>$ dropdb --if-exists {{DEVDB}}     # In case there is a old version.
+$ createdb -Ojmdictdb {{DEVDB}}    # That's -Oh, not -zero.
+$ pg_dump jmdict | psql -d {{DEVDB}}</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -108,7 +141,7 @@ you&#8217;ll want to develop and test them in a separate database.</p>
 <h4 id="_2_2_apply_any_needed_database_updates">2.2. Apply any needed database updates:</h4>
 <div class="literalblock">
 <div class="content">
-<pre>$ tools/dbversion.py &lt;DEVDB&gt;</pre>
+<pre>$ tools/dbversion.py {{DEVDB}}</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -118,7 +151,7 @@ it reports something like:</p>
 <div class="literalblock">
 <div class="content">
 <pre>code expects updates: a921f4
-&lt;DEVDB&gt;: incompatible, missing updates: a921f4, has updates: 7256aa</pre>
+{{DEVDB}}: incompatible, missing updates: a921f4, has updates: 7256aa</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -136,9 +169,9 @@ there are three that follow 028-7256aa.sql:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>psql -d&lt;DEVDB&gt; -Ujmdictdb -f 029-000000.sql
-psql -d&lt;DEVDB&gt; -Ujmdictdb -f 029-835781.sql
-psql -d&lt;DEVDB&gt; -Ujmdictdb -f 030-a921f4.sql</pre>
+<pre>psql -d{{DEVDB}} -Ujmdictdb -f 029-000000.sql
+psql -d{{DEVDB}} -Ujmdictdb -f 029-835781.sql
+psql -d{{DEVDB}} -Ujmdictdb -f 030-a921f4.sql</pre>
 </div>
 </div>
 </div>
@@ -150,7 +183,7 @@ command line tools.  <code>shentr.py</code> can provide a useful test:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>$ bin/shentr.py -d&lt;DEVDB&gt; -q 1408370
+<pre>$ bin/shentr.py -d{{DEVDB}} -q 1408370
 Entry: jmdict 1408370 A {1974702}
 Kanji: 1.太陽[ichi1,news1,nf04]
 Readings: 1.たいよう[ichi1,news1,nf04]
@@ -169,13 +202,7 @@ History:
 <div class="sect2">
 <h3 id="_3_setup_web_access">3. Setup Web Access</h3>
 <div class="sect3">
-<h4 id="vdir">3.1. Create a web server virtual directory</h4>
-<div class="paragraph">
-<p>See section
-<a href="install.html#apache_config">5.configuring_the_apache_webserver</a>
-in the <a href="install.html">Install documentation</a>
-for instructions on adding a virtual directory.</p>
-</div>
+<h4 id="apache_config">3.1. Apache Configuration</h4>
 <div class="admonitionblock note">
 <table>
 <tr>
@@ -183,17 +210,46 @@ for instructions on adding a virtual directory.</p>
 <div class="title">Note</div>
 </td>
 <td class="content">
-This need only be done once.  If you&#8217;ve configured a virtual
-directory for &lt;DEVDIR&gt; in the past you can continue to use that.
+This need only be done once.  If you&#8217;ve configured Apache to
+serve the pages from {{DEVDIR}} in the past you can continue to
+use that configuration unless the directory location or URL root
+you want to use has changed.
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>In that example you&#8217;ll want to change the name of the virtual directory
-(jpdicts in the example) to a name of your choice (which we&#8217;ll refer to
-as &lt;VDIR&gt; below), and the physical directory (/var/wwww/jmdictdb/ in
-the example) to the path to &lt;DEVDIR&gt;.</p>
+<p>Section
+<a href="install.html#apache_config">5.Configuring_the_apache_webserver</a>
+in the <a href="install.html">Install documentation</a>
+describes how to create a configuration file or section in an existing
+configuration file for web access to the main production instance of
+JMdictDB.  For development access you will do the same thing but use a
+different name for the process group and root URL.  For example,
+changing the process group name from "jmapp" (used in the Section 5
+example) to "jmdev" would result in a configuration section like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>WSGIDaemonProcess jmdev processes=2 threads=2 \
+    display-name=apache2-jmdev locale=en_US.UTF-8 lang=en_US.UTF-8
+WSGIProcessGroup jmdev
+WSGIScriptAlias /{{URLROOT}} {{DEVDIR}}/web/cgi/jmapp.wsgi \
+    process-group=jmdev
+
+  # Serve static files directly without using the app.
+Alias "/{{URLROOT}}/web/" "{{DEVDIR}}/web/"
+&lt;Directory {{DEVDIR}}/web/&gt;
+    DirectoryIndex disabled
+    Require all granted
+    &lt;/Directory&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Of course replace {{DEVDIR}} with the directory path you checked the
+JMdictDB code out to and {{URLROOT}} with the value you wish to use.
+This configuration section can go in the same file as the production
+configuration  or in a separate file, whatever is most convenient.</p>
 </div>
 <div class="paragraph">
 <p>The web server will need to be restarted in order for it to read the
@@ -204,28 +260,25 @@ new configuration.</p>
 <h4 id="config_ini">3.2. Config and log files</h4>
 <div class="paragraph">
 <p>See section
-<a href="install.html#config_ini">6.Create a config.ini file for CGI settings</a>
+<a href="install.html#config_ini">6.Create a config.ini file for web settings</a>
 in the
 <a href="install.html">Install documentation</a>
-for general instructions on the config files.</p>
-</div>
-<div class="paragraph">
-<p>Particularizing here:</p>
+for general instructions on the config files.3.1</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>Since the web files will be served directly from &lt;DEVDIR&gt; the
+<p>Since the web files will be served directly from {{DEVDIR}} the
 config.ini and config-pvt.ini files should be created in
-&lt;DEVDIR&gt;/web/lib/.  config.ini can be empty if the default
+{{DEVDIR}}/web/lib/.  config.ini can be empty if the default
 settings described in config-sample.ini are ok.</p>
 </li>
 <li>
-<p>The config-pvt.ini file must contain a [db_&lt;DEVDB-SVC&gt;] section
-to allow CGI access to your development database.
+<p>The config-pvt.ini file must contain a [db_{{DEVDB-SVC}}] section
+to allow web access to your development database.
 &lt;DEVDB-SVC&gt; is the "service name" used in URLs as the &amp;svc=&#8230;&#8203;" value.
 The author finds that naming the service section anything other
-than "db_&lt;DEVDB&gt;" (that is, not making the service name the same
+than "db_{{DEVDB}}" (that is, not making the service name the same
 as the database name) inevitably leads to confusion.</p>
 </li>
 <li>
@@ -240,7 +293,7 @@ database from the development code, you can remove or not add a
 </ul>
 </div>
 <div class="paragraph">
-<p>Create a jmdictdb.log file in &lt;DEVDIR&gt;/web/lib/ (or wherever you
+<p>Create a jmdictdb.log file in {{DEVDIR}}/web/lib/ (or wherever you
 you specified config.ini if you you overrode the default
 name or location in config.ini.</p>
 </div>
@@ -263,16 +316,16 @@ by the web server.</p>
 <h4 id="_3_3_check_access">3.3. Check access</h4>
 <div class="paragraph">
 <p>At this point you should be able to access the development database
-with the CGI web pages.</p>
+with via the web pages.</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>\http://localhost/&lt;VDIR&gt;/cgi-bin/srchform.py?svc=&lt;DEVDB-SVC&gt;</pre>
+<pre>\http://localhost/{{URLROOT}}/srchform.py?svc={{DEVDB-SVC}}</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>where &lt;VDIR&gt; is the web server virtual directory configured in
-step <a href="#vdir">3.1. Create a web server virtual directory</a> and &lt;DEVDB-SVC&gt; is the database access service
+<p>where {{URLROOT}} is the root URL for the development files configured in
+step <a href="#apache-config">[apache-config]</a> above and {{DEVDB-SVC}} is the database access service
 for your development database that was added to config-pvt.ini
 in step <a href="#config_ini">3.2. Config and log files</a>.</p>
 </div>
@@ -296,16 +349,12 @@ in the tools/ directory.</p>
 with a given database.</p>
 </li>
 <li>
-<p>cgi/cgiinfo.py&#8201;&#8212;&#8201;A web page that will report details about the
-current development environment, most importantly where the library
-modules being used by the cgi scripts are coming from.  This can
-help diagnose subtle problems when the CGI scripts access installed
-(and possibly older) versions of library code rather than that
-from the development directory.  Available at the URL:
-<a href="http://localhost/&lt;VDIR&gt;/cgi-bin/cgiinfo.py?svc=&lt;SVC&gt" class="bare">http://localhost/&lt;VDIR&gt;/cgi-bin/cgiinfo.py?svc=&lt;SVC&gt</a>;
-where &lt;VDIR&gt; is the web server virtual directory configured in
-step 3.1 and &lt;DEVDB-SVC&gt; is the database access service defined
-in config-pct.ini in step <a href="#config_ini">3.2. Config and log files</a>.</p>
+<p><a href="https://localhost/{{URLROOT}}cgiinfo.py&#8201;&#8212;&#8201;A" class="bare">https://localhost/{{URLROOT}}cgiinfo.py&#8201;&#8212;&#8201;A</a> web page that will report
+details about the current development environment, most importantly where
+the library modules being used by the web pages are coming from.  This
+can help diagnose subtle problems when the code is inadvertently accessing
+installed (and possibly older) versions of library code rather than that
+from the development directory.</p>
 </li>
 </ul>
 </div>
@@ -315,7 +364,7 @@ in config-pct.ini in step <a href="#config_ini">3.2. Config and log files</a>.</
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-09-21 10:10:43 MDT
+Last updated 2021-11-23 12:51:56 MST
 </div>
 </div>
 </body>
