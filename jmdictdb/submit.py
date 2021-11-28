@@ -113,6 +113,7 @@ from jmdictdb import logger; from jmdictdb.logger import L
 from jmdictdb import jdb
   #FIXME: temporary hack...
 from jmdictdb import jmcgi
+from jmdictdb import db     # To get psycopg2 exceptions.
 
 class BranchesError (ValueError): pass
 class NonLeafError (ValueError): pass
@@ -207,6 +208,13 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
         entr.id = None          # Submissions, approvals and rejections will
         entr.unap = not disp    #   always produce a new db entry object so
         merge_rev = False       #   nuke any id number.
+          # Prepare an error message here since there are several places
+          # we might use it.
+        noentr_msg = "The entry you are editing no longer exists, "\
+              "likely because it was approved, deleted or rejected "\
+              "before your changes were submitted.  "\
+              "Please search for the current version of the entry and "\
+              "reenter your changes if they are still applicable."
         if not entr.dfrm:       # This is a submission of a new entry.
             entr.stat = KW.STAT['A'].id
             if not is_editor:
@@ -215,6 +223,9 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
             edtree = None
         else:   # Modification of existing entry.
             edroot = get_edroot (dbh, entr.dfrm)
+            if not edroot:
+                L('submit.submission').debug("edroot returned %r" % edroot)
+                errs.append ("[noroot] "+noentr_msg);  return
             edtree = get_subtree (dbh, edroot)
               # Get the parent entry and augment the xrefs so when hist diffs
               # are generated, they will show xref details.
@@ -231,11 +242,7 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
                   # tree shape.  Approvals of edits, deletes or rejects may
                   # affect our subtree and if so will always manifest themselves
                   # as the disappearance of our parent entry.
-                errs.append (
-                    "The entry you are editing no loger exists because it "
-                    "was approved, deleted or rejected.  "
-                    "Please search for entry '%s' seq# %s and reenter your changes "
-                    "if they are still applicable." % (KW.SRC[ent.src].kw, entr.seq))
+                errs.append ("[noparent] "+noentr_msg)
                 return
             pentr = pentr[0]
             jdb.augment_xrefs (dbh, raw['xref'])
@@ -316,19 +323,35 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
                 L('submit.submission').debug("removed %s BOM character(s)" % n)
 
         if not errs:
-            if not disp:
-                added = submit (dbh, entr, edtree, errs)
-            elif disp == "a":
-                added = approve (dbh, entr, edtree, errs)
-            elif disp == "r":
-                added = reject (dbh, entr, edtree, errs, None)
-            else:
-                L('submit.submission').debug("bad url parameter (disp=%s)" % disp)
-                errs.append ("Bad url parameter (disp=%s)" % disp)
+            try:
+                  #FIXME? functions called below can raise a psycopg2
+                  # TransactionRollbackError if there is a serialization
+                  # error resulting from a concurrent update.  We currently
+                  # trap it and report it as an error but it could be retried
+                  # and would likely succeed.  Other exceptions
+                  # (IntegrityError, etc) are hard errors, no point retrying. 
+                if not disp:
+                    added = submit (dbh, entr, edtree, errs)
+                elif disp == "a":
+                    added = approve (dbh, entr, edtree, errs)
+                elif disp == "r":
+                    added = reject (dbh, entr, edtree, errs, None)
+                else:
+                    L('submit.submission').debug("bad url parameter (disp=%s)"
+                                                 % disp)
+                    errs.append ("Bad url parameter (disp=%s)" % disp)
+            except db.IntegrityError as e:
+                c = None
+                if 'entr_src_seq_idx' in str(e): c = 'seq'
+                elif 'entr_dfrm_fkey' in str(e): c = 'dfrm'
+                else: raise
+                L('submit.submission').debug("constraint violation: %s" % c)
+                errs.append ("["+c+"_vio] "+noentr_msg)
+                dbh.connection.rollback()
         L('submit.submission').debug("seqset: %s"
                                      % logseq (dbh, entr.seq, entr.src))
         if errs:
-            L('submit.submission').debug("Entry not submitted due to errors")
+            L('submit.submission').debug("Entry not submitted due to errors:")
             for e in errs: L('submit.submission').debug('  '+e)
 
           # Note that changes have not been committed yet, caller is

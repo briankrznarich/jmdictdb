@@ -45,12 +45,6 @@ def main( args, opts ):
         for entr in entrs:
               #FIXME: temporary hack...
             submit.Svc, submit.Sid = svc, sid
-              #FIXME: submission() can raise a psycopg2
-              # TransactionRollbackError if there is a serialization
-              # error resulting from a concurrent update.  Detecting
-              # such a condition is why run with serializable isolation
-              # level.  We need to trap it and present some sensible
-              # error message.
             e = submit.submission (dbh, entr, disp, errs, jmcgi.is_editor (sess),
                                    sess.userid if sess else None)
               # The value returned by submission() is a 3-tuple consisting

@@ -36,12 +36,6 @@ def view (svc, cfg, user, dbh, form):
         for entr in entrs:
               #FIXME: temporary (I hope) hack...
             submit.Svc = svc
-              #FIXME: submission() can raise a psycopg2
-              # TransactionRollbackError if there is a serialization
-              # error resulting from a concurrent update.  Detecting
-              # such a condition is why run with serializable isolation
-              # level.  We need to trap it and present some sensible
-              # error message.
             e = submit.submission (dbh, entr, disp, errs,
                                    jmcgi.is_editor (user),
                                    user.userid if user else None)

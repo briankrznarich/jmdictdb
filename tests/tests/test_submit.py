@@ -110,14 +110,9 @@ class Approval (unittest.TestCase):
                     _hist=[Hist()])
           # Create a new, approved entry.
         eid,seq,src = submit_ (inp, disp='a',is_editor=True,userid='smg')
-        with _.assertRaisesRegex (db.IntegrityError,
-                    'duplicate key value violates unique constraint '
-                    '"entr_src_seq_idx"'):
+        with _.assertRaisesRegex (RuntimeError,
+                                  'entry you are editing no longer exists'):
             submit_ (inp, disp='a', is_editor=True, userid='smg')
-          # The db connection is in failed transaction state at this point;
-          # do a rollback to prevent failure of subsequent operations that
-          # use it.
-        DBcursor.connection.rollback()
 
 class Clean (unittest.TestCase):
       # Tests for submit.clean() which strips ascii control characters
