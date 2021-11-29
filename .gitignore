@@ -17,3 +17,4 @@ __pycache__/
 web/lib/cfgapp.ini
 web/lib/cfgapp-pvt.ini
 /web/cgi/parser.out
+/web/cgi/jmapp.wsgi
