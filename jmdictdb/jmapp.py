@@ -9,7 +9,7 @@
 # For production use, the App object created here is imported by a WSGI
 # server and the server will call its methods in response to http requests
 # it receives.  For development it can be run with the Flask debug server
-# by the program bin/run-jmapp.py.
+# by the program tools/run-jmapp.py.
 #
 # Note that a lot of what happens here (such as reading the configuration
 # files) happens when this module is imported.  An environment variable,
@@ -21,7 +21,7 @@
 # config-sample.ini and config-pvt-sample.ini for details on the
 # configuration file format and contents.
 
-import sys, os, io, inspect, pdb
+import sys, os, datetime, pdb
 #_=sys.path; _[0]=_[0]+('/' if _[0] else '')+'..'
 
 import flask
@@ -30,7 +30,7 @@ from flask import Flask, request as Rq, session as Session, g as G, \
         render_template as Render,  _app_ctx_stack
 from jmdictdb import jdb, logger, jinja, jmcgi
 from jmdictdb import srvlib, rest
-from jmdictdb.srvlib import vLogEntry, fv, fvn
+from jmdictdb.srvlib import fv, fvn
 from jmdictdb.logger import L
 
 def app_config (app, cfgfile):
@@ -112,6 +112,29 @@ def before_request():
         if msg: return Render ('error.jinja', svc=None, errs=[msg],
                                cssclass='errormsg')
 
+from werkzeug.exceptions import HTTPException
+@App.errorhandler (Exception)
+def app_error (e):
+        # This error handler catches otherwise uncaught exceptions in
+        # the rest of the views and library code.  The intent is to keep
+        # application errors, typically accompanied by a Python stack
+        # dump, out of the Apache system log files and put them in the
+        # JMdictDB log file.
+          # Flask uses exceptions to signal various conditions so we
+          # pass them on...
+        if isinstance(e, HTTPException): return e
+          # Everything else we handle.  First, log the exception with
+          # stack trace ti the JMdictDB log file.
+        L('app.error').exception(e)
+          # Generate a generic "something went wrong' page for the client.
+          # The 'errid' value has same format as the timestamp in the
+          # the JMdictDB log file and provides correlation with it.
+        errid = datetime.datetime.now().strftime("%y%m%d-%H%M%S")\
+                + '-' + str(os.getpid())
+        msg = "We're sorry, something seems to gone kaput!"
+        return Render ('error.jinja', errs=[msg], errid=errid,
+                       cssclass='errormsg', svc='')
+
 #=============================================================================
 #  View functions.
 #  The functions below are executed in response to Flask receiving
@@ -126,12 +149,12 @@ def before_request():
 
 @App.route ('/')
 def home():
-        vLogEntry()
+        srvlib.vLogEntry()
         return Redirect (Url('srchform'))
 
 @App.route ('/login', methods=['POST'])
 def login():
-        vLogEntry()
+        srvlib.vLogEntry()
         return_to = fv ('this_page')
         #L('view.login').debug("return_to=%r"%return_to)
         if not return_to.startswith (Rq.script_root): flask.abort(400)
@@ -143,14 +166,14 @@ def login():
 
 @App.route ('/cgiinfo.py')
 def cgiinfo():
-        vLogEntry()
+        srvlib.vLogEntry()
         from jmdictdb.views.cgiinfo import view
         html = view (App, Rq.values)
         return html
 
 @App.route ('/conj.py')
 def conj():
-        vLogEntry()
+        srvlib.vLogEntry()
         from jmdictdb.views.conj import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
@@ -159,7 +182,7 @@ def conj():
 
 @App.route ('/edconf.py', methods=['GET','POST'])
 def edconf():
-        vLogEntry()
+        srvlib.vLogEntry()
         from jmdictdb.views.edconf import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.values)
         if errs:
@@ -171,7 +194,7 @@ def edconf():
 
 @App.route ('/edform.py')
 def edform():
-        vLogEntry()
+        srvlib.vLogEntry()
         from jmdictdb.views.edform import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
@@ -180,7 +203,7 @@ def edform():
 
 @App.route ('/entr.py')
 def entr():
-        vLogEntry()
+        srvlib.vLogEntry()
         from jmdictdb.views.entr import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
@@ -189,7 +212,7 @@ def entr():
 
 @App.route ('/edhelp.py')
 def edhelp():
-        vLogEntry()
+        srvlib.vLogEntry()
         from jmdictdb.views.edhelp import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
@@ -198,12 +221,12 @@ def edhelp():
 
 @App.route ('/edhelpq.py')
 def edhelpq():
-        vLogEntry()
+        srvlib.vLogEntry()
         return render ('edhelpq.jinja', this_page=path())
 
 @App.route ('/groups.py')
 def groups():
-        vLogEntry()
+        srvlib.vLogEntry()
         from jmdictdb.views.groups import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
@@ -212,7 +235,7 @@ def groups():
 
 @App.route ('/srchform.py')
 def srchform():
-        vLogEntry()
+        srvlib.vLogEntry()
         from jmdictdb.views.srchform import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
@@ -221,7 +244,7 @@ def srchform():
 
 @App.route ('/srchformq.py')
 def srchformq():
-        vLogEntry()
+        srvlib.vLogEntry()
         from jmdictdb.views.srchformq import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
@@ -231,7 +254,7 @@ def srchformq():
 
 @App.route ('/srchres.py')
 def srchres():
-        vLogEntry()
+        srvlib.vLogEntry()
         from jmdictdb.views.srchres import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
@@ -247,13 +270,13 @@ def srchres():
 
 @App.route ('/srchsql.py')
 def srchsql():
-        vLogEntry()
+        srvlib.vLogEntry()
         return render ('srchsql.jinja', this_page=path())
 
 @App.route ('/edsubmit.py', methods=['POST'])
 @App.route ('/submit.py', methods=['POST'])
 def submit():
-        vLogEntry()
+        srvlib.vLogEntry()
         from jmdictdb.views.submit import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.form)
         if errs:
@@ -262,7 +285,7 @@ def submit():
 
 @App.route ('/updates.py')
 def updates():
-        vLogEntry()
+        srvlib.vLogEntry()
         from jmdictdb.views.updates import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
@@ -275,7 +298,7 @@ def updates():
 
 @App.route ('/user.py')
 def user():
-        vLogEntry()
+        srvlib.vLogEntry()
         from jmdictdb.views.user import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
@@ -284,7 +307,7 @@ def user():
 
 @App.route ('/users.py')
 def users():
-        vLogEntry()
+        srvlib.vLogEntry()
         from jmdictdb.views.users import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.args)
         if errs:
@@ -294,7 +317,7 @@ def users():
 
 @App.route ('/userupd.py', methods=['POST'])
 def userupd():
-        vLogEntry()
+        srvlib.vLogEntry()
         from jmdictdb.views.userupd import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.form)
         if errs:
