@@ -68,6 +68,6 @@ td.syntable     {vertical-align:top; border: 1px solid black;
                  cellpadding:2; cellspacing:2;}
 
 /* Error form */
-.errormsg	{margin: 1px 1px 1px 1em; white-space: pre;
+.errormsg	{margin: 1px 1px 1px 1em; white-space: pre-wrap;
                  font-size:110%; font-family: monospace;
                  padding 2px; }

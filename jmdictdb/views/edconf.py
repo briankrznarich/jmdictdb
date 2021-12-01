@@ -60,7 +60,7 @@ def view (svc, cfg, user, cur, form):
         name    = submit.clean (url_str ('name', form))
         email   = submit.clean (url_str ('email', form))
 
-        if errs: return {}, errs
+        if errs: return {}, {'errs':errs}
 
           # Parse the entry data.  Problems will be reported
           # by messages in 'perrs'.  We do the parse even if
@@ -72,13 +72,14 @@ def view (svc, cfg, user, cur, form):
         entr, errs = parse (intxt)
           # 'errs' is a list which if not empty has a single item
           # which is a 2-seq of str's: (error-type, error-message).
-        if errs or not entr:
-            if not entr and not errs:
-                errs = ["Unable to create an entry from your input."]
-                #FIXME: what to return to present this error properly?
-            # jmcgi.err_page ([errs[0][1]], prolog=errs[0][0],
-            #                 cssclass="errormsg")
-            return {}, errs
+        if errs:
+            MARKER = '\u2587'  # Needs to match MARKER[0] in jelparse.y.
+            err, pro = errs[0][1], errs[0][0] 
+            epi = "Approximate location of error, if known, "\
+                  "is marked with %s." % MARKER
+            return {}, {'errs':[err],'prolog':pro,'epilog': epi}
+        if not entr:
+            return {}, {'errs':["Unable to create entry"]}
 
         entr.dfrm = eid;
         entr.unap = not disp
@@ -176,17 +177,17 @@ def view (svc, cfg, user, cur, form):
             rslv_errs = jelparse.resolv_xrefs (cur, entr)
             if rslv_errs: chklist['xrslv'] = rslv_errs
 
-        if errs: return {}, errs
+        if errs: return {}, {'errs':errs}
 
           # Append a new hist record details this edit.
         if not hasattr (entr, '_hist'): entr._hist = []
         entr = jdb.add_hist (entr, pentr, user.userid if user else None,
                              name, email, comment, refs,
                              entr.stat==KW.STAT['D'].id)
-        if errs: return {}, errs
+        if errs: return {}, {'errs':errs}
         if not delete:
             check_for_errors (entr, errs)
-            if errs: return {}, errs
+            if errs: return {}, {'errs':errs}
             pseq = pentr.seq if pentr else None
             check_for_warnings (cur, entr, pseq, chklist)
 

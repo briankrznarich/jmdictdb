@@ -80,11 +80,14 @@ def main (args, opts):
         entr, errs = parse (intxt)
           # 'errs' is a list which if not empty has a single item
           # which is a 2-seq of str's: (error-type, error-message).
-        if errs or not entr:
-            if not entr and not errs:
-                errs = ([], "Unable to create an entry from your input.")
-            jmcgi.err_page ([errs[0][1]], prolog=errs[0][0],
-                            cssclass="errormsg")
+        if errs:
+            MARKER = '\u2587'  # Needs to match MARKER[0] in jelparse.y.
+            err, pro = errs[0][1], errs[0][0] 
+            epi = "Approximate location of error, if known, "\
+                  "is marked with %s." % MARKER
+            jmcgi.err_page ([err],prolog=pro,epilog=epi,cssclass="errormsg")
+        if not entr:
+            jmcgi.err_page (["Unable to create entry"], cssclass="errormsg")
 
         entr.dfrm = eid;
         entr.unap = not disp

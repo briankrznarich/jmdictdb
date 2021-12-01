@@ -163,7 +163,10 @@ def edconf():
         from jmdictdb.views.edconf import view
         data, errs = view (G.svc, G.cfg, G.user, G.dbcur, Rq.values)
         if errs:
-             return render ('error.jinja', errs=errs, cssclass='errormsg')
+               # 'errs' is a dict with items: 'errs', a list of error
+               # messages; optionally 'prolog', prolog text; and optionally
+               # 'epilog', epilog text.
+             return render ('error.jinja', cssclass='errormsg', **errs)
         return render ('edconf.jinja', this_page=path(), **data)
 
 @App.route ('/edform.py')

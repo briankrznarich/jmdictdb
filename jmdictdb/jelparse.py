@@ -399,9 +399,7 @@ def perror (t_or_p, msg="Syntax Error", loc=True):
               # LexTokens will have a "lexpos" attribute.
             elif hasattr (t_or_p, 'lexpos'):
                 errpos = t_or_p.lexpos
-            if errpos == -1:
-                raise ValueError ("Unable to get lexer error position.  "
-                                  "Was parser called with tracking=True?")
+            if errpos == -1: errpos = None
             t = errloc (errpos)
             loc_text = '\n'.join (t)
         else:
@@ -423,28 +421,10 @@ def errloc (errpos):
 
         global JelParser
         input = JelParser.lexer.lexdata
-        if errpos is None: errpos = len (input)
-        lines = input.splitlines (True)
-        eol = 0;  out = []
-        for line in lines:
-            out.append (line.rstrip('\n\r'))
-            eol += len (line)
-            if eol >= errpos and errpos >= 0:
-                  # Calculate 'errcol', the error position relative
-                  # to the start of the current line.
-                errcol = len(line) + errpos - eol
-                  # The line may contain double-width characters.  Count
-                  # (in 'adj') the number of them that occur up to (but
-                  # not past) 'errcol'.
-                adj = 0
-                for chr in line[:errcol]:
-                    w = unicodedata.east_asian_width (chr)
-                    if w == "W" or w == "F": adj += 1
-                  # This assume that the width of a space is the same as
-                  # regular characters, and exactly half of a double-width
-                  # character, but that is the best we can do here.
-                out.append ((' ' * (errcol+adj)) + '^')
-                errpos = -1     # Ignore errpos on subsequent loops.
+        MARKER = '\u2587\u2587'
+        if errpos is None: out = input
+        else: out = input[:errpos] + MARKER + input[errpos:]
+        out = out.splitlines(0)
         return out
 
 def tag_eql_text (p, tag, text):
