@@ -135,7 +135,7 @@
             {%- endif %}{# not e.id  #}
           <tr>
             <td>Kanji: <br><a class="helplink" target="edhelp" href="edhelp.py?svc={{svc}}&amp;sid={{sid}}#kanji" tabindex="1274">help</a></td>
-            <td><textarea id="kanj" name="kanj" wrap="physical" cols="60" rows="3" tabindex="1202" style="width:100%;">{{e.ktxt}}</textarea></td>
+            <td><textarea id="kanj" name="kanj" cols="60" rows="3" tabindex="1202" style="width:100%;">{{e.ktxt}}</textarea></td>
             <td> </td>
             <td>
               Tags Help: <br>
@@ -144,7 +144,7 @@
               </td></tr>
           <tr>
             <td>Reading(s): <br><a class="helplink" target="edhelp" href="edhelp.py?svc={{svc}}&amp;sid={{sid}}#readings" tabindex="1275">help</a></td>
-            <td><textarea name="rdng" wrap="physical" cols="60" rows="3" tabindex="1203" style="width:100%;">{{e.rtxt}}</textarea></td>
+            <td><textarea name="rdng" cols="60" rows="3" tabindex="1203" style="width:100%;">{{e.rtxt}}</textarea></td>
             <td> </td>
             <td>
               <a class="helplink" target="edhelp" href="edhelp.py?svc={{svc}}&amp;sid={{sid}}#kw_rinf" tabindex="1255">reading info</a><br>
@@ -153,7 +153,7 @@
               </td></tr>
           <tr>
             <td>Meaning(s): <br><a class="helplink" target="edhelp" href="edhelp.py?svc={{svc}}&amp;sid={{sid}}#senses" tabindex="1276">help</a></td>
-            <td><textarea name="sens" wrap="physical" cols="60" rows="6" tabindex="1204" style="width:100%;">{{e.stxt}}</textarea></td>
+            <td><textarea name="sens" cols="60" rows="6" tabindex="1204" style="width:100%;">{{e.stxt}}</textarea></td>
             <td> </td>
             <td>
               <a class="helplink" target="edhelp" href="edhelp.py?svc={{svc}}&amp;sid={{sid}}#kw_pos" tabindex="1258">part-of-speech</a><br>
@@ -188,13 +188,13 @@
             {%- endif %}
           <tr>
             <td>References: <br><a class="helplink" target="edhelp" href="edhelp.py?svc={{svc}}&amp;sid={{sid}}#references" tabindex="1279">help</a></td>
-            <td><textarea name="reference" wrap="physical" cols="60" rows="6" tabindex="1205" style="width:100%;">{{extra.ref|d}}</textarea></td>
+            <td><textarea name="reference" cols="60" rows="6" tabindex="1205" style="width:100%;">{{extra.ref|d}}</textarea></td>
             <td> </td>
             <td> </td>
             </tr>
           <tr>
             <td>Comments: <br><a class="helplink" target="edhelp" href="edhelp.py?svc={{svc}}&amp;sid={{sid}}#comments" tabindex="1280">help</a></td>
-            <td><textarea name="comment" wrap="physical" cols="60" rows="6" tabindex="1206" style="width:100%;">{{extra.comment|d}}</textarea></td>
+            <td><textarea name="comment" cols="60" rows="6" tabindex="1206" style="width:100%;">{{extra.comment|d}}</textarea></td>
             <td> </td>
             <td> </td>
             </tr>
@@ -285,7 +285,7 @@
           <tr>
             <td>Entr note: <a class="helplink" target="edhelp" target="edhelp" href="edhelp.py?svc={{svc}}&amp;sid={{sid}}#entrnote_ed" tabindex="1287">help</a></td>
             <td>
-              <textarea name="notes" wrap="physical" width="100%" cols="60" rows="2" tabindex="1224" style="width:100%;">{{e.notes}}</textarea>
+              <textarea name="notes" width="100%" cols="60" rows="2" tabindex="1224" style="width:100%;">{{e.notes}}</textarea>
               </td>
             <td> </td>
             <td> </td>
@@ -293,7 +293,7 @@
           <tr>
             <td>Groups: <a class="helplink" target="edhelp" target="edhelp" href="edhelp.py?svc={{svc}}&amp;sid={{sid}}#groups_ed" tabindex="1288">help</a></td>
             <td>
-              <textarea name="grp" wrap="physical" width="100%" cols="60" rows="2" tabindex="1226" style="width:100%;">{{e|TALgrps}}</textarea>
+              <textarea name="grp" width="100%" cols="60" rows="2" tabindex="1226" style="width:100%;">{{e|TALgrps}}</textarea>
               </td>
             <td> </td>
             <td> </td>
