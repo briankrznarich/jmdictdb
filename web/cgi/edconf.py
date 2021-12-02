@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import sys, cgi, re, datetime, copy
+import markupsafe
 try: import pkgpath.py  # Make jmdictdb package available on sys.path.
 except ImportError: pass
 from jmdictdb import logger; from jmdictdb.logger import L
@@ -82,7 +83,7 @@ def main (args, opts):
           # which is a 2-seq of str's: (error-type, error-message).
         if errs:
             MARKER = '\u2587'  # Needs to match MARKER[0] in jelparse.y.
-            err, pro = errs[0][1], errs[0][0] 
+            err, pro = errs[0][1], markupsafe.escape(errs[0][0])
             epi = "Approximate location of error, if known, "\
                   "is marked with %s." % MARKER
             jmcgi.err_page ([err],prolog=pro,epilog=epi,cssclass="errormsg")

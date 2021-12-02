@@ -4,7 +4,7 @@
 
 import sys, ply.yacc, re, unicodedata, pdb
 from collections import defaultdict
-from jmdictdb import jellex, jdb
+from jmdictdb import jellex, jdb, restr
 from jmdictdb.objects import *
 
 class ParseError (ValueError):
@@ -33,13 +33,13 @@ entr    : preentr
                   # readings or kanji.
                 if hasattr (e, '_rdng') and hasattr (e, '_kanj'):
                     err = mk_restrs ("_RESTR", e._rdng, e._kanj)
-                    if err: perror (p, err, loc=False)
+                    if err: perror (p, err)
                 if hasattr (e, '_sens') and hasattr (e, '_kanj'):
                     err = mk_restrs ("_STAGK", e._sens, e._kanj)
-                    if err: perror (p, err, loc=False)
+                    if err: perror (p, err)
                 if hasattr (e, '_sens') and hasattr (e, '_rdng'):
                     err = mk_restrs ("_STAGR", e._sens, e._rdng)
-                    if err: perror (p, err, loc=False)
+                    if err: perror (p, err)
                 p[0] = e }
         ;
 preentr
@@ -716,14 +716,14 @@ def mk_restrs (listkey, rdngs, kanjs):
               # Get the list of restr text strings and nokanji flag and
               # delete them from the rdng object since they aren't part
               # of the standard api.
-            restrtxt = getattr (r, listkey, None)
-            if restrtxt: delattr (r, listkey)
+            restrtxts = getattr (r, listkey, None)
+            if restrtxts: delattr (r, listkey)
             nokanj = getattr (r, '_NOKANJI', None)
             if nokanj: delattr (r, '_NOKANJI')
 
               # Continue with next reading if nothing to be done
               # with this one.
-            if not nokanj and not restrtxt: continue
+            if not nokanj and not restrtxts: continue
 
               # bld_rdngs() guarantees that {_NOKANJI} and {_RESTR}
               # won't both be present on the same rdng.
@@ -732,24 +732,19 @@ def mk_restrs (listkey, rdngs, kanjs):
                   # message can hardwire "reading" and "kanji" text even though
                   # this function in also used for sens-rdng and sens-kanj
                   # restrictions.
-                errs.append ("Reading %d has 'nokanji' tag but entry has no kanji" % (n+1))
+                msg = "Reading %d has 'nokanji' tag but entry has no kanji"\
+                      % (n+1)
+                errs.append (msg)
                 continue
-            if nokanj: restrtxt = None
-            z = jdb.txt2restr (restrtxt, r, kanjs, listkey.lower())
-              # Check for kanji erroneously in the 'restrtxt' but not in
-              # 'kanjs'.  As an optimization, we only do this check if the
-              # number of Restr objects created (len(z)) plus the number of
-              # 'restrtxt's are not equal to the number of 'kanjs's.  (This
-              # criterion my not be valid in some corner cases.)
-            if restrtxt is not None and len (z) + len (restrtxt) != len (kanjs):
-                nomatch = [x for x in restrtxt if x not in ktxts]
-                if nomatch:
-                    if   listkey == "_RESTR": not_found_in = "kanji"
-                    elif listkey == "_STAGR": not_found_in = "readings"
-                    elif listkey == "_STAGK": not_found_in = "kanji"
-                    errs.append ("restr value(s) '" +
-                            "','".join (nomatch) +
-                            "' not in the entry's %s" % not_found_in)
+            if nokanj: restrtxts = None
+              # txt2restr() will lookup each string in list 'restrtxts'
+              # in list of Kanj/Rdng items, 'kanjs', and then for each,
+              # create a Restr/Stagr/Stagk item and append it to the
+              # proper attribute (.restr/.stanr/.stagk) of Rdng/Sens
+              # item 'r'.  If the resttxts sting is not found, a KeyError
+              # is raised.
+            try: z = restr.txt2restr (restrtxts, r, kanjs, listkey.lower())
+            except KeyError as e: errs.append (str (e))
         return "\n".join (errs)
 
 def x2xrslv (t):

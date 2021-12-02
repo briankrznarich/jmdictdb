@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import sys, cgi, re, datetime, copy
+import markupsafe
 from jmdictdb import logger; from jmdictdb.logger import L
 from jmdictdb import jdb, jmcgi, jelparse, jellex, serialize, submit, fmt
 from jmdictdb.srvlib import fv, fvn as fl
@@ -74,7 +75,7 @@ def view (svc, cfg, user, cur, form):
           # which is a 2-seq of str's: (error-type, error-message).
         if errs:
             MARKER = '\u2587'  # Needs to match MARKER[0] in jelparse.y.
-            err, pro = errs[0][1], errs[0][0] 
+            err, pro = errs[0][1], markupsafe.escape(errs[0][0])
             epi = "Approximate location of error, if known, "\
                   "is marked with %s." % MARKER
             return {}, {'errs':[err],'prolog':pro,'epilog': epi}

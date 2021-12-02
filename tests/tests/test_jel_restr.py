@@ -75,8 +75,8 @@ class KRrestrs (unittest.TestCase):
   def test0010711(_): rk(_, '一人一人;１人１人', 'ひとりびとり["１人１人"]', [[RK(1)]])   # c.f. jmdict-q1612530
 
     # Failures
-  def test0020110(_): rkf(_, '亜;井;卯', 'あ[絵]',    KeyError, "Restriction target.*not found")
-  def test0020120(_): rkf(_, '亜;井;卯', 'あ[井、絵]', KeyError, "Restriction target.*not found")
+  def test0020110(_): rkf(_, '亜;井;卯', 'あ[絵]',    ParseError, "Restriction target.*not found")
+  def test0020120(_): rkf(_, '亜;井;卯', 'あ[井、絵]', ParseError, "Restriction target.*not found")
   def test0020530(_): rkf(_, '亜;井;卯', 'あ[亜;卯]', ParseError, "Syntax Error") # Semicolon separator.
   def test0020710(_): rkf(_, '亜;井;卯・う', 'あ[卯・う]', ParseError, "Syntax Error")  # unquoted "・"; c.f. 0010710.
 
@@ -128,11 +128,11 @@ class SKrestrs (unittest.TestCase):
   def test0010710(_): sk(_, '亜;井;卯・う', '[1]x["卯・う"]', [[SK(1),SK(2)]])    # Quoted middot.
 
     # Failures
-  def test0020110(_): skf(_, '亜;井;卯', '[1]x[絵]',      KeyError, "Restriction target.*not found")
-  def test0020120(_): skf(_, '亜;井;卯', '[1]x[井、絵]',   KeyError, "Restriction target.*not found")
+  def test0020110(_): skf(_, '亜;井;卯', '[1]x[絵]',      ParseError, "Restriction target.*not found")
+  def test0020120(_): skf(_, '亜;井;卯', '[1]x[井、絵]',   ParseError, "Restriction target.*not found")
   def test0020530(_): skf(_, '亜;井;卯', '[1]x[亜;卯]',    ParseError, "Syntax Error")
       # rk-restr tag "nokanji' not recognised in stagk, stagr restrs.
-  def test0020540(_): skf(_, '亜;井;卯', '[1]x[nokanji]',  KeyError, 'Restriction target.*nokanji.*not found')
+  def test0020540(_): skf(_, '亜;井;卯', '[1]x[nokanji]',  ParseError, 'Restriction target.*nokanji.*not found')
   def test0020710(_): skf(_, '亜;井;卯・う', '[1]x[卯・う]', ParseError, "Syntax Error")  # unquoted "・"; c.f. 0010710.
 
 #=============================================================================
@@ -183,11 +183,11 @@ class SRrestrs (unittest.TestCase):
   def test0010710(_): sr(_, 'あ;い;う・う', '[1]あ["う・う"]',  [[SR(1),SR(2)]])    # Quoted middot.
 
     # Failures
-  def test0020110(_): srf(_, 'あ;い;う', '[1]x[ん]',      KeyError, "Restriction target.*not found")
-  def test0020120(_): srf(_, 'あ;い;う', '[1]x[い、ん]',   KeyError, "Restriction target.*not found")
+  def test0020110(_): srf(_, 'あ;い;う', '[1]x[ん]',      ParseError, "Restriction target.*not found")
+  def test0020120(_): srf(_, 'あ;い;う', '[1]x[い、ん]',   ParseError, "Restriction target.*not found")
   def test0020530(_): srf(_, 'あ;い;う', '[1]x[あ;う]',    ParseError, "Syntax Error")
       # rk-restr tag "nokanji' not recognised in stagk, stagr restrs.
-  def test0020540(_): srf(_, 'あ;い;う', '[1]x[nokanji]',  KeyError, 'Restriction target.*nokanji.*not found')
+  def test0020540(_): srf(_, 'あ;い;う', '[1]x[nokanji]',  ParseError, 'Restriction target.*nokanji.*not found')
   def test0020710(_): srf(_, 'あ;い;う・う', '[1]x[卯・う]', ParseError, "Syntax Error")  # unquoted "・"; c.f. 0010710.
 
 #=============================================================================

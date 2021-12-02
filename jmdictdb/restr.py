@@ -224,7 +224,7 @@ def txt2restr (restrtxts, rdng, kanjs, attr=None, bad=None):
                 if x not in ktxts:
                     if bad is not None: bad.append (x)
                     else: raise KeyError (
-                      'Restriction target text "%s" not found' % x)
+                      'Restriction target "%s" not found' % x)
         restrs = []; nkanjs = []
         if restrtxts != []:
             cls, attr, lst = restr_info (rdng, kanjs[0])
