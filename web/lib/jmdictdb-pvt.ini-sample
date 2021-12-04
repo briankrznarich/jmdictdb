@@ -1,20 +1,20 @@
 ########################################################################
 #
-#   config-pvt-sample.ini
-#   This file is an example of the contents of config-pvt.ini.
+#   jmdictdb-pvt-sample.ini
+#   This file is an example of the contents of jmdictdb-pvt.ini.
 #
-#   config-pvt.ini is for settings that need to be kept private,
+#   jmdictdb-pvt.ini is for settings that need to be kept private,
 #   particularly the access credentials for the JMdictDB databases.
 #
-#   In addition to editing config-pvt.ini, you'll need to tell
+#   In addition to editing jmdictdb-pvt.ini, you'll need to tell
 #   JMdictDB to use it by adding or editing the following section
-#   in the main configuration file, config.ini:
+#   in the main configuration file, jmdictdb.ini:
 #
 #     [config]
-#     PRIVATE = config-pvt.ini
+#     PRIVATE = jmdictdb-pvt.ini
 #
 #   CAUTION:
-#   config-pvt.ini should not be world readable: only the site
+#   jmdictdb-pvt.ini should not be world readable: only the site
 #   maintainer(s) should have write access and only they and the
 #   webserver process should have read access.
 #

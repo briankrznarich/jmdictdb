@@ -2,23 +2,23 @@
 # Copyright (c) 2019 Stuart McGraw
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-# jmapp -- WSGI application for JMdictDB.
+# flaskapp -- WSGI application for JMdictDB.
 # Please see the installation documention for information about
 # configuring a WSGI webserver.
 #
 # For production use, the App object created here is imported by a WSGI
 # server and the server will call its methods in response to http requests
 # it receives.  For development it can be run with the Flask debug server
-# by the program tools/run-jmapp.py.
+# by the program tools/run-flask.py.
 #
 # Note that a lot of what happens here (such as reading the configuration
 # files) happens when this module is imported.  An environment variable,
-# JMAPP_CFGFILE, *MUST* be defined and point to a readable configuration
-# file at import time.  Both cgi/jmapp.wsgi (run by Apache/mod_wsgi) and
-# bin/run-jmapp.py (runs the Flask debug server) do so.
+# JMDICTDB_CFGFILE, *MUST* be defined and point to a readable configuration
+# file at import time.  Both cgi/jmdictdb.wsgi (run by Apache/mod_wsgi) and
+# bin/run-flask.py (runs the Flask debug server) do so.
 #
 # Please see installation documentation and the source files web/lib/-
-# config-sample.ini and config-pvt-sample.ini for details on the
+# jmdictdb.ini-sample and jmdictdb-pvt.ini-sample for details on the
 # configuration file format and contents.
 
 import sys, os, datetime, pdb
@@ -34,11 +34,11 @@ from jmdictdb.srvlib import fv, fvn
 from jmdictdb.logger import L
 
 def app_config (app, cfgfile):
-        app.session_cookie_name = 'jmapp'
+        app.session_cookie_name = 'jmwsgi'
         app.secret_key = 'secret'
         # print ("Loading config file: %s" % cfgfile, file=sys.stderr) ##DEBUG
           # We may get an OSError exception if the config file given by
-          # environment variable JMAPP_CFGFILE can not be opened for some
+          # environment variable JMDICTDB_CFGFILE can not be opened for some
           # reason.  We let the exception happen with th assumption if will
           # end up in the webserver's log file.
         try: cfg = jmcgi.initcgi (cfgfile)
@@ -52,9 +52,9 @@ App = flask.Flask (__name__, static_folder='../web',
 
   # Environment variable identifying the config file MUST be set
   # when this module is imported.
-try: cfgfile = os.environ['JMAPP_CFGFILE']
+try: cfgfile = os.environ['JMDICTDB_CFGFILE']
 except KeyError:
-    msg = "The JMAPP_CFGFILE environment variable was not set"
+    msg = "The JMDICTDB_CFGFILE environment variable was not set"
     raise RuntimeError (msg) from None
 
 app_config (App, cfgfile)
@@ -87,12 +87,13 @@ def prereq():
           #  separately) but multiple logins can be stored simultaneously
           #  in Session.
         G.user = rest.get_user (G.svc, Session)
-        L('jmapp.prereq').debug("cfg files: %s"%G.cfg.get('status','cfg_files'))
+        L('jmwsgi.prereq').debug("cfg files: %s"
+                                 % G.cfg.get('status','cfg_files'))
           # The following logging statement should usually be disabled
           # because the output contains database login credentials.
           # Enable for debugging only.
-        #L('jmapp.prereq').debug("svc=%s; cfg=%r"
-        #                        % (G.svc,dict(G.cfg['db_'+G.svc])))
+        #L('jmwsgi.prereq').debug("svc=%s; cfg=%r"
+        #                         % (G.svc,dict(G.cfg['db_'+G.svc])))
         G.dbcur = rest.dbOpenSvc (G.cfg, G.svc)
 
 @App.before_request

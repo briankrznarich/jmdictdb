@@ -74,8 +74,8 @@ CSS_FILES = jmdict.css \
 WEB_CSS = $(addprefix web/,$(CSS_FILES))
 
 LIB_FILES = .htaccess \
-        config-sample.ini \
-        config-pvt-sample.ini
+        jmdictdb.ini-sample \
+        jmdictdb-pvt.ini-sample
 WEB_LIB = $(addprefix web/lib/,$(LIB_FILES))
 
 CGI_FILES = cgiinfo.py \
@@ -86,7 +86,6 @@ CGI_FILES = cgiinfo.py \
         edhelp.py \
         edhelpq.py \
         edsubmit.py \
-        jmapp.wsgi \
         srchform.py \
         srchformq.py \
         srchres.py \

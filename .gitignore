@@ -14,7 +14,7 @@ __pycache__/
 /tests/tmp/
 /web/lib/config.ini
 /web/lib/config-pvt.ini
-web/lib/cfgapp.ini
-web/lib/cfgapp-pvt.ini
+/web/lib/jmdictdb.ini
+/web/lib/jmdictdb-pvt.ini
 /web/cgi/parser.out
-/web/cgi/jmapp.wsgi
+/web/cgi/jmdictdb.wsgi
