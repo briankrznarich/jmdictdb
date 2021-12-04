@@ -64,7 +64,7 @@
               <input type="hidden" name="svc" value="{{svc}}">
               <input type="hidden" name="this_page" value="{{this_page}}">
             {%- if user %}
-              <a href="user.py?svc={{svc}}">{{user.userid}}</a>
+              <a href="user.py?svc={{svc}}">{{user.fullname or user.userid}}</a>
               <input type="submit" name="loginout" value="logout">
             {%- else %}{# not user #}
               <table align="right">
