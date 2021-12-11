@@ -22,55 +22,83 @@ import sys, configparser, html, os, pdb
 try: import pkgpath.py  # Make jmdictdb package available on sys.path.
 except ImportError: pass
 
-def main():
-        try: import jmdictdb
-        except ImportError:
-            content = """\
-                <h3>Failed to import jmdictdb</h3>
-                Current directory is: %s<br>
-                sys.path is: %r"""  % (os.getcwd(), sys.path)
-            return Page % content
-        from jmdictdb import jdb, config, jmcgi
+Row_tmpl = "    <tr><td>%s</td><td>%s</td></tr>"
 
-        row_tmpl = "    <tr><td>%s</td><td>%s</td></tr>"
+jmdictdb = jdb = config = jmcgi = None
+Failed_import = None
+  # Following imports are in order of depencies: if import of jmdictdb fails,
+  # a the following ones will fail too; if jdb fails, so won't config ands
+  # jmcgi.  So no point trying a later import if earlier one fails and we
+  # need only record the name of the first to fail.
+try: import jmdictdb
+except ImportError: Failed_import = 'jmdictdb'
+if not Failed_import:
+    try: from jmdictdb import jdb
+    except ImportError: Failed_import = 'jdb'
+if not Failed_import:
+    try: from jmdictdb import config
+    except ImportError: Failed_import = 'config'
+if not Failed_import:
+    try: from jmdictdb import jmcgi
+    except ImportError: Failed_import = 'jmcgi'
+
+def main():
+        ex_rows = gen_ex_section()
+        cfg_rows = gen_cfg_section()
+        env_rows = gen_env_section()
+        htmltxt = Page % (ex_rows, cfg_rows, env_rows)
+        print ("Content-type: text/html\n\n", htmltxt)
 
   # NOTE: Be mindful of the distinction between cfg.get()
   # and cfg_get() below.
 
+def gen_ex_section():
         exdata = []
         exdata.append (('cwd', os.getcwd()))
         exdata.append (('cgi location',
                      os.path.dirname (os.path.abspath (__file__))))
-        exdata.append (('pkg location',
-                     os.path.dirname (os.path.abspath (jdb.__file__))))
-        exdata.append (('pkg version',
-                     getattr (jmdictdb, '__version__', '<none>')))
-        exdata.append (('sys.path', '%r' % sys.path))
-        ex_rows = '\n'.join ([row_tmpl % (key.replace(' ','&nbsp;'), html.escape(value))
+        exdata.append (('python version', '%r' % sys.version))
+        exdata.append (('sys.path', '%s' % sys.path))
+        if jdb is not None:
+            try: pkg_loc = os.path.dirname (os.path.abspath (jdb.__file__))
+            except Exception as e: pkg_loc = e.__class__.__name__+": "+str(e)
+            exdata.append (('pkg location', pkg_loc))
+        else: exdata.append (('pkg location', "- (import of %s module failed)" % Failed_import))
+        if jmdictdb is not None:
+            try: pkg_ver =  getattr (jmdictdb, '__version__', '<none>')
+            except Exception as e: pkg_ver = e.__class__.__name__+": "+str(e)
+            exdata.append (('pkg version', pkg_ver))
+        else: exdata.append (('pkg version', "- (import of %s module failed)" % Failed_import))
+        ex_rows = '\n'.join ([Row_tmpl % (key.replace(' ','&nbsp;'), html.escape(value))
                               for key,value in exdata])
+        return ex_rows
 
+def gen_cfg_section ():
         cfgdata = []
-          # The canonical definition the CGI config file location is
-          # defined by the variable CONFIG_FILE in module jmcgi.
-        try: cfg = config.cfgRead (jmcgi.CONFIG_FILE)
-        except Exception as e:
-            cfgdata.append ((jmcgi.CONFIG_FILE, str(e)))
+        if Failed_import:
+            cfgdata.append (('', "- (import of %s module failed)" % Failed_import))
         else:
-            cfgdata.append (('config dir', cfg.get ('status', 'cfg_dir')))
-            cfgdata.append (('config files',
-                            cfg.get ('status', 'cfg_files')))
-            cfgdata.append (cfg_get (cfg, 'logging', 'LOG_FILENAME'))
-            cfgdata.append (cfg_get (cfg, 'web', 'STATUS_DIR'))
-            cfgdata.extend (cfg_svcs (cfg))
-        cfg_rows = '\n'.join ([row_tmpl % (key.replace(' ','&nbsp;'),
+              # The canonical definition the CGI config file location is
+              # defined by the variable CONFIG_FILE in module jmcgi.
+            try: cfg = config.cfgRead (jmcgi.CONFIG_FILE)
+            except Exception as e:
+                cfgdata.append ((jmcgi.CONFIG_FILE, e.__class__.__name__+": "+str(e)))
+            else:
+                cfgdata.append (('config dir', cfg.get ('status', 'cfg_dir')))
+                cfgdata.append (('config files',
+                                cfg.get ('status', 'cfg_files')))
+                cfgdata.append (cfg_get (cfg, 'logging', 'LOG_FILENAME'))
+                cfgdata.append (cfg_get (cfg, 'web', 'STATUS_DIR'))
+                cfgdata.extend (cfg_svcs (cfg))
+        cfg_rows = '\n'.join ([Row_tmpl % (key.replace(' ','&nbsp;'),
                                            html.escape(value).replace("\n","<br>"))
                               for key,value in cfgdata])
+        return cfg_rows
 
-        env_rows = '\n'.join ([row_tmpl % (key.replace(' ','&nbsp;'), html.escape(value))
+def gen_env_section ():
+        env_rows = '\n'.join ([Row_tmpl % (key.replace(' ','&nbsp;'), html.escape(value))
                               for key,value in sorted (os.environ.items())])
-
-        htmltxt = Page % (ex_rows, cfg_rows, env_rows)
-        print ("Content-type: text/html\n\n", htmltxt)
+        return env_rows
 
 def cfg_get (cfg, section, key):
         tag = "[%s] %s" % (section, key)
