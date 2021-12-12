@@ -55,10 +55,36 @@ class General (unittest.TestCase):
           #  and thus it should exactly match 'out'.
         _.assertEqual (inp, out)
 
+    def test1000040(_):  # Parent entry disappears before commit of child
+                         #  as can happen when someone else approves a
+                         #  different edit of the same entry.
+        inp = Entr (stat=2, src=99,
+                    _rdng=[Rdng(txt='パン')], _kanj=[],
+                    _sens=[Sens(_gloss=[Gloss(txt="breab",lang=1,ginf=1)])],
+                    _hist=[Hist()])
+        eid,seq,src = submit_ (inp, disp='')
+        DBcursor.connection.commit()
+          # An index exception on next line indicates the new entry
+          #  was not found.
+        out = jdb.entrList (DBcursor, None, [eid])[0]
+          # Make a change to the entry.
+        inp._sens[0]._gloss[0].txt = "bread"
+        inp.dfrm = eid
+          # Remove the original entry as would happen if someone else had
+          # approved a different edit of it.
+        DBcursor.execute ("DELETE FROM entr WHERE id=%s", (eid,))
+        DBcursor.connection.commit()
+          # Now submit our first edit which should raise an exception
+          # since the parent entry is gone.
+        errs = submitE (_, inp, disp='')
+        _.assertIn ('[noroot] The entry you are editing no longer exists',
+                    errs[0])
+
 class Approval (unittest.TestCase):
     def setUp(_):
           # In case a test fail left an open aborted transaction.
         DBcursor.connection.rollback()
+
     def test1000010(_):  # Create an new unapproved entry and approve.
         inp = Entr (stat=2, src=99,
                     _rdng=[Rdng(txt='パン')], _kanj=[],
@@ -110,9 +136,8 @@ class Approval (unittest.TestCase):
                     _hist=[Hist()])
           # Create a new, approved entry.
         eid,seq,src = submit_ (inp, disp='a',is_editor=True,userid='smg')
-        with _.assertRaisesRegex (RuntimeError,
-                                  'entry you are editing no longer exists'):
-            submit_ (inp, disp='a', is_editor=True, userid='smg')
+        errs = submitE (_, inp, disp='a', is_editor=True, userid='smg')
+        _.assertIn ('entry you are editing no longer exists', errs[0])
 
 class Clean (unittest.TestCase):
       # Tests for submit.clean() which strips ascii control characters
@@ -219,14 +244,28 @@ def addentr (jel, q=None, c=99, s=2, u=False, d=None):
         DBcursor.connection.commit()
         return entr
 
-  # Submit an Entr via submit.submission().
-def submit_ (entr, **kwds):  # Trailing "_" to avoid conflict
-        errs = []             #  with submit module.
+  # Submit an Entr via submit.submission().  Call this when no errors are
+  # expected.  If any occur, a Runtime Exception is raised so they will
+  # be noticed without need for caller to explicitly pass and check 'errs'.
+def submit_ (entr, **kwds):   # Trailing "_" in function name to avoid
+        errs = []             #  conflict with submit module.
         kwds['errs'] = errs
         id,seq,src = submit.submission (DBcursor, entr, **kwds)
         if errs: raise RuntimeError (errs)
-        # Don't commit, transaction will be rolled back automatically.
+          # Don't commit, transaction will be rolled back automatically.
         return id,seq,src
+
+  # Submit an Entr via submit.submission().  Call this when errors are
+  # expected.  The submission() return values confirmed to be None*3
+  # and the value of the 'errs' parameter returned for checking by the
+  # caller.
+def submitE (_, entr, **kwds):
+        errs = []
+        kwds['errs'] = errs
+        id,seq,src = submit.submission (DBcursor, entr, **kwds)
+          # Don't commit, transaction will be rolled back automatically.
+        _.assertEqual ((id,seq,src), (None,None,None))
+        return errs
 
   # Global variables.
 DBcursor = JELparser = None

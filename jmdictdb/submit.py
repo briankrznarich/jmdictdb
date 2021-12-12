@@ -122,6 +122,13 @@ class IsApprovedError (ValueError): pass
   #FIXME: Temporary hack...
 Svc, Sid = None, None
 
+  # submission() and several sub-functions it calls normally return a
+  # 3-tuple of (entry-id, sequence-number, src-id).  However if an error
+  # condition is encountered, they will typically add an error message
+  # to paramter 'errs[]' and return early.  In such case a 3-tuple also
+  # needs to be returned since that is inevitably what the caller expects.
+None3 = None, None, None
+
 def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
         # Add a changed entry, 'entr', to the jmdictdb database accessed
         # by the open DBAPI cursor, 'dbh'.
@@ -203,7 +210,7 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
              (';'.join (r.txt for r in entr._rdng))))
         L('submit.submission').debug("seqset: %s"
           % logseq (dbh, entr.seq, entr.src))
-        added = None, None, None
+        added = None3
         oldid = entr.id
         entr.id = None          # Submissions, approvals and rejections will
         entr.unap = not disp    #   always produce a new db entry object so
@@ -225,7 +232,7 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
             edroot = get_edroot (dbh, entr.dfrm)
             if not edroot:
                 L('submit.submission').debug("edroot returned %r" % edroot)
-                errs.append ("[noroot] "+noentr_msg);  return
+                errs.append ("[noroot] "+noentr_msg);  return None3
             edtree = get_subtree (dbh, edroot)
               # Get the parent entry and augment the xrefs so when hist diffs
               # are generated, they will show xref details.
@@ -233,6 +240,12 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
                                                % entr.dfrm)
             pentr, raw = jdb.entrList (dbh, None, [entr.dfrm], ret_tuple=True)
             if len (pentr) != 1:
+                  #FIXME: this should be treated as an assertion error:
+                  # it can't normally fail since we should be inside a
+                  # transaction and looking at a consistent database
+                  # snapshot; if the parent entry is gone now it was
+                  # gone when get_edroot() was called above and would
+                  # have produced a "noroot" error then.
                 L('submit.submission').debug("missing parent %d"
                                                    % entr.dfrm)
                   # The editset may have changed between the time our user
@@ -243,7 +256,7 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
                   # affect our subtree and if so will always manifest themselves
                   # as the disappearance of our parent entry.
                 errs.append ("[noparent] "+noentr_msg)
-                return
+                return None3
             pentr = pentr[0]
             jdb.augment_xrefs (dbh, raw['xref'])
 
@@ -368,10 +381,10 @@ def submit (dbh, entr, edtree, errs):
                                        % entr.dfrm)
         if not entr.dfrm and entr.stat != KW.STAT['A'].id:
             L('submit.submit').debug("bad url param exit")
-            errs.append ("Bad url parameter, no dfrm");  return
+            errs.append ("Bad url parameter, no dfrm");  return None3
         if entr.stat == jdb.KW.STAT['R'].id:
             L('submit.submit').debug("bad stat=R exit")
-            errs.append ("Bad url parameter, stat=R");  return
+            errs.append ("Bad url parameter, stat=R");  return None3
         res = addentr (dbh, entr)
         return res
 
@@ -381,7 +394,7 @@ def approve (dbh, entr, edtree, errs):
           # Check stat.  May be A or D, but not R.
         if entr.stat == KW.STAT['R'].id:
             L('submit.approve').debug("stat=R exit")
-            errs.append ("Bad url parameter, stat=R"); return
+            errs.append ("Bad url parameter, stat=R"); return None3
 
         dfrmid = entr.dfrm
         if dfrmid:
@@ -395,7 +408,7 @@ def approve (dbh, entr, edtree, errs):
                     "entry.  You need to reject those edits before you can "\
                     "approve this entry.  The id numbers are: %s"\
                     % ', '.join ("id="+url(x) for x in leafsn([e.args[0]]))))
-                return
+                return None3
             except BranchesError as e:
                 L('submit.approve').debug("BranchesError")
                 errs.append (jmcgi.Markup("There are other edits pending on "\
@@ -403,7 +416,7 @@ def approve (dbh, entr, edtree, errs):
                     "entry cannot be approved until those are rejected.  "\
                     "The id numbers are: %s"\
                     % ', '.join ("id="+url(x) for x in leafsn(e.args[0]))))
-                return
+                return None3
           # Prepare 'entr' to become independent.
         entr.dfrm = None
         entr.unap = False
@@ -434,11 +447,11 @@ def reject (dbh, entr, edtree, errs, rejcnt=None):
                     "To reject entries, you must reject the version(s) most "
                     "recently edited, which are: %s"\
                     % ', '.join ("id="+url(x) for x in leafsn([e.args[0]]))))
-            return
+            return None3
         except IsApprovedError as e:
             L('submit.reject').debug("IsApprovedrror")
             errs.append ("You can only reject unapproved entries.")
-            return
+            return None3
         if not rejcnt or rejcnt > len(rejs): rejcnt = len(rejs)
         chhead = (rejs[-rejcnt]).id if rejcnt else None
         L('submit.reject').debug("rejs=%r, rejcnt=%d, chhead=%s"
