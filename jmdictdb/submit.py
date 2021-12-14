@@ -308,8 +308,9 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
               # but it is not trustworthy since it could be modified or
               # created from scratch before we get it.  So we extract
               # the unvalidated info from it (name, email, notes, refs)
-              # and recreate it.
-            h = entr._hist[-1]
+              # and recreate it.  Provide an empty record if one not
+              # supplied (common with test submissions, etc.)
+            h = entr._hist[-1] if entr._hist else jdb.Hist()
               # When we get here, if merge_rev is true, pentr will also be
               # true.  If we are wrong, add_hist() will throw an exception
               # but will never return a None, so no need to check return val.
