@@ -1,4 +1,4 @@
-import sys, unittest, os.path, pdb
+import sys, unittest, os.path, copy, pdb
 import unittest_extensions
 from jmdb import DBmanager, JelParser
 from jmdictdb import jdb, db; from jmdictdb.objects import *
@@ -28,6 +28,17 @@ DBNAME, DBFILE = "jmtest01", "data/jmtest01.sql"
   # run, module setup and teardown functions delete all the entries in
   # the test corpus so preexisting detritus won't affect these tests
   # and to leave things clean for tests that use the database afterwards.
+  #
+  # A number of tests create the entries in the test database that are
+  # then edited and submitted.  The entries are (in some cases) created
+  # directly in the database by local helper function addentr() (a thin
+  # wrapper around jdb.addentr()) without going through submit.submission().
+  # It is then convenient to "edit" the returned entr object (since it
+  # already has kanj, rdng, sens, etc, values set) my modifying it and
+  # passing it to submission() to check for the expected response.  This
+  # editing is conveniently done with helper function edentr() which will
+  # autimatically create the necessary .dfrm link to the entry it is
+  # editing.
 
 class General (unittest.TestCase):
     def setUp(_):
@@ -35,12 +46,12 @@ class General (unittest.TestCase):
         DBcursor.connection.rollback()
     def test_1000010(_):  # Minimal new entry: no sense, reading or kanji.
         errs = []
-        e = Entr (src=99, stat=2, _hist=[Hist()])
+        e = Entr (src=99, stat=2)
         submit.submission (DBcursor, e, '', errs)
         _.assertEqual (0, len(errs))
 
     def test_1000020(_):  # A more realistic submission.
-        inp = Entr (stat=2, src=99, _hist=[Hist()],
+        inp = Entr (stat=2, src=99,
                     _rdng=[Rdng(txt='ゴミ')], _kanj=[],
                     _sens=[Sens(_gloss=[Gloss(txt="trash",lang=1,ginf=1)])],)
         eid,seq,src = submit_ (inp, disp='')
@@ -60,8 +71,7 @@ class General (unittest.TestCase):
                          #  different edit of the same entry.
         inp = Entr (stat=2, src=99,
                     _rdng=[Rdng(txt='パン')], _kanj=[],
-                    _sens=[Sens(_gloss=[Gloss(txt="breab",lang=1,ginf=1)])],
-                    _hist=[Hist()])
+                    _sens=[Sens(_gloss=[Gloss(txt="breab",lang=1,ginf=1)])])
         eid,seq,src = submit_ (inp, disp='')
         DBcursor.connection.commit()
           # An index exception on next line indicates the new entry
@@ -88,8 +98,7 @@ class Approval (unittest.TestCase):
     def test1000010(_):  # Create an new unapproved entry and approve.
         inp = Entr (stat=2, src=99,
                     _rdng=[Rdng(txt='パン')], _kanj=[],
-                    _sens=[Sens(_gloss=[Gloss(txt="breab",lang=1,ginf=1)])],
-                    _hist=[Hist()])
+                    _sens=[Sens(_gloss=[Gloss(txt="breab",lang=1,ginf=1)])])
         eid,seq,src = submit_ (inp, disp='')
         DBcursor.connection.commit()
           # An index exception on next line indicates the new entry
@@ -110,8 +119,7 @@ class Approval (unittest.TestCase):
     def test1000020(_):  # Edit an approved entry and approve.
         inp = Entr (stat=2, src=99,
                     _rdng=[Rdng(txt='パン')], _kanj=[],
-                    _sens=[Sens(_gloss=[Gloss(txt="breab",lang=1,ginf=1)])],
-                    _hist=[Hist()])
+                    _sens=[Sens(_gloss=[Gloss(txt="breab",lang=1,ginf=1)])])
           # Create a new, approved entry.
         eid,seq,src = submit_ (inp, disp='a',is_editor=True,userid='smg')
           # An index exception on next line indicates the new entry
@@ -132,12 +140,50 @@ class Approval (unittest.TestCase):
                          # IS-213.
         inp = Entr (seq=1000030, stat=2, src=99,
                     _rdng=[Rdng(txt='パン')], _kanj=[],
-                    _sens=[Sens(_gloss=[Gloss(txt="bread",lang=1,ginf=1)])],
-                    _hist=[Hist()])
+                    _sens=[Sens(_gloss=[Gloss(txt="bread",lang=1,ginf=1)])])
           # Create a new, approved entry.
         eid,seq,src = submit_ (inp, disp='a',is_editor=True,userid='smg')
         errs = submitE (_, inp, disp='a', is_editor=True, userid='smg')
         _.assertIn ('entry you are editing no longer exists', errs[0])
+
+    def test1001040(_):  # Fail submit non-leaf approve.
+        seq = 1001040
+          # Create edits: e1(A)-->e2(A*)-->e3(A*)
+          # then try to approve e2.  It should fail because there is
+          # a later edit on the same branch.
+        e1 = addentr ('\fねこいし\f[1]cat stone', q=seq, a=True)
+        e2 = addedit (e1)
+        e3 = addedit (e2)
+          # Edit e2 and and try to approve with submit.submission().
+        e = edentr (e2)
+        errs = submitE (_, e, disp='a', is_editor=True, userid='smg')
+        _.assertIn ('Edits have been made to this entry', errs[0])
+
+    def test1001050(_):  # Fail submit multiple branches approve.
+        seq = 1001050
+          # Create edits: e1(A)--.--->e2(A*)
+          #                       `-->e3(A*)
+          # then try to approve e3.  It should fail because there
+          # is another edit branch.
+        e1 = addentr ('\fねこぼうし\f[1]cathat', q=seq, a=True)
+        e2 = addedit (e1)
+        e3 = addedit (e1)
+        e = edentr (e3)   # Edit e3 and try to approve it.
+        errs = submitE (_, e, disp='a', is_editor=True, userid='smg')
+        _.assertIn ('There are other edits pending', errs[0])
+
+    def test1001060(_):  # Fail submit non-leaf reject.
+        seq = 1001060
+          # Create edits: e1(A)-->e2(A*)-->e3(A*)
+          # then try to approve e2.  It should fail because there is
+          # a later edit on the same branch.
+        e1 = addentr ('\fねこいし\f[1]cat stone', q=seq, a=True)
+        e2 = addedit (e1)
+        e3 = addedit (e2)
+          # Edit e2 and and try to reject with submit.submission().
+        e = edentr (e2)
+        errs = submitE (_, e, disp='r', is_editor=True, userid='smg')
+        _.assertIn ('Edits have been made to this entry', errs[0])
 
 class Clean (unittest.TestCase):
       # Tests for submit.clean() which strips ascii control characters
@@ -189,7 +235,7 @@ class Xrefs (unittest.TestCase):   # Named with plural form because "Xref"
 
     def test0001(_):
           # Create a single, simple xref.
-        e0 = mkentr ('犬\fいぬ\f[1]dog [see=猫]', c=99, h=[Hist()])
+        e0 = mkentr ('犬\fいぬ\f[1]dog [see=猫]', c=99)
         id,seq,src = submit_ (e0, disp='')
         e1 = jdb.entrList (DBcursor, None, [id])[0]
         expect = [Xref (id,1,1,3,_.t1.id,1,None,1,None,False,False)]
@@ -198,7 +244,7 @@ class Xrefs (unittest.TestCase):   # Named with plural form because "Xref"
 
     def test0002(_):
           # Xref to kanji and sense #1.
-        e0 = mkentr ('犬\fいぬ\f[1]dog [see=馬[2]]', c=99, h=[Hist()])
+        e0 = mkentr ('犬\fいぬ\f[1]dog [see=馬[2]]', c=99)
         id,seq,src = submit_ (e0, disp='')
         e1 = jdb.entrList (DBcursor, None, [id])[0]
         expect = [Xref (id,1,1,3,_.t2.id,2,None,1,None,False,False)]
@@ -207,7 +253,7 @@ class Xrefs (unittest.TestCase):   # Named with plural form because "Xref"
 
     def test0003(_):
           # Xref to reading and sense #1.
-        e0 = mkentr ('子犬\fこいぬ\f[1]puppy [see=うま[2]]', c=99, h=[Hist()])
+        e0 = mkentr ('子犬\fこいぬ\f[1]puppy [see=うま[2]]', c=99)
         id,seq,src = submit_ (e0, disp='')
         e1 = jdb.entrList (DBcursor, None, [id])[0]
         expect = [Xref (id,1,1,3,_.t2.id,2,1,None,None,False,False)]
@@ -217,7 +263,7 @@ class Xrefs (unittest.TestCase):   # Named with plural form because "Xref"
 class Xrslvs (unittest.TestCase):  # Named with plural form because "Xrslv"
     def test0001(_):               #  conflicts objects.Xrslv.
           # An xref to a non-existant target will generate an Xrslv object.
-        e0 = mkentr ('犬\fいぬ\f[1]dog[see=猫猫]', c=99, h=[Hist()])
+        e0 = mkentr ('犬\fいぬ\f[1]dog[see=猫猫]', c=99)
         errs = []
         id,seq,src = submit_ (e0, disp='')
         e1 = jdb.entrList (DBcursor, None, [id])[0]
@@ -229,20 +275,43 @@ class Xrslvs (unittest.TestCase):  # Named with plural form because "Xrslv"
 #=============================================================================
 # Support functions
 
-  # Create an Entr object from JEL.
-def mkentr (jel, q=None, c=99, s=2, u=False, d=None, h=[]):
+  # Create an Entr object from JEL and optionally add to the database.
+def mkentr (jel, q=None, c=99, s=2, a=False, d=None, h=[], dbw=False):
           # We need to pass srcid, stat, unap to .parse because they
           # are used when resolving any xrefs.
-        entr = JELparser.parse (jel, src=c, stat=s, unap=u, dfrm=d)
-        if h: entr._hist.extend (h)
-        return entr
+        e = JELparser.parse (jel, src=c, stat=s, unap=not a, dfrm=d)
+        e.seq, e.src, e.stat, e.unap, e.dfrm = q, c, s, not a, d
+        if h: e._hist.extend (h)
+        if dbw:
+            id,seq,src = jdb.addentr (DBcursor, e)
+            if not id: raise RuntimeError ("entry not added to database")
+            DBcursor.connection.commit()
+        return e
+  # Same as mkentr() but default database write is True.
+def addentr (*args, **kwargs): return mkentr (*args, dbw=True, **kwargs)
 
-  # Create an Entr object from JEL and add it to the database.
-def addentr (jel, q=None, c=99, s=2, u=False, d=None):
-        entr = mkentr (jel, q, c, s, u, d)
-        id,seq,src = jdb.addentr (DBcursor, entr)
-        DBcursor.connection.commit()
-        return entr
+  # "Edit" a copy of an existing entry, 'entr' and optionally add to the
+  # database.  Unless overridden by parameter 'd', the new entry's 'dfrm'
+  # value is set to 'entr.id' and its 'id set to None.  Other parameters,
+  # if given, will set the corresponding attributes.  The new entry object
+  # is returned, as possibly modified by jdb.addentr().
+NoChange = object()
+def edentr (entr, q=NoChange, c=NoChange, s=NoChange, a=False,
+                  d=NoChange, h=None, dbw=False):
+        e = copy.deepcopy (entr)
+        if d is NoChange: e.dfrm, e.id = e.id, None
+        else: e.dfrm = d
+        e.unap = not a
+        if q is not NoChange: e.seq = q
+        if c is not NoChange: e.src = c
+        if s is not NoChange: e.stat = s
+        if h: e._hist.append (h)
+        if dbw:
+            id,seq,src = jdb.addentr (DBcursor, e)
+            if not id: raise RuntimeError ("entry not added to database")
+            DBcursor.connection.commit()
+        return e
+def addedit (*args, **kwargs): return edentr (*args, dbw=True, **kwargs)
 
   # Submit an Entr via submit.submission().  Call this when no errors are
   # expected.  If any occur, a Runtime Exception is raised so they will
