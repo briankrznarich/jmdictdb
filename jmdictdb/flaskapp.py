@@ -266,7 +266,7 @@ def srchres():
               # is only one result *and* this is the first page *and* the
               # url parameter "srchres" (used to force showing the srchres
               # page even if only one result) is not set.
-            return Redirect (Url ('entr', e=data['results'][0].id))
+            return Redirect (Url ('entr', svc=G.svc, e=data['results'][0].id))
         return render ("srchres.jinja", this_page=path(), **data)
 
 @App.route ('/srchsql.py')
