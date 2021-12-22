@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.17 (Ubuntu 10.17-0ubuntu0.18.04.1)
--- Dumped by pg_dump version 10.17 (Ubuntu 10.17-0ubuntu0.18.04.1)
+-- Dumped from database version 10.18 (Ubuntu 10.18-0ubuntu0.18.04.1)
+-- Dumped by pg_dump version 10.18 (Ubuntu 10.18-0ubuntu0.18.04.1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -163,84 +163,6 @@ CREATE FUNCTION public.err(msg text) RETURNS boolean
 ALTER FUNCTION public.err(msg text) OWNER TO jmdictdb;
 
 --
--- Name: get_edroot(integer); Type: FUNCTION; Schema: public; Owner: jmdictdb
---
-
-CREATE FUNCTION public.get_edroot(eid integer) RETURNS SETOF integer
-    LANGUAGE plpgsql
-    AS $$
-    -- Starting at entry 'eid', follow the chain of 'dfrm' foreign
-    -- keys until a entr row is found that has a NULL 'dfrm' value,
-    -- and return that row (which may be the row with id of 'eid').
-    -- If there is no row with an id of 'eid', or if there is a cycle
-    -- in the dfrm references such that none of entries have a NULL
-    -- dfrm, no rows are returned.
-    BEGIN
-        RETURN QUERY
-            WITH RECURSIVE wt(id,dfrm) AS (
-                SELECT id,dfrm FROM entr WHERE id=eid
-                UNION
-                SELECT entr.id,entr.dfrm
-                FROM wt, entr WHERE wt.dfrm=entr.id)
-            SELECT id FROM wt WHERE dfrm IS NULL;
-        RETURN;
-    END; $$;
-
-
-ALTER FUNCTION public.get_edroot(eid integer) OWNER TO jmdictdb;
-
-SET default_tablespace = '';
-
-SET default_with_oids = false;
-
---
--- Name: entr; Type: TABLE; Schema: public; Owner: jmdictdb
---
-
-CREATE TABLE public.entr (
-    id integer NOT NULL,
-    src smallint NOT NULL,
-    stat smallint NOT NULL,
-    seq bigint NOT NULL,
-    dfrm integer,
-    unap boolean NOT NULL,
-    srcnote character varying(255),
-    notes text,
-    idx integer,
-    CONSTRAINT entr_seq_check CHECK ((seq > 0))
-);
-
-
-ALTER TABLE public.entr OWNER TO jmdictdb;
-
---
--- Name: get_subtree(integer); Type: FUNCTION; Schema: public; Owner: jmdictdb
---
-
-CREATE FUNCTION public.get_subtree(eid integer) RETURNS SETOF public.entr
-    LANGUAGE plpgsql
-    AS $$
-    -- Return the set of entr rows that reference the row with id
-    -- 'eid' via 'dfrm', and all the row that reference those rows
-    -- and so on.  This function will terminate even if there are
-    -- 'dfrm' cycles.
-    BEGIN
-        RETURN QUERY
-            WITH RECURSIVE wt(id) AS (
-                SELECT id FROM entr WHERE id=eid
-                UNION
-                SELECT entr.id
-                FROM wt, entr WHERE wt.id=entr.dfrm)
-            SELECT entr.*
-            FROM wt
-            JOIN entr ON entr.id=wt.id;
-        RETURN;
-    END; $$;
-
-
-ALTER FUNCTION public.get_subtree(eid integer) OWNER TO jmdictdb;
-
---
 -- Name: kwsrc_updseq(); Type: FUNCTION; Schema: public; Owner: jmdictdb
 --
 
@@ -364,6 +286,10 @@ CREATE FUNCTION public.vchk(need text) RETURNS SETOF void
 
 
 ALTER FUNCTION public.vchk(need text) OWNER TO jmdictdb;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
 
 --
 -- Name: chr; Type: TABLE; Schema: public; Owner: jmdictdb
@@ -497,6 +423,90 @@ CREATE TABLE public.dial (
 
 
 ALTER TABLE public.dial OWNER TO jmdictdb;
+
+--
+-- Name: entr; Type: TABLE; Schema: public; Owner: jmdictdb
+--
+
+CREATE TABLE public.entr (
+    id integer NOT NULL,
+    src smallint NOT NULL,
+    stat smallint NOT NULL,
+    seq bigint NOT NULL,
+    dfrm integer,
+    unap boolean NOT NULL,
+    srcnote character varying(255),
+    notes text,
+    idx integer,
+    CONSTRAINT entr_dfrm_check CHECK (((dfrm IS NULL) OR unap)),
+    CONSTRAINT entr_seq_check CHECK ((seq > 0))
+);
+
+
+ALTER TABLE public.entr OWNER TO jmdictdb;
+
+--
+-- Name: edbase; Type: VIEW; Schema: public; Owner: jmdictdb
+--
+
+CREATE VIEW public.edbase AS
+ WITH RECURSIVE sg(id, dfrm, path, cycle) AS (
+         SELECT g.id,
+            g.dfrm,
+            ARRAY[g.id] AS "array",
+            false AS bool
+           FROM (public.entr g
+             LEFT JOIN public.entr h ON ((h.id = g.dfrm)))
+          WHERE g.unap
+        UNION ALL
+         SELECT g.id,
+            g.dfrm,
+            (g.id || sg_1.path),
+            (g.id = ANY (sg_1.path))
+           FROM public.entr g,
+            sg sg_1
+          WHERE ((g.id = sg_1.dfrm) AND (NOT sg_1.cycle))
+        )
+ SELECT sg.id,
+    sg.path
+   FROM sg
+  WHERE (sg.dfrm IS NULL);
+
+
+ALTER TABLE public.edbase OWNER TO jmdictdb;
+
+--
+-- Name: edpath; Type: VIEW; Schema: public; Owner: jmdictdb
+--
+
+CREATE VIEW public.edpath AS
+ SELECT e.id AS root,
+    e.path
+   FROM public.edbase e
+  WHERE (NOT (EXISTS ( SELECT 1
+           FROM public.edbase f
+          WHERE ((e.id = f.id) AND (f.path @> e.path) AND (e.path <> f.path)))));
+
+
+ALTER TABLE public.edpath OWNER TO jmdictdb;
+
+--
+-- Name: edpaths; Type: VIEW; Schema: public; Owner: jmdictdb
+--
+
+CREATE VIEW public.edpaths AS
+ SELECT e1.id,
+    e2.root,
+    e2.path
+   FROM (( SELECT edpath.root,
+            edpath.path,
+            unnest(edpath.path) AS id
+           FROM public.edpath
+          WHERE (array_length(edpath.path, 1) > 1)) e1
+     JOIN public.edpath e2 ON ((e1.root = e2.root)));
+
+
+ALTER TABLE public.edpaths OWNER TO jmdictdb;
 
 --
 -- Name: entr_id_seq; Type: SEQUENCE; Schema: public; Owner: jmdictdb
@@ -3368,10 +3378,11 @@ COPY public.db (id, active, ts) FROM stdin;
 11173099	f	2020-08-02 13:03:35.893273
 273560	f	2020-08-02 13:03:51.029015
 12840591	f	2020-08-06 17:50:01.913543
-13831421	t	2021-06-06 16:17:54.116385
 9415724	f	2020-08-19 21:28:17.442967
 14985756	f	2020-10-08 20:15:24.672514
 4601165	f	2021-02-09 21:11:50.102646
+9907187	t	2021-12-21 14:52:30.009316
+13831421	f	2021-06-06 16:17:54.116385
 \.
 
 
@@ -6120,7 +6131,7 @@ COPY public.stagr (entr, sens, rdng) FROM stdin;
 --
 
 COPY public.testsrc (filename, method, hash) FROM stdin;
-/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	242b532f1688d49356ab1eb2b6a4101784957ec9
+/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	b160e9fca0e1df5f7fa4d968266b2b47e734c82c
 \.
 
 

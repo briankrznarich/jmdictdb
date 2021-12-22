@@ -165,11 +165,11 @@ steps described in Note 2 below.]
 The apply the latest database updates to as you would to the main
 "jmdict" database:
 
-  $ psql -d jmtemp -U jmdictdb -f patches/nnn-xxxxxx.sql
+  $ psql -d jmtest01 -U jmdictdb -f ../db/updates/nnn-xxxxxx.sql
 
 And when all changes are complete, save it:
 
-  $ pg_dump -d jmtemp > python/tests/data/jmtest01.sql
+  $ pg_dump -d jmtest01 > data/jmtest01.sql
 
 ========================================================================
 Note 1:

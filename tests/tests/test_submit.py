@@ -41,16 +41,16 @@ DBNAME, DBFILE = "jmtest01", "data/jmtest01.sql"
   # editing.
 
 class General (unittest.TestCase):
-    def setUp(_):
-          # In case a test fail left an open aborted transaction.
+    def setUp(_):  # In case a test fail left an open aborted transaction.
         DBcursor.connection.rollback()
-    def test_1000010(_):  # Minimal new entry: no sense, reading or kanji.
+
+    def test1000010(_):  # Minimal new entry: no sense, reading or kanji.
         errs = []
         e = Entr (src=99, stat=2)
         submit.submission (DBcursor, e, '', errs)
         _.assertEqual (0, len(errs))
 
-    def test_1000020(_):  # A more realistic submission.
+    def test1000020(_):  # A more realistic submission.
         inp = Entr (stat=2, src=99,
                     _rdng=[Rdng(txt='ゴミ')], _kanj=[],
                     _sens=[Sens(_gloss=[Gloss(txt="trash",lang=1,ginf=1)])],)
@@ -69,30 +69,20 @@ class General (unittest.TestCase):
     def test1000040(_):  # Parent entry disappears before commit of child
                          #  as can happen when someone else approves a
                          #  different edit of the same entry.
-        inp = Entr (stat=2, src=99,
-                    _rdng=[Rdng(txt='パン')], _kanj=[],
-                    _sens=[Sens(_gloss=[Gloss(txt="breab",lang=1,ginf=1)])])
-        eid,seq,src = submit_ (inp, disp='')
-        DBcursor.connection.commit()
-          # An index exception on next line indicates the new entry
-          #  was not found.
-        out = jdb.entrList (DBcursor, None, [eid])[0]
-          # Make a change to the entry.
-        inp._sens[0]._gloss[0].txt = "bread"
-        inp.dfrm = eid
-          # Remove the original entry as would happen if someone else had
-          # approved a different edit of it.
-        DBcursor.execute ("DELETE FROM entr WHERE id=%s", (eid,))
-        DBcursor.connection.commit()
+        e1 = addentr ('\fパン\f[1]bread', c=99, s=2)  # Add and entry...
+        e2 = edentr (e1)                             # ...and edit it.
+          # But before it's submitted, remove the parent entry as would
+          # happen if someone else had approved a different edit of it.
+        delentr (e1.id)
           # Now submit our first edit which should raise an exception
           # since the parent entry is gone.
-        errs = submitE (_, inp, disp='')
+        errs = submitE (_, e2, disp='')
         _.assertIn ('[noroot] The entry you are editing no longer exists',
                     errs[0])
 
+
 class Approval (unittest.TestCase):
-    def setUp(_):
-          # In case a test fail left an open aborted transaction.
+    def setUp(_):  # In case a test fail left an open aborted transaction.
         DBcursor.connection.rollback()
 
     def test1000010(_):  # Create an new unapproved entry and approve.
@@ -116,7 +106,7 @@ class Approval (unittest.TestCase):
         _.assertEqual ([], out3)
         #FIXME? should also check history records?
 
-    def test1000020(_):  # Edit an approved entry and approve.
+    def test1500020(_):  # Edit an approved entry and approve.
         inp = Entr (stat=2, src=99,
                     _rdng=[Rdng(txt='パン')], _kanj=[],
                     _sens=[Sens(_gloss=[Gloss(txt="breab",lang=1,ginf=1)])])
@@ -136,54 +126,203 @@ class Approval (unittest.TestCase):
         out3 = jdb.entrList (DBcursor, None, [eid])
         _.assertEqual ([], out3)
 
-    def test1000030(_):  # Fail when submit entries with same corpus/seq#.
+    def test1501030(_):  # Fail when submit entries with same corpus/seq#.
                          # IS-213.
-        inp = Entr (seq=1000030, stat=2, src=99,
-                    _rdng=[Rdng(txt='パン')], _kanj=[],
-                    _sens=[Sens(_gloss=[Gloss(txt="bread",lang=1,ginf=1)])])
-          # Create a new, approved entry.
-        eid,seq,src = submit_ (inp, disp='a',is_editor=True,userid='smg')
-        errs = submitE (_, inp, disp='a', is_editor=True, userid='smg')
-        _.assertIn ('entry you are editing no longer exists', errs[0])
+        e1 = addentr ('\fパン\f[1]bread', q=1501030, a=True)
+          # Create a second, independent (because its .dfrm does not point
+          # to e1), entry with same seq number...
+        e2 = mkentr ('\fパンぼうし\f[1]bread hat', q=1501030)
+          # ...then try to submit it.
+        errs = submitE (_, e2, disp='a', is_editor=True, userid='smg')
+        _.assertIn ('[seq_vio] The entry you are editing no longer exists',
+                    errs[0])
+        _.assertEqual (1, len(errs))   # Expect only 1 error message.
 
-    def test1001040(_):  # Fail submit non-leaf approve.
-        seq = 1001040
+    def test1501040(_):  # Fail submit non-leaf approve.
           # Create edits: e1(A)-->e2(A*)-->e3(A*)
           # then try to approve e2.  It should fail because there is
           # a later edit on the same branch.
-        e1 = addentr ('\fねこいし\f[1]cat stone', q=seq, a=True)
+        e1 = addentr ('\fねこいし\f[1]cat stone', a=True)
         e2 = addedit (e1)
         e3 = addedit (e2)
           # Edit e2 and and try to approve with submit.submission().
         e = edentr (e2)
         errs = submitE (_, e, disp='a', is_editor=True, userid='smg')
+          # Verify error message and conflicting edit ids.
         _.assertIn ('Edits have been made to this entry', errs[0])
+        _.assertIn ('>%s<' % e3.id, errs[0])
+        _.assertEqual (1, len(errs))   # Expect only 1 error message.
 
-    def test1001050(_):  # Fail submit multiple branches approve.
-        seq = 1001050
+    def test1501050(_):  # Fail submit multiple (2) branches approve.
           # Create edits: e1(A)--.--->e2(A*)
           #                       `-->e3(A*)
           # then try to approve e3.  It should fail because there
           # is another edit branch.
-        e1 = addentr ('\fねこぼうし\f[1]cathat', q=seq, a=True)
+        e1 = addentr ('\fねこぼうし\f[1]cathat', a=True)
         e2 = addedit (e1)
         e3 = addedit (e1)
         e = edentr (e3)   # Edit e3 and try to approve it.
         errs = submitE (_, e, disp='a', is_editor=True, userid='smg')
+          # Verify error message and conflict edit ids.
         _.assertIn ('There are other edits pending', errs[0])
+        _.assertIn ('>%s<' % e2.id, errs[0])
+        _.assertEqual (1, len(errs))   # Expect only 1 error message.
 
-    def test1001060(_):  # Fail submit non-leaf reject.
-        seq = 1001060
-          # Create edits: e1(A)-->e2(A*)-->e3(A*)
-          # then try to approve e2.  It should fail because there is
-          # a later edit on the same branch.
-        e1 = addentr ('\fねこいし\f[1]cat stone', q=seq, a=True)
-        e2 = addedit (e1)
-        e3 = addedit (e2)
-          # Edit e2 and and try to reject with submit.submission().
+    def test1501070(_):  # Fail submit multiple (3) branches approve.
+          # Create edits: e1(A)--.--->e2(A*)
+          #                       `-->e3(A*)--.--->e4(A*)
+          #                                    `-->e5(A*)
+        e1 = addentr ('\fかえばえ\f[1]nonsense', a=True)
+        e2=addedit(e1);  e3=addedit(e1);  e4=addedit(e3);  e5=addedit(e3)
+
+          # Try to approve e2.
         e = edentr (e2)
-        errs = submitE (_, e, disp='r', is_editor=True, userid='smg')
+        errs = submitE (_, e, disp='a', is_editor=True, userid='smg')
+          # Verify error message and conflict edit ids.
+        _.assertIn ('There are other edits pending', errs[0])
+        _.assertIn ('>%s<' % e4.id, errs[0])
+        _.assertIn ('>%s<' % e5.id, errs[0])
+        _.assertEqual (1, len(errs))   # Expect only 1 error message.
+
+          # Try again but with e4 this time.
+        e = edentr (e4)
+        errs = submitE (_, e, disp='a', is_editor=True, userid='smg')
+          # Verify error message and conflict edit ids.
+        _.assertIn ('There are other edits pending', errs[0])
+        _.assertIn ('>%s<' % e2.id, errs[0])
+        _.assertIn ('>%s<' % e5.id, errs[0])
+        _.assertEqual (1, len(errs))   # Expect only 1 error message.
+          # Try again but with e4 this time.
+
+          # Try again but with e3 this time.  This violates both the
+          # the requirement that the edit must be to a leaf entry and
+          # that here must no other branches.  Current behavior is
+          # to fail on the following edit rather than the multiple
+          # branches.
+        e = edentr (e3)
+        errs = submitE (_, e, disp='a', is_editor=True, userid='smg')
+          # Verify error message and conflict edit ids.
         _.assertIn ('Edits have been made to this entry', errs[0])
+        _.assertIn ('>%s<' % e4.id, errs[0])
+        _.assertIn ('>%s<' % e5.id, errs[0])
+        _.assertEqual (1, len(errs))   # Expect only 1 error message.
+
+
+class Reject (unittest.TestCase):
+    def setUp(_):  # In case a test fail left an open aborted transaction.
+        DBcursor.connection.rollback()
+
+    def test2000010(_):       # Reject new unapproved edit, c.f. test2001020
+        e1 = addentr ("\fかえばえ\f[1]nonsense")
+        e = edentr (e1)
+        submit_ (e, disp='r',is_editor=True,userid='smg')
+        f = _dbread (q=e1.seq)
+        _.assertEqual (1, len(f), "Expected 1 entry, got: %s" % f)
+        _.assertEqual ((e1.src, 6, e1.seq, None, False), f[0][1:6])
+
+    def test2000020(_):       # Reject a single edit to an approved entry.
+        e1 = addentr ("\fかえばえ\f[1]nonsense", a=True)
+        e2 = addedit (e1)
+        e = edentr (e2)
+        submit_ (e, disp='r',is_editor=True,userid='smg')
+        f = _dbread (q=e1.seq)
+        _.assertEqual (2, len(f), "Expected 2 entries, got: %s" % f)
+        _.assertEqual ((e1.src, e1.stat, e1.seq, None, e1.unap), f[0][1:6])
+        _.assertEqual ((e2.src, 6,       e2.seq, None, False),   f[1][1:6])
+
+    def test2000030(_):       # Reject a branch of edits to an approved entry.
+        e1 = addentr ("\fかえばえ\f[1]nonsense", a=True)
+        e2 = addedit (e1);  e3 = addedit (e2);  e = edentr (e3)
+        submit_ (e, disp='r',is_editor=True,userid='smg')
+        f = _dbread (q=e1.seq)
+        _.assertEqual (2, len(f), "Expected 2 entries, got: %s" % f)
+        _.assertEqual ((e1.src, e1.stat, e1.seq, None, e1.unap), f[0][1:6])
+        _.assertEqual ((e2.src, 6,       e2.seq, None, False),   f[1][1:6])
+
+    def test2000040(_):       # Reject branch up to branch point.
+        e1 = addentr ("\fかえばえ\f[1]nonsense", a=True)
+        e2 = addedit (e1)                        # Branch 1.
+        e3 = addedit (e1);  e4 = addedit (e3)    # Branch 2.
+        e = edentr (e4)
+        submit_ (e, disp='r',is_editor=True,userid='smg')  # Reject branch 2.
+        f = _dbread (q=e1.seq)
+        _.assertEqual (3, len(f), "Expected 3 entries, got: %s" % f)
+        _.assertEqual ((99, 2, e1.seq, None,    False), f[0][1:6])
+        _.assertEqual ((99, 2, e1.seq, e2.dfrm, True),  f[1][1:6])
+        _.assertEqual ((99, 6, e1.seq, None,    False), f[2][1:6])
+
+    def test2001010(_):       # Fail: reject non-leaf entry.
+        e1 = addentr ("\fかえばえ\f[1]nonsense", a=True)
+        e2 = addedit (e1);  e3 = addedit (e2)
+        e = edentr (e2)   # Edit a non-leaf entry for rejection.
+        regex = "Edits have been made to this entry.  To reject entries"
+        with _.assertRaisesRegex (RuntimeError, regex):
+            submit_ (e, disp='r',is_editor=True,userid='smg')
+
+    def test2001020(_):       # Fail: reject approved entry, c.f. test2000010
+        e1 = addentr ("\fかえばえ\f[1]nonsense", a=True)
+        e = edentr (e1)   # Edit root entry for rejection.
+        regex = "You can only reject unapproved entries"
+        with _.assertRaisesRegex (RuntimeError, regex):
+            submit_ (e, disp='r',is_editor=True,userid='smg')
+
+
+class Delete (unittest.TestCase):
+    # Test submission of "delete" entries.  We  only test the basic edits
+    # since the processing of branch edits and such is done be the same
+    # code as for other submissions and is tested by other test classes.
+
+    def setUp(_):  # In case a test fail left an open aborted transaction.
+        DBcursor.connection.rollback()
+
+    def test3000010(_):        # unapproved delete of unapproved entry.
+        e1 = addentr ("\fかえばえ\f[1]nonsense")
+        e = edentr (e1, s=4)   # Edit root entry for deletion.
+        submit_ (e, disp='',is_editor=True,userid='smg')
+        f = _dbread (q=e1.seq)
+          # We expect both the original approved entry 'e1' and the
+          # new entry to exist.
+        _.assertEqual (2, len(f), "Expected 2 entries, got: %s" % f)
+                     # src stat  seq   dfrm     unap
+        _.assertEqual ((99, 2, e1.seq, None,    True), f[0][1:6])
+        _.assertEqual ((99, 4, e1.seq, e1.id,   True), f[1][1:6])
+
+    def test3000020(_):        # unapproved delete of approved entry.
+        e1 = addentr ("\fかえばえ\f[1]nonsense", a=True)
+        e = edentr (e1, s=4)   # Edit root entry for deletion.
+        submit_ (e, disp='',is_editor=True,userid='smg')
+        f = _dbread (q=e1.seq)
+          # We expect both the original approved entry 'e1' and the
+          # new entry to exist.
+        _.assertEqual (2, len(f), "Expected 2 entries, got: %s" % f)
+                     # src stat  seq   dfrm     unap
+        _.assertEqual ((99, 2, e1.seq, None,   False), f[0][1:6])
+        _.assertEqual ((99, 4, e1.seq, e1.id,   True), f[1][1:6])
+
+    def test3000030(_):        # approved delete of unapproved entry.
+        e1 = addentr ("\fかえばえ\f[1]nonsense")
+        e = edentr (e1, s=4)   # Edit root entry for deletion.
+        submit_ (e, disp='a',is_editor=True,userid='smg')
+        f = _dbread (q=e1.seq)
+          # We expect the original unapproved entry 'e1' to be gone, and
+          # the lone new approved (arg 5 below == False) entry to have
+          # status 'D' (arg 2 below == 4).
+        _.assertEqual (1, len(f), "Expected 2 entries, got: %s" % f)
+                     # src stat  seq   dfrm     unap
+        _.assertEqual ((99, 4, e1.seq, None,   False), f[0][1:6])
+
+    def test3000040(_):        # approved delete of approved entry.
+        e1 = addentr ("\fかえばえ\f[1]nonsense", a=True)
+        e = edentr (e1, s=4)   # Edit root entry for deletion.
+        submit_ (e, disp='a',is_editor=True,userid='smg')
+        f = _dbread (q=e1.seq)
+          # We expect the original unapproved entry 'e1' to be gone, and
+          # the lone new approved (arg 5 below == False) entry to have
+          # status 'D' (arg 2 below == 4).
+        _.assertEqual (1, len(f), "Expected 2 entries, got: %s" % f)
+                     # src stat  seq   dfrm     unap
+        _.assertEqual ((99, 4, e1.seq, None,   False), f[0][1:6])
+
 
 class Clean (unittest.TestCase):
       # Tests for submit.clean() which strips ascii control characters
@@ -220,6 +359,7 @@ class Clean (unittest.TestCase):
         _.assertEqual (1, len(errs))
         _.assertEqual ("Illegal characters in 'comments'", errs[0])
 
+
 class Xrefs (unittest.TestCase):   # Named with plural form because "Xref"
     @classmethod                   #  conflicts with objects.Xref.
     def setUpClass(cls):
@@ -229,8 +369,7 @@ class Xrefs (unittest.TestCase):   # Named with plural form because "Xref"
           # finished.
         cls.t1 = addentr ('猫\fねこ\f[1]cat', q=20100, c=99)
         cls.t2 = addentr ('馬\fうま\f[1]horse[2]mule', q=20110, c=99)
-    def setUp(_):
-          # In case a test fail left an open aborted transaction.
+    def setUp(_):  # In case a test fail left an open aborted transaction.
         DBcursor.connection.rollback()
 
     def test0001(_):
@@ -260,6 +399,7 @@ class Xrefs (unittest.TestCase):   # Named with plural form because "Xref"
         _.assertEqual (expect, e1._sens[0]._xref)
         _.assertEqual ([],     e1._sens[0]._xrslv)
 
+
 class Xrslvs (unittest.TestCase):  # Named with plural form because "Xrslv"
     def test0001(_):               #  conflicts objects.Xrslv.
           # An xref to a non-existant target will generate an Xrslv object.
@@ -271,9 +411,15 @@ class Xrslvs (unittest.TestCase):  # Named with plural form because "Xrslv"
         _.assertEqual (expect, e1._sens[0]._xrslv)
         _.assertEqual ([],     e1._sens[0]._xref)
 
-
 #=============================================================================
-# Support functions
+# Support functions.
+
+# Please note that the functions below that add entries to the database
+# (addentr(), addedit()) do so using the low level jdb.addentr() function
+# and will attempt to write whatever they are given.  They do not perform
+# any of the validity checking or application-level rule enforcement done
+# by submit.submission() such as deleting ancestor entries when an approved
+# entry is written.
 
   # Create an Entr object from JEL and optionally add to the database.
 def mkentr (jel, q=None, c=99, s=2, a=False, d=None, h=[], dbw=False):
@@ -282,11 +428,9 @@ def mkentr (jel, q=None, c=99, s=2, a=False, d=None, h=[], dbw=False):
         e = JELparser.parse (jel, src=c, stat=s, unap=not a, dfrm=d)
         e.seq, e.src, e.stat, e.unap, e.dfrm = q, c, s, not a, d
         if h: e._hist.extend (h)
-        if dbw:
-            id,seq,src = jdb.addentr (DBcursor, e)
-            if not id: raise RuntimeError ("entry not added to database")
-            DBcursor.connection.commit()
+        if dbw: _dbwrite (e, c, q)
         return e
+
   # Same as mkentr() but default database write is True.
 def addentr (*args, **kwargs): return mkentr (*args, dbw=True, **kwargs)
 
@@ -294,7 +438,8 @@ def addentr (*args, **kwargs): return mkentr (*args, dbw=True, **kwargs)
   # database.  Unless overridden by parameter 'd', the new entry's 'dfrm'
   # value is set to 'entr.id' and its 'id set to None.  Other parameters,
   # if given, will set the corresponding attributes.  The new entry object
-  # is returned, as possibly modified by jdb.addentr().
+  # is returned and, if succesfully written to the database, will have
+  # its .id and .seq attributes set to the values assigned in the database.
 NoChange = object()
 def edentr (entr, q=NoChange, c=NoChange, s=NoChange, a=False,
                   d=NoChange, h=None, dbw=False):
@@ -306,12 +451,36 @@ def edentr (entr, q=NoChange, c=NoChange, s=NoChange, a=False,
         if c is not NoChange: e.src = c
         if s is not NoChange: e.stat = s
         if h: e._hist.append (h)
-        if dbw:
-            id,seq,src = jdb.addentr (DBcursor, e)
-            if not id: raise RuntimeError ("entry not added to database")
-            DBcursor.connection.commit()
+        if dbw: _dbwrite (e, c, q)
         return e
+
 def addedit (*args, **kwargs): return edentr (*args, dbw=True, **kwargs)
+
+  # Internal  helper function for mkentr() and edentr().
+def _dbwrite (e, c, q):
+        if q is NoChange: q = e.seq
+        if c is NoChange: c = e.src
+        id,seq,src = jdb.addentr (DBcursor, e)
+        if not id: raise RuntimeError ("entry not added to database")
+        if q is not None and seq!=q:
+            raise RuntimeError ("entry has wrong seq# (got %s)"%e.seq)
+        if c is not None and src!=c:
+            raise RuntimeError ("entry has wrong src# (got %s)"%e.src)
+        DBcursor.connection.commit()
+
+def _dbread (e=None, q=None, c=99):
+        if e and q: raise ValueError("call with 'e' or 'q', not both")
+        if not e and not q: raise ValueError("'e' or 'q' required")
+        if e: whr, args = "id=%s", (e,)
+        else: whr, args = "seq=%s AND src=%s", (q, c)
+        sql = "SELECT id,src,stat,seq,dfrm,unap"\
+              " FROM entr WHERE %s ORDER BY id" % whr
+        rs = db.query (DBcursor.connection, sql, args)
+        return rs
+
+def delentr (id):
+        DBcursor.execute ("DELETE FROM entr WHERE id=%s", (id,))
+        DBcursor.connection.commit()
 
   # Submit an Entr via submit.submission().  Call this when no errors are
   # expected.  If any occur, a Runtime Exception is raised so they will
@@ -320,7 +489,7 @@ def submit_ (entr, **kwds):   # Trailing "_" in function name to avoid
         errs = []             #  conflict with submit module.
         kwds['errs'] = errs
         id,seq,src = submit.submission (DBcursor, entr, **kwds)
-        if errs: raise RuntimeError (errs)
+        if errs or id is None: raise RuntimeError (errs)
           # Don't commit, transaction will be rolled back automatically.
         return id,seq,src
 

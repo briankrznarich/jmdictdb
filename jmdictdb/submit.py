@@ -227,13 +227,14 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
             if not is_editor:
                 entr.seq = None # Force addentr() to assign seq number.
             pentr = None        # No parent entr.
-            edtree = None
+            edpaths, root_unap = [], None
         else:   # Modification of existing entry.
-            edroot = get_edroot (dbh, entr.dfrm)
-            if not edroot:
-                L('submit.submission').debug("edroot returned %r" % edroot)
+            edpaths, root_unap = get_edpaths (dbh, entr.dfrm)
+            L('submit.submission').debug("get_edpaths returned %r"
+                                         % ((edpaths,root_unap),))
+            if edpaths is None:
                 errs.append ("[noroot] "+noentr_msg);  return None3
-            edtree = get_subtree (dbh, edroot)
+
               # Get the parent entry and augment the xrefs so when hist diffs
               # are generated, they will show xref details.
             L('submit.submission').debug("reading parent entry %d"
@@ -343,13 +344,13 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
                   # error resulting from a concurrent update.  We currently
                   # trap it and report it as an error but it could be retried
                   # and would likely succeed.  Other exceptions
-                  # (IntegrityError, etc) are hard errors, no point retrying. 
+                  # (IntegrityError, etc) are hard errors, no point retrying.
                 if not disp:
-                    added = submit (dbh, entr, edtree, errs)
+                    added = submit (dbh, entr, errs)
                 elif disp == "a":
-                    added = approve (dbh, entr, edtree, errs)
+                    added = approve (dbh, entr, edpaths, errs)
                 elif disp == "r":
-                    added = reject (dbh, entr, edtree, errs, None)
+                    added = reject (dbh, entr, edpaths, root_unap, errs)
                 else:
                     L('submit.submission').debug("bad url parameter (disp=%s)"
                                                  % disp)
@@ -376,7 +377,28 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
           # messages appended and return value will be (None,None,None).
         return added
 
-def submit (dbh, entr, edtree, errs):
+def submit (dbh, entr, errs):
+        """===================================================================
+        Submit an unapproved entry.
+        Write entry object 'entr' to the database as an active
+        (entr.stat=2), unapproved (entr.unap=True) entry.  'entr' must
+        have a .dfrm attribute value with the id number of the entry in
+        the database that it is an edit of.
+
+        Parameters:
+          dbh -- An open cursor to a JMdictDB database.
+          entr -- The entry object that will be written to the database
+            as the approved entry.
+          edpaths -- The full set of paths (as returned by get_edpaths()
+            for the edit tree of which entr.dfrm is a leaf entry.
+          errs -- a list to which any errors encountered will be appended.
+
+        Returns:
+          If successful: A 3-tuple of the new entry's id number, sequence
+            number, and corpus (aka"src") number.
+          If error: A 3-tuple: (None,None,None) and relevant error
+            message(s) will be appended to list 'errs'.
+        ===================================================================="""
         KW = jdb.KW
         L('submit.submit').debug("submitting entry with parent id %s"
                                        % entr.dfrm)
@@ -389,7 +411,31 @@ def submit (dbh, entr, edtree, errs):
         res = addentr (dbh, entr)
         return res
 
-def approve (dbh, entr, edtree, errs):
+def approve (dbh, entr, edpaths, errs):
+        """===================================================================
+        Approve an entry
+        Write entry object 'entr' to the database as an active
+        (entr.stat=2), approved (entr.unap=False) entry.  'entr' must be
+        a leaf entry in the edit tree given by 'edpaths'.  The edit tree
+        must have no branches ('edpaths' must be a list containing exactly
+        one list of the edit chain leading to 'entr').  When 'entr' is
+        written to the database, all the entries in 'edpaths' will be
+        deleted.
+
+        Parameters:
+          dbh -- An open cursor to a JMdictDB database.
+          entr -- The entry object that will be written to the database
+            as the approved entry.
+          edpaths -- The full set of paths (as returned by get_edpaths()
+            for the edit tree of which entr.dfrm is a leaf entry.
+          errs -- a list to which any errors encountered will be appended.
+
+        Returns:
+          If successful: A 3-tuple of the new entry's id number, sequence
+            number, and corpus (aka"src") number.
+          If error: A 3-tuple: (None,None,None) and relevant error
+            message(s) will be appended to list 'errs'.
+        ==================================================================="""
         KW = jdb.KW
         L('submit.approve').debug("approving entr id %s" % entr.dfrm)
           # Check stat.  May be A or D, but not R.
@@ -402,21 +448,23 @@ def approve (dbh, entr, edtree, errs):
               # Since 'dfrmid' has a value, this is an edit of an
               # existing entry.  Check that there is a single edit
               # chain back to the root entry.
-            try: approve_ok (edtree, dfrmid)
+            try: approve_ok (edpaths, dfrmid)
             except NonLeafError as e:
                 L('submit.approve').debug("NonLeafError")
+                leafs = get_leafs (edpaths, e.args[0])
                 errs.append (jmcgi.Markup("Edits have been made to this "\
                     "entry.  You need to reject those edits before you can "\
                     "approve this entry.  The id numbers are: %s"\
-                    % ', '.join ("id="+url(x) for x in leafsn([e.args[0]]))))
+                    % ', '.join ("id="+url(x) for x in leafs)))
                 return None3
             except BranchesError as e:
                 L('submit.approve').debug("BranchesError")
+                leafs = e.args[0]
                 errs.append (jmcgi.Markup("There are other edits pending on "\
                     "some of the predecessor entries of this one, and this "\
                     "entry cannot be approved until those are rejected.  "\
                     "The id numbers are: %s"\
-                    % ', '.join ("id="+url(x) for x in leafsn(e.args[0]))))
+                    % ', '.join ("id="+url(x) for x in leafs)))
                 return None3
           # Prepare 'entr' to become independent.
         entr.dfrm = None
@@ -425,44 +473,93 @@ def approve (dbh, entr, edtree, errs):
           # entry before adding the new one, to avoid annoying the database
           # constraint the prohibits two active, approved entries.
           # Because the dfrm foreign key is "on delete cascade", deleting
-          # the root entry will also delete all it's children.  edtree[0].id
+          # the root entry will also delete all it's children. edpaths[0][0]
           # is the id number of the edit root.
-        if edtree: delentr (dbh, edtree[0].id)
+        if edpaths: delentr (dbh, abs(edpaths[0][0]))
           # With the old approved entry gone we can write the new one to
           # the database.
         res = addentr (dbh, entr)
         return res
 
-def reject (dbh, entr, edtree, errs, rejcnt=None):
+def reject (dbh, entr, edpaths, root_unap, errs):
+        """===================================================================
+        Reject an entry (and the unapproved edit leading to it.)
+        A chain of edits is sequence of entries linked by their .dfrm
+        fields.  No entry in the chain may be referenced by more than one
+        other entry.  This function will delete all the entries on the
+        chain (except possibly the first if it is the entr tree's root
+        entry and an approved entry) from the database and add a new
+        approved entry to the database using 'entr' which will have
+        stat='R'.
+
+        Parameters:
+          dbh -- An open cursor to a JMdictDB database.
+          entr -- The entry object that will be written to the database
+            as the R (rejected) entry.
+          edpaths -- The full set of paths (as returned by get_edpaths()
+            for the edit tree of which entr.dfrm is a leaf entry.
+          root_unap -- (bool) true if the root entry of the edit tree is
+            an unapproved entry; false if it is an approved entry.
+          errs -- a list to which any errors encountered will be appended.
+
+        Returns:
+          If successful: A 3-tuple of the new entry's id number, sequence
+            number, and corpus (aka"src") number.
+          If error: A 3-tuple: (None,None,None) and relevant error
+            message(s) will be appended to list 'errs'.
+
+        ==================================================================="""
         KW = jdb.KW
-        L('submit.reject').debug("rejecting entry id %s, rejcnt=%s"
-                                       % (entr.dfrm, rejcnt))
-          # rejectable() returns a list entr rows on the path to the edit
-          # edit root, starting with the one closest to the root, and ending
-          # with our entry's parent, that can be rejected.  If this is a new
-          # entry, 'rejs' will be set to [].
-        try: rejs = rejectable (edtree, entr.dfrm)
-        except NonLeafError as e:
+        L('submit.reject').debug("rejecting entry id %s" % (entr.dfrm))
+          # get_segment() returns a list of entr ids from a leaf entry
+          # back torwards the root up to but not including the first
+          # entry that is in another path.  IOW, it is a sequence of
+          # edits where each entry has only one "child" entry.  When
+          # we reject a branch of edits we only reject back to the first
+          # entry with multiple "child" edits and the list returned
+          # by get_segment() provides those entries (sans a slight
+          # adjustment described below.)
+        rejs = get_segment (edpaths, entr.dfrm)
+        L('submit.reject').debug("reject path 'rejs': %s" % rejs)
+        if rejs is None:    # None signals 'entr.dfrm' was not a leaf entry.
+                            # IOW, entr.dfrm itself has edits made to it.
             L('submit.reject').debug("NonLeafError")
+            leafs = get_leafs (edpaths, entr.dfrm)
             errs.append (jmcgi.Markup("Edits have been made to this entry.  "\
                     "To reject entries, you must reject the version(s) most "
                     "recently edited, which are: %s"\
-                    % ', '.join ("id="+url(x) for x in leafsn([e.args[0]]))))
+                    % ', '.join ("id="+url(x) for x in leafs)))
             return None3
-        except IsApprovedError as e:
+        if len (rejs)==1 and rejs[0]==edpaths[0][0] and not root_unap:
+              # If this is an edit of the root entry and the root entry
+              # is approved, then fail.
+              #FIXME? why shouldn't an approved entry be rejected?
             L('submit.reject').debug("IsApprovedrror")
             errs.append ("You can only reject unapproved entries.")
             return None3
-        if not rejcnt or rejcnt > len(rejs): rejcnt = len(rejs)
-        chhead = (rejs[-rejcnt]).id if rejcnt else None
-        L('submit.reject').debug("rejs=%r, rejcnt=%d, chhead=%s"
-          % ([x.id for x in rejs], -rejcnt, chhead))
-        entr.stat = KW.STAT['R'].id
-        entr.dfrm = None
-        entr.unap = False
-        res = addentr (dbh, entr)
-        if chhead: delentr (dbh, chhead)
-        return res
+          # If this segment goes back to and includes the root entry,
+          # and the root entry is approved, remove the root entry.
+          # IOW, we want to reject all the unapproved entries on the
+          # path but not the approved root entry.
+        if rejs and rejs[0]==edpaths[0][0] and not root_unap:
+            L('submit.reject').debug("removing root entry from 'rejs'")
+            rejs.pop(0)
+          # If after all that we have nothing left to reject, then
+          # something went wrong.
+        assert rejs, "programming error"
+
+          # Prepare the "reject" entry then add to the database.
+        entr.stat, entr.unap, entr.dfrm = KW.STAT['R'].id, False, None
+        L('submit.reject').debug("adding rejected entry")
+        eid, seq, src = addentr (dbh, entr)
+        L('submit.reject').debug("added 'R' entry: %s", ((eid,seq,src),))
+          # 'rejs' is the path segment leading to the leaf entry that
+          # was rejected.  When we delete the first entry in it, all the
+          # following ones will also be deleted due to the CASCADE qualifier
+          # on the entr.dfrm column in the database.
+        L('submit.reject').debug("deleting db entries: %s" % rejs)
+        if rejs: delentr (dbh, rejs[0])
+        return eid, seq, src
 
 def addentr (dbh, entr):
         entr._hist[-1].unap = entr.unap
@@ -492,8 +589,8 @@ def has_xrslv (entr):
             if getattr (s, '_xrslv', None): return True
         return False
 
-def approve_ok (edtree, id):
-        # edtree -- A (root,dict) 2-tuple as returned by get_subtree().
+def approve_ok (edpaths, eid):
+        # edpaths -- A (root,dict) 2-tuple as returned by get_subtree().
         # id -- (int) An id number of an entr row in 'edtree'.
         # Returns: None
         #
@@ -518,124 +615,114 @@ def approve_ok (edtree, id):
         #
         #    If the given entry is not approvable, an error is raised.
 
-        if not edtree:
-            L('submit.approve_ok').debug("edtree is none, returning")
-            return
-        root, d = edtree;  erow = d[id];  branches = []
-        if erow._dfrm: raise NonLeafError (erow)
-        while erow != root:
-            last = erow
-            erow = d[erow.dfrm]
-            if len(erow._dfrm) > 1:
-                branches.extend ([x for x in erow._dfrm if x!=last])
-        if branches: raise BranchesError (branches)
+        leafs = [b[-1] for b in edpaths]
+        if eid not in leafs: raise NonLeafError (eid)
+        leafs.remove (eid)
+        if len (leafs) > 0: raise BranchesError (leafs)
         return
 
-def rejectable (edtree, id):
-        # edtree -- A (root,dict) 2-tuple as returned by get_subtree().
-        # id -- (int) An id number of an entr row in 'edtree'.
-        #
-        # Returns: A list of rows in 'edtree' starting at row 'id'
-        # and moving back towards the root via the 'dfrm' references
-        # until one of the following conditions obtain:
-        # * An entry is reached that is referenced by more than one
-        #   other entry.  (This is an entry that has two or more
-        #   direct edits.)
-        # * An entry that is not "unapproved".
-        # The entry that terminated the search is not included
-        # in the list.
-        # If the entry row designated by 'id' is not a leaf node,
-        # or is approved, an error is raised.
+def get_edpaths (dbh, eid):
+        """===================================================================
+        # Versions of entries are linked together in a tree of edits via
+        # each entry's .dfrm field, which references the parent entr from
+        # which the referencing entry was derived.
+        # This function returns a list of edit paths for the edit tree in
+        # which the entry 'eid' appears somewhere.  Each item (path) is a
+        # list of entry id's from the root entry of tree (common to every
+        # path) to a leaf entry in the tree.   Example (using letters to
+        # represent entry id numbers and A<--B represents B.dfrm=A):
+        #   A<--B<-.---C
+        #           `--D<--E
+        # This function when called with D (or A, B, C or E) would return:
+        #   [[A, B, C], [A, B, D, E]]
+        # If an entry has no edits (no other entries exist with .dfrm=D)
+        # or doesn't exist (no entry D in the database), a single item
+        # list is returned: [[D]].  If the entry 'eid' doesn't exist, a
+        # 2-tuple of (None,None) is returned.
+        ===================================================================="""
+        if eid is None: raise ValueError (eid)
+        sql = "SELECT DISTINCT path FROM edpaths WHERE id=%s"
+        rs = db.query (dbh.connection, sql, (eid,))
+        edpaths = [r[0] for r in rs]
+        rootid = edpaths[0][0] if edpaths else eid
+          # Get the full entr record for the root entry.
+        sql = "SELECT * FROM entr WHERE id=%s"
+        entr = db.query1 (dbh.connection, sql, (rootid,))
+          # It not uncommon for the target entry to disappear between the
+          # time this function was called and we get here -- an edited entry
+          # could have been approved by someone else for example.
+        if not entr: return None, None
+          # The edpaths data just retrieved will be empty if 'eid' is a
+          # lone entry with no other entries referencing it via their
+          # .dfrm fields.  If that's the case, put the 'eid' entry in it.
+        if not edpaths: edpaths = [[rootid]]
+        check_edpaths (edpaths)
+          # The reject() function needs to know if the root entry is
+          # approved or not.
+        root_unap = entr[5]
+        return edpaths, root_unap
 
-        if not edtree:
-            L('submit.rejectable').debug("edtree is none, returning")
-            return []
-        root, d = edtree;  erow = d[id]
-        if erow._dfrm: raise NonLeafError (erow)
-        if not erow.unap: raise IsApprovedError (erow)
-        erows = []
-        while 1:
-            erows.append (erow)
-            if not erow.dfrm: break
-            erow = d[erow.dfrm]
-            if not erow.unap or len(erow._dfrm)>1: break
-        erows.reverse()
-        return erows
+def check_edpaths (edpaths, eid=None):
+          # Some basic sanity checks:
+          # 1. Every branch is expected to have the same root entry.
+        for p in edpaths:
+            assert p[0]==edpaths[0][0], "root conflict in edpaths"
+          # 2. Our entry id should occur in at least one branch.
+        if eid:
+            assert any([(eid in p) for p in edpaths]),"'eid' not in any path"
 
-def get_edroot (dbh, id):
-        # Given the id number of an 'entr' row, return the id
-        # of the root of the edit tree it is part of.  The
-        # edit tree on an entry is that set of entries from
-        # which the first entry can be reached by following
-        # 'dfrm' links.
+def get_segment (edpaths, eid):
+        """===================================================================
+        #  Given a list of edit paths such as returned by get_edpaths(),
+        #  and the entry id number 'eid' of a leaf entry 'edpaths', return
+        #  list of entry id numbers from leaf 'eid' back towards the root
+        #  until, and not including, an entry id that also exists on another
+        #  path (but in reverse order, so the leaf entry is the right-most,
+        #  i.e., index [-1], item.)  If 'eid' is not a leaf item on any path
+        #  None is returned.
+        #  Example: given a "dfrm" tree in the database like:
+        #      A<-.--B<-.---C<---D
+        #          `.    `--E
+        #            `---F<---G<---H
+        #  get_edpaths() would return a path list like:
+        #     [[A, B, C, D],
+        #      [A, B, E],
+        #      [A, F, G, H]]
+        #  get_segment(D) => [C, D]
+        #  get_segment(E) => [E]
+        #  get_segment(H) => [F, G, H]
+        #  get_segment(C) => None
+        ===================================================================="""
+          # Find the path (aka branch) in 'edpaths' that has 'eid' as a
+          # leaf entry.  None is returned if 'eid' is not a leaf entry of
+          # any of them.
+        try: n = [b[-1] for b in edpaths].index(eid)
+        except ValueError: return None
+          # Get the entry ids of all the other branches.
+        others = set (sum (edpaths[0:n]+edpaths[n:-1],[]))
+        segment = []
+          # Starting from the leaf end of the path with 'eid' as its leaf,
+          # accumulate entry id until we encounter one in another branch.
+        for e in reversed (edpaths[n]):
+            if e in others: break
+            segment.append (e)
+        return list (reversed (segment))
 
-        if id is None: raise ValueError (id)
-        sql = "SELECT * FROM get_edroot(%s)"
-        rs = jdb.dbread (dbh, sql, [id])
-        if not rs: return None
-        return rs[0][0]
-
-def get_subtree (dbh, id):
-        # Read the "entr" table row for entry with id 'id'
-        # and all the rows with a 'dfrm' attribute that points
-        # to that row, and all the rows with 'dfrm' attributes
-        # that point to any of thoses rows, and so on recursively.
-        # That is, we read all the rows in the edit sub-tree
-        # below (leaf-ward) and including row 'id'.  If 'id'
-        # denotes an edit root row, then we will read the
-        # entire edit tree.
-        #
-        # After reading the rows, they are linked together in a
-        # tree structure that mirrors that in the database by
-        # adding an attribute, '._dfrm' tO each row which is set
-        # to a list of rows that have 'dfrm' values equal to the
-        # id number of the ._dfrm row.
-        #
-        # Return a 2-tuple of:
-        # 1. The entr row with id 'id' (which is the root of
-        #    the subtree.
-        # 2. A dict of (id, entr row) key value pairs allows
-        #    quick lookup of a row by 'id'..
-
-        if id is None: raise ValueError (id)
-        root = None
-        sql = "SELECT * FROM get_subtree(%s)"
-        rs = jdb.dbread (dbh, sql, [id])
-        d = dict ((r.id,r) for r in rs)
-        for r in rs: r._dfrm = []
-        for r in rs:
-            if r.dfrm:
-                d[r.dfrm]._dfrm.append (r)
-            else:
-                if root: raise ValueError ("get_subtree: Multiple roots returned by get_subtree")
-                root = r
-        return root, d
-
-def leafs (erow):
-        # erow -- An entry row with a '_dfrm' attribute such
-        #        produced by get_subtree().
-        # Returns: A list of entry nodes that are leaf entries
-        #        for the subtree rooted at 'erow'.
-        v = []
-        if not erow._dfrm: return [erow]
-        for x in erow._dfrm: v.extend (leafs (x))
-        return v
-
-def leafsn (erows):
-        # Given a list of entr rows, 'erows', find the
-        # leaf entries of all of them and return a sorted
-        # list of their id numbers (without duplicates).
-        lst = set()
-        for e in erows:
-            lst.update (x.id for x in leafs (e))
-        return sorted (list (lst))
+def get_leafs (edpaths, eid):
+        # Return the leaf entry ids for all paths in which 'eid' occurs.
+        leafs = []
+        for p in edpaths:
+            if eid in p: leafs.append(p[-1])
+        return leafs
 
 def logseq (cur, seq, src):
+        """===================================================================
         # Return a list of the id,dfrm pairs (plus stat and unap) for
         # all entries in a src/seq set.  We format the list into a text
         # string for the caller to print.  By looking at this someome
         # can figure out the shape of the edit tree (assuming that it
         # is entirely in the src/seq set).
+        ==================================================================="""
         sql = "SELECT id,dfrm,stat,unap FROM entr WHERE seq=%s AND src=%s ORDER by id"
         cur.execute (sql, (seq,src))
         rs = cur.fetchall()
@@ -666,7 +753,7 @@ def clean (s, source=None, errs=None):
              N, N, N, N, N, N, N, N, N,  N,    N,     N, N, N, N, N ])
           # Expand any tabs to spaces.
           # [Postponing the tab expansion, needs more consideration
-          # and discussion.] 
+          # and discussion.]
         #cleaned = cleaned.expandtabs()
         if source and cleaned != s:
             errs.append ("Illegal characters in '%s'" % source)

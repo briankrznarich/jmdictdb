@@ -24,9 +24,9 @@ CREATE TABLE kwsrc (
         -- Ad hoc nore regarding this corpus.
     seq VARCHAR(20) NOT NULL,
         -- Name of Postgresql sequence thar will supply entr.seq default
-        -- values.  The sequence will be automatically created (by the 
+        -- values.  The sequence will be automatically created (by the
         -- kwsrc_updseq() trigger in mktables.sql) when a row in inserted
-        -- in kwsrc.  
+        -- in kwsrc.
     sinc SMALLINT,  -- Sequence INCREMENT value used when creating seq.
     smin BIGINT,    -- Sequence MINVALUE value used when creating seq.
     smax BIGINT,    -- Sequence MAXVALUE value used when creating seq.
@@ -55,17 +55,19 @@ CREATE TABLE entr (
         -- Sequence number.  This number maps to the <ent_seq>
         -- element of the JMdict XML file, and is intended
         -- to be a stable identifier of a particular word.
-    dfrm INT
+    dfrm INT CHECK
+      CONSTRAINT entr_dfrm_check CHECK (dfrm IS NULL OR unap)
       REFERENCES entr(id) ON DELETE CASCADE ON UPDATE CASCADE,
         -- If not NULL is a reference to another entry that was the
-        -- edit source for this entry.
+        -- edit source for this entry.  The CHECK constraint prevents
+        -- approved entries from being an edit of some other entry.
     unap BOOLEAN NOT NULL,
         -- If TRUE, this entry has not been approved by an editor yet.
     srcnote VARCHAR(255) NULL,
         -- Additional ad-hoc information about the source of this
         -- entry.
     notes TEXT,
-        -- Arbitrary textual information about this entry.  Intended 
+        -- Arbitrary textual information about this entry.  Intended
         -- for display by applications.
     idx INT);
 CREATE INDEX ON entr(seq);
@@ -73,7 +75,7 @@ CREATE INDEX ON entr(stat) WHERE stat!=2;
 CREATE INDEX ON entr(dfrm) WHERE dfrm IS NOT NULL;
 CREATE INDEX ON entr(unap) WHERE unap;
   -- Following disallows two active (stat=2), approved (unap=False)
-  -- with the same corpus (seq) and sequence number (seq) from 
+  -- with the same corpus (seq) and sequence number (seq) from
   -- existing at the same time. (IS-213).
 CREATE UNIQUE INDEX ON entr (src,seq) WHERE stat=2 AND NOT unap;
 
@@ -120,7 +122,7 @@ CREATE TABLE sens (
 CREATE TABLE gloss (
       -- Contain the gloss items associated with each sense.
     entr INT NOT NULL,
-    sens SMALLINT NOT NULL, 
+    sens SMALLINT NOT NULL,
     FOREIGN KEY (entr,sens)
       REFERENCES sens(entr,sens) ON DELETE CASCADE ON UPDATE CASCADE,
     gloss SMALLINT NOT NULL CHECK (gloss>0),
@@ -171,7 +173,7 @@ CREATE TABLE xref (
        -- Indicates that no specific sense should be considered the target
        -- of the cross-reference; that is the xref should be treated as if
        -- was to the entire target entry.  If 'nosens' is True, 'xsens'
-       -- should always be 1 although this is not enforced by constraint. 
+       -- should always be 1 although this is not enforced by constraint.
     lowpri BOOLEAN NOT NULL DEFAULT FALSE,
        -- Low priority xref.  Used by Examples entries to denote xrefs that
        -- are not "priority" xrefs.
@@ -204,13 +206,13 @@ CREATE TABLE hist (
         -- Email address given on submission form.
     diff TEXT,
         -- Unix-style 'diff' between the XML of the pre- and post-edit
-        -- changes. 
+        -- changes.
     refs TEXT,
         -- User provided text from the "References" field on the
-        -- submission form. 
+        -- submission form.
     notes TEXT,
         -- User provided text from the "Comments" field on the
-        -- submission form. 
+        -- submission form.
     PRIMARY KEY (entr,hist));
 CREATE INDEX ON hist(dt);
 CREATE INDEX ON hist(email);
@@ -286,7 +288,7 @@ CREATE TABLE lsrc (
     ord SMALLINT NOT NULL,
         -- Order of this tag among other "lsrc" tags.
     lang SMALLINT NOT NULL DEFAULT 1 REFERENCES kwlang(id),
-        -- Language of the source word.  
+        -- Language of the source word.
     txt VARCHAR(250) NOT NULL,
         -- Text of the source word.
     PRIMARY KEY (entr,sens,lang,txt),

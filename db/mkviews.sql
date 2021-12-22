@@ -301,11 +301,108 @@ CREATE OR REPLACE VIEW vrslv AS (
 --  The following views are used in cgi/edsubmit.py for manipulating
 --  a tree of edits to an entry.
 --============================================================================
+-- Get all edit paths and subpaths for every unapproved entry.
+-- This view is a helper view for the more useful view, "edtrees",
+-- below.  This view is based directly on the recursive CTE tree example
+-- in the Postgresql docs:
+--   https://www.postgresql.org/docs/10/queries-with.html#id-1.5.6.12.5.4
+-- The aliases "g" and "sg" have been kept allow easier comparision to
+-- the example.
+--
+-- If a JMdictDB edit tree (a tree of entries linked by their entr.dfrm
+-- fields) like the following exists:
+--   NULL=A.dfrm <-- B.dfrm <-.---- C.dfrm
+--                             `.-- D.dfrm <-- E.dfrm
+-- The 'path' values in the 'sg' working table in the CTE will be:
+--   AB, ABC, ABD, ABDE, B, BC, BD, BDE, C, D, DE, E
+-- (Values in the 'path' column are actually arrays and "ABC" above is an
+-- abbreviation for ARRAY[A,B,C], where A, B and C are entry id numbers.)
+-- We refer to A as the "root" entry, the entries C and E as (edit) "heads"
+-- (or "leaf" entries), and the two sequences of entries from the root to
+-- each head (ABC and ABDE) as "paths".
+-- * If there is cyclic 'dfrm' path, it will be detected and not cause an
+--   infinite loop but will not be returned in the result set.
+-- * The first item in 'path' will always equal 'id' for that row.
+-- * 'dfrm' will be NULL for each row that 'id'/'path[0]' is A.
+-- * Any connected set of paths that has a row with a 'dfrm' value of NULL
+--    can't contain any rows with 'cycle' equal True.
+-- * The first item in 'path' is the "oldest" in that edit path, the right
+--    most the newest.
+-- Because we want only full-length paths (from root entry to leaf entry)
+-- we'll select only those paths with 'dfrm'=NULL (ie, starting at a root
+-- entry).  This will include incomplete paths (not all the way to a leaf
+-- node) but those can be removed later.  It will exclude any sets of paths
+-- that are cyclic but that exclusion can be justified on the grounds that
+-- they are "broken" (the jmdictdb libraries should prevent them) and we
+-- assume routine jmdictdb database maintenance will detect and remove
+-- them.  The query will still terminate if 'dfrm' cycles exist.
+------------------------------------------------------------------------------
+CREATE OR REPLACE VIEW edbase AS (
+    WITH RECURSIVE sg (id, dfrm, path, cycle) AS (
+        SELECT g.id, g.dfrm, ARRAY[g.id], false
+          FROM entr g LEFT JOIN entr h ON h.id=g.dfrm
+          WHERE g.unap
+        UNION ALL
+        SELECT g.id, g.dfrm, g.id||path, g.id=ANY(path)
+          FROM entr g, sg
+          WHERE g.id = sg.dfrm AND NOT cycle)
+    SELECT id, path AS path FROM sg WHERE dfrm IS NULL);
 
+------------------------------------------------------------------------------
+-- Return a set of edit paths: arrays where each element is an entry id
+-- and the array represents a list of edits from a "root" entry to the
+-- most recenty edited entry on an edit branch.
+-- This view simply removes incomplete paths (those not starting from a
+-- root entry or not ending at a head entry) from the paths returned by
+-- the "edbase" helper view above.
+-- The number of rows returned is the number of edit "heads".
+-- There will be at least one row for every unapproved root entry (which
+-- includes new entries with no following entries.)
+-- Any approved entries present will be the first entry in the path and
+-- there will be at least one unapproved entry following it.  (I.e.,
+-- approved entries, unlike unapproved ones, will never appear alone, or
+-- to put it in a different way, never with a path length of 1 and never
+-- in any position in the path except the first.  (The latter condition
+-- is guaranteed by the "entr_dfrm_check" constrain on the entr table.)
+-- With the example tree in the "edbase" view comments, the result set of
+-- this view would be:    id      path
+--                         A     {A,B,C}
+--                         A     {A,B,D,E}
+-- where the letters are entry id numbers.
+------------------------------------------------------------------------------
+CREATE OR REPLACE VIEW edpath AS (
+    SELECT id AS root, path FROM edbase e WHERE NOT EXISTS (
+        SELECT 1 FROM edbase f
+        WHERE e.id=f.id AND f.path@>e.path AND e.path!=f.path));
+
+------------------------------------------------------------------------------
+-- Like view "edpath" but with a separate row for each 'path' item; each
+-- row is from table "entr" with an additional two columns: 'root', whose
+-- value is the root entry of the edit path, and 'path', the path that 'id'
+-- is an element of.
+-- With the example tree in the "edbase" view comments, the result set of
+-- this view would be:    id     root    path
+--                         A       A     {A,B,C}
+--                         A       A     {A,B,D,E}
+--                         B       A     {A,B,C}
+--                         B       A     {A,B,D,E}
+--                         C       A     {A,B,C}
+--                         D       A     {A,B,D,E}
+--                         E       A     {A,B,D,E}
+------------------------------------------------------------------------------
+CREATE OR REPLACE VIEW edpaths AS (
+    SELECT e1.id, e2.root, e2.path
+        FROM
+           (SELECT root, path, unnest(path) AS id
+            FROM edpath
+            WHERE array_length(path,1)>1) AS e1
+        JOIN edpath e2 ON e1.root=e2.root);
+
+------------------------------------------------------------------------------
 -- This function will replicate an entry by duplicating it's
 -- row in table entr and all child rows recursively (although
 -- this function is not recursive.)
--------------------------------------------------------------
+------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION dupentr(entrid int) RETURNS INT AS $$
     DECLARE
         _p0_ INT;
@@ -384,47 +481,10 @@ CREATE OR REPLACE FUNCTION delentr(entrid int) RETURNS void AS $$
         END;
     $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION get_subtree (eid INT) RETURNS SETOF entr AS $$
-    -- Return the set of entr rows that reference the row with id
-    -- 'eid' via 'dfrm', and all the row that reference those rows
-    -- and so on.  This function will terminate even if there are
-    -- 'dfrm' cycles.
-    BEGIN
-        RETURN QUERY
-            WITH RECURSIVE wt(id) AS (
-                SELECT id FROM entr WHERE id=eid
-                UNION
-                SELECT entr.id
-                FROM wt, entr WHERE wt.id=entr.dfrm)
-            SELECT entr.*
-            FROM wt
-            JOIN entr ON entr.id=wt.id;
-        RETURN;
-    END; $$ LANGUAGE 'plpgsql';
-
-CREATE OR REPLACE FUNCTION get_edroot (eid INT) RETURNS SETOF int AS $$
-    -- Starting at entry 'eid', follow the chain of 'dfrm' foreign
-    -- keys until a entr row is found that has a NULL 'dfrm' value,
-    -- and return that row (which may be the row with id of 'eid').
-    -- If there is no row with an id of 'eid', or if there is a cycle
-    -- in the dfrm references such that none of entries have a NULL
-    -- dfrm, no rows are returned.
-    BEGIN
-        RETURN QUERY
-            WITH RECURSIVE wt(id,dfrm) AS (
-                SELECT id,dfrm FROM entr WHERE id=eid
-                UNION
-                SELECT entr.id,entr.dfrm
-                FROM wt, entr WHERE wt.dfrm=entr.id)
-            SELECT id FROM wt WHERE dfrm IS NULL;
-        RETURN;
-    END; $$ LANGUAGE 'plpgsql';
-
 --============================================================================
 --  The following views are used by cgi/conj.py for conjugating
 --  database entry words.
 --============================================================================
-
 
 DROP VIEW IF EXISTS vconotes, vinflxt, vinflxt_, vinfl, vconj, vcpos CASCADE;
 
