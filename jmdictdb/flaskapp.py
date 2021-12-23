@@ -35,7 +35,6 @@ from jmdictdb.logger import L
 
 def app_config (app, cfgfile):
         app.session_cookie_name = 'jmwsgi'
-        app.secret_key = 'secret'
         # print ("Loading config file: %s" % cfgfile, file=sys.stderr) ##DEBUG
           # We may get an OSError exception if the config file given by
           # environment variable JMDICTDB_CFGFILE can not be opened for some
@@ -45,6 +44,10 @@ def app_config (app, cfgfile):
         except OSError as e:
             raise RuntimeError ("Unable to read configuration file")
         app.config['CFG'] = cfg
+        app.secret_key = cfg.get ('flask', 'key')
+        if app.secret_key in ('xxxxxxxxxxxxxxxx', ''):
+            msg = "Configuration file error: [flask]/key not set"
+            raise RuntimeError (msg)
         jinja.init (jinja_env=app.jinja_env)
 
 App = flask.Flask (__name__, static_folder='../web',

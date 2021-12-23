@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import setuptools, subprocess
+import setuptools
 
 def get_version():
         with open ("jmdictdb/__version__.py") as fh:

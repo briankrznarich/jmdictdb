@@ -20,6 +20,12 @@
 #
 ########################################################################
 
+# Private data for Flask: the key used to encrypt session cookies.
+# (Key of least 16 random characters is recommended.)
+
+[flask]
+key = xxxxxxxxxxxxxxxx
+
 # The following sections define the databases that can be
 # opened by name by with the "svc=" url parameter for JMdictDB
 # web pages.  The svc value used is the same as the section
