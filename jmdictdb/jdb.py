@@ -1034,7 +1034,7 @@ def add_hist (
 
         h = Hist (dt= datetime.datetime.utcnow().replace(microsecond=0),
                 stat=entr.stat, unap=entr.unap, userid=userid, name=name,
-                email=email, diff=None, notes=notes, refs=refs)
+                email=email, diff=None, notes=notes, refs=refs, eid=None)
 
         e = entr
         if use_parent:
@@ -1108,7 +1108,7 @@ def addentr (cur, entr):
           # Walk through the entr object tree writing each row object to
           # a new database row.
         for h in entr._hist:   dbinsert (cur, "hist", ['entr','hist','stat','unap','dt','userid',
-                                                       'name','email','diff','refs','notes'], h)
+                                                       'name','email','diff','refs','notes','eid'], h)
         for k in entr._kanj:
             dbinsert (cur, "kanj", ['entr','kanj','txt'], k)
             for x in k._inf:   dbinsert (cur, "kinf",  ['entr','kanj','ord','kw'], x)

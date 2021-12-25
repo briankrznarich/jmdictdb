@@ -147,9 +147,9 @@ class Xref (DbRow):
 
 class Hist (DbRow):
     def __init__ (s, entr=None, hist=None, stat=None, unap=None, dt=None, userid=None, name=None,
-                  email=None, diff=None, refs=None, notes=None):
-        DbRow.__init__(s, ( entr,  hist,  stat,  unap,  dt,  userid,  name,  email,  diff,  refs,  notes),
-                          ('entr','hist','stat','unap','dt','userid','name','email','diff','refs','notes'))
+                  email=None, diff=None, refs=None, notes=None, eid=None):
+        DbRow.__init__(s, ( entr,  hist,  stat,  unap,  dt,  userid,  name,  email,  diff,  refs,  notes,  eid),
+                          ('entr','hist','stat','unap','dt','userid','name','email','diff','refs','notes','eid'))
 
 class Grp (DbRow):
     def __init__ (s, entr=None, kw=None, ord=None, notes=None):

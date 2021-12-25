@@ -213,6 +213,8 @@ CREATE TABLE hist (
     notes TEXT,
         -- User provided text from the "Comments" field on the
         -- submission form.
+    eid INT,
+        -- Id# of entry history item was first attached to.  
     PRIMARY KEY (entr,hist));
 CREATE INDEX ON hist(dt);
 CREATE INDEX ON hist(email);
