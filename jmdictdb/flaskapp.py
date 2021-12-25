@@ -111,9 +111,10 @@ def before_request():
         if Rq.endpoint in ('login','logout','static'): return
         msg = None
         try: prereq()
-        except rest.SvcUnknownError: msg = "Unknown service (%s)" % G.svc
-        except rest.SvcDbError: msg = "Unavailable service (%s)" % G.svc
-        if msg: return Render ('error.jinja', svc=None, errs=[msg],
+        except rest.SvcUnknownError: msg = "Unknown service (%s)"
+        except rest.SvcDbVersionError: msg = "Database version error (%s)"
+        except rest.SvcDbError: msg = "Unavailable service (%s)"
+        if msg: return Render ('error.jinja', svc=None, errs=[msg%G.svc],
                                cssclass='errormsg')
 
 from werkzeug.exceptions import HTTPException
