@@ -37,7 +37,7 @@ DBNAME, DBFILE = "jmtest01", "data/jmtest01.sql"
   # already has kanj, rdng, sens, etc, values set) my modifying it and
   # passing it to submission() to check for the expected response.  This
   # editing is conveniently done with helper function edentr() which will
-  # autimatically create the necessary .dfrm link to the entry it is
+  # automatically create the necessary .dfrm link to the entry it is
   # editing.
 
 class General (unittest.TestCase):
@@ -349,6 +349,110 @@ class Delete (unittest.TestCase):
         _.assertEqual ((99, 4, e1.seq, None,   False), f[0][1:6])
 
 
+class History (unittest.TestCase):
+    def setUp(_):  # In case a test fail left an open aborted transaction.
+        DBcursor.connection.rollback()
+
+    def test4000010(_):
+          # Create a new unapproved entry from an approved entry with
+          # no history.  This represents probably the most common edit
+          # operation that occurs since the vast majority of JMdictDB
+          # entries are approved with no history.
+        e1 = addentr ("\fかえばえ\f[1]nonsense", a=True)
+        e = edentr (e1, h=Hist(name="hist-test"))
+        submit_ (e, disp='')
+        sql = "SELECT id FROM entr WHERE src=99 AND seq=%s"
+        f = jdb.entrList (DBcursor, sql, (e1.seq,))
+        _.assertEqual (2, len(f), "Expected 2 entries, got: %s" % f)
+          # Original entry's history list should remain empty.
+        _.assertEqual (0, len(f[0]._hist))
+          # We expect a single item in the new entry hist list.
+        _.assertEqual (1, len(f[1]._hist))
+          # It should have the name we provided above.
+        _.assertEqual ("hist-test", f[1]._hist[0].name)
+          # The "eid" field should be same as the "entr" field.
+        _.assertEqual (f[1]._hist[0].entr, f[1]._hist[0].eid)
+
+    def test4000020(_):  # Appr entry w/hists -> unappr entry
+        e1 = addentr ("\fかえばえ\f[1]nonsense", a=True,
+                      h=[Hist(name="hist-1",stat=2,unap=True, dt=db.DEFAULT),
+                         Hist(name="hist-2",stat=2,unap=False,dt=db.DEFAULT)])
+        e = edentr (e1, h=Hist(name="hist-test"))
+        submit_ (e, disp='')
+        sql = "SELECT id FROM entr WHERE src=99 AND seq=%s"
+          # Retrieve 'e1' and 'e' from the database as 'f[0]' and 'f[1]'.
+        f = jdb.entrList (DBcursor, sql, (e1.seq,))
+        _.assertEqual (2, len(f), "Expected 2 entries, got: %s" % f)
+          # Original entry's history list should remain at two items.
+        _.assertEqual (2, len(f[0]._hist))
+          # We expect three items in the new entry hist list.
+        _.assertEqual (3, len(f[1]._hist))
+          # It should have the names we provided above.
+        _.assertEqual ("hist-1",    f[1]._hist[0].name)
+        _.assertEqual ("hist-2",    f[1]._hist[1].name)
+        _.assertEqual ("hist-test", f[1]._hist[2].name)
+          # When 'e1' was added to the database, jdb.addentr() set the last
+          # hist item's .eid value but didn't touch its first.  When 'e' was
+          # submmitted, it received e1 hists and added a new one; the new
+          # one's .eid value was set by jdb.addentr().
+        _.assertEqual (None, f[1]._hist[0].eid)
+        _.assertEqual (f[0].id, f[1]._hist[1].eid)
+        _.assertEqual (f[1].id, f[1]._hist[2].eid)
+
+    def test4000030(_):  # Appr entry w/hists -> appr entry
+        e1 = addentr ("\fかえばえ\f[1]nonsense", a=True,
+                      h=[Hist(name="hist-1",stat=2,unap=True, dt=db.DEFAULT),
+                         Hist(name="hist-2",stat=2,unap=False,dt=db.DEFAULT)])
+        e = edentr (e1, h=Hist(name="hist-test"))
+        submit_ (e, disp='a')
+        sql = "SELECT id FROM entr WHERE src=99 AND seq=%s"
+        f = jdb.entrList (DBcursor, sql, (e1.seq,))
+          # We should get only one entry, the newly approved one.
+        _.assertEqual (1, len(f), "Expected 1 entry, got: %s" % f)
+        f = f[0]
+          # We expect three items in the new entry hist list.
+        _.assertEqual (3, len(f._hist))
+          # It should have the names we provided above.
+        _.assertEqual ("hist-1",    f._hist[0].name)
+        _.assertEqual ("hist-2",    f._hist[1].name)
+        _.assertEqual ("hist-test", f._hist[2].name)
+          # When 'e1' was added to the database, jdb.addentr() set the last
+          # hist item's .eid value but didn't touch its first.  When 'e' was
+          # submmitted, it received 'e1' hists and added a new one; the new
+          # one's .eid value was set by jdb.addentr().  When checking hist[1]'s
+          # eid value, compare to our local 'e1' since 'e1' was deleted from
+          # the database when 'e' was approved.
+        _.assertEqual (None,    f._hist[0].eid)
+        _.assertEqual (e1.id,   f._hist[1].eid)
+        _.assertEqual (e.id,    f._hist[2].eid)
+        _.assertEqual (f.id,    e.id)
+
+    def test4000040(_):  # Unappr entry w/hists, multiple edits -> rej entry
+        e1 = addentr ("\fかえばえ\f[1]nonsense", a=False,
+                      h=[Hist(name="hist-1",stat=2,unap=True,dt=db.DEFAULT)])
+        e2 = addedit (e1, h=Hist(name="hist-2",stat=2,unap=True,dt=db.DEFAULT))
+        e3 = addedit (e2, h=Hist(name="hist-3",stat=2,unap=True,dt=db.DEFAULT))
+        e = edentr (e3, h=Hist(name="hist-test"))
+        submit_ (e, disp='r')
+        sql = "SELECT id FROM entr WHERE src=99 AND seq=%s"
+          # Retrieve 'e1' and 'e' from the database as 'f[0]' and 'f[1]'.
+        f = jdb.entrList (DBcursor, sql, (e1.seq,))
+        _.assertEqual (1, len(f), "Expected 1 entry, got: %s" % f)
+        f = f[0]
+          # We expect three items in the new entry hist list.
+        _.assertEqual (4, len(f._hist))
+          # It should have the names we provided above.
+        _.assertEqual ("hist-1",    f._hist[0].name)
+        _.assertEqual ("hist-2",    f._hist[1].name)
+        _.assertEqual ("hist-3",    f._hist[2].name)
+        _.assertEqual ("hist-test", f._hist[3].name)
+        _.assertEqual (e1.id,       f._hist[0].eid)
+        _.assertEqual (e2.id,       f._hist[1].eid)
+        _.assertEqual (e3.id,       f._hist[2].eid)
+        _.assertEqual (e.id,        f._hist[3].eid)
+        _.assertEqual (f.id,        e.id)
+
+
 class Clean (unittest.TestCase):
       # Tests for submit.clean() which strips ascii control characters
       # from a string and expands tabs.
@@ -455,7 +559,6 @@ def mkentr (jel, q=None, c=99, s=2, a=False, d=None, h=[], dbw=False):
         if h: e._hist.extend (h)
         if dbw: _dbwrite (e, c, q)
         return e
-
   # Same as mkentr() but default database write is True.
 def addentr (*args, **kwargs): return mkentr (*args, dbw=True, **kwargs)
 
@@ -478,7 +581,7 @@ def edentr (entr, q=NoChange, c=NoChange, s=NoChange, a=False,
         if h: e._hist.append (h)
         if dbw: _dbwrite (e, c, q)
         return e
-
+  # Same as edentr() but default database write is True.
 def addedit (*args, **kwargs): return edentr (*args, dbw=True, **kwargs)
 
   # Internal  helper function for mkentr() and edentr().

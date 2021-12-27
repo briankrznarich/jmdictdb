@@ -789,6 +789,7 @@ CREATE TABLE public.hist (
     diff text,
     refs text,
     notes text,
+    eid integer,
     CONSTRAINT hist_hist_check CHECK ((hist > 0))
 );
 
@@ -3381,8 +3382,9 @@ COPY public.db (id, active, ts) FROM stdin;
 9415724	f	2020-08-19 21:28:17.442967
 14985756	f	2020-10-08 20:15:24.672514
 4601165	f	2021-02-09 21:11:50.102646
-9907187	t	2021-12-21 14:52:30.009316
 13831421	f	2021-06-06 16:17:54.116385
+11915279	t	2021-12-27 16:00:44.532196
+9907187	f	2021-12-21 14:52:30.009316
 \.
 
 
@@ -3939,23 +3941,23 @@ COPY public.grp (entr, kw, ord, notes) FROM stdin;
 -- Data for Name: hist; Type: TABLE DATA; Schema: public; Owner: jmdictdb
 --
 
-COPY public.hist (entr, hist, stat, unap, dt, userid, name, email, diff, refs, notes) FROM stdin;
-104	1	2	f	2020-01-26 21:56:59	smg			\N		
-105	1	2	f	2020-01-26 21:56:59	smg			\N		
-105	2	2	t	2020-01-26 21:59:28	smg					edit #1
-106	1	2	f	2020-01-26 21:56:59	smg			\N		
-106	2	2	t	2020-01-26 21:59:28	smg					edit #1
-106	3	2	t	2020-01-26 21:59:44	smg					edit #2
-107	1	2	f	2020-01-26 21:56:59	smg			\N		
-107	2	4	t	2020-01-26 22:00:22	smg					for delete
-109	1	2	f	2020-01-26 21:56:59	smg			\N		
-109	2	2	t	2020-01-26 22:01:48	smg					for reject
-109	3	6	f	2020-01-26 22:02:24	smg					reject
-115	1	2	f	2020-01-27 02:02:11	smg			\N		
-116	1	2	f	2020-01-27 23:53:16	smg			\N		
-120	1	2	t	2020-01-30 01:55:29	smg			\N		
-120	2	4	f	2020-01-30 01:55:54	smg					
-121	1	6	f	2020-01-30 01:56:52	smg			\N		
+COPY public.hist (entr, hist, stat, unap, dt, userid, name, email, diff, refs, notes, eid) FROM stdin;
+104	1	2	f	2020-01-26 21:56:59	smg			\N			\N
+105	1	2	f	2020-01-26 21:56:59	smg			\N			\N
+105	2	2	t	2020-01-26 21:59:28	smg					edit #1	\N
+106	1	2	f	2020-01-26 21:56:59	smg			\N			\N
+106	2	2	t	2020-01-26 21:59:28	smg					edit #1	\N
+106	3	2	t	2020-01-26 21:59:44	smg					edit #2	\N
+107	1	2	f	2020-01-26 21:56:59	smg			\N			\N
+107	2	4	t	2020-01-26 22:00:22	smg					for delete	\N
+109	1	2	f	2020-01-26 21:56:59	smg			\N			\N
+109	2	2	t	2020-01-26 22:01:48	smg					for reject	\N
+109	3	6	f	2020-01-26 22:02:24	smg					reject	\N
+115	1	2	f	2020-01-27 02:02:11	smg			\N			\N
+116	1	2	f	2020-01-27 23:53:16	smg			\N			\N
+120	1	2	t	2020-01-30 01:55:29	smg			\N			\N
+120	2	4	f	2020-01-30 01:55:54	smg						\N
+121	1	6	f	2020-01-30 01:56:52	smg			\N			\N
 \.
 
 
@@ -6131,7 +6133,7 @@ COPY public.stagr (entr, sens, rdng) FROM stdin;
 --
 
 COPY public.testsrc (filename, method, hash) FROM stdin;
-/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	b160e9fca0e1df5f7fa4d968266b2b47e734c82c
+/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	c7ebf8620abbe7f9cb4b3107db69a1832cdace92
 \.
 
 

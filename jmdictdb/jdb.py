@@ -1187,6 +1187,9 @@ def setkeys (e, id=0):
             for x in s._xrer:                   x.xentr, x.xsens = id, n
         for n,x in enum (e._snd, 1):       x.entr, x.ord = id, n
         for n,x in enum (e._hist, 1):      x.entr, x.hist = id, n
+          # The current (ie last) hist item has the id of its original entry
+          # saved permenantly in datum "eid".
+        if len(e._hist) > 0: e._hist[-1].eid = id
         if e.chr:
             c = e.chr;  c.entr = id
             for x in c._cinf:                   x.entr = id
