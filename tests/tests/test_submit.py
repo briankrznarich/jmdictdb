@@ -230,7 +230,15 @@ class Reject (unittest.TestCase):
         _.assertEqual ((e1.src, e1.stat, e1.seq, None, e1.unap), f[0][1:6])
         _.assertEqual ((e2.src, 6,       e2.seq, None, False),   f[1][1:6])
 
-    def test2000030(_):       # Reject a branch of edits to an approved entry.
+    def test2000030(_):       # Reject a branch of edits to an unapproved entry.
+        e1 = addentr ("\fかえばえ\f[1]nonsense")
+        e2 = addedit (e1);  e3 = addedit (e2);  e = edentr (e3)
+        submit_ (e, disp='r',is_editor=True,userid='smg')
+        f = _dbread (q=e1.seq)
+        _.assertEqual (1, len(f), "Expected 1 entries, got: %s" % f)
+        _.assertEqual ((e2.src, 6,       e2.seq, None, False),   f[0][1:6])
+
+    def test2000040(_):       # Reject a branch of edits to an approved entry.
         e1 = addentr ("\fかえばえ\f[1]nonsense", a=True)
         e2 = addedit (e1);  e3 = addedit (e2);  e = edentr (e3)
         submit_ (e, disp='r',is_editor=True,userid='smg')
@@ -239,7 +247,7 @@ class Reject (unittest.TestCase):
         _.assertEqual ((e1.src, e1.stat, e1.seq, None, e1.unap), f[0][1:6])
         _.assertEqual ((e2.src, 6,       e2.seq, None, False),   f[1][1:6])
 
-    def test2000040(_):       # Reject branch up to branch point.
+    def test2000050(_):       # Reject branch up to branch point.
         e1 = addentr ("\fかえばえ\f[1]nonsense", a=True)
         e2 = addedit (e1)                        # Branch 1.
         e3 = addedit (e1);  e4 = addedit (e3)    # Branch 2.
@@ -250,6 +258,23 @@ class Reject (unittest.TestCase):
         _.assertEqual ((99, 2, e1.seq, None,    False), f[0][1:6])
         _.assertEqual ((99, 2, e1.seq, e2.dfrm, True),  f[1][1:6])
         _.assertEqual ((99, 6, e1.seq, None,    False), f[2][1:6])
+
+    def test2000060(_):       # Reject single edit on first branch.
+          # This tests a bug that was present in revisions prior to the
+          # one this test appeared in that caused a "programming error"
+          # assertion failure in submit.reject().
+        e1 = addentr ("\fかえばえ\f[1]nonsense", a=True)
+        e2 = addedit (e1)                        # Branch 1.
+        e3 = addedit (e1);  e4 = addedit (e3)    # Branch 2.
+        e = edentr (e2)
+          # Reject branch 1.
+        submit_ (e, disp='r',is_editor=True,userid='smg')
+        f = _dbread (q=e1.seq)
+        _.assertEqual (4, len(f), "Expected 3 entries, got: %s" % f)
+        _.assertEqual ((99, 2, e1.seq, None,  False), f[0][1:6])  # e1
+        _.assertEqual ((99, 2, e1.seq, e1.id,  True), f[1][1:6])  # e3
+        _.assertEqual ((99, 2, e1.seq, e3.id,  True), f[2][1:6])  # e4
+        _.assertEqual ((99, 6, e1.seq, None,  False), f[3][1:6])  # e
 
     def test2001010(_):       # Fail: reject non-leaf entry.
         e1 = addentr ("\fかえばえ\f[1]nonsense", a=True)

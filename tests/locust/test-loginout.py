@@ -87,7 +87,7 @@ def get_user1 (user=None):
            except KeyError: return None
        assert False, "Programming error"
 
-  # Give out userid's sequrntially and non-exclusively.
+  # Give out userid's sequentially and non-exclusively.
 Counter = itertools.count()
 def get_usern (user=None):
        if not user: return 'test' + str(next (Counter) % NUSERS).zfill(3)

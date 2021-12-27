@@ -694,16 +694,18 @@ def get_segment (edpaths, eid):
         #  get_segment(C) => None
         ===================================================================="""
           # Find the path (aka branch) in 'edpaths' that has 'eid' as a
-          # leaf entry.  None is returned if 'eid' is not a leaf entry of
-          # any of them.
-        try: n = [b[-1] for b in edpaths].index(eid)
-        except ValueError: return None
-          # Get the entry ids of all the other branches.
-        others = set (sum (edpaths[0:n]+edpaths[n:-1],[]))
+          # leaf entry.  While doing that, build a set of the id numbers
+          # in all the other paths.
+        our_path, others = None, set()
+        for p in edpaths:
+            if p[-1] == eid: our_path = p
+            else: others |= set (p)
+          # If 'eid' is not a leaf entry of any of any path, return None.
+        if not our_path: return None
         segment = []
           # Starting from the leaf end of the path with 'eid' as its leaf,
           # accumulate entry id until we encounter one in another branch.
-        for e in reversed (edpaths[n]):
+        for e in reversed (our_path):
             if e in others: break
             segment.append (e)
         return list (reversed (segment))

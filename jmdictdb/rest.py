@@ -54,6 +54,7 @@ def get_user (svc, session):
 
 class SvcUnknownError(RuntimeError): pass
 class SvcDbError(RuntimeError): pass
+class SvcDbVersionError(RuntimeError): pass
 
 def dbOpenSvc (cfg, svcname, readonly=False, session=False, **kwds):
         '''-------------------------------------------------------------------
@@ -68,6 +69,12 @@ def dbOpenSvc (cfg, svcname, readonly=False, session=False, **kwds):
         -------------------------------------------------------------------'''
         try:
             cur = jdb.dbOpenSvc (cfg, svcname, readonly, session, **kwds)
-        except KeyError as e: raise SvcUnknownError(svcname)
-        except db.OperationalError as e: raise SvcDbError(svcname)
+        except KeyError as e:
+            L('lib.rest.dbOpenSvc').debug("jdb.dbOpenSvc: KeyError: %s" % e)
+            if "Database missing required update" in str(e):
+                raise SvcDbVersionError(svcname)
+            else: raise SvcUnknownError(svcname)
+        except db.OperationalError as e: 
+            L('lib.rest.dbOpenSvc').debug("jdb.dbOpenSvc: KeyError: %s" % e)
+            raise SvcDbError(svcname)
         return cur
