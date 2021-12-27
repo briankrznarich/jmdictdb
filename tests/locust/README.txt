@@ -16,6 +16,27 @@ Test programs:
     in and out of various editor id's.  Tests for correct behavior
     with multiple simultaneous logins and logouts.
 
+How to run:
+  (Below the following should be replaced with the indicated values:
+    <editor-userid>: A JMdictDB userid for an editor.
+    <editor-password>: The JMdictDB password for <editor-userid>.
+  $ export JMDICTDB_USER=<editor-userid>
+  $ export JMDICTDB_PW=<editor-password>
+  $ locust -f test-submit.py
+or for test-loginout.py just:
+  #FIXME? have to create test users?
+  $ locust -f test-loginout.py    # does not need the env variables set.
+
+Then open a web browser and go to http://localhost:8089, fill out the
+startup form, eg:
+  Number of users: 10
+  Spawn rate: 1
+  Host: http://localhost/jmwsgi/
+and click start.
+
+To save the console log, use a 'locust' command like
+  $ locust -f
+
 Support modules:
   behaviors.py -- Functions that implement user behavior for the test
     programs.
