@@ -5,21 +5,60 @@
 <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 1.5.5">
-<title>INSTALLATION</title>
+<title>JMdictDB INSTALLATION</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <link rel="stylesheet" href="./asciidoctor.css">
 </head>
 <body class="article">
 <div id="header">
+<h1>JMdictDB INSTALLATION</h1>
+<div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_requirements">1. Requirements</a></li>
+<li><a href="#_authentication">2. Authentication</a>
+<ul class="sectlevel2">
+<li><a href="#_database_authentication">2.1. Database Authentication</a></li>
+<li><a href="#_editor_authentication">2.2. Editor Authentication</a></li>
+</ul>
+</li>
+<li><a href="#_placeholder_conventions">3. Placeholder conventions</a></li>
+<li><a href="#_common_development_production_installation_steps">4. Common Development/Production Installation Steps</a>
+<ul class="sectlevel2">
+<li><a href="#get-code">4.1. Get the code</a></li>
+<li><a href="#_configure_the_postgresql_database_server">4.2. Configure the Postgresql database server</a></li>
+<li><a href="#_load_the_database">4.3. Load the database</a></li>
+</ul>
+</li>
+<li><a href="#inst-dev">5. Install For Development</a>
+<ul class="sectlevel2">
+<li><a href="#_configuration_files">5.1. Configuration files</a></li>
+<li><a href="#_start_the_flask_development_server">5.2. Start the Flask development server</a></li>
+</ul>
+</li>
+<li><a href="#inst-prod">6. Install For Production</a>
+<ul class="sectlevel2">
+<li><a href="#inst-sw">6.1. Install the JMdictDB software</a></li>
+<li><a href="#config_ini">6.2. Configuration files.</a></li>
+<li><a href="#apache_config">6.3. Configure the Apache webserver</a></li>
+</ul>
+</li>
+<li><a href="#_add_jmdictdb_editors_and_admins">7. Add JMdictDB editors and admins</a></li>
+<li><a href="#errors">Appendix A: Common problems</a></li>
+<li><a href="#_appendix_b_postgresql_authentication_documentation">Appendix B: Postgresql authentication documentation</a></li>
+</ul>
+</div>
 </div>
 <div id="content">
-<div class="sect1">
-<h2 id="_installation">INSTALLATION</h2>
+<div id="preamble">
 <div class="sectionbody">
+<div class="paragraph">
+<p>Installing and Configuring JMdictDB</p>
+</div>
 <div class="paragraph">
 <p>Although this software was written and is maintained primarily
 to support Jim Breen&#8217;s JMdict and wwwjdic projects at
-link:[<a href="https://edrdg.org" class="bare">https://edrdg.org</a>], you may wish to install a local copy
+<a href="https://edrdg.org" class="bare">https://edrdg.org</a>, you may wish to install a local copy
 of this software to:</p>
 </div>
 <div class="ulist">
@@ -37,15 +76,37 @@ of this software to:</p>
 </div>
 <div class="paragraph">
 <p>This document describes how to setup a functional instance of
-a JMdictDB server including loading dictionary data.</p>
+a JMdictDB server including loading dictionary data.  An instance
+of JMdictDB can be installed for development or production or both.
+The  primary difference is that for development the code is run
+directly from a developer&#8217;s local directory and web pages served
+using a private web server built into the JMdictDB code.
+For production use, the code is installed to dedicated system
+locations: the jmdictdb Python package to a library directory
+with other Python packages, the log and configuration files to
+directories with other such files, the command line programs to
+/usr/local/bin/, etc., and web pages are served using high-capacity
+robust exernal webserver.</p>
 </div>
-<div class="sect2">
-<h3 id="_requirements">Requirements</h3>
+<div class="paragraph">
+<p>The two primary components that JMdictDB uses, a Postgresql
+database server and Apache (or other WSGI-capable) web server
+provide many different configuration options.  How they are
+configured will depend on individual site policies and preferences.
+These instructions describe one possible set of choices based on
+the author&#8217;s experience; you should adjust them as needed for
+your environment.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_requirements">1. Requirements</h2>
+<div class="sectionbody">
 <div class="paragraph">
 <p>The code is currently developed and tested on Ubuntu Linux using
-Apache as a web server and Postgresql as the database server.
-The webserver should be configured to to include the mod_wsgi
-module.</p>
+Apache-2.4/mod_wsgi as a web server and Postgresql as the database
+server.  The JMdictDB web application should be runnable with any
+WSGI-capable web server but to date has only been tested with Apache.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -92,29 +153,79 @@ numbers are the versions currently in use in the author&#8217;s
 development environment&#8201;&#8212;&#8201;the software may work fine with
 earlier or later versions, but this has not been verified.</p>
 </div>
-<div class="literalblock">
-<div class="content">
-<pre>Python [3.6] (known not to work before 3.3).
-Additional Python packages:
-  psycopg2-2.7.3 Python-Postgresql connector.
-    https://initd.org/projects/psycopg2/
-  ply-3.9 -- YACC'ish parser generator.
-    https://www.dabeaz.com/ply/
-  lxml-4.0.0 -- XML/XSLT library.  Used by xslfmt.py for doing
-    xml-&gt;edict2 conversion.
-  flask-2.0 -- Web framework
-  jinja2-2.9.6 -- Template engine for generating web pages.
-Postgresql [10.3] -- Database server
-Apache [2.4] -- Web server
-make [4.1] -- Gnu make is required if you want to use the provided
-  Makefile's to automate parts of the installation.
-wget -- Used by Makefile-db to download the dictionary XML files.
-  If not available, you can download the needed files manually.</pre>
+<div class="ulist">
+<ul>
+<li>
+<p>Python [3.6] (known not to work before 3.3).</p>
+</li>
+<li>
+<p>Additional Python packages.  These packages all have their
+own dependencies but those are usually installed
+automatically by the tool (e.g., pip, apt, dnf, etc)
+used to install the parent package):</p>
+<div class="ulist">
+<ul>
+<li>
+<p>psycopg2-2.7.3 Python-Postgresql connector.
+(<a href="https://pypi.org/project/psycopg2/" class="bare">https://pypi.org/project/psycopg2/</a>)</p>
+</li>
+<li>
+<p>ply-3.9&#8201;&#8212;&#8201;YACC&#8217;ish parser generator.
+(<a href="https://pypi.org/project/ply/" class="bare">https://pypi.org/project/ply/</a>)</p>
+</li>
+<li>
+<p>lxml-4.0.0&#8201;&#8212;&#8201;XML/XSLT library.  Used by xslfmt.py for doing
+xml&#8594;edict2 conversion.  (<a href="https://pypi.org/project/lxml/" class="bare">https://pypi.org/project/lxml/</a>)</p>
+</li>
+<li>
+<p>flask-2.0&#8201;&#8212;&#8201;Web framework.  (<a href="https://pypi.org/project/Flask/" class="bare">https://pypi.org/project/Flask/</a>)</p>
+</li>
+<li>
+<p>jinja2-3.0&#8201;&#8212;&#8201;Template engine for generating web pages.
+(<a href="https://pypi.org/project/Jinja2/" class="bare">https://pypi.org/project/Jinja2/</a>)</p>
+</li>
+<li>
+<p>python-dateutil-2.6.1
+(<a href="https://pypi.org/project/python-dateutil/" class="bare">https://pypi.org/project/python-dateutil/</a>)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Postgresql [10.18]&#8201;&#8212;&#8201;Database server (<a href="https://postgresql.org" class="bare">https://postgresql.org</a>)</p>
+</li>
+<li>
+<p>Apache [2.4]&#8201;&#8212;&#8201;Web server  (<a href="https://httpd.apache.org/" class="bare">https://httpd.apache.org/</a>)</p>
+<div class="ulist">
+<ul>
+<li>
+<p>mod_wsgi [4.5]&#8201;&#8212;&#8201;WSGI module for Apache.
+(<a href="https://modwsgi.readthedocs.io/en/master/" class="bare">https://modwsgi.readthedocs.io/en/master/</a>)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>wget&#8201;&#8212;&#8201;Used by Makefile-db to download the dictionary XML files.
+If not available, you can download the needed files manually.</p>
+</li>
+</ul>
 </div>
 </div>
+</div>
+<div class="sect1">
+<h2 id="_authentication">2. Authentication</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Postgresql database requires applications connecting to it to
+do so as a user known to the database server.  The JMdictDB software
+itself requires some of its users to identify themselves to JMdictB
+in order to perform certain actions.  This section describes the
+authentication requirements of both as background for later
+configuration details.</p>
 </div>
 <div class="sect2">
-<h3 id="_database_authentication">Database Authentication</h3>
+<h3 id="_database_authentication">2.1. Database Authentication</h3>
 <div class="paragraph">
 <p>We use the term "database server" when referring to the entire
 Postgresql instance.  JMdictDB uses multiple, separate databases
@@ -155,11 +266,11 @@ given on the command line, environment variables, or a .pgpass
 file.  The last option is usually the most convenient and
 secure and is the method documented below.  A detailed discussion
 of Postgresql authentication methods is out of scope here but
-<a href="#note1">[note1]</a> provides some further references.</p>
+<a href="#Appendix B">[Appendix B]</a> provides some further references.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_editor_authentication">Editor Authentication</h3>
+<h3 id="_editor_authentication">2.2. Editor Authentication</h3>
 <div class="paragraph">
 <p>JMdictDB provides a separate, application-level authentication
 scheme for web access.  Users can login as Admin, Editor or access
@@ -177,7 +288,46 @@ setup once.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_procedure">Procedure</h2>
+<h2 id="_placeholder_conventions">3. Placeholder conventions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In this sections that follow the following placeholders should
+be replaced with actual values:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">{{DEVDIR}}</dt>
+<dd>
+<p>The local development directory where the JMdictDB
+code has been checked out to from Git.
+Example value: ~/devel/jmdictdb/</p>
+</dd>
+<dt class="hdlist1">{{URLROOT}}</dt>
+<dd>
+<p>URL root that the Apache web server will be configured
+to serve the JMdictDB pages under.
+Example value: /jmdictdb (the web server will serve the JMdictDB
+ pages under the URLs https://localhost/jmdictdb/, e.g.,
+ https://localhost/jmdictdb/srchform.py)</p>
+</dd>
+<dt class="hdlist1">{{WEBROOT}}</dt>
+<dd>
+<p>The location to install the web component files to.
+and where the web server will be configured to look for them at.
+Example value: /usr/local/jmdictdb/.
+The default value is /var/www/jmdictdb/.</p>
+</dd>
+<dt class="hdlist1">{{WCGI}}</dt>
+<dd>
+<p>Path and filename of the .wsgi file (see section 6.2.3
+(<a href="#prod-wsgifile">Create the jmdictdb-pvt.ini file</a>).</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_common_development_production_installation_steps">4. Common Development/Production Installation Steps</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Setting up a JMdictDB instance involves:</p>
@@ -185,8 +335,7 @@ setup once.</p>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Download and unpack (or clone) the JMdictDB software
-into a local directory.</p>
+<p>Clone the JMdictDB software into a local directory.</p>
 </li>
 <li>
 <p>Configure the Postgresql database server.</p>
@@ -195,57 +344,47 @@ into a local directory.</p>
 <p>Use the JMdictDB tools to load the database with dictionary data.</p>
 </li>
 <li>
+<p>Configure the .ini file(s) for the development server.</p>
+</li>
+<li>
 <p>Configure the Apache web server.</p>
 </li>
 <li>
-<p>Deploy the JMdictDB software.  This step installs the jmdictdb
+<p>Install the JMdictDB software.  This step installs the jmdictdb
 library package, command line programs and web scripts to
-locations independent of the code in the download directory
+locations independent of the development directory
 allowing the latter to be changed or deleted without affecting
 the operation of the installed version.</p>
 </li>
 <li>
-<p>Create a config.ini file for web page settings.</p>
+<p>Configure the .ini file(s) for the production server.</p>
 </li>
 </ol>
 </div>
 <div class="paragraph">
-<p>A makefile is provided that automates loading the database
-(Makefile-db) and installing the JMdictDB software (Makefile).
-It is presumed that there is a functioning Postgresql server
-instance, and that you have access to the database server&#8217;s
-"postgres" account or some account with enough privileges to
-create and drop databases.</p>
+<p>Steps 1-3 are required whether JMdictDB is being installed for
+development or production or both and are described in this
+section.</p>
 </div>
 <div class="paragraph">
-<p>In this section the following placeholders should be replaced
-with actual values:</p>
+<p>Step 4 is required for running JMdictDB with the builtin Flask
+development server and is detailed in section 5 (<a href="#inst-dev">Install For Development</a>) below.</p>
 </div>
-<div class="dlist">
-<dl>
-<dt class="hdlist1">{{DEVDIR}}</dt>
-<dd>
-<p>Directory where the JMdictDB code has been checked
-out to from Git.  Example value: ~/devel/jmdictdb/</p>
-</dd>
-<dt class="hdlist1">{{URLROOT}}</dt>
-<dd>
-<p>URL root that the Apache web server will be configured
-to serve the JMdictDB development pages under.  Example value:
-/jmdev (the web server will serve the JMdictDB pages under the
-URL https://localhost/jmdev/, e.g., https://localhost/jmdev/srchform.py)</p>
-</dd>
-<dt class="hdlist1">{{WEBROOT}}</dt>
-<dd>
-<p>The location to install the web component files to.
-and where the web server will be configured to look for them at.
-Example value: /usr/local/jmdictdb/.  The default value is
-/var/www/jmdictdb/.</p>
-</dd>
-</dl>
+<div class="paragraph">
+<p>Steps 5-7 are required for running JMdictDB under a production
+web server like Apache and are detailed in section 6 (<a href="#inst-prod">Install For Production</a>)
+below.</p>
+</div>
+<div class="paragraph">
+<p>Makefiles are provided that automate loading the database
+(Makefile-db) and installing the JMdictDB software (Makefile).</p>
+</div>
+<div class="paragraph">
+<p>The following steps are generally needed whether you are setting
+up a development instance or a production instance.</p>
 </div>
 <div class="sect2">
-<h3 id="_1_get_the_code">1. Get the code</h3>
+<h3 id="get-code">4.1. Get the code</h3>
 <div class="paragraph">
 <p>There are two main branches in the code:</p>
 </div>
@@ -268,33 +407,73 @@ should generally be based on.</p>
 <pre>$ git clone https://gitlab.com/yamagoya/jmdictdb.git {{DEVDIR}}</pre>
 </div>
 </div>
-<div class="paragraph">
-<p>Or, you can download a tar or zip archive at:</p>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+The JMdictDB install process involves building a
+Python package with a version number that includes the Git
+revision number.  Therefore you&#8217;ll need the actual cloned
+Git repository to install JMdictDB; a download (e.g., .tar.gz)
+of the current files is not sufficient.
+</td>
+</tr>
+</table>
 </div>
-<div class="ulist none">
-<ul class="none">
-<li>
-<p><a href="https://gitlab.com/yamagoya/jmdictdb" class="bare">https://gitlab.com/yamagoya/jmdictdb</a></p>
-</li>
-</ul>
-</div>
 <div class="paragraph">
-<p>(The download button is just to the left of the green
-Clone button.)</p>
+<p>Update the version file to match the downloaded version:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ cd {{DEVDIR}}
+$ tools/upd-version.py</pre>
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+From here on, unless indicated otherwise, we assume
+the current directory is the {{DEVDIR}} directory.
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_2_configure_the_postgresql_database_server">2. Configure the Postgresql database server</h3>
+<h3 id="_configure_the_postgresql_database_server">4.2. Configure the Postgresql database server</h3>
 <div class="sect3">
-<h4 id="_2_1_provide_access_to_the_postgresql_server">2.1. Provide access to the Postgresql server</h4>
-<div class="paragraph">
+<h4 id="_provide_access_to_the_postgresql_server">4.2.1. Provide access to the Postgresql server</h4>
+<div id="pg_access" class="paragraph">
 <p>JMdictDB accesses the Postgresql database using two dedicated
 Postgresql database user accounts, by default named 'jmdictdb'
 (for read-write access) and 'jmdictdbv' (for read-only access)
-although they can be changed in Makefile-db.</p>
+although they can be changed in Makefile-db.  For routine
+JMdictDB maintenance it is also convenient to have a personal
+login to the database.  Some initial installation steps are
+dome as database user "postgres".</p>
 </div>
 <div class="paragraph">
-<p>Create a .pgpass file which will allow access to the
+<p>Create a personal Postgresql login (replace &lt;username&gt; with
+the postgresql user name you want to use, typically the same
+as your OS login name):</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ createuser -Upostgres -P --superuser &lt;username&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and enter a password when prompted.</p>
+</div>
+<div class="paragraph">
+<p>Create a ~/.pgpass file which will allow access to the
 database server without the need to enter a password each
 time a database command is run:</p>
 </div>
@@ -311,17 +490,19 @@ creating the 'jmdictdb' and 'jmdictdbv' users.</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>localhost:*:*:postgres:xxxxxx
+<pre>localhost:*:*:&lt;username&gt;:&lt;password&gt;
+localhost:*:*:postgres:xxxxxx
 localhost:*:*:jmdictdb:yyyyyy
 localhost:*:*:jmdictdbv:zzzzzz</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>where "xxxxxx", "yyyyyy" and "zzzzzz" are the passwords for the
-database "super user" and the two JMdictDB access users respectively.
-If you changed PG_SUPER replace 'postgres' above with the changed value.
-This will prevent Postgresql from prompting you for passwords dozens
-of times.</p>
+<p>where "&lt;username&gt;" and "&lt;password&gt;" are the ones used when
+creating the personal account and "xxxxxx", "yyyyyy" and
+"zzzzzz" are the passwords for the database "super user"
+and the two JMdictDB access users respectively.
+This will prevent Postgresql from prompting you for passwords
+dozens of times during the install.</p>
 </div>
 <div class="admonitionblock important">
 <table>
@@ -330,15 +511,22 @@ of times.</p>
 <div class="title">Important</div>
 </td>
 <td class="content">
-If the file mode is not 600 Postgresql will ignore
-the file.
+Set the permissions on the .pgpass file to 600;
+otherwise  Postgresql will ignore it and prompt you for
+a password each time a Postgresql command is run.
 </td>
 </tr>
 </table>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_2_2_create_the_jmdictdb_postgresql_users">2.2. Create the JMdictDB Postgresql users</h4>
+<h4 id="_create_the_sessions_database_and_postgresql_users">4.2.2. Create the sessions database and Postgresql users</h4>
+<div class="paragraph">
+<p>JMdictDB maintains sessions for logged-in editors in a
+separate database name "jmsess".  This step creates that database
+and also create two Postgresql users that the software uses
+when accessing the Postgresql database server.</p>
+</div>
 <div class="literalblock">
 <div class="content">
 <pre>$ make -f Makefile-db init</pre>
@@ -376,7 +564,7 @@ even if you install the JMdictDB software multiple times.
 </div>
 </div>
 <div class="sect2">
-<h3 id="_3_load_the_database">3. Load the database</h3>
+<h3 id="_load_the_database">4.3. Load the database</h3>
 <div class="paragraph">
 <p>By default, the main "production" database is named "jmdict".
 Other databases are used when loading data, for testing, etc.
@@ -394,9 +582,9 @@ provided to move a newly loaded database to "jmdict".</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Repeat the following, where "loadXX" is one of loadjm (JMdict),
-loadne (JMnedict), loadkd (kanjidic2), loadex (Tatoeba examples)
-for as many of the those sources as you want to load.
+<p>Repeat the following, where "loadXX" is one of <code>loadjm</code> (JMdict),
+<code>loadne</code> (JMnedict), <code>loadkd</code> (kanjidic2), <code>loadex</code> (Tatoeba
+examples) for as many of the those sources as you want to load.
 Each of the "loadXX" targets will download the appropriate source
 file to the data/ directory, parse it and load the data into the
 "jmnew" database.</p>
@@ -443,48 +631,79 @@ databases <strong>other</strong> than the one being loaded (which is usually
 </div>
 </div>
 <div class="paragraph">
-<p>That will rename the current "jmdict" database (if any) to "jmold"
-and rename the "jmnew" database that was just loaded to "jmdict".</p>
+<p>which rename the "jmnew" database to "jmdict".</p>
 </div>
 </div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="inst-dev">5. Install For Development</h2>
+<div class="sectionbody">
 <div class="sect2">
-<h3 id="deploy">4. Deploy the JMdictDB software</h3>
+<h3 id="_configuration_files">5.1. Configuration files</h3>
 <div class="paragraph">
-<p>At this point you have three ways to make make the database
-command line tools and and web pages available:</p>
+<p>Copy jmdictdb-pvt.ini-sample to jmdictdb-pvt.ini and edit it.</p>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
+<div class="ulist">
+<ul>
 <li>
-<p>Serve them directly from your development directory.</p>
+<p>In the [flask] section, in the line
+  key = xxxxxxxxxxxxxxxx
+replace the string of x&#8217;s with a passphrase or better,
+a string of random characters.</p>
 </li>
 <li>
-<p>Install them to standard locations in your home directory.</p>
+<p>Uncomment the ;pw and ;sel_pw lines and replace the
+"xxxxxx" with the passwords for the jmdictdb and
+jmdictdbv  users set in section 4.2.1 (<a href="#pg_access">[pg_access]</a>)
+above.</p>
 </li>
-<li>
-<p>Install them to standard system-wide locations.</p>
-</li>
-</ol>
+</ul>
 </div>
 <div class="paragraph">
-<p>Any or all of the above can be done and each install is independent
-of the others.  In particular you can do development work in your
-development directory while using a previous install to your user
-directories as a reference, and an earlier system install to a
-production location is available to all.  If you have no need
-to do development work you can delete your development directory
-after doing the install in either option #2 or #3.</p>
-</div>
-<div class="paragraph">
-<p>We will describe only options #2 and #3 here; option #1 is described
-in the DEVELOPMENT document.</p>
-</div>
-<div class="paragraph">
-<p>The JMdictDB software is deployed system-wide by:</p>
+<p>Make sure that jmdictdb-pvt.ini is not world-readable:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre># make -f  Makefile WEBROOT={{WEBROOT}} install-sys</pre>
+<pre>$ chmod 640 jmdictdb-pvt.ini</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_start_the_flask_development_server">5.2. Start the Flask development server</h3>
+<div class="paragraph">
+<p>The Flask web framework JMdictDB uses comes with a builtin
+development server.  At this point you can:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ tools/run-mapjp.py web/lib/jmdictdb.ini
+Using cfgfile: /home/stuart/devel/jdb/jb/web/lib/jmdictdb.ini
+ * Serving Flask app 'jmdictdb.jmapp' (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can now start a web browser and go to <a href="http://localhost:5000/" class="bare">http://localhost:5000/</a> and
+you will see the JMdictDB Advanced Search page.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="inst-prod">6. Install For Production</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="inst-sw">6.1. Install the JMdictDB software</h3>
+<div class="paragraph">
+<p>The JMdictDB software is installed system-wide by:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ sudo make WEBROOT={{WEBROOT}} install-sys</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -493,20 +712,22 @@ may be left out if installing to the default location of
 /var/www/jmdictdb/.</p>
 </div>
 <div class="paragraph">
-<p>Or, for you as an individual user by:</p>
+<p>Note that when installing system-wide you must execute the 'make'
+command as the 'root' user, either when logged in as root or via
+something like 'sudo'.</p>
+</div>
+<div class="paragraph">
+<p>It is also possible to install the software to per-user specific
+locations (see below) using:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>$ make -f Makefile install-user</pre>
+<pre>$ make install-user</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Note that when installing system-wide you must execute the 'make'
-command as a 'root' user with, for example, 'sudo'.</p>
-</div>
-<div class="paragraph">
-<p>You can also leave out the "-f Makefile" part on those commands
-since 'make' uses that file by default.</p>
+<p>However this can lead to library confusions when running the
+the development server and is thus not recommended.</p>
 </div>
 <div class="paragraph">
 <p>The 'install-sys' target will, by default, install to the following
@@ -584,8 +805,7 @@ locations:</p>
 </table>
 <div class="paragraph">
 <p><span class="small">[*]&#8201;&#8212;&#8201;The CGI scripts in here are deprecated and will
-be removed in a future version.  However the file jmapp.wsgi also
-lives in this directory and is required.</span></p>
+be removed in a future version.</span></p>
 </div>
 <div class="paragraph">
 <p><span class="small">[**]&#8201;&#8212;&#8201;The exact location is determined by Python.  X and
@@ -600,7 +820,162 @@ find the web components and at what URL to serve them.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="apache_config">5. Configuring the Apache webserver</h3>
+<h3 id="config_ini">6.2. Configuration files.</h3>
+<div class="paragraph">
+<p>The JMdictDB configuration and log files are located in {{WEBROOT}}/lib/.</p>
+</div>
+<div class="sect3">
+<h4 id="_create_the_log_file">6.2.1. Create the log file.</h4>
+<div class="paragraph">
+<p>The name, "jmdictdb.log" may be changed to whatever name is
+preferred.  If changed, the value of LOGFILE in the configuration
+file (next section) will need to match.
+The file&#8217;s permissions must allow the web server process to
+write to it.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre># cd {{WEBROOT}}/lib/
+# touch jmdictdb.log
+# chgrp www-data jmdictdb.log
+# chmod 664 jmdictdb.log</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>"www-data" is the user name the web server typically runs
+under on Debian-derived systems; you may need to change it
+to something different on other OS distributions.</p>
+</div>
+<div class="paragraph">
+<p>The JMdictDB software tries not to write sensitive information
+like passwords to the log file but like all software is not
+perfect.  Additionally different sites will have different
+definitions of "sensitive".  You may wish to use a permissions
+value of 660 rather than 664 on the log file.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_create_the_jmdictdb_ini_file">6.2.2. Create the jmdictdb.ini file</h4>
+<div class="paragraph">
+<p>Copy jmdictdb.ini-sample to jmdictdb.ini and edit it, guided by
+the comments.  Note that relative file locations in the config
+files are relative to the config file directory.
+In particular the following should be changed:</p>
+</div>
+<div class="paragraph">
+<p>In the [web] section, uncomment the line:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>#CONTACT_EMAIL =</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and provide an appropriate value, for example:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>CONTACT_EMAIL = jmdictdb-admin@myorg.com</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In the [logging] section uncomment the line:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>#LOG_FILENAME =</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and set the value to the location of the log file created in
+the previous section.  For example:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>LOG_FILENAME = jmdictdb.log</pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="prod-wsgifile">6.2.3. Create the jmdictdb-pvt.ini file</h4>
+<div class="paragraph">
+<p>Copy jmdictdb-pvt-sample.ini to jmdictdb-pvt.ini and edit it.</p>
+</div>
+<div class="paragraph">
+<p>In the [flask] section, in the line:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>key = xxxxxxxxxxxxxxxx</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>replace the string of x&#8217;s with a passphrase or better, a string of
+random characters.  A convenient way to generate such a string is
+with any of the online password generator websites.</p>
+</div>
+<div class="paragraph">
+<p>Uncomment the ;pw and ;sel_pw lines and replace the
+"xxxxxx" values with the passwords for the jmdictdb and
+jmdictdbv  users set in section 4.2.1 (<a href="#pg_access">[pg_access]</a>) above.</p>
+</div>
+<div class="paragraph">
+<p>Make sure that jmdictdb-pvt.ini is not world-readable but is
+readable by the Apache webserver process:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre># chmod 640 jmdictdb-pvt.ini
+# chgrp www-data jmdictdb-pvt.ini</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where "www-data" is the web server process user (typical for
+Debian-derived systems, may be different in other distributions.)</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_create_a_wsgi_file">6.2.4. Create a .wsgi file</h4>
+<div class="paragraph">
+<p>This file is a shim between Apache and the JMdictDB software.
+Its name is specified in the Apache configuration directives
+(see below) and its job is to load the JMdictDB Flask module
+into Apache&#8217;s mod_wsgi processes when they are started.  It
+can be placed in any directory the web server has been configured
+to execute a wsgi script from.  The existing CGI script directory
+may be convenient if it allows the execution of WSGI scripts,
+or you can create a new directory, for example: {{WEBROOT}}/wsgi/.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre># cd {{WEBROOT}}/{{WSGI}}/</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Create a file, jmdictdb.wsgi, with the following contents:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>import sys, os
+import jmdictdb
+if not os.environ.get('JMDICTDB_CFGFILE'):
+    p = os.path
+    our_directory = p.dirname (__file__)
+    default_cfgfile = p.normpath(p.join (our_directory,'../lib/jmdictdb.ini'))
+    os.environ['JMDICTDB_CFGFILE'] = default_cfgfile
+from jmdictdb.flaskapp import App as application</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you placed the .wsgi file in a directory other than a sibling
+directory of {{WEBROOT}}/lib/ or you chose to use a filename other
+than jmdictdb.ini, you will need to adjust the relative path and/or
+filename in the <code>default_cfgfile=&#8230;&#8203;</code> line in the .wsgi file above.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="apache_config">6.3. Configure the Apache webserver</h3>
 <div class="paragraph">
 <p>JMdictDB uses a WSGI application to serve pages via the Apache
 web server with the mod_wsgi module.  The location of the JMdictDB
@@ -615,11 +990,11 @@ specifics.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>WSGIDaemonProcess jmapp processes=2 threads=10 \
-    display-name=apache2-jmapp locale=en_US.UTF-8 lang=en_US.UTF-8
-WSGIProcessGroup jmapp
-WSGIScriptAlias {{URLROOT}} {{WEBROOT}}/web/cgi-bin/jmapp.wsgi \
-    process-group=jmapp
+<pre>WSGIDaemonProcess jmwsgi processes=2 threads=10 \
+    display-name=apache2-jmwsgi locale=en_US.UTF-8 lang=en_US.UTF-8
+WSGIProcessGroup jmwsgi
+WSGIScriptAlias {{URLROOT}} {{WEBROOT}}/web/wsgi/jmdictdb.wsgi \
+    process-group=jmwsgi
 
   # Serve static files directly without using the app.
 Alias "{{URLROOT}}/web/" "{{WEBROOT}}/web/"
@@ -640,91 +1015,24 @@ load.  For more information see:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Restart the web server:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre># systemctl restart apache2</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>If you point your web browser to
-https://localhost/jpdicts/srchformq.py
-you should see a JMdictDB page with an error message about
-the config.ini file not being found.  Which is correct since
-we&#8217;ve not set up a config file yet.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="config_ini">6. JMdictDB config.ini and log files</h3>
-<div class="sect3">
-<h4 id="_6_2_config_ini">6.2 config.ini</h4>
-<div class="paragraph">
-<p>The config.ini file contains settings used by JMdictDB when
-serving web pages.  At a minimum you&#8217;ll need to provide settings
-that describe each database you want to be accessible via the web.</p>
-</div>
-<div class="paragraph">
-<p>There <strong>must</strong> be config.ini file.  There <strong>may</strong> also be a config-pvt.ini
-file.  The latter is intended for database access credentials that
-should have access limited to the system maintainer and the webserver.
-However the database access credentials can go into config.ini if
-you wish (but be sure to protect config.ini appropriately in that
-case.)</p>
-</div>
-<div class="paragraph">
-<p>Create a config.ini file (use the config-sample.ini file
-as a guide).  The config.ini file should go in $(WEBROOT)/lib/
-(the "Admin files" directory in step <a href="#deploy">4. Deploy the JMdictDB software</a>).</p>
-</div>
-<div class="paragraph">
-<p>The config.ini file need contain only settings where the value
-differs from the setting&#8217;s default value.  All the settings and
-their default values are described in config-sample.ini.  The
-config.ini file may be empty if no changes from the defaults
-are needed but it must be present.</p>
-</div>
-<div class="paragraph">
-<p>The config-pvt.ini file should be readable by the web server
-process and not readable by world (it will contain database
-passwords.)  The same applies to config.ini if you&#8217;ve chosen
-to place the database access setting in there instead of in
-config-pvt.ini.</p>
-</div>
+<p>Restart the web server.</p>
 </div>
 <div class="sect3">
-<h4 id="_6_2_log_file">6.2 Log file</h4>
-<div class="paragraph">
-<p>The $(WEBROOT)/lib/ directory is the default location for the
-JMdictDB log file.  However both the name and location can be
-set in config.ini.</p>
-</div>
-<div class="paragraph">
-<p>The log file must exist for logging to occur; it will not be
-automatically created.  It also must be writable by the web
-server process.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_6_3_verify_web_access">6.3 Verify web access</h4>
+<h4 id="_verify_web_access">6.3.1. Verify web access</h4>
 <div class="paragraph">
 <p>You should now be able to view any of the JMdictDB web pages
 in your web browser.</p>
 </div>
 <div class="paragraph">
-<p>If you did a system install in step 4 the URL will be:</p>
+<p>If you did a system install in section 6.1 (<a href="#inst-sw">Install the JMdictDB software</a>) the URL will be:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>https://localhost/&lt;VDIR&gt;/srchform.py</pre>
+<pre>https://localhost/{{URLROOT}}/srchform.py</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>where &lt;VDIR&gt; is the web server virtual directory configured in
-step 5 (jpdicts in that example).</p>
-</div>
-<div class="paragraph">
-<p>If you did a user install in step 4, the URL will be:</p>
+<p>If you did a user install in section 6.1 (<a href="#inst-sw">Install the JMdictDB software</a>) the URL will be:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -734,18 +1042,73 @@ step 5 (jpdicts in that example).</p>
 <div class="paragraph">
 <p>where &lt;USERNAME&gt; is your username.</p>
 </div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_add_jmdictdb_editors_and_admins">7. Add JMdictDB editors and admins</h2>
+<div class="sectionbody">
 <div class="paragraph">
-<p>The above URLs will need adjustment if you overrode any of the
-default locations when installing.</p>
+<p>The JMdictDB web interface allows anyone to view entries and
+to submit provisional entries.  To approve entries one must
+login as an Editor and to manage other users (add, delete,
+modify, etc.) one must login as an Admin.  User management
+can be done from the users.py web page but you need to create
+an initial Admin user before you can access that page.</p>
+</div>
+<div class="paragraph">
+<p>To add an initial admin user:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ bin/users.py -d jmsess add &lt;username&gt; -pa --pw</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You will be prompted to enter a password for the user.
+You can now visit http://localhost/{{URLROOT}}/users.py with
+a web browser.  The page will initially say that access is not
+allowed but if you login with the username and password of
+the user you just added, you will get access and be able
+to change that user&#8217;s details (add a full name for example)
+and add and modify other users.  Or if you prefer you can
+continue to manage users directly with the users.py program.</p>
+</div>
+<div class="paragraph">
+<p>For full details on using users.py, view its help:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ bin/users.py --help</pre>
 </div>
 </div>
 </div>
-<div class="sect2">
-<h3 id="errors">7. Common errors that may occur when accessing a web page</h3>
+</div>
+<div class="sect1">
+<h2 id="errors">Appendix A: Common problems</h2>
+<div class="sectionbody">
 <div class="qlist qanda">
 <ol>
 <li>
-<p><em>Server Error</em></p>
+<p><em>Flask server fails with traceback</em></p>
+<p>This will happen when tools/upd-version.py hasn&#8217;t been run
+(see section 4.1, <a href="#get-code">Get the code</a> )</p>
+<div class="literalblock">
+<div class="content">
+<pre>Traceback (most recent call last):
+  File "tools/run-flask.py", line 45, in &lt;module&gt;
+    main()
+  File "tools/run-flask.py", line 32, in main
+    from jmdictdb import flaskapp
+  File "/home/stuart/jmdictdb/tools/../jmdictdb/__init__.py", line 1, in &lt;module&gt;
+    from . import __version__
+ImportError: cannot import name '__version__' from partially initialized module 'jmdictdb' (most likely due to a circular import) (/home/stuart/jmdictdb/tools/../jmdictdb/__init__.py)</pre>
+</div>
+</div>
+</li>
+<li>
+<p><em>"500 - Server Error" web page returned</em></p>
 <p>Check the web server&#8217;s error log.  There will often be a Python
 stack dump from the JMdictDB code that will identify the problem.</p>
 </li>
@@ -804,11 +1167,11 @@ the config.ini file.</p>
 </ol>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_notes">Notes</h3>
-<div class="sect3">
-<h4 id="_note_1">Note 1</h4>
-<div id="note1" class="paragraph">
+</div>
+<div class="sect1">
+<h2 id="_appendix_b_postgresql_authentication_documentation">Appendix B: Postgresql authentication documentation</h2>
+<div class="sectionbody">
+<div class="paragraph">
 <p>For more information on Postgresql usernames, passwords and
 the .pgpass file, see the Postgresql docs:</p>
 </div>
@@ -839,11 +1202,9 @@ these are for Postgresql version 10.</p>
 </div>
 </div>
 </div>
-</div>
-</div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-11-23 13:40:36 MST
+Last updated 2021-12-28 22:51:59 MST
 </div>
 </div>
 </body>

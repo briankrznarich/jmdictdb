@@ -204,6 +204,22 @@ at least initially.  The instructions below do that.</p>
 <div class="sect1">
 <h2 id="_procedure">3. Procedure</h2>
 <div class="sectionbody">
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The JMdictDB software and the two major components it
+relies on, Apache web server and Postgresql database server
+are highly configurable.  These instructions are based on
+a site configured per the Installation Guide and will likely
+require adaptation for the specifics of a particular site.
+</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
 <p>In this section the following are used as placeholders and should
 be substituted with actual values.</p>
@@ -216,18 +232,21 @@ software has been cloned from the GitLab JMdictDB repository.
 Example: /home/me/jmdictdb-dev</p>
 </li>
 <li>
-<p><strong>{{WEBROOT}}</strong>&#8201;&#8212;&#8201;The directory to which the JMdictDB web files are
-installed and from where the web server has been configured to
-serve them.  Example: /usr/local/apache2/jmdictdb</p>
+<p><strong>{{WEBROOT}}</strong>&#8201;&#8212;&#8201;The directory to which the JMdictDB web
+files are installed and from where the web server has been
+configured to serve them.  Example: /usr/local/apache2/jmdictdb</p>
 </li>
 <li>
-<p><strong>{{CGI}}</strong>&#8201;&#8212;&#8201;The cgi directory under {{WEBROOT}}.  Example: cgi-bin</p>
+<p><strong>{{WSGI}}</strong>&#8201;&#8212;&#8201;A directory under {{WEBROOT}} that will hold
+the jmdictdb.wsgi script.  This may be an existing directory
+such as the cgi/ or cgi-bin/ directory or a new directory such
+as wsgi/.  More details in section: <a href="#_create_a_wsgi_file">Create a .wsgi file</a>.</p>
 </li>
 <li>
-<p><strong>{{URLROOT}}</strong>&#8201;&#8212;&#8201;The virtual directory in which the JMdictDB pages
-will appear in URL-space.  Example: /jmwsgi (the URLs for the
-JMdictDB pages will, assuming a host name of edrdg.org for example,
-start with https://edrdg.org/jmwsgi/)</p>
+<p><strong>{{URLROOT}}</strong>&#8201;&#8212;&#8201;The virtual directory in which the JMdictDB
+pages will appear in URL-space.  Example: /jmwsgi (the URLs for
+the JMdictDB pages will, assuming a host name of edrdg.org for
+example, start with https://edrdg.org/jmwsgi/)</p>
 </li>
 </ul>
 </div>
@@ -252,6 +271,10 @@ packages to the requirements for JMdictDB (see
 <li>
 <p>flask package for Python3
 (<a href="https://pypi.org/project/Flask/" class="bare">https://pypi.org/project/Flask/</a>)</p>
+</li>
+<li>
+<p>python-dateutil package for Python3
+(<a href="https://pypi.org/project/python-dateutil/" class="bare">https://pypi.org/project/python-dateutil/</a>)</p>
 </li>
 </ul>
 </div>
@@ -369,44 +392,62 @@ be accessing the same databases with the same credentials.)</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_create_a_wsgi_file">3.3.4. Create a .wsgi file.</h4>
+<h4 id="_add_a_new_item_to_the_config_pvt_ini_file">3.3.4. Add a new item to the config-pvt.ini file</h4>
+<div class="paragraph">
+<p>Edit the config-pvt.ini file and add a new section above the
+db_* sections.  (See the config-pvt.ini-sample file for an
+example.)</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>[flask]
+key = xxxxxxxxxxxxxxxx</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>but replace the "xxxxxxxxxxxxxxxx" with a string of 16 to 32
+random characters.  You can generate such a string using one
+of the many online password generators such as:
+<a href="https://passwordsgenerator.net/" class="bare">https://passwordsgenerator.net/</a></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_create_a_wsgi_file">3.3.5. Create a .wsgi file</h4>
 <div class="paragraph">
 <p>This file is a shim between Apache and the JMdictDB software.
 Its name is specified in the Apache configuration directives
 (see below) and its job is to load the JMdictDB Flask module
-into Apache&#8217;s mod_wsgi processes when they are started.</p>
+into Apache&#8217;s mod_wsgi processes when they are started.  It
+can be placed in any directory the web server has been configured
+to execute a wsgi script from.  The existing CGI script directory
+may be convenient if it allows the execution of WSGI scripts,
+or you can create a new directory, for example: {{WEBROOT}}/wsgi/.</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre># cd {{WEBROOT}}/{{CGI}}/</pre>
+<pre># cd {{WEBROOT}}/{{WSGI}}/</pre>
 </div>
 </div>
 <div class="paragraph">
 <p>Create a file, jmdictdb.wsgi, with the following contents:</p>
 </div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
 <pre>import sys, os
 import jmdictdb
 if not os.environ.get('JMDICTDB_CFGFILE'):
     p = os.path
     our_directory = p.dirname (__file__)
-    default_cfgfile = p.normpath (p.join (our_directory, '../lib/jmdictdb.ini'))
+    default_cfgfile = p.normpath(p.join (our_directory,'../lib/jmdictdb.ini'))
     os.environ['JMDICTDB_CFGFILE'] = default_cfgfile
 from jmdictdb.flaskapp import App as application</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>If you chose to use a filename other than jmdictdb.ini in step 3.2.2
-above then you will also need to change it in the <code>default_cfgfile</code>
-line above.</p>
-</div>
-<div class="paragraph">
-<p>The name and location of the .wsgi file can also be changed
-but you may have to adjust the contents so that it can find
-the flaskapp module from the new location and you will need
-to change in the Apache configuration directives below with
-the changed name and/or location.</p>
+<p>If you placed the .wsgi file in a directory other than a sibling
+directory of {{WEBROOT}}/lib/ or you chose to use a filename other
+than jmdictdb.ini, you will need to adjust the relative path and/or
+filename in the <code>default_cfgfile=&#8230;&#8203;</code> line in the .wsgi file above.</p>
 </div>
 </div>
 </div>
@@ -422,7 +463,7 @@ a copy of the original file before modification in case Apache does
 not like the changes.</p>
 </div>
 <div class="paragraph">
-<p>Replace {{WEBROOT}}, {{CGI}} and {{URLROOT}} with the appropriate
+<p>Replace {{WEBROOT}}, {{WSGI}} and {{URLROOT}} with the appropriate
 values.  In particular, {{URLROOT}} is the top level virtual
 directory you want the JMdictDB pages to be served under (via WSGI).
 For example, using "/jmwsgi" will result in the JMdictDB pages
@@ -433,16 +474,35 @@ being available at https://edrdg.org/jmwsgi/&#8230;&#8203;</p>
 <pre>WSGIDaemonProcess jmwsgi processes=2 threads=10 \
     display-name=apache2-jmwsgi locale=en_US.UTF-8 lang=en_US.UTF-8
 WSGIProcessGroup jmwsgi
-WSGIScriptAlias {{URLROOT}} {{WEBROOT}}/{{CGI}}/jmdictdb.wsgi \
+WSGIScriptAlias {{URLROOT}} {{WEBROOT}}/{{WSGI}}/jmdictdb.wsgi \
     process-group=jmwsgi
 
   # Serve static files directly without using the app.
-Alias {{URLROOT}}/web/ {{WEBROOT}}
+Alias {{URLROOT}}/web/ {{WEBROOT}}/
 &lt;Directory {{WEBROOT}}&gt;
     DirectoryIndex disabled
     Require all granted
     &lt;/Directory&gt;</pre>
 </div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+You must also arrange for Apache to access and
+execute the jmdictdb.wsgi as a WSGI script.  It you have
+placed it in the CGI directory and that is already configured
+to execute scripts based on their extension, you may need
+nothing more.  If you&#8217;ve placed it in a new directory, you
+may need a &lt;DIRECTORY&gt; section for it and a directive like
+"SetHandler wsgi-script".  Please refer to the Apache
+documentation for details.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>The above file defines the URL for the WSGI versions of the JMdictDB
@@ -517,7 +577,7 @@ investigated.
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-12-07 16:17:24 MST
+Last updated 2021-12-28 20:15:25 MST
 </div>
 </div>
 </body>
