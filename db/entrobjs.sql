@@ -55,9 +55,9 @@ CREATE TABLE entr (
         -- Sequence number.  This number maps to the <ent_seq>
         -- element of the JMdict XML file, and is intended
         -- to be a stable identifier of a particular word.
-    dfrm INT CHECK
-      CONSTRAINT entr_dfrm_check CHECK (dfrm IS NULL OR unap)
+    dfrm INT
       REFERENCES entr(id) ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT entr_dfrm_check CHECK (dfrm IS NULL OR unap)
         -- If not NULL is a reference to another entry that was the
         -- edit source for this entry.  The CHECK constraint prevents
         -- approved entries from being an edit of some other entry.

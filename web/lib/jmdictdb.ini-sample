@@ -27,9 +27,9 @@
   # path is given it is relative to this file's directory.  For
   # example:
   #   PRIVATE = jmdictdb-pvt.ini
-  # If not provided no other configuration files other than the
+  # If not provided no other configuration files other than this
   # main one will be read.
-#PRIVATE =
+PRIVATE = jmdictdb-pvt.ini
 
 [web]
 

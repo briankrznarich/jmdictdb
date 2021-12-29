@@ -226,7 +226,7 @@ def audio (entr, label="Audio: "):
 
 def snd (snd_list, rtxt=None):
         fmt = ", ".join ([str(x.snd) for x in snd_list])
-        if rtxt: fmt =  "(%s): %s" (rtxt, fmt)
+        if rtxt: fmt =  "(%s): %s" % (rtxt, fmt)
         return fmt
 
 def hists (entr, label="History: "):
