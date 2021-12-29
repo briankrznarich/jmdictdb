@@ -47,7 +47,3 @@ CREATE TABLE sessions (
         state JSONB DEFAULT NULL);
 CREATE INDEX sessions_userid ON sessions(userid);
 CREATE INDEX sessions_ts ON sessions(ts);
-
--- Add an initial user.
-INSERT INTO users VALUES ('admin', 'Admin User', 'admin@localhost',
-                           crypt('admin', gen_salt('bf')), FALSE, 'A', NULL);

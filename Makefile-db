@@ -129,7 +129,6 @@ init:
 	psql $(PG_HOST) -U $(PG_SUPER) -d postgres -c 'create database jmsess'
 	psql $(PG_HOST) -U $(PG_SUPER) -d jmsess -c "CREATE EXTENSION IF NOT EXISTS pgcrypto"
 	cd db && psql $(PG_HOST) -U $(USER) -d jmsess -f mksess.sql
-	@echo 'Remember to add jmdictdb editors to the jmsess "users" table.'
 
 #------ Create a blank jmnew database ----------------------------------
 #
