@@ -1,14 +1,7 @@
 \set ON_ERROR_STOP
 BEGIN;
 
--- Improved edit tree support.
--- This update replaces the PL/pgSQL functions get_subtree() and get_edroot()
--- with a more versatile set of views.
--- For more documentation on the new views see db/mkviews.sql.
---
--- This update also adds a database constraint on entr.dfrm that enforces
--- a condition (approved entries can't be edits of some other entry) that
--- was previously maintained by the JMdictDB software.
+-- Add "eid" column to table "hist".
 
 \set dbversion  '''b5d00f'''  -- New version supplied by this update.
 \set require    '''972bf3'''  -- These updates(s) must be active.
