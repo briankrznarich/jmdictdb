@@ -6,9 +6,9 @@ DOC_DIR = /doc            # Requires leading slash if not empty.
   # List of doc files that will be installed to ~/WEBROOT/DOC_DIR/
 DOC_FILES = README.txt \
         asciidoctor.css \
-        dev.html \
         index.html \
         install.html \
+        oper.html \
         schema.pdf \
         schema.png \
         tags.html \
@@ -23,10 +23,10 @@ all: basic schema updates
 %.html : src/%.asc
 	asciidoctor -a linkcss -D . $?
 
-basic: index.html dev.html install.html tags.html
+basic: index.html install.html oper.html tags.html
 index.html: src/index.asc
 install.html: src/install.asc
-dev.html: src/dev.asc
+oper.html: src/oper.asc
 tags.html: src/tags.asc
 
 schema: schema.png schema.pdf

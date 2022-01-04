@@ -5,13 +5,13 @@
 <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 1.5.5">
-<title>JMdictDB INSTALLATION</title>
+<title>JMdictDB Installation Guide</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <link rel="stylesheet" href="./asciidoctor.css">
 </head>
 <body class="article">
 <div id="header">
-<h1>JMdictDB INSTALLATION</h1>
+<h1>JMdictDB Installation Guide</h1>
 <div id="toc" class="toc">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
@@ -22,12 +22,12 @@
 <li><a href="#_editor_authentication">2.2. Editor Authentication</a></li>
 </ul>
 </li>
-<li><a href="#_placeholder_conventions">3. Placeholder conventions</a></li>
+<li><a href="#_document_conventions_and_placeholders">3. Document conventions and placeholders</a></li>
 <li><a href="#_common_development_production_installation_steps">4. Common Development/Production Installation Steps</a>
 <ul class="sectlevel2">
 <li><a href="#get-code">4.1. Get the code</a></li>
 <li><a href="#_configure_the_postgresql_database_server">4.2. Configure the Postgresql database server</a></li>
-<li><a href="#_load_the_database">4.3. Load the database</a></li>
+<li><a href="#load-db">4.3. Load the database</a></li>
 </ul>
 </li>
 <li><a href="#inst-dev">5. Install For Development</a>
@@ -43,9 +43,9 @@
 <li><a href="#apache_config">6.3. Configure the Apache webserver</a></li>
 </ul>
 </li>
-<li><a href="#_add_jmdictdb_editors_and_admins">7. Add JMdictDB editors and admins</a></li>
+<li><a href="#users">7. Add JMdictDB editors and admins</a></li>
 <li><a href="#errors">Appendix A: Common problems</a></li>
-<li><a href="#_appendix_b_postgresql_authentication_documentation">Appendix B: Postgresql authentication documentation</a></li>
+<li><a href="#appx-B">Appendix B: Postgresql authentication documentation</a></li>
 </ul>
 </div>
 </div>
@@ -56,9 +56,9 @@
 <p>Installing and Configuring JMdictDB</p>
 </div>
 <div class="paragraph">
-<p>Although this software was written and is maintained primarily
-to support Jim Breen&#8217;s JMdict and wwwjdic projects at
-<a href="https://edrdg.org" class="bare">https://edrdg.org</a>, you may wish to install a local copy
+<p>Although the JMdictDB software was written and is maintained
+primarily to support Jim Breen&#8217;s JMdict and wwwjdic projects
+at <a href="https://edrdg.org" class="bare">https://edrdg.org</a>, you may wish to install a local copy
 of this software to:</p>
 </div>
 <div class="ulist">
@@ -75,27 +75,29 @@ of this software to:</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>This document describes how to setup a functional instance of
-a JMdictDB server including loading dictionary data.  An instance
-of JMdictDB can be installed for development or production or both.
-The  primary difference is that for development the code is run
-directly from a developer&#8217;s local directory and web pages served
-using a private web server built into the JMdictDB code.
+<p>This document describes how to setup a functional instance
+of a JMdictDB server including loading dictionary data.  An
+instance of JMdictDB can be installed for development or
+production or both.
+The  primary difference is that for development the code is
+run directly from a developer&#8217;s local directory and web pages
+served using a private web server built into the JMdictDB code.
 For production use, the code is installed to dedicated system
 locations: the jmdictdb Python package to a library directory
 with other Python packages, the log and configuration files to
-directories with other such files, the command line programs to
-/usr/local/bin/, etc., and web pages are served using high-capacity
-robust exernal webserver.</p>
+directories with other such files, the command line programs
+to /usr/local/bin/, etc., and web pages are served using
+high-capacity, robust exernal webserver.</p>
 </div>
 <div class="paragraph">
-<p>The two primary components that JMdictDB uses, a Postgresql
-database server and Apache (or other WSGI-capable) web server
-provide many different configuration options.  How they are
-configured will depend on individual site policies and preferences.
-These instructions describe one possible set of choices based on
-the author&#8217;s experience; you should adjust them as needed for
-your environment.</p>
+<p>The two primary external pieces of software that JMdictDB
+uses, a Postgresql database server and Apache (or other
+WSGI-capable) web server provide many different configuration
+options.  How they are configured will depend on individual
+site policies and preferences.
+These instructions describe one possible set of choices based
+on the author&#8217;s experience; you should adjust them as needed
+for your environment.</p>
 </div>
 </div>
 </div>
@@ -103,10 +105,11 @@ your environment.</p>
 <h2 id="_requirements">1. Requirements</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The code is currently developed and tested on Ubuntu Linux using
-Apache-2.4/mod_wsgi as a web server and Postgresql as the database
-server.  The JMdictDB web application should be runnable with any
-WSGI-capable web server but to date has only been tested with Apache.</p>
+<p>The JMdictDB code is currently developed and tested on Ubuntu
+Linux using Apache-2.4/mod_wsgi as a web server and Postgresql
+as the database server.  The JMdictDB web application should
+be runnable with any WSGI-capable web server but to date has
+only been tested with Apache.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -135,7 +138,7 @@ repository).
 Regarding Microsoft Windows:
 Up to mid 2014 the code also ran and was supported on Microsoft
 Windows XP.  However, lack of access to a Windows machine
-has required dropping Windows support.  Please be aware that
+necessitated dropping Windows support.  Please be aware that
 lingering references to Microsoft Windows in this and other
 documentation are outdated and unsupported.
 </td>
@@ -211,6 +214,12 @@ If not available, you can download the needed files manually.</p>
 </li>
 </ul>
 </div>
+<div class="paragraph">
+<p>If you plan on doing development of JMdictDB some additional
+software, used in various build chains, is also required.
+Please see <a href="oper.html#appx-A">Appendix A</a> of the
+<a href="#oper.asc">Operation and Debugging Guide</a>.</p>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -236,10 +245,15 @@ a "jmtest" database and so on.</p>
 </div>
 <div class="paragraph">
 <p>Any program that accesses the database server needs a username
-and possibly a password to do so.  Note that these passwords
-are distinct from the JMdictDB editor passwords discussed in the
-next section.  The database server is accessed by the JMdictDB
-system in two contexts:</p>
+and possibly a password to do so.  Note that these usernames
+and passwords are distinct from the JMdictDB editor
+usernames/passwords discussed in the next section and they
+are distinct from the usernames/passwords used to log into
+the operating system.</p>
+</div>
+<div class="paragraph">
+<p>The database server is accessed by the JMdictDB system in two
+contexts:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -266,7 +280,7 @@ given on the command line, environment variables, or a .pgpass
 file.  The last option is usually the most convenient and
 secure and is the method documented below.  A detailed discussion
 of Postgresql authentication methods is out of scope here but
-<a href="#Appendix B">[Appendix B]</a> provides some further references.</p>
+<a href="#appx-B">Appendix B: Postgresql authentication documentation</a> provides some further references.</p>
 </div>
 </div>
 <div class="sect2">
@@ -282,16 +296,19 @@ A user logged in as Admin can additionally manage other users.</p>
 <div class="paragraph">
 <p>JMdictDB users and their access levels are stored in a separate
 separate database named "jmsess".  This database need only be
-setup once.</p>
+setup once.  Management of the user accounts in "jmsess" may be
+done by the program bin/users.py (see <a href="#users">section 7</a> in this
+document and <a href="oper.html#users">section 2</a> in the Operation Guide),
+or, after the install is completed, by the users.py web page.</p>
 </div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_placeholder_conventions">3. Placeholder conventions</h2>
+<h2 id="_document_conventions_and_placeholders">3. Document conventions and placeholders</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>In this sections that follow the following placeholders should
+<p>In the sections that follow the following placeholders should
 be replaced with actual values:</p>
 </div>
 <div class="dlist">
@@ -454,7 +471,7 @@ the current directory is the {{DEVDIR}} directory.
 <p>JMdictDB accesses the Postgresql database using two dedicated
 Postgresql database user accounts, by default named 'jmdictdb'
 (for read-write access) and 'jmdictdbv' (for read-only access)
-although they can be changed in Makefile-db.  For routine
+although those names can be changed in Makefile-db.  For routine
 JMdictDB maintenance it is also convenient to have a personal
 login to the database.  Some initial installation steps are
 dome as database user "postgres".</p>
@@ -499,10 +516,7 @@ localhost:*:*:jmdictdbv:zzzzzz</pre>
 <div class="paragraph">
 <p>where "&lt;username&gt;" and "&lt;password&gt;" are the ones used when
 creating the personal account and "xxxxxx", "yyyyyy" and
-"zzzzzz" are the passwords for the database "super user"
-and the two JMdictDB access users respectively.
-This will prevent Postgresql from prompting you for passwords
-dozens of times during the install.</p>
+"zzzzzz" are <strong>replaced with passwords of your choosing</strong>.</p>
 </div>
 <div class="admonitionblock important">
 <table>
@@ -522,10 +536,11 @@ a password each time a Postgresql command is run.
 <div class="sect3">
 <h4 id="_create_the_sessions_database_and_postgresql_users">4.2.2. Create the sessions database and Postgresql users</h4>
 <div class="paragraph">
-<p>JMdictDB maintains sessions for logged-in editors in a
-separate database name "jmsess".  This step creates that database
-and also create two Postgresql users that the software uses
-when accessing the Postgresql database server.</p>
+<p>JMdictDB maintains user accounts for editors in a
+separate database named "jmsess".  This step creates that
+database and also create two Postgresql users that the
+JM dictDB software uses when accessing the Postgresql
+database server.</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -533,9 +548,9 @@ when accessing the Postgresql database server.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>You will be prompted for the password to use for the new 'jmdictdb'
-database account.  Use the same passwords as entered above in the
-~/.pgpass file.</p>
+<p>You will be prompted for the password to use for the new
+'jmdictdb' database account.  Use the same passwords as
+entered above in the ~/.pgpass file.</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -544,8 +559,8 @@ Enter it again: yyyyyy</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The same process is repeated for the 'jmdictdbv' account (use the
-zzzzzz password this time.)</p>
+<p>The same process is repeated for the 'jmdictdbv' account
+(use the zzzzzz password this time.)</p>
 </div>
 <div class="admonitionblock important">
 <table>
@@ -554,9 +569,10 @@ zzzzzz password this time.)</p>
 <div class="title">Important</div>
 </td>
 <td class="content">
-You need (and should) only do the 'make -fMakefile-db init'
-step once when installing JMdictDB on a machine for the first time,
-even if you install the JMdictDB software multiple times.
+You need (and should) only do the
+'make -fMakefile-db init' step once when installing JMdictDB
+on a machine for the first time, even if you install the
+JMdictDB software multiple times.
 </td>
 </tr>
 </table>
@@ -564,7 +580,7 @@ even if you install the JMdictDB software multiple times.
 </div>
 </div>
 <div class="sect2">
-<h3 id="_load_the_database">4.3. Load the database</h3>
+<h3 id="load-db">4.3. Load the database</h3>
 <div class="paragraph">
 <p>By default, the main "production" database is named "jmdict".
 Other databases are used when loading data, for testing, etc.
@@ -614,7 +630,7 @@ four of the dictionaries.</p>
 </td>
 <td class="content">
 No provision is made for concurrent access while loading
-data; we assume that only the access to the database being loaded
+data; we assume that the only access to the database being loaded
 is by the procedures used for the loading.  However, use of
 databases <strong>other</strong> than the one being loaded (which is usually
 "jmnew") can continue as usual during loading.
@@ -1047,7 +1063,7 @@ in your web browser.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_add_jmdictdb_editors_and_admins">7. Add JMdictDB editors and admins</h2>
+<h2 id="users">7. Add JMdictDB editors and admins</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>The JMdictDB web interface allows anyone to view entries and
@@ -1169,7 +1185,7 @@ the config.ini file.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_appendix_b_postgresql_authentication_documentation">Appendix B: Postgresql authentication documentation</h2>
+<h2 id="appx-B">Appendix B: Postgresql authentication documentation</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>For more information on Postgresql usernames, passwords and
@@ -1204,7 +1220,7 @@ these are for Postgresql version 10.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-12-28 22:51:59 MST
+Last updated 2022-01-03 19:09:18 MST
 </div>
 </div>
 </body>

@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.5">
+<title>Operation and Debugging Guide</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<link rel="stylesheet" href="./asciidoctor.css">
+</head>
+<body class="article">
+<div id="header">
+<h1>Operation and Debugging Guide</h1>
+<div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_document_conventions_and_placeholders">1. Document conventions and placeholders</a></li>
+<li><a href="#users">2. User management</a></li>
+<li><a href="#_temporary_downtime">3. Temporary downtime</a></li>
+<li><a href="#_upgrading_jmdictdb">4. Upgrading JMdictDB</a>
+<ul class="sectlevel2">
+<li><a href="#code-upgrade">4.1. Code upgrades</a></li>
+<li><a href="#_database_upgrades">4.2. Database upgrades</a></li>
+<li><a href="#_if_something_goes_wrong">4.3. If something goes wrong</a></li>
+</ul>
+</li>
+<li><a href="#tests">5. Tests</a></li>
+<li><a href="#_general_troubleshooting">6. General troubleshooting</a>
+<ul class="sectlevel2">
+<li><a href="#_shentr_py">6.1. shentr.py</a></li>
+<li><a href="#_cgiinfo_py_web_page">6.2. cgiinfo.py web page</a></li>
+<li><a href="#_log_files">6.3. Log files</a></li>
+</ul>
+</li>
+<li><a href="#_wsgi_debugging">7. WSGI debugging</a></li>
+<li><a href="#_cgi_debugging">8. CGI debugging</a></li>
+<li><a href="#devdb">9. Creating a database for development</a></li>
+<li><a href="#_preparing_a_release">10. Preparing a "release"</a></li>
+<li><a href="#appx-A">Appendix A: Additional software requirements for development</a></li>
+<li><a href="#_appendix_b_operational_tools">Appendix B: Operational tools</a></li>
+<li><a href="#_appendix_c_build_and_development_tools">Appendix C: Build and development tools</a>
+<ul class="sectlevel2">
+<li><a href="#_debugging_and_development_tools">Debugging and development tools</a></li>
+<li><a href="#_build_tools">Build tools</a></li>
+<li><a href="#_one_time_or_obsolete_tools">One-time or obsolete tools</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Operation and Debugging Guide</p>
+</div>
+<div class="paragraph">
+<p>This document collects some notes on the care and feeding
+of a JMdictDB instance and on tools and techniques useful
+for troubleshooting and debugging.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_document_conventions_and_placeholders">1. Document conventions and placeholders</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In the sections that follow the following placeholders should
+be replaced with actual values:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">{{DEVDIR}}</dt>
+<dd>
+<p>The local development directory where the JMdictDB
+code has been checked out to from Git.
+Example value: ~/devel/jmdictdb/</p>
+</dd>
+<dt class="hdlist1">{{URLROOT}}</dt>
+<dd>
+<p>URL root that the Apache (or other WSGI-capable)
+web server is configured to serve the JMdictDB pages under.
+Example value: /jmdictdb (the web server will serve the JMdictDB
+ pages under the URLs https://localhost/jmdictdb/, e.g.,
+ https://localhost/jmdictdb/srchform.py)</p>
+</dd>
+<dt class="hdlist1">{{WEBROOT}}</dt>
+<dd>
+<p>The location the web component files are installed
+at and where the web server is configured to look for them at.
+Example value: /usr/local/jmdictdb/.
+The default value is /var/www/jmdictdb/.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>Example URLs show both "http:" and "https:" URL schemes; accessing
+the development Flask server will generally be via "http:" but
+the choice of "http:" or "https:" for the production web server
+will depend on the site configuration.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="users">2. User management</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When JMdictDB is accessed by the web pages, there are three
+levels of user privilege:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Anonymous&#8201;&#8212;&#8201;Any user has general read access to the JMdictDB
+web pages (e.g., search for entries) and can submit new or
+edited entries as unapproved submissions without any need to
+login.</p>
+</li>
+<li>
+<p>Editor&#8201;&#8212;&#8201;To approve entries a user must log in as an Editor.</p>
+</li>
+<li>
+<p>Admin &#8201;&#8212;&#8201;A user logged in as Admin has, in addition to
+Editor privileges, the ability to manage other users (add,
+remove, modify, etc.)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>There are two way to manage users:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The users.py web page.  This is accessible by logging in
+and then clicking your name (which is a link) beside the
+Logout" button.  This will take you to a page that lets you
+change the settings for your own account.  If you have Admin
+privilege, there will also be two links: "Add User" and
+"List Users" that will allow to to perform user admin actions
+on other users.</p>
+</li>
+<li>
+<p>The bin/users.py command line program.  To use this you
+must have access to a Postgresql database account with
+access to the JMdictDB database.  Run <code>bin/users.py --help</code>
+for details on use.  The installation procedure uses this
+script to add an initial Amin user.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_temporary_downtime">3. Temporary downtime</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Web access to the JMdictDB pages may be temporarily disabled
+for maintenance, because of excessive load, or to block
+access from a set of specific IP addresses.  When this is
+done visitors (or specific visitors in the case of an IP
+block) to any JMdictDB pages will see a message to that
+effect.</p>
+</div>
+<div class="paragraph">
+<p>This is done by creating a control file in a directory
+designated as the status directory.  The location of the
+status directory is set in the configuration file by the
+STATUS_DIR setting.  By default it is the
+{{WEBROOT}}/{{CGI}} directory.</p>
+</div>
+<div class="paragraph">
+<p>The control files are named "status_maint", "status_load" or
+"status_blocked".  If either of the first two exist (contents
+are ignored), any web access to a CGI script will result in a
+redirect to the pages "status_maint.html" or "status_load.html"
+which present the user with a message that the system is
+unavailable due to maintenance or excessive load, respectively.</p>
+</div>
+<div class="paragraph">
+<p>If the "status_blocked" control file exists, it should contain
+IP addresses, one per line.  When a visitor&#8217;s IP matches one of
+the entries, a redirect to the page "status_blocked.html" will
+be returned.  Lines that do not have the format of an IP
+address are ignored (as is any text after the first word on a
+line) and may be used for comments.</p>
+</div>
+<div class="paragraph">
+<p>The names of the control files and the location of the html
+files are not customizable although you can modify the contents
+of the html files.</p>
+</div>
+<div class="paragraph">
+<p>It is up to you to create and and remove the control files
+as appropriate.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_upgrading_jmdictdb">4. Upgrading JMdictDB</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Development of JMdictDB is ongoing and updates to the code are
+made frequently and to the database schema, occasionally.
+Updates to both the code and the database are generally
+not cummulative; all updates between the current state
+and the latest state need to be applied.</p>
+</div>
+<div class="paragraph">
+<p>In general the upgrade procedure is to pull the latest changes
+from the GitLab repository, install them with the 'make' command,
+then apply any required database updates.  In some case additional
+or alternate steps will be required which will be detailed in the
+update instructions.</p>
+</div>
+<div class="paragraph">
+<p>The usual steps are detailed below.  We assume you have a cloned
+copy of the JMdictDB repository in {{DEVDIR}}; if not you can get
+a copy with:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ git clone https://gitlab.com/yamagoya/jmdictdb.git {{DEVDIR}}</pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+If both a software and database upgrade are required, the
+JMdictDB web service may not be available (users will get a
+"database version error" page) from the time the software is
+updated until the database update completes successfully.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="code-upgrade">4.1. Code upgrades</h3>
+<div class="paragraph">
+<p>To upgrade the code:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ cd {{devdir}}
+$ git status</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Verify you have the desired branch ("master" or "edrdg") checked
+out, although for most announced upgrades, they will be the same.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ git show -s --oneline</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note the 7-digit hex revision number in case there are problems
+with the update and you want to revert to the former (at this
+point in time, the still current) version.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ git checkout master   # or edrdg.
+$ git pull
+$ sudo make WEBROOT={{WEBROOT}} install-sys</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_database_upgrades">4.2. Database upgrades</h3>
+<div class="paragraph">
+<p>Many upgrades will involve updating only the JMdictDB software as
+described above, but sometimes upgrading the database schema is
+necessary to support new features.</p>
+</div>
+<div class="paragraph">
+<p>Upgrading the database is done by executing one or more SQL
+script files with the Postgresql tool, <code>psql</code>, or a script
+that runs psql such as db/updates/update.sh.  In addition to
+the actual schema changes made by the script, it also stores
+a database version (aka update) number, usually shown as a
+6-digit hexadecimal number, in the database.
+<sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="#_footnote_1" title="View footnote.">1</a>]</sup></p>
+</div>
+<div class="paragraph">
+<p>When the JMdictDB software opens a connection to a JMdictDB
+database, it checks the database version number and will exit
+if the number does not match the number it expects (which is
+stored in the file jmdictdb/dbver.py).  This is to reduce the
+chances of the code trying to access a database schema it
+does not fully understand.</p>
+</div>
+<div class="sect3">
+<h4 id="_backup_the_current_jmdict_database">4.2.1. Backup the current jmdict database</h4>
+<div class="literalblock">
+<div class="content">
+<pre>$ pg_dump -Fc jmdict &lt;FILENAME&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where &lt;FILENAME&gt; is the name to use for the backup file.  It can be
+named and located whatever and anywhere you want.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_determine_the_correct_database_updates_to_apply">4.2.2. Determine the correct database updates to apply</h4>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<strong>This is usually not necessary since the update documentation
+will provide this information.</strong>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The full set of historical database updates are maintained in the
+db/updates/ directory.  Generally the update documentation will
+indicate which of the update files there need to be applied.
+If not, run the following command to show the current database
+version and whether or nor it is compatible with the current
+JMdictDB code.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ tools/dbversion.py jmdict</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If the api and database version are compatible, you&#8217;re all set.
+If it will report something like:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>code expects updates: d30cfd
+jmdict: incompatible, missing updates: d30cfd, has updates: e4aa1c</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then, look in db/updates/ for a series of updates that will bring
+the database from, in this example, e4aa1c to d30cfd.  At the time
+of writing, there are two that follow 036-e4aa1c.sql:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>036-e4aa1c.sql  037-46354d.sql  038-d30cfd.sql</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Some updates may have an "s" following the initial three-digit
+sequence number; ignore these, they are updates for the "jmsess"
+database.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_apply_the_database_updates">4.2.3. Apply the database updates</h4>
+<div class="paragraph">
+<p>Run the db/updates/update.sh script to apply all the required
+updates.  Assuming the the updates:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>037-46354d.sql
+038-d30cfd.sql</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>are required, as determined from the update documentation
+or by means of the dbversion.py tool described above, they
+are conveniently applied by the update.sh script<sup class="footnote">[<a id="_footnoteref_2" class="footnote" href="#_footnote_2" title="View footnote.">2</a>]</sup>:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>cd db/updates/
+./update.sh jmdict 037-46354d.sql 038-d30cfd.sql</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The first argument is the database to update; the remaining
+arguments are the update files to apply.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_if_something_goes_wrong">4.3. If something goes wrong</h3>
+<div class="paragraph">
+<p>If no database update was involved, a software update can
+be reversed by checking out the Git revision that was in'
+use prior to the upgrade and reinstalling it with the
+'sudo make &#8230;&#8203; install-sys' command used in section
+<a href="#code-upgrade">Code upgrades</a>.  If you don&#8217;t have the previous Git
+revision number it will, under usual circumstances, be
+the one tagged "edrdg" in the Git repository.</p>
+</div>
+<div class="paragraph">
+<p>The Makefile does not use the traditional 'file modification
+time' to decide whether to reinstall the target files; rather
+it runs an install script that will reinstall a target file
+if it is different (determined by checksum) than the source
+file.  Thus the earlier versions of the source files should
+get properly reinstalled to their destination locations.</p>
+</div>
+<div class="paragraph">
+<p>If the upgrade involved a database update, reversing it is
+more complex.  If you have a backup if the database from
+before the upgrade and no activity (new submissions, etc.)
+have occurred since the upgrade, restoring from the backup
+is probably the best option.  If that can&#8217;t be done then
+you will need to examine the database update file(s) and
+manually undo the changes they made, including removing
+the new database version number and activating (setting
+the "active" column value to True) for the previous database
+version number).</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="tests">5. Tests</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>See tests/README.txt for more information on running the tests.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_general_troubleshooting">6. General troubleshooting</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_shentr_py">6.1. shentr.py</h3>
+<div class="paragraph">
+<p>Entries in the database can be examined directly, with
+no involvement from the web server, by the command line
+program, <code>bin/shentrpy</code>.  Run the program with the
+<code>--help</code> option for full details.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_cgiinfo_py_web_page">6.2. cgiinfo.py web page</h3>
+<div class="paragraph">
+<p>If the JMdictDB web server is more-or-less operational, the
+cgiinfo.py web page can provide useful information on the
+server environment.  Of particular interest is often the
+"pkg location" and "pkg_version" in the Execution Info section;
+the server code using the wrong or outdated version of the
+software is a common cause of unexpected behavior.</p>
+</div>
+<div class="paragraph">
+<p>The cgiinfo.py page can also show if the correct .ini files
+are being used, the location of the log file and the available
+database service names.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_log_files">6.3. Log files</h3>
+<div class="paragraph">
+<p>There are several sources that may provide diagnostic
+information in the case of problems:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>web server log files (OS dependent location)</p>
+</li>
+<li>
+<p>postgresql log files (OS dependent location)</p>
+</li>
+<li>
+<p>JMdictDB log files (typically in {{WEBROOT}}/lib/jmdictdb.log
+but location is defined in the config file and is shown
+in the cgiinfo.py web page.)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Note that the JMdictDB log file must be pre-created; the
+JMdictDB code will not create it automatically  (see
+the xref:install.asc).  If it
+is not not accessible or writable by the web server at
+web server startup, an error message to that effect will
+be written to the web server&#8217;s error log.</p>
+</div>
+<div class="paragraph">
+<p>Also note that it is not truncated or rotated periodically;
+you must arrange for that.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_wsgi_debugging">7. WSGI debugging</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The primary debugging tool is the local web server built into
+the Flask web framework.  It can be started with:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>tools/run-jmapp.py {{CONFIG-FILE}}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where {{CONFIG-FILE}} is the configuration file to use.  The
+usual config file will have log messages directed to a file
+and certain log levels suppressed or promoted.  When running
+under the Flask server for debugging purposes it is often
+better to run with a config file that directs log messages
+to stderr so you can see them in the terminal window that is
+running the Flask server.</p>
+</div>
+<div class="paragraph">
+<p>Make a copy of the {{DEVDIR}}/web/lib/jmdictdb.ini file to,
+say, debug.ini. Edit it and comment out the "LOGFILE = &#8230;&#8203;"
+which will cause messages to go to stderr instead. You also
+probably want to see at least all "INFO" level mesasges so
+"LOGFILTER" should have at least the line <code>I^.*</code> in it.
+You can then, from {{DEVDIR}}, run:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ tools/run-jmapp.py web/lib/debug.ini</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and browse to <a href="http://localhost:5000/" class="bare">http://localhost:5000/</a> to get the search page.</p>
+</div>
+<div class="paragraph">
+<p>The Flask server will run the code in {{DEVDIR}}, not the
+installed code, so you can modify the code and view the
+effects, insert pdb breakpoints for debugging etc.</p>
+</div>
+<div class="paragraph">
+<p>For full details see the Flask documentation at
+<a href="https://flask.palletsprojects.com/en/2.0.x/server/" class="bare">https://flask.palletsprojects.com/en/2.0.x/server/</a></p>
+</div>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Caution</div>
+</td>
+<td class="content">
+The flask server will by default access the same
+"jmdict" database as the installed production server and
+changes made to entries will affect the same entries used
+to produce the JMdict and JMnedict XML files.   To access
+a different "throw-away" database, see section
+<strong>9. Creating a database for development</strong>
+and use a "svc" URL parameter (e.g.,
+"&#8230;&#8203;/srchform.py?svc=jmtest" to direct the web  server to it.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_cgi_debugging">8. CGI debugging</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The CGI code is deprecated since the adoption of the
+more efficient and clean Flask/WSGI code so this section
+of mainly of historical interest.</p>
+</div>
+<div class="paragraph">
+<p>The CGI scripts can be run directly in a terminal window
+by giving them a URL (which can be copy-pasted from a web
+browser) command line argument:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ cd web/cgi/
+$ python3 -mpdb entr.py http://localhost/jmdictdbv/cgi/entr.py?svc=jmdict&amp;e=2171804</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In the above example, the "-mpdb" runs the Python debugger
+which is usually useful but is optional.</p>
+</div>
+<div class="paragraph">
+<p>Pages that normally get their parameters by a POST request
+and thus do not show the parameters in the URL can be coerced
+to do so by adding the URL parameter, "dbg=1".
+To debug the edconf.py (confirmation) page for example, go to
+the preceding edform.py (edit form) page and add the dbg parameter:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>http://localhost/jmdictdbv/cgi/edform.py?e=14082&amp;dbg=1</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Click the Next button and the Edit Confirmation page will
+be displayed with URL parameters:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>http://localhost/jmdictdbv/cgi/edconf.py?kanj=%E5%93%80%E6%AD%8C&amp;rdng=%E3%81%82%E3%81%84%E3%81%8B&amp;sens=%5B1%5D%5Bn%2Cadj-no%5D%0D%0A++lament+%28song%29%3B+elegy%3B+dirge%3B+sad+song%0D%0A%5B2%5D%5Bn%2Cadj-no%5D%0D%0A++Lamentations+%28book+of+the+Bible%29&amp;reference=&amp;comment=&amp;name=&amp;email=&amp;svc=jmdict&amp;id=14082&amp;stat=2&amp;dbg=1&amp;src=1&amp;seq=1150170&amp;srcnote=&amp;notes=</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can now copy-paste that into the command line and
+debug the edconf.py script interactively.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ python3 -mpdb edvconf.py 'http://localhost/jmdictdbv/cgi/edconf.py?kanj=%E5%93%80%E6%AD%8C&amp;rdng=%E3%81%82%E3%81%84%E3%81%8B&amp;sens=%5B1%5D%5Bn%2Cadj-no%5D%0D%0A++lament+%28song%29%3B+elegy%3B+dirge%3B+sad+song%0D%0A%5B2%5D%5Bn%2Cadj-no%5D%0D%0A++Lamentations+%28book+of+the+Bible%29&amp;reference=&amp;comment=&amp;name=&amp;email=&amp;svc=jmdict&amp;id=14082&amp;stat=2&amp;dbg=1&amp;src=1&amp;seq=1150170&amp;srcnote=&amp;notes='</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The "dbg" parameter, once added, is passed along to all
+subsequent pages.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="devdb">9. Creating a database for development</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When doing development work it is convenient to have a
+dedicated, throw-away test database to avoid polluting
+the production database&#8201;&#8212;&#8201;even using the "test" corpus
+in the production database unnecessarily bumps up the
+shared entry id numbers and produces noise messages in
+the log files.</p>
+</div>
+<div class="paragraph">
+<p>In the examples below the test database is named "jmtest"
+but you can name it whatever you wish.  Keep in mind
+the names "jmdict", "jmnew" and "jmtest01" are currently
+used by default for other purposes.</p>
+</div>
+<div class="paragraph">
+<p>To create a copy of the current "jmdict" production database:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ createdb jmtest
+$ pg_dump jmdict | psql -d jmtest</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Alternatively you can follow the procedure in the
+<a href="install.html#load-db">Section 4.3</a> of the Installation
+Guide for creating a new database but after loading it
+from the XML files instead of running
+"make -f Makefile-db activate", rename the "jmew" database
+to "jmtest" in 'psql':</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ psql -Upostgres
+psql&gt; alter database jmnew rename to jmtest;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To make the database available through the web pages,
+add a new section to the jmdictdb-pvt.ini file.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>[db_jmtest]
+dbname = jmtest
+sel_user = jmdictdbv
+sel_pw = xxxxxx
+user = jmdictdb
+pw = xxxxxx
+session_db = db_session</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It you intend to access the database though the Flask
+development server, add it to the file
+{{DEVDIR}}/web/lib/jmdictdb-pvt.ini (change the base
+filename if you are using something different.)</p>
+</div>
+<div class="paragraph">
+<p>If you intend to access the database though the production
+(e.g. Apache) web server, add it to the file
+{{WEBROOT}}/lib/jmdictdb-pvt.ini (again, adjust for
+site-specific changes.)</p>
+</div>
+<div class="paragraph">
+<p>Replace the "xxxxxx" strings with the passwords for the
+"jmdictdbv" and "jmdictdb" Postgresql users respectively.</p>
+</div>
+<div class="paragraph">
+<p>The test database will the be accessible at the usual
+URL(s) with the addition/replacement of the "svc" URL
+parameter</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>http://localhost/jmdictdb/srchform.py?svc=jmtest</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>or for the Flask server:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>http://localhost:5000/srchform.py?svc=jmtest</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_preparing_a_release">10. Preparing a "release"</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The JMdictDB project does not produce formal releases per se;
+instead, after a number of new features and bug fixes have
+accumulated and after consultation with Jim Breen at edrdg.org
+(the primary user of JMdictDB), the changes made to branch
+"master" are merged into branch "edrdg" and both branches are
+pushed to GitLab.  After the edrdg.org site applies the updates
+from the "edrdg" branch, it is tagged with "edrdg-&lt;YYMMDD&gt;"
+("&lt;YYMMDD&gt;" is the year, month and day) to provide a record
+of what software was running there when.</p>
+</div>
+<div class="paragraph">
+<p>Before pushing to GitLab, the following should be checked:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Make sure the JEL parser is up-to-date with the parser
+source file, jmdictdb/jelparse.y:</p>
+<div class="literalblock">
+<div class="content">
+<pre>$ cd {{DEVDIR}}/jmdictdb/ &amp;&amp; make</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Confirm all the tests pass (see section <a href="#tests">Tests</a>)</p>
+</li>
+<li>
+<p>If possible, do a full install from XML files per the
+<a href="#install.asc">Installation Guide</a></p>
+</li>
+<li>
+<p>Make sure the documentation is up-to-date:</p>
+<div class="literalblock">
+<div class="content">
+<pre>$ cd {{DEVDIR}}/doc/ &amp;&amp; make</pre>
+</div>
+</div>
+</li>
+<li>
+<p>and optionally install a local copy to ~/public_html/doc/</p>
+<div class="literalblock">
+<div class="content">
+<pre>$ make install</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Prepare a set of upgrade instructions which may, for complex
+or major upgrades, be in the form of a permanent document added
+to the doc/ directory or, for straight forward and routine
+upgrades, simply an email.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="appx-A">Appendix A: Additional software requirements for development</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>For building documentation:</p>
+</div>
+<div class="ulist none">
+<ul class="none">
+<li>
+<p><strong>asciidoctor</strong>: doc/src/*.asc &#8658; *.html</p>
+</li>
+<li>
+<p><strong>dia</strong>: doc/src/schema.dia &#8658; schema.png diagram.</p>
+</li>
+<li>
+<p><strong>libreoffice writer</strong>:  doc/src/schema.odt &#8658; schema.pdf</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_appendix_b_operational_tools">Appendix B: Operational tools</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>These are tools for use at installed JMdictDB sites and are
+located in bin/.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">bulkupd.py</dt>
+<dd>
+<p>Allows making similar changes to a large number
+of database entries at once.</p>
+</dd>
+<dt class="hdlist1">conj.py</dt>
+<dt class="hdlist1">dbcheck.py</dt>
+<dt class="hdlist1">dbreaper.py</dt>
+<dt class="hdlist1">entrs2xml.py</dt>
+<dd>
+<p>Produce a JMdict or JMnedict XML file from
+the database contents.  This does the inverse of jmparse.py.</p>
+</dd>
+<dt class="hdlist1">ex2txt.py</dt>
+<dd>
+<p>Produce a Tatoeba sentence examples file from
+data in a JMdictDB database.  This does the inverse of
+exparse.py.</p>
+</dd>
+<dt class="hdlist1">exparse.py</dt>
+<dd>
+<p>Parse a Tatoeba sentence examples file into a
+form suitable for loading into a JMdictDB database by
+pgload.  Normally run by Makefile-db.  This does the inverse
+of ex2txt.py.</p>
+</dd>
+<dt class="hdlist1">jelload.py</dt>
+<dt class="hdlist1">jmdbss.txt</dt>
+<dt class="hdlist1">jmparse.py</dt>
+<dd>
+<p>Parse a JMdict or JMnedict XML file into a
+form suitable for loading into a JMdictDB database by
+pgload.  Normally run by Makefile-db.  This does the inverse
+of entr2xml.py.</p>
+</dd>
+<dt class="hdlist1">kdparse.py</dt>
+<dd>
+<p>Parse a kanjdic XML file into a
+form suitable for loading into a JMdictDB database by
+pgload.  Normally run by Makefile-db.  These is not currently
+a program to produce a kanjidic XML file from database data.</p>
+</dd>
+<dt class="hdlist1">mklabels.py</dt>
+<dt class="hdlist1">pgload.py</dt>
+<dd>
+<p>Loads the intermediate file produced ny
+jmparse.py, kdparse.py or exparse.py into a JMdictDB
+database.  Normally run by Makefile-db.</p>
+</dd>
+<dt class="hdlist1">shentr.py</dt>
+<dd>
+<p>A command line program that can display entries
+from a JMdictDB database.</p>
+</dd>
+<dt class="hdlist1">users.py</dt>
+<dd>
+<p>A program for managing (adding, deleting modifying)
+users in the jmsess database.</p>
+</dd>
+<dt class="hdlist1">xresolv.py</dt>
+<dd>
+<p>This is run after pgload.py loads a corpus into
+a JMdictDB database and attempts to resolve (produce xrefs
+from) the unresolved xrefs generated by pgload.py.  Normally
+run by Makefile-db.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_appendix_c_build_and_development_tools">Appendix C: Build and development tools</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>These are programs that are used in the development of JMdictDB,
+either for debugging or as part of that toolchains used for
+packaging, and distributing the software.</p>
+</div>
+<div class="sect2">
+<h3 id="_debugging_and_development_tools">Debugging and development tools</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">dbcompare.py</dt>
+<dt class="hdlist1">dbg-parser.py</dt>
+<dt class="hdlist1">dbversion.py</dt>
+<dd>
+<p>Show the database version number of a chosen
+database or all JMdictDB databases and whether or nor it
+is compatible the the current JMdictDB code.</p>
+</dd>
+<dt class="hdlist1">dtdcheck.py</dt>
+<dt class="hdlist1">hggit.py</dt>
+<dd>
+<p>Maps between old Mercurial and current Git revision
+number.</p>
+</dd>
+<dt class="hdlist1">jmbuild.py</dt>
+<dt class="hdlist1">jmextract.py</dt>
+<dt class="hdlist1">kwcmp.py</dt>
+<dt class="hdlist1">run-flask.py</dt>
+<dd>
+<p>Run the JMdictDB Flask app in debugging mode.</p>
+</dd>
+<dt class="hdlist1">upd-version.py</dt>
+<dd>
+<p>Update the jmdictdb/<em>version_</em>.py file based
+of the current Git revision number.</p>
+</dd>
+<dt class="hdlist1">xmlarch.sh</dt>
+<dd>
+<p>A script that can be run regularly by cron to check
+a JMdict or JMnedict XML file and save a copy of the DTD if
+it has changed since the last run.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_build_tools">Build tools</h3>
+<div class="paragraph">
+<p>These are part of the build toolchains and usually invoked by a
+Makefile or script; they seldom need to be manually run.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">install.sh</dt>
+<dd>
+<p>Run by Makefile to install command line programs and
+CGI scripts.  replaces the target file only id the source and
+target file contents differ determine by checksum).</p>
+</dd>
+<dt class="hdlist1">gen_parsetab.py</dt>
+<dt class="hdlist1">yply.py</dt>
+<dd>
+<p>Used in the build process by jmdictdb/Makefile to
+convert the YACC grammar that jmdictdb/jelparse.y is written
+in, into a format understood by the ply parser-generator.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_one_time_or_obsolete_tools">One-time or obsolete tools</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">lic-replace.py</dt>
+<dd>
+<p>A quick hack that was used to replace the full
+GPL license text in source files with a short SPID license
+identifier.</p>
+</dd>
+<dt class="hdlist1">mkiso639maps.py</dt>
+<dt class="hdlist1">mkkwmod.py</dt>
+<dt class="hdlist1">mklang.py</dt>
+</dl>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footnotes">
+<hr>
+<div class="footnote" id="_footnote_1">
+<a href="#_footnoteref_1">1</a>. The database version number is stored as an integer in table "db" but generally accessed as a hexadecimal string via the view "dbx".
+</div>
+<div class="footnote" id="_footnote_2">
+<a href="#_footnoteref_2">2</a>. The update.sh script simply runs the command `psql -Ujmdictdb -d&lt;first-arg&gt; -f&lt;next-arg&gt;`, for each of the second and subsequent arguments (denoted &lt;next-arg&gt;).
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2022-01-03 19:08:56 MST
+</div>
+</div>
+</body>
+</html>
