@@ -3,7 +3,7 @@
 
 import sys, pdb
 from jmdictdb import logger; from jmdictdb.logger import L
-from jmdictdb import jdb, srch
+from jmdictdb import jdb, srch, jmcgi
 
 def view (svc, cfg, user, cur, params):
         '''-------------------------------------------------------------------
