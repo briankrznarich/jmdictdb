@@ -3,25 +3,12 @@ from jmdictdb import jdb, db
 from jmdictdb.objects import *
 from jmdictdb import fmtxml
 
-sys.path.append ("./data/fmtxml")
-import fmtxml_data as f
+global TestData  # Defined in SetUpModule() (near bottom).
 
-# Note on the initializations of fmtxml.XKW below...
-# fmtxml.XKW is a global in fmtxml.py that fmtxml uses to to keep a
-# modified version of whatever was in jdb.KW when fmtxml initialized
-# XKW.  Because (AFAICT) fmtxml is only imported once by unittest
-# the values in XKW are persistent between tests.  Most tests call
-# fmtxml.entr() which will initialize XKW if it is None.  Thus we
-# force this initialization by setting XKW to None before each test
-# in the test class' setUp() method.  For some tests that don't call
-# fmtxml.entr() we set up XKW "by hand'.  It is very hard to notice
-# when this is not done correctly because:
-# - The jdb.KW data is the same for most tests so stale data most
-#   often does not cause an error.
-# - When (and whether) problems occur are dependent of the order the
-#   tests are run in.
+# NOTE: some test class names below are prefixed with "t" to avoid shadowing
+#  the name of a JMdictDB object class in object.py,
 
-class Test_restr (unittest.TestCase):
+class tRestr (unittest.TestCase):
     def test_001(_):
         k1, k2, k3 = Kanj(txt='k1'), Kanj(txt='k2'), Kanj(txt='k3')
         kanjs = [k1, k2, k3]
@@ -50,15 +37,7 @@ class Test_restr (unittest.TestCase):
         xml = fmtxml.restrs (rdng, kanjs)
         _.assertEqual (['<re_nokanji/>'], xml)
 
-# The following tests use data from data/fmtxml_data.py imported (as 'f'
-# for brevity) above.  Module f contains two dicts., 'f.inp' and 'f.exp',
-# both keyed by the test id number (as a string).  The values in f.inp
-# are python code strings that will be exed'd by dotest() to produce a
-# jdb.Entr object for feeding to the module-under-test, fmtxml.  The
-# values in f.exp are strings with the coresponding XML that the fmtxml
-# is expected to produce.
-
-class Test_entr (unittest.TestCase):
+class tEntr (unittest.TestCase):
     def setUp(_):
         jdb.KW = jdb.Kwds ('')
         for id,kw,descr in ((1,'grp1','group grp1'),
@@ -67,40 +46,36 @@ class Test_entr (unittest.TestCase):
                             (11,'mxtpp55-2','group mxtpp55-2 with hyphen'),
                             (200,'aabb','group aabb'),):
             jdb.KW.add ('GRP', (id,kw,descr))
-        fmtxml.XKW = None   # Force XKW to be reset from just loaded KW.
-    def test0200010 (_): dotest (_, f.t_in['0200010'], f.t_exp['0200010'])
-    def test0201020 (_): dotest (_, f.t_in['0201020'], f.t_exp['0201020'])
-    def test0201030 (_): dotest (_, f.t_in['0201030'], f.t_exp['0201030'])
-    def test0201040 (_): dotest (_, f.t_in['0201040'], f.t_exp['0201040'], compat='jmdict')
-    def test0201050 (_): dotest (_, f.t_in['0201050'], f.t_exp['0201050'])
+    def test0200010 (_): dotest (_, TestData['0200010'])
+    def test0201020 (_): dotest (_, TestData['0201020'])
+    def test0201030 (_): dotest (_, TestData['0201030'])
+    def test0201040 (_): dotest (_, TestData['0201040'], compat='jmdict')
+    def test0201050 (_): dotest (_, TestData['0201050'])
 
-class Test_xrslv (unittest.TestCase):
+class tXrslv (unittest.TestCase):
     def setUp (_):
         jdb.KW = jdb.Kwds ('')
-        fmtxml.XKW = None   # Force XKW to be reset from just loaded KW.
-    def test0202010(_): dotest (_, f.t_in['0202010'], f.t_exp['0202010'], compat='jmdict')
-    def test0202020(_): dotest (_, f.t_in['0202020'], f.t_exp['0202020'], compat='jmdict')
-    def test0202030(_): dotest (_, f.t_in['0202030'], f.t_exp['0202030'], compat='jmdict')
-    def test0202040(_): dotest (_, f.t_in['0202040'], f.t_exp['0202040'], compat='jmdict')
-    def test0202050(_): dotest (_, f.t_in['0202050'], f.t_exp['0202050'], compat='jmdict')
+    def test0202010(_): dotest (_, TestData['0202010'], compat='jmdict')
+    def test0202020(_): dotest (_, TestData['0202020'], compat='jmdict')
+    def test0202030(_): dotest (_, TestData['0202030'], compat='jmdict')
+    def test0202040(_): dotest (_, TestData['0202040'], compat='jmdict')
+    def test0202050(_): dotest (_, TestData['0202050'], compat='jmdict')
 
-class Test_jmnedict (unittest.TestCase):
+class JMnedict (unittest.TestCase):
     def setUp(_):
         jdb.KW = jdb.Kwds ('')
-        fmtxml.XKW = None   # Force XKW to be reset from just loaded KW.
-    def test0300010(_): dotest (_, f.t_in['0300010'], f.t_exp['0300010'], compat='jmnedict')
-    def test0300020(_): dotest (_, f.t_in['0300020'], f.t_exp['0300020'], compat='jmnedict')
-    def test0300030(_): dotest (_, f.t_in['0300030'], f.t_exp['0300030'], compat='jmnedict')
-    def test0300040(_): dotest (_, f.t_in['0300040'], f.t_exp['0300040'], compat='jmnedict')
-    def test0300050(_): dotest (_, f.t_in['0300050'], f.t_exp['0300050'], compat='jmnedict')
+    def test0300010(_): dotest (_, TestData['0300010'], compat='jmnedict')
+    def test0300020(_): dotest (_, TestData['0300020'], compat='jmnedict')
+    def test0300030(_): dotest (_, TestData['0300030'], compat='jmnedict')
+    def test0300040(_): dotest (_, TestData['0300040'], compat='jmnedict')
+    def test0300050(_): dotest (_, TestData['0300050'], compat='jmnedict')
 
     def test0305001(_):  # IS-221
-        dotest (_, f.t_in['0305001'], f.t_exp['0305001'], compat='jmnedict')
+        dotest (_, TestData['0305001'], compat='jmnedict')
 
 class Jmex (unittest.TestCase):
     def setUp(_):
         jdb.KW = jdb.Kwds ('')
-        fmtxml.XKW = None   # Force XKW to be reset from just loaded KW.
     def test_001(_):
           # Rinf(kw=103) below is a RINF['name'] tag used in kanjidic but
           # disallowed in jmdict.  Since the jmex format allows all tags
@@ -119,19 +94,17 @@ class Jmex (unittest.TestCase):
         got = fmtxml.entr (data)   # compat='jmex' is default.
         _.assertEqual (expect, got)
 
-def dotest (_, execstr, expected, **kwds):
-        lcls = {}
-        exec (execstr, globals(), lcls)
-        xml = fmtxml.entr (lcls['e'], **kwds)
-        if xml != expected:
-            msg = "\nExpected (len=%d):\n%s\nGot (len=%d):\n%s" \
-                   % (len(expected), expected, len(xml), xml)
-            _.failIf (1, msg)
+def dotest (_, testdata, **kwds):
+        entr, xml = testdata
+          # Remove the leading spaces due to formatting.
+        expected = re.sub (r'^[ ]+', '', xml, flags=re.M)
+        got = fmtxml.entr (entr, **kwds)
+        _.assertEqual (expected, got)
 
   # Tests for fmtxml.entr_diff(), see IS-227.
   # Like class Test_entr above, we use data from data/fmtxml_data.py imported
   # (as 'f' for brevity) earlier.  See Test_entr above for more details.
-class Test_entr_diff (unittest.TestCase):
+class Entr_diff (unittest.TestCase):
     def setUp(_):
         jdb.KW = jdb.Kwds ('')
           # We need an additional kwsrc row to allow the tests to change
@@ -139,18 +112,18 @@ class Test_entr_diff (unittest.TestCase):
           # brevity add just the needed field: srct.
         jdb.KW.add ('SRC', db.DbRow((1,'jmdict','',1),
                                     ('id','kw','descr','srct')))
-    def test_0400010(_): _.do_test ('0400010')   # No change.
-    def test_0400020(_): _.do_test ('0400020')   # rdng.txt change.
-    def test_0400030(_): _.do_test ('0400030')   # entr.src change.
-    def test_0400040(_): _.do_test ('0400040')   # entr.seq change.
-    def do_test (_, testnum):
-        lcls = {}
-        exec (f.t_in[testnum], globals(), lcls)
-        e1, e2 = lcls['e1'], lcls['e2']
-        s = fmtxml.entr_diff (e1, e2, n=0)
-        _.assertEqual (s, f.t_exp[testnum])
+    def test_0400010(_): _.do_test (TestData['0400010'])   # No change.
+    def test_0400020(_): _.do_test (TestData['0400020'])   # rdng.txt change.
+    def test_0400030(_): _.do_test (TestData['0400030'])   # entr.src change.
+    def test_0400040(_): _.do_test (TestData['0400040'])   # entr.seq change.
+    def do_test (_, testdata):
+        e1, e2, xml = testdata
+          # Remove the leading spaces due to formatting.
+        expected = re.sub (r'^[ ]+', '', xml, flags=re.M)
+        got = fmtxml.entr_diff (e1, e2, n=0)
+        _.assertEqual (expected, got)
 
-class Test_xrefs (unittest.TestCase):
+class Xrefs (unittest.TestCase):
     def setUp(_):
         jdb.KW = jdb.Kwds ('')
 
@@ -319,7 +292,6 @@ class Test_xrefs (unittest.TestCase):
 class Compat (unittest.TestCase):
     def setUp(_):
         jdb.KW = jdb.Kwds ('')
-        fmtxml.XKW = None   # Force XKW to be reset from just loaded KW.
         _.entr = Entr(id=33, src=99, seq=1000222, stat=2, unap=False, dfrm=None,
                       notes="entr-note",
                       srcnote="src-note",
@@ -456,5 +428,149 @@ class Tags (unittest.TestCase):
         _.assertEqual (expect, got)
         _.assertRegex (test_stderr.getvalue(),
                        r'Illegal tag for DTD.*jmnedict.*abbr')
+
+def setUpModule():
+    jdb.KW = jdb.Kwds('')   # Load JMdictDB tags from csv files.
+
+    global TestData
+    TestData = {
+      # for class Entr
+      '0200010': (
+           Entr(),
+           '''<entry>
+           </entry>'''),
+      '0201020': (
+          Entr(_grp=[Grp(kw=2,ord=1)]),
+          '''<entry>
+          <group ord="1">xx</group>
+          </entry>'''),
+      '0201030': (
+          Entr(_grp=[Grp(kw=11,ord=5),Grp(kw=10,ord=2)]),
+          '''<entry>
+          <group ord="5">mxtpp55-2</group>
+          <group ord="2">zz</group>
+          </entry>'''),
+      '0201040': (
+          Entr(_grp=[Grp(kw=5,ord=1)]),
+          '''<entry>
+          </entry>'''),
+      '0201050': (
+          Entr(_grp=[Grp(kw=1)]),
+          '''<entry>
+          <group>grp1</group>
+          </entry>'''),
+
+      # for class Xrslv
+      '0202010': (
+          Entr (src=99, _sens=[Sens (_xrslv=[Xrslv(typ=3, ktxt='\u540c\u3058')])]),
+          '''<entry>
+          <sense>
+          <xref>同じ</xref>
+          </sense>
+          </entry>'''),
+      '0202020': (
+          Entr (src=99, _sens=[Sens (_xrslv=[Xrslv(typ=2, ktxt='\u540c\u3058')])]),
+          '''<entry>
+          <sense>
+          <ant>同じ</ant>
+          </sense>
+          </entry>'''),
+      '0202030': (
+          Entr (src=99, _sens=[Sens (_xrslv=[Xrslv(typ=3, rtxt='\u304a\u306a\u3058')])]),
+          '''<entry>
+          <sense>
+          <xref>おなじ</xref>
+          </sense>
+          </entry>'''),
+      '0202040': (
+          Entr (src=99, _sens=[Sens (_xrslv=[Xrslv(typ=3, ktxt='\u540c\u3058',\
+                                                          rtxt='\u304a\u306a\u3058')])]),
+          '''<entry>
+          <sense>
+          <xref>同じ・おなじ</xref>
+          </sense>
+          </entry>'''),
+      '0202050': (
+          Entr (src=99, _sens=[Sens (_xrslv=[Xrslv(typ=3, ktxt='\u540c\u3058',\
+                                                          rtxt='\u304a\u306a\u3058', tsens=3)])]),
+          '''<entry>
+          <sense>
+          <xref>同じ・おなじ・3</xref>
+          </sense>
+          </entry>'''),
+
+      # for class JMnedict
+      '0300010': (
+          Entr (src=99, seq=300010),
+          '''<entry>
+          <ent_seq>300010</ent_seq>
+          </entry>'''),
+      '0300020': (
+          Entr (src=99, _rdng=[Rdng (txt='たかはし')]),
+          '''<entry>
+          <r_ele>
+          <reb>たかはし</reb>
+          </r_ele>
+          </entry>'''),
+
+      '0300030': (
+          Entr (src=99, _rdng=[Rdng (txt='キャッツ')]),
+          '''<entry>
+          <r_ele>
+          <reb>キャッツ</reb>
+          </r_ele>
+          </entry>'''),
+      '0300040': (
+          Entr (src=99, _kanj=[Kanj (txt='高橋')]),
+          '''<entry>
+          <k_ele>
+          <keb>高橋</keb>
+          </k_ele>
+          </entry>'''),
+      '0300050': (
+          Entr (src=99, _sens=[Sens (_gloss=[Gloss(txt='Takahashi')])]),
+          '''<entry>
+          <trans>
+          <trans_det>Takahashi</trans_det>
+          </trans>
+          </entry>'''),
+      '0305001': (
+          Entr (src=99, _rdng=[Rdng (txt='キャッツ＆ドッグス')],\
+                       _sens=[Sens (_gloss=[Gloss (txt='Cats & Dogs (film)')],\
+                                    _misc=[Misc (kw=jdb.KW.MISC['unclass'].id)])]),
+          '''<entry>
+          <r_ele>
+          <reb>キャッツ＆ドッグス</reb>
+          </r_ele>
+          <trans>
+          <name_type>&unclass;</name_type>
+          <trans_det>Cats &amp; Dogs (film)</trans_det>
+          </trans>
+          </entry>'''),
+
+      # for class Entr_diff
+      '0400010': (
+          Entr (id=1, src=99, _rdng=[Rdng (txt='たかはし')]),
+          Entr (id=2, src=99, _rdng=[Rdng (txt='たかはし')]),
+          ''),
+      '0400020': (
+          Entr (id=1, src=99, _rdng=[Rdng (txt='たかはし')]),
+          Entr (id=2, src=99, _rdng=[Rdng (txt='たかばし')]),
+          '''@@ -4 +4 @@
+          -<reb>たかはし</reb>
+          +<reb>たかばし</reb>'''),
+      '0400030': (
+          Entr (id=1, src=1, _rdng=[Rdng (txt='たかはし')]),
+          Entr (id=2, src=99, _rdng=[Rdng (txt='たかはし')]),
+          '''@@ -1,2 +1,2 @@
+          -<ent_corp type="jmdict">jmdict</ent_corp>
+          +<ent_corp type="jmdict">test</ent_corp>'''),
+      '0400040': (
+          Entr (id=1, src=99, seq=1000123),
+          Entr (id=2, src=99, seq=1000124),
+          '''@@ -3 +3 @@
+          -<ent_seq>1000123</ent_seq>
+          +<ent_seq>1000124</ent_seq>'''),
+      }
 
 if __name__ == '__main__': unittest.main()
