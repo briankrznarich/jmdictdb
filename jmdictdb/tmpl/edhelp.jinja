@@ -301,15 +301,17 @@
           </li><li>The syntax of gloss information (or ginf) tags is the same
           as for sense tags but
           ginf tags apply only to the gloss they are adjacent to.  They may
-          occur before or after the gloss they apply to.  There are two type of
-          gloss tags: translation type tags, and gloss language tags.  Each gloss
-          can have only one translation tag and one language tag.
-          </li><li>Ginf tranlation tags are:
-            <ul><li>equ -- Equivalent translation (<a href="#syn_ginf_equ">syntax</a>).
-               This is the default if no other translation tag is given.
-            </li><li>expl -- Explanatory translation (<a href="#syn_ginf_expl">syntax</a>)
-            </li><li>fig -- Figurative translation (<a href="#syn_ginf_fig">syntax</a>)
-            </li><li>lit -- Literal translation (<a href="#syn_ginf_lit">syntax</a>)
+          occur before or after the gloss they apply to.  There are two type
+          of gloss tags: translation type tags
+          (<a href="#syn_ginf">syntax</a>, <a href="#kw_ginf">abbrs</a>)
+          and gloss language tags
+          (<a href="#syn_lang">syntax</a>, <a href="#kw_lang">abbrs</a>).
+          Each gloss can have only one translation tag and one language tag.
+          </li><li>The most frequently use translation tag is:
+            <ul><li>equ -- Equivalent translation.
+              This is the default if no other translation tag is given.
+            </li><li>See the Ginf tags list (<a href="#kw_ginf">abbrs</a>) for
+              other values.
             </li></ul>
           </li><li>Ginf language tags are:
             <ul><li>lang -- Value can be any of the three-letter language codes from
@@ -465,62 +467,22 @@
             </tr>
 
           <tr id="syn_ginf">
-            <td class="syntable" id="syn_ginf_equ">
-              ginf <a href="#kw_ginf">(kwds)</a></td>
-            <td class="syntable">equ</td>
-            <td class="syntable">Equivalent translation</td>
-            <td class="syntable">Senses (applies to gloss)</td>
+            <td class="syntable">ginf</td>
+            <td class="syntable"><a href="#kw_ginf">kwds</a></td>
+            <td class="syntable">Translation type</td>
+            <td class="syntable">Gloss</td>
             <td class="syntable">
-              [equ] <span style="font-style: italic;">the
-              equivalent text</span>...<br>
-              (1) Since "equ" is the default translation type for
-              glosses, it will rarely need to be specified explicitly. <br>
-              (2) The tag can placed at either the beginning or end
-              of the gloss text.
-              </td>
-            <td class="syntable">&nbsp;</td>
-            </tr>
-
-          <tr id="syn_ginf_expl">
-            <td class="syntable">&nbsp;</td>
-            <td class="syntable">expl</td>
-            <td class="syntable">Explanatory translation</td>
-            <td class="syntable">Senses (applies to gloss)</td>
+              [<span style="font-style: italic;"><a href="#kw_ginf">kw</a></span>]
+              <span style="font-style: italic;">gloss text...</span><br>
+              (1) Since "equ" (equivalent translation) is the default
+              ginf value for glosses, it will rarely need to be specified
+              explicitly. <br>
+              (2) The tag can placed at either the beginning or end of the
+              gloss text.</td>
             <td class="syntable">
-              [expl] <span style="font-style: italic;">the
-              explanatory text</span>...<br>
-              (1) The tag can placed at either the beginning or end
-              of the gloss text.
-              </td>
-            <td class="syntable">&nbsp;</td>
-            </tr>
-
-          <tr id="syn_ginf_fig">
-            <td class="syntable">&nbsp;</td>
-            <td class="syntable">fig</td>
-            <td class="syntable">Figurative translation</td>
-            <td class="syntable">Senses (applies to gloss)</td>
-            <td class="syntable">
-              [fig] <span style="font-style: italic;">the
-              figurative text</span>...<br>
-              (1) The tag can placed at either the beginning or end
-              of the gloss text.
-              </td>
-            <td class="syntable">&nbsp;</td>
-            </tr>
-
-          <tr id="syn_ginf_lit">
-            <td class="syntable">&nbsp;</td>
-            <td class="syntable">lit</td>
-            <td class="syntable">Literal translation</td>
-            <td class="syntable">Senses (applies to gloss)</td>
-            <td class="syntable">
-              [lit] <span style="font-style: italic;">the
-              literal text...</span>]<br>
-              (1) The tag can placed at either the beginning or end
-              of the gloss text.
-              </td>
-            <td class="syntable">[lit] even monkeys fall from trees</td>
+              there are no birds in last year's nest<br>
+              [lit] there aren't always loach under the willow tree<br>
+              [expl] good luck does not always repeat itself</td>
             </tr>
 
           <tr id="syn_fld">
@@ -563,7 +525,7 @@
             <td class="syntable">Senses (applies to gloss)</td>
             <td class="syntable">
               [xxx] <span style="font-style: italic;">gloss
-              text...</span>]<br>
+              text...</span><br>
               (1) Specifies the language of the associated gloss.
               "xxx" is a three-letter code from ISO-639-2. <br>
               See <a href="#kw_lang">language keywords</a> for a full list.
