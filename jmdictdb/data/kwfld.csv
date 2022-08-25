@@ -32,7 +32,7 @@ id	kw	descr	ents
 31	Christn	Christianity	
 32	phil	philosophy	
 33	physiol	physiology	
-34	pharm	pharmacy	
+34	pharm	pharmacology	
 35	elec	electricity, elec. eng.	
 36	ent	entomology	
 37	biochem	biochemistry	
@@ -71,3 +71,16 @@ id	kw	descr	ents
 70	rail	railway	
 71	psy	psychiatry	
 72	cloth	clothing	
+73	manga	manga	
+74	dent	dentistry	
+75	cards	card games	
+76	mining	mining	
+77	kabuki	kabuki	
+78	noh	noh	
+79	politics	politics	
+80	stockm	stock market	
+81	ski	skiing	
+82	rommyth	Roman mythology	
+83	psyanal	psychoanalysis	
+84	film	film	
+85	tv	television	

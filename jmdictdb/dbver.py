@@ -8,4 +8,4 @@
 # that the database to be used is at the update level that 
 # this JMdictDB API version expects.
 
-DBVERS = [0xb5d00f]
+DBVERS = [0xcda09c]

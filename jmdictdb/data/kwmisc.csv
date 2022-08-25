@@ -1,9 +1,9 @@
 id	kw	descr	ents
 1	X	rude or X-rated term (not displayed in educational software)	
 2	abbr	abbreviation	
-3	arch	archaism	
+3	arch	archaic	
 4	chn	children's language	
-5	col	colloquialism	
+5	col	colloquial	
 6	derog	derogatory	
 8	fam	familiar language	
 9	fem	female term, language, or name	{"jmdict":{"v":"female term or language"}, "jmnedict":{"v":"female given name or forename"}}
@@ -13,9 +13,8 @@ id	kw	descr	ents
 14	m-sl	manga slang	
 15	male	male term, language, or name	{"jmdict":{"v":"male term or language"}, "jmnedict":{"e":"masc", "v":"male given name or forename"}}
 17	obs	obsolete term	
-18	obsc	obscure term	
+18	rare	rare term	
 19	pol	polite (teineigo) language	
-20	rare	rare	
 21	sl	slang	
 22	uk	word usually written using kana alone	
 24	vulg	vulgar expression or word	
@@ -23,6 +22,7 @@ id	kw	descr	ents
 26	poet	poetical term	
 27	on-mim	onomatopoeic or mimetic word	
 28	joc	jocular, humorous term	
+29	euph	euphemistic	
 81	proverb	proverb	
 82	aphorism	aphorism (pithy saying)	{"jmdict":0}
 83	quote	quotation	
@@ -54,3 +54,4 @@ id	kw	descr	ents
 190	station	railway station	{"jmnedict":1}
 191	organization	organization name	{"jmnedict":1}
 192	work	work of art, literature, music, etc. name	{"jmnedict":1}
+193	ship	ship name	{"jmnedict":1}

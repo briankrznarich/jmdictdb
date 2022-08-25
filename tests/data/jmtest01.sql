@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.18 (Ubuntu 10.18-0ubuntu0.18.04.1)
--- Dumped by pg_dump version 10.18 (Ubuntu 10.18-0ubuntu0.18.04.1)
+-- Dumped from database version 10.21 (Ubuntu 10.21-0ubuntu0.18.04.1)
+-- Dumped by pg_dump version 10.21 (Ubuntu 10.21-0ubuntu0.18.04.1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -3383,8 +3383,9 @@ COPY public.db (id, active, ts) FROM stdin;
 14985756	f	2020-10-08 20:15:24.672514
 4601165	f	2021-02-09 21:11:50.102646
 13831421	f	2021-06-06 16:17:54.116385
-11915279	t	2021-12-27 16:00:44.532196
 9907187	f	2021-12-21 14:52:30.009316
+13475996	t	2022-08-25 06:59:57.467042
+11915279	f	2021-12-27 16:00:44.532196
 \.
 
 
@@ -4219,7 +4220,6 @@ COPY public.kwfld (id, kw, descr, ents) FROM stdin;
 31	Christn	Christianity	\N
 32	phil	philosophy	\N
 33	physiol	physiology	\N
-34	pharm	pharmacy	\N
 35	elec	electricity, elec. eng.	\N
 36	ent	entomology	\N
 37	biochem	biochemistry	\N
@@ -4259,6 +4259,20 @@ COPY public.kwfld (id, kw, descr, ents) FROM stdin;
 54	horse	horse racing	\N
 67	audvid	audiovisual	\N
 68	vidg	video games	\N
+34	pharm	pharmacology	\N
+73	manga	manga	\N
+74	dent	dentistry	\N
+75	cards	card games	\N
+76	mining	mining	\N
+77	kabuki	kabuki	\N
+78	noh	noh	\N
+79	politics	politics	\N
+80	stockm	stock market	\N
+81	ski	skiing	\N
+82	rommyth	Roman mythology	\N
+83	psyanal	psychoanalysis	\N
+84	film	film	\N
+85	tv	television	\N
 \.
 
 
@@ -4307,6 +4321,7 @@ COPY public.kwkinf (id, kw, descr, ents) FROM stdin;
 5	ateji	ateji (phonetic) reading	\N
 6	rK	rarely-used kanji form	\N
 3	oK	word containing out-dated kanji or kanji usage	\N
+7	sK	search-only kanji form	\N
 \.
 
 
@@ -4809,9 +4824,7 @@ COPY public.kwlang (id, kw, descr) FROM stdin;
 COPY public.kwmisc (id, kw, descr, ents) FROM stdin;
 1	X	rude or X-rated term (not displayed in educational software)	\N
 2	abbr	abbreviation	\N
-3	arch	archaism	\N
 4	chn	children's language	\N
-5	col	colloquialism	\N
 6	derog	derogatory	\N
 8	fam	familiar language	\N
 11	hon	honorific or respectful (sonkeigo) language	\N
@@ -4819,9 +4832,7 @@ COPY public.kwmisc (id, kw, descr, ents) FROM stdin;
 13	id	idiomatic expression	\N
 14	m-sl	manga slang	\N
 17	obs	obsolete term	\N
-18	obsc	obscure term	\N
 19	pol	polite (teineigo) language	\N
-20	rare	rare	\N
 21	sl	slang	\N
 22	uk	word usually written using kana alone	\N
 24	vulg	vulgar expression or word	\N
@@ -4862,6 +4873,11 @@ COPY public.kwmisc (id, kw, descr, ents) FROM stdin;
 178	doc	document	{"jmnedict": 1}
 179	group	group	{"jmnedict": 1}
 88	form	formal or literary term	\N
+3	arch	archaic	\N
+5	col	colloquial	\N
+18	rare	rare term	\N
+29	euph	euphemistic	\N
+193	ship	ship name	{"jmnedict": 1}
 \.
 
 
@@ -4973,7 +4989,6 @@ COPY public.kwrinf (id, kw, descr, ents) FROM stdin;
 1	gikun	gikun (meaning as reading) or jukujikun (special kanji reading)	\N
 2	ok	out-dated or obsolete kana usage	\N
 3	ik	word containing irregular kana usage	\N
-4	uK	word usually written using kanji alone	\N
 103	name	reading used only in names (nanori)	{"jmdict": 0}
 104	rad	reading used as name of radical	{"jmdict": 0}
 105	jouyou	approved reading for jouyou kanji	{"jmdict": 0}
@@ -4983,6 +4998,7 @@ COPY public.kwrinf (id, kw, descr, ents) FROM stdin;
 130	go	on-yomi, go	{"jmdict": 0}
 131	tou	on-yomi, tou	{"jmdict": 0}
 132	kanyou	on-yomi, kan\\'you	{"jmdict": 0}
+4	sk	search-only kana form	\N
 \.
 
 
@@ -6133,7 +6149,7 @@ COPY public.stagr (entr, sens, rdng) FROM stdin;
 --
 
 COPY public.testsrc (filename, method, hash) FROM stdin;
-/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	c7ebf8620abbe7f9cb4b3107db69a1832cdace92
+/home/stuart/devel/jdb/jb/tests/data/jmtest01.sql	sha1	9280beae1bd724d2fbedbc7c936931ce2c5b3fdc
 \.
 
 
