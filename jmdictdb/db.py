@@ -287,14 +287,14 @@ def make_pguri (connargs):
   #     connection parameters.
   #   Connection.dsn -- Return a connection's connection string.
 
-def require (dbconn, want, table='db', ret_dbver=False):
+def require (dbconn, want, ret_dbver=False):
         ''' Given a list of update id numbers, return a subset of
         those numbers that are *not* present in the "db" table.
-        These will usuable represent database updates that the
+        These will usually represent database updates that the
         application requires to run correctly but which haven't
-        been applied to the database.  If all the required
-        updates are present in the database, an empty set is
-        returned.
+        been applied to the database.  If all the required updates
+        are present in the database (ie, the software and database
+        are compatible), an empty set is returned.
 
         want -- A list or set of update numbers that we require
             to be in the database's "db" table and have the
@@ -306,18 +306,62 @@ def require (dbconn, want, table='db', ret_dbver=False):
             numbers in <want> that are not in the database "db" table.
           If 'ret_dbver' is true: A 2-tuple where the first item is
             as described above for the ret_dbver==false case, and the
-            second item is a set of update values in the database.'''
+            second item is the set of all active update is's in the
+            database.'''
 
         cursor = dbconn.cursor()
-        want_i = [int(x,16) if isinstance(x, str) else int(x) for x in want]
-        sql = "SELECT id FROM %s WHERE active" % table
-        try: cursor.execute (sql, (tuple(want_i),))
-        except dbapi.ProgrammingError as e:
-            raise ValueError ("No table '%s', wrong database?" % table)
-        have = [x[0] for x in cursor.fetchall()]
+        want_i = [v if isinstance(v, str) else "%.6x"%v for v in want]
+        have = updates (dbconn)
         missing = set(want_i) - set(have)
         if ret_dbver: return missing, have
         return missing
+
+def updates (dbconn, want_inactive=False, want_ts=False):
+        '''-------------------------------------------------------------------
+        Return a list of update ids (in hex format) for a database.
+        Parameters:
+          dbconn -- A psycopg2 connection object to JMdictDB database.
+          want_inactive -- (bool) Return updates marked inactive as well
+            as active ones.  If false, only active ones are returned.
+          want_ts -- (bool) Items in returned list will be 3-tuples of
+            (update-id, time-stamp, active).  If false, the list items
+            will be update id's only.
+        Returns:
+          If both 'want_inactive' and 'want_ts' are false, the return
+            value is a list of active update ids.
+          If either 'want_inactive' or 'want_ts' are true, the return
+            value is a list of 3-tuples of (update-id, time-stamp, active).
+          In both cases update ids are a six-character str representing
+            the id value in hexadecimal (lowercase with no prefix).
+          Timestamps are in the form of datetime.dateime instances.
+          The list will be ordered by descending value of timestamp,
+            whether or not timestamps were requested with 'want_ts'.
+        -------------------------------------------------------------------'''
+        cursor = dbconn.cursor()
+        cols = "id" + (",ts,active" if want_ts or want_inactive else "")
+        whr = "" if want_inactive else " WHERE active"
+        sql = "SELECT %s FROM db %s ORDER BY ts DESC" % (cols, whr)
+        try: cursor.execute (sql)
+        except dbapi.ProgrammingError as e:
+            raise ValueError ("Can't read 'db' table, wrong database?")
+        fmt = "%.6x"
+        if want_ts or want_inactive:
+            results = [(fmt%r[0],r[1],r[2]) for r in cursor.fetchall()]
+        else: results = [fmt%r[0] for r in cursor.fetchall()]
+        return results
+
+def is_jmdictdb (dbconn):
+         '''------------------------------------------------------------------
+         Return True if database is a JMdictDB database, else False.
+         ------------------------------------------------------------------'''
+           # Test for JMdictDB database by looking for presence of
+           # a set of tables.
+         sql = "SELECT count(*) "\
+               "FROM information_schema.tables "\
+               "WHERE table_schema='public' "\
+                 "AND table_name in ('db','entr','kanj','kinf','stagr')"
+         rs = query (dbconn, sql)
+         return bool (rs and rs[0][0] == 5)
 
 def rowget (dbconn, tblname, pkey, cols=None):
     # Get a single row selected by primry key from a named table.
@@ -449,4 +493,3 @@ def rowchanges (new, old, raise_missing=False):
             if k not in old and raise_missing: raise KeyError (k)
             if k not in old or old[k] != v: diff[k] = v
         return diff
-

@@ -33,8 +33,7 @@ def main():
         reqver, dbver = db.require (dbcur.connection, DBVERS, ret_dbver=1)
         if reqver: print ("WARNING: expected database at update: %s\n"
                           "  but database is at %s"
-                          % (','.join(["%06.6x"%r for r in DBVERS]),
-                             ','.join(["%06.6x"%r for r in dbver])),
+                          % (','.join(DBVERS), ','.join(dbver)),
                           file=sys.stderr)
 
           # The processing for the sql diffs and csv diffs has almost

@@ -16,11 +16,9 @@ def main():
               dbnames = get_dblist()
          else: dbnames = args.dbnames
          for dbname in dbnames:
-             try: have = db_has (dbname)
-             except Exception as e:
-                 print ("%s: %s" % (dbname, e))
-                 continue
-             if have is None: continue
+             dbconn, have = db.open (dbname), None
+             if not db.is_jmdictdb (dbconn): continue
+             missing, have = db.require (dbconn,dbver.DBVERS,ret_dbver=True)
              missing = set (need) - set (have)
              has_txt = ", ".join(have)
              if missing:
@@ -28,19 +26,6 @@ def main():
                         % (dbname, ", ".join (missing)), end=', ')
              else: print ("%s: compatible" % dbname, end=', ')
              print ("has updates: %s" % has_txt)
-
-def db_has (dbname):
-         dbconn = db.connect (dbname)
-         sql = "SELECT count(*) "\
-               "FROM information_schema.tables "\
-               "WHERE table_schema='public' "\
-                 "AND table_name in ('db','entr','kanj','kinf','stagr')"
-         rs = db.query (dbconn, sql)
-         if not rs or rs[0][0] != 5: return None;
-         rs = db.query (dbconn, "SELECT * FROM db WHERE active")
-         have = ["%0.6x"%v[0] for v in rs]
-         dbconn.close()
-         return have
 
 def get_dblist():
         sql = "SELECT datname FROM pg_database WHERE NOT datistemplate"

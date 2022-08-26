@@ -2106,7 +2106,7 @@ def dbrequire (dbconn, require):
         missing = db.require (dbconn, require)
           #FIXME: include database name or URI in error message.
         if missing: raise KeyError ("Database missing required update(s): %s"
-                                    % ','.join(["%06.6x"%r for r in missing]))
+                                    % ','.join(missing))
 
   # The functions parse_pguri() and make_pguri() were moved to the 'db'
   # module.  We keep the function signatures here as comments in case
@@ -2216,9 +2216,18 @@ def uord (s):
         n = (((s0n & 0x3FF) << 10) | (s1n & 0x3FF)) + 0x10000
         return n
 
-def first (seq, f, nomatch=None):
+def first (seq, f=None, nomatch=None):
+        '''-------------------------------------------------------------------
+        Return first item x in 'seq' for which f(x) is true.
+        If f(seq[x] is not true for any x the value of 'nomatch'
+        is retured.  If 'f' is not given it defaults to the
+        identity function.
+        -------------------------------------------------------------------'''
         for s in seq:
-            if f(s): return s
+              # For efficiency don't call an actual identity
+              # function, fake it without a function call...
+            if not f and s: return s
+            if f and f(s): return s
         return nomatch
 
 _sentinal = object()

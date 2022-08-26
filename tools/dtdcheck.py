@@ -16,8 +16,7 @@ def main():
             dbcursor = jdb.dbOpen (args.dburi, noverchk=True)
             missing = db.require (dbcursor.connection, DBVERS)
             if missing: print ("WARNING: database missing updates: %s"
-                               % ','.join(["%06.6x"%r for r in missing]),
-                               file=sys.stderr)
+                               % ','.join(missing), file=sys.stderr)
         else: jdb.KW = jdb.Kwds (jdb.std_csv_dir())
         kwds = get_kwds (jdb.KW)
         entities = read_dtd_file (args.dtdfile)
