@@ -259,7 +259,7 @@ the same.</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>$ git checkout edrdg
+<pre>$ git checkout edrdg     # or master.
 $ git pull</pre>
 </div>
 </div>
@@ -274,11 +274,25 @@ server with the upgraded database
 (eg, http://localhost:5000/srchform.py?svc=jmtest).</p>
 </div>
 <div class="paragraph">
-<p>To install the upgraded code system-wide:</p>
+<p>To install the upgraded code system-wide do the following.  The
+commands must be run as a root user, perhaps using 'sudo'.</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>$ sudo make WEBROOT={{WEBROOT}} install-sys</pre>
+<pre># git config --global --add safe.directory {{DEVDIR}}
+# make WEBROOT={{WEBROOT}} install-sys</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The 'git config' command is needed to override security protections
+added to Git in April 2022.  For more details see:
+  <a href="https://github.blog/2022-04-12-git-security-vulnerability-announced/" class="bare">https://github.blog/2022-04-12-git-security-vulnerability-announced/</a>
+If you wish, you can undo the Git configuration change after the
+install is done with,</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre># git config --global --unset safe.directory {{DEVDIR}}</pre>
 </div>
 </div>
 </div>
@@ -1030,7 +1044,7 @@ subsequent pages.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-08-27 10:19:12 MDT
+Last updated 2022-08-27 16:51:51 MDT
 </div>
 </div>
 </body>

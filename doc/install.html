@@ -705,7 +705,7 @@ Using cfgfile: /home/stuart/devel/jdb/jb/web/lib/jmdictdb.ini
 </div>
 <div class="paragraph">
 <p>You can now start a web browser and go to <a href="http://localhost:5000/" class="bare">http://localhost:5000/</a> and
-you will see the JMdictDB Advanced Search page.</p>
+if all is well you will see the JMdictDB Advanced Search page.</p>
 </div>
 </div>
 </div>
@@ -720,7 +720,14 @@ you will see the JMdictDB Advanced Search page.</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>$ sudo make WEBROOT={{WEBROOT}} install-sys</pre>
+<pre> To install the upgraded code system-wide do the following.  The
+commands must be run as a root user, perhaps using 'sudo'.</pre>
+</div>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre># git config --global --add safe.directory {{DEVDIR}}
+# make WEBROOT={{WEBROOT}} install-sys</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -729,9 +736,16 @@ may be left out if installing to the default location of
 /var/www/jmdictdb/.</p>
 </div>
 <div class="paragraph">
-<p>Note that when installing system-wide you must execute the 'make'
-command as the 'root' user, either when logged in as root or via
-something like 'sudo'.</p>
+<p>The 'git config' command is needed to override security protections
+added to Git in April 2022.  For more details see:
+  <a href="https://github.blog/2022-04-12-git-security-vulnerability-announced/" class="bare">https://github.blog/2022-04-12-git-security-vulnerability-announced/</a>
+If you wish, you can undo the Git configuration change after the
+install is done with,</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre># git config --global --unset safe.directory {{DEVDIR}}</pre>
+</div>
 </div>
 <div class="paragraph">
 <p>It is also possible to install the software to per-user specific
@@ -1240,7 +1254,7 @@ these are for Postgresql version 10.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-08-27 08:01:26 MDT
+Last updated 2022-08-27 16:52:42 MDT
 </div>
 </div>
 </body>
