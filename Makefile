@@ -97,14 +97,11 @@ CGI_FILES = cgiinfo.py \
 WEB_CGI = $(addprefix web/cgi/,$(CGI_FILES))
 
 CMD_FILES = bulkupd.py \
-        dbcheck.py \
-        dbreaper.py \
         entrs2xml.py \
         exparse.py \
         jelload.py \
         jmparse.py \
         kdparse.py \
-        resetpw.py \
         shentr.py \
         xresolv.py
 CMDS = $(addprefix bin/,$(CMD_FILES))
