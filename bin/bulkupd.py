@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014,2019 Stuart McGraw
+# Copyright (c) 2014-2022 Stuart McGraw
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import sys, os, inspect, re, time, pdb
@@ -59,14 +59,14 @@ def main (cmdargs=sys.argv):
           # with the next entry.
         tdone = tskipped = tfailed = trolledback = 0
         for n, (seqnums, src, edits) in enumerate (cmds, start=1):
-            I("\nProcessing directives set %d" % n)
+            I("\nProcessing directive set #%d" % n)
             done,skipped,failed,rolledback \
               = apply (cur, edits, src, seqnums, hist)
-            I("Directives set %d: %d updated, %d skipped, %d failed"
+            I("Directive set #%d results: %d updated, %d skipped, %d failed"
                     % (n, done, skipped, failed))
-            tdone+=done;  tskipped==skipped;
+            tdone+=done;  tskipped+=skipped;
             tfailed+=failed; trolledback+=rolledback
-        S("Updated: %d, skipped: %d, failed: %d"
+        S("Total results: %d updated, %d skipped, %d failed"
                 % (tdone,tskipped,tfailed))
         if rolledback:
             S("%d updates rolled back due to --noaction" % trolledback)
@@ -82,7 +82,7 @@ def apply (cur, edits, src, seqnums, hist):
             for edit in edits:
                 try: doedit (entr, hist, edit)
                 except UpdateError as e:
-                    E("Entry %s: %s" % (entr.seq, e));
+                    E("Entry %s (id %s): %s" % (entr.seq, entr.id, e));
                     skipped += 1;  break
             else: # Executed if the for-loop exits normally (not via 'break').
                    # Pause between updates to database if --delay was
@@ -159,8 +159,9 @@ def parse_cmdfile (cmdfile, initial_corpus):
 
 class Cmd:
       # add/repl/del kanj/rdng [oldtxt] [newtxt]
-      # add/repl/del gloss[sens] [oldtxt] [newtxt]
-      # add/repl/del pos/misc/fld/dial[sens] [oldkw] [newkw]
+      # add/repl/del kinf/rinf[kr#/krtxt] [oldtag] [newtag]
+      # add/repl/del gloss[sens#] [oldtxt] [newtxt]
+      # add/repl/del pos/misc/fld/dial[sens#] [oldkw] [newtag]
       # del entr junktxt
     def __init__ (self, cmd, txt):
         # cmd -- The command directive: one of "add", "repl", "del".
@@ -168,14 +169,14 @@ class Cmd:
 
         if cmd not in ('add', 'repl', 'del'): raise DirectiveError (cmd)
         self.cmd = cmd
-        self.operand = None     # The part of the entry to edit ('kanj', 'pos', etc).
+        self.operand = None     # Part of entry to edit ('kanj', 'pos', etc).
         self.sens = None        # Sense number (base 1).
         self.new = None         # Value to add or use for replacement in entry.
         self.old = None         # Value to delete or replace in entry.
         pattern = r'''
-          ((?:entr)|(?:kanj)|(?:rdng)|(?:gloss)|(?:pos)|(?:misc)|(?:fld)|(?:dial)|(?:comment)|(?:refs))
+          ((?:entr)|(?:kanj)|(?:kinf)|(?:rdng)|(?:rinf)|(?:gloss)|(?:pos)|(?:misc)|(?:fld)|(?:dial)|(?:comment)|(?:refs))
           \s*
-          (?:\[([0-9]+)\])?    # Optional sense number (in square brackets).
+          (?:\[([^\]]+)\])?     # Optional sense# or krtext in square brackets.
           \s+
           ((?:[^"][^\s]*)              # Unquoted or...
           |(?:"(?:(?:\\")|[^"])*"))    #  quoted string.
@@ -188,7 +189,9 @@ class Cmd:
         mo = re.match (pattern, txt, re.I|re.X)
         if not mo: raise ArgumentsError (cmd)
         self.operand = mo.group(1).lower()
-        self.sens = int (mo.group(2) or 0)
+        self.sens = mo.group(2)
+        try: self.sens = int (mo.group(2))    # If sense#, convert to int,
+        except (ValueError, TypeError): pass  #  otherwise leave unchanged.
         if self.cmd != 'repl':
             if mo.group(4): raise ReplValError (self.operand)
             if self.cmd == 'add': self.new = clean_quoted_string (mo.group(3))
@@ -197,9 +200,14 @@ class Cmd:
             self.old = clean_quoted_string (mo.group(3))
             self.new = clean_quoted_string (mo.group(4))
         if self.operand in ('kanj','rdng','comment','refs'):
-            if self.sens: raise SensError (self.operand)
-        else: # sens number required...
-            if not self.sens: self.sens = 1 #raise NoSensError (self.operand)
+            if self.sens:
+                raise SensError (self.operand)  # No sense# allowed.
+        else:   # self.sens value required.
+            if not self.sens: self.sens = 1  # If none was given, use 1.
+            if self.operand not in ('kinf', 'rinf'):
+                  # kinf, rinf allow text, all others must be an int.
+                if type (self.sens) is not int:
+                    raise BadSensError (self.operand)
         if self.operand in ('comment','refs'):
             if cmd != 'add': raise NotAddError (cmd)
         if self.operand == 'entr':
@@ -299,19 +307,35 @@ def doedit (entr, hist, cmd):
         h = jdb.Hist (**hist)
         entr._hist.append (h)
         new = None
+          # The name "operand" here corresponds to "item" in the help text.
         if cmd.operand in ('kanj', 'rdng'):
             tlist = getattr (entr, '_'+cmd.operand)
             if cmd.new:
                 if cmd.operand == 'kanj': new = jdb.Kanj (txt=cmd.new)
                 else: new = jdb.Rdng (txt=cmd.new)
             edit (tlist, 'txt', cmd.old, new or cmd.new, cmd.operand, cmd.old, cmd.new)
+        elif cmd.operand in ('kinf', 'rinf'):
+            krlist = getattr (entr, '_'+('kanj' if cmd.operand=='kinf' else 'rdng'))
+            krtype = "kanji" if cmd.operand=='kinf' else "reading"
+            if type (cmd.sens) is int:
+                try: use = krlist[cmd.sens-1]
+                except IndexError: raise NoKRError (krtype, cmd.sens)
+            else:  # we expect a kanji/kana str, find matching list item.
+                use = jdb.first (krlist, lambda kr: kr.txt==cmd.sens, [])
+                if not use: raise NoKRError (krtype, cmd.sens)
+              #FIXME: what if 'use' is empty?  error? warning? ignore?
+            tlist = getattr (use, '_inf')
+            new, old = kw2id (cmd.operand, cmd.new, cmd.old)
+            edit (tlist, 'kw', old, new, cmd.operand, cmd.old, cmd.new)
         elif cmd.operand == 'gloss':
-            tlist = getattr (getattr (entr, '_sens')[cmd.sens-1], '_'+cmd.operand)
+            try: tlist = getattr (entr._sens[cmd.sens-1], '_'+cmd.operand)
+            except IndexError: raise NoSenseError (cmd.sens)
             if cmd.new: new = jdb.Gloss (txt=cmd.new, lang=jdb.KW.LANG['eng'].id,
                                                       ginf=jdb.KW.GINF['equ'].id)
             edit (tlist, 'txt', cmd.old, new or cmd.new, cmd.operand, cmd.old, cmd.new)
         elif cmd.operand in ('pos','misc','fld','dial'):
-            tlist = getattr (getattr (entr, '_sens')[cmd.sens-1], '_'+cmd.operand)
+            try: tlist = getattr (entr._sens[cmd.sens-1], '_'+cmd.operand)
+            except IndexError: raise NoSenseError (cmd.sens)
             new, old = kw2id (cmd.operand, cmd.new, cmd.old)
             edit (tlist, 'kw', old, new, cmd.operand, cmd.old, cmd.new)
         elif cmd.operand == 'entr':
@@ -325,11 +349,11 @@ def doedit (entr, hist, cmd):
         return True #FIXME: how to determine if no change was made to entry?
 
 def edit (tlist, srchattr, old, new, operand,  t_old, t_new):
-        # tlist -- A _kanj, _rdng, _gloss, _pos, _misc, _fld, or _dial
-        #   list from an entry.
+        # tlist -- A _kanj, _kinf, _rdng, _rinf, _gloss, _pos, _misc,
+        #   _fld, or _dial list from an entry.
         # srchattr -- Name of attribute to use when searching 'tlist'
         #   for item matching 'old', ie 'txt' for _kanj, _rdng, _gloss,
-        #   or 'kw' for _pos, _misc, _fld, _dial.
+        #   or 'kw' for _pos, _misc, _fld, _dial, _kinf, _rinf.
         # old -- None or text string or id number that identifies item
         #   to replace or delete in 'tlist'.
         # new -- None or an instance of appropriate type (Kanj(), Pos()
@@ -348,31 +372,40 @@ def edit (tlist, srchattr, old, new, operand,  t_old, t_new):
             srch = [getattr (t, srchattr) for t in tlist]
             try: index = srch.index (old)
             except ValueError as e:
-               raise NotFoundError (t_old, operand)
+               raise NoItemError (t_old, operand)
             if not new:
-                I("Deleting '%s' from '%s'" % (t_old, operand))
+                I("Deleting '%s' from '%s' list" % (t_old, operand))
                 del tlist[index]
         if new:
             if not old:
-                I("Appending '%s' to '%s'" % (t_new, operand))
+                I("Appending '%s' to '%s' list" % (t_new, operand))
                 tlist.append (new)
             else:
-                I("Replacing '%s' with '%s' in '%s'" % (t_old, t_new, operand))
+                I("Replacing '%s' with '%s' in '%s' list" % (t_old, t_new, operand))
                 tlist[index] = new
 
 def kw2id (operand, new, old):
-        if   operand == 'pos':
-            if new: new = jdb.Pos (kw=jdb.KW.POS[new].id)
-            if old: old = jdb.KW.POS[old].id
-        elif operand == 'misc':
-            if new: new = jdb.Misc (kw=jdb.KW.MISC[new].id)
-            if old: old = jdb.KW.MISC[old].id
-        elif operand == 'fld':
-            if new: new = jdb.Fld (kw=jdb.KW.FLD[new].id)
-            if old: old = jdb.KW.FLD[old].id
-        elif operand == 'dial':
-            if new: new = jdb.Dial (kw=jdb.KW.DIAL[new].id)
-            if old: old = jdb.KW.DIAL[old].id
+        # Convert keyword str 'new' to a JMdictDB object that can go
+        # into an Entr structure, and keyword str 'old' to a keyword
+        # id number.
+          # Get the right section of KW to allow keyword lookups.  E.g.,
+          # if 'operand' is "pos", then get KW.POS so that later we can
+          # lookup the id number of a POS key like "v5k" using
+          #   kwsect['v5k'].id  (equiv to KW.POS["v5k"].id)
+        kwsect = getattr (jdb.KW, operand.upper())
+        if new:	    # Convert kw str to an JMdictDB object.
+              # Get the class object corresponding to 'operand'; e.g.
+              # if 'operand' is "pos", get a jdb.Pos() class object.
+            obj = getattr (jdb, operand.capitalize())
+              # Create a new instance of the class with an id number
+              # corresponding to original value of 'new'.  (The id
+              # number is assigned to attribute 'kw' for historical
+              # reasons.)
+            try: new = obj (kw=kwsect[new].id)
+            except KeyError: raise UnknownTagError (operand, new)
+        if old:     # Convert kw str to id number.
+            try: old = kwsect[old].id
+            except KeyError: raise UnknownTagError (operand, old)
         return new, old
 
 def submit (cur, entr, appr, userid, noaction):
@@ -416,6 +449,7 @@ def submit (cur, entr, appr, userid, noaction):
                    entr.seq, jdb.KW.SRC[entr.src].kw, userid))
         errs = []
         cur.execute ("BEGIN")
+        entrid = "(none)"    # In case submission fails.
         try: entrid,_,_ = submission (cur, entr, disp, errs,
                                       is_editor=bool(userid), userid=userid)
         except psycopg2.DatabaseError as e: errs.append (str(e))
@@ -435,16 +469,18 @@ def submit (cur, entr, appr, userid, noaction):
             cur.execute("COMMIT")
         return stat   # Return 1 if committed, 0 if noaction rollback.
 
-class ParseError (Exception): pass
 class RetrievalError(Exception): pass
+
+  # Errors that occur during parsing of the command list.
+class ParseError (Exception): pass
 class DirectiveError (ParseError):
     def __str__(self): return "Unrecognised directive: '%s'" % self.args[0]
 class ArgumentsError (ParseError):
     def __str__(self): return "Unparsable arguments to '%s' directive" % self.args[0]
 class SensError (ParseError):
     def __str__(self): return "Sense number not allowed with '%s' directive" % self.args[0]
-class NoSensError (ParseError):
-    def __str__(self): return "Sense number required with '%s' directive" % self.args[0]
+class BadSensError (ParseError):
+    def __str__(self): return "Sense number must be number, not text with '%s' directive" % self.args[0]
 class ReplValError (ParseError):
     def __str__(self): return "Replacement value not allowed with '%s' directive" % self.args[0]
 class NotAddError (ParseError):
@@ -454,18 +490,18 @@ class NotDelError (ParseError):
 class KwError (ParseError):
     def __str__(self): return "'%s' not a valid value for '%s'" % self.args
 
+  # Errors that occur when excuting the commands.
 class UpdateError (Exception): pass
-class MissingError (UpdateError):
-    def __str__(self): return "%s: Seq number not found" % self.args[0]
-class MultipleError (UpdateError):
-    def __str__(self): return "%s: Seq number has multiple entries" % self.args[0]
-class ChildError (UpdateError):
-    def __str__(self): return "%s: Seq number has a parent entry" % self.args[0]
-class NotFoundError (UpdateError):
-    def __str__(self): return "'%s' not found in '%s'" % (self.args[0], self.args[1])
+class NoItemError (UpdateError):
+    def __str__(self): return "no '%s' item in %s list" % (self.args[0], self.args[1])
 class SubmitError (UpdateError):
     def __str__(self): return "%s: %s" % (self.args[0], self.args[1])
-
+class NoSenseError (UpdateError):
+    def __str__(_): return "has no sense %s" % (_.args[0])
+class NoKRError (UpdateError):
+    def __str__(_): return "has no %s '%s'" % (_.args[0],_.args[1])
+class UnknownTagError (UpdateError):
+    def __str__(_): return "unknown %s tag: '%s'" % (_.args[0],_.args[1])
 #-----------------------------------------------------------------------
 
 from argparse import ArgumentParser
@@ -513,12 +549,14 @@ def parse_cmdline (cmdargs):
             help="Submitter's email address.")
 
         p.add_argument ("-u", "--userid", default='',
-            help="User id of editor.  If not given, the modified entries will be created "
-                "in an unapproved state.  If given, the modified entries will be created "
-                "in the same approval state that the original entries were in.  "
-                "This argument is not validated in any way -- write access to the "
-                "database by the user executing this program is sufficient to allow "
-                "any changes including approval of the updated entry.  ")
+            help="User id of editor.  If not given, the modified entries will "
+                "be created in an unapproved state.  If given, the modified "
+                "entries will be created in the same approval state that the "
+                "original entries were in or as requested by --approve.  "
+                "This argument is not validated in any way -- write access "
+                "to the database by the user executing this program is "
+                "sufficient to allow any changes including approval of the "
+                "updated entry.  ")
 
         p.add_argument ("--approve", default=None, choices=['yes','no'],
             help="Set the updated entries to approved or unapproved as "
@@ -541,7 +579,8 @@ def parse_cmdline (cmdargs):
                 " pg://remotehost/jmdict \n"
                 " pg://user:mypassword@/jmtest \n"
                 " pg://remotehost.somewhere.org:8866 \n"
-                "For more details see \"Connection URIs\" in the \"Connections Strings\" "
+                "For more details see the "
+                "\"Connection URIs\" in the \"Connections Strings\" "
                 "section of the Postgresql \"libq\" documentation. ")
 
         p.add_argument ("-l", "--loglevel", default="info",
@@ -572,29 +611,33 @@ Directives:
         will apply to all of given entries.
     id <entry-id-number> [<entry-id-number>...]
         Set the current entry set to given entry id numbers.  The directives
-        following will apply to these entries.  Multiple id lines can occur in
-        succession and the following edit directives will apply to all of given
-        entries.  The 'corpus' value is ignored when processing entries
+        following will apply to these entries.  Multiple id lines can occur
+        in succession and the following edit directives will apply to all of
+        given entries.  The 'corpus' value is ignored when processing entries
         identified by id number.
-    add <operand> [<sense#>] <new-value>
-        <operand> may be any of:
-          kanj, rdng, gloss, pos, misc, fld, dial, comment, refs
-        [sense#] (including the brackets) must not be given if <operand>
-          is kanj, rdng, comment or refs.  It is optional for other operands
-          and is the sense number containing the items to be acted on.
-          If not given, the default is 1.
-          For "comment" note that an additional line will be added auto-
-          matically that indicates this was a bulk update so that infomation
-          need not be included in the comment text.
-        <new-value> If operand is kanj, rdng, gloss, comment or refs, this
-          is the text for the item to be added.  If it contains any white-
-          space, the entire string should be enclosed in double-quote (")
-          characters.  If such a quoted string also contains any double-
-          quote (") characters they should be escaped with as backslash (\)
-          character.  If operand is pos, misc, fld or dial, <new-value> is
-          the keyword that is to be added.
-    del <operand> [<sense#>] <old-value>
-        <operand> and <sense#> have the same meanings as for the "add"
+    add <item> [<ownid>] <new-value>
+        <item> is one of:
+          kanj, kinf, rdng, rinf, gloss, pos, misc, fld, dial, comment, refs.
+        [<ownid>] (square brackets required) tells bulkupd which, of possible
+          multiple items the item could belong to, are to be used.  For items
+          associated with a sense (gloss, pos, misc, fld, dial), it is a sense
+          number and if not provided will be assumed to be 1.
+          For kinf or rinf items it must be the text of the owning kanji or
+          reading item or the kanji/reading ordinal number.  If not provided
+          the first kanji or reading item will be assumed.
+          For other items (comment, refs) an ownid must not be given.
+        <new-value> If item is kanj, rdng, gloss, comment or refs, this is
+          the text for the item to be added.  If it contains any whitespace,
+          the entire string should be enclosed in doublequote (") characters.
+          If such a quoted string also contains any doublequote (") characters
+          they should be escaped with as backslash (\) character.
+          If item is kinf, rinf, pos, misc, fld or dial, <new-value> is the
+          keyword that is to be added.
+        Note that a comment line indicating the entry was modified by a bulk
+        update will be added to the entry automatically; any comment added
+        with a "comment" item will be prepended to that generated text.
+    del <item> [<ownid>] <old-value>
+        <item> and <ownid> have the same meanings as for the "add"
         directive except that "comment" and "refs" are not valid.
         <old_value> is either text or a keyword that will searched for
         in the current entry and removed.  An error will be generated and
@@ -603,8 +646,8 @@ Directives:
     del entr xxx
         The entry with the current seq number will be deleted. "xxx" is
         any arbitrary text (required to keep the parser happy.)
-    repl <operand> [<sense#>] <new-value> <old-value>
-        <operand> and <sense#> have the same meanings as for the "add"
+    repl <item> [<ownid>] <old-value> <new-value>
+        <item> and <ownid> have the same meanings as for the "add"
         directive except that "comment" and "refs" are not valid.
         <old_value> is either text or a keyword and will be replaced by
         <new-value>.  An error will be generated and no change made to
@@ -630,7 +673,7 @@ Usage examples:
     seq 1882070 1901840 1901860 1927550
     add comment "deleted because ..."
     del entr x
-      # Multiple sequence number can also occur on separate
+      # Multiple sequence numbers can also occur on separate
       # lines.  The following does the same as the preceding
       # example.
     1882070
@@ -649,7 +692,7 @@ Usage examples:
 Missing capabilities:
 There is no way at present to do the following:
   * Add/repl/del an entire sense.
-  * Add/repl/del lsrc, rinf, kinf, freq, stagk, stagr, restr, xref, ginf, lang elements.
+  * Add/repl/del lsrc, freq, stagk, stagr, restr, xref, ginf, lang elements.
   * Reorder elements.
   * Use multi-line comments or refs in the command file.
 """
