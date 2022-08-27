@@ -435,6 +435,7 @@ or you can create a new directory, for example: {{WEBROOT}}/wsgi/.</p>
 <div class="content">
 <pre>import sys, os
 import jmdictdb
+sys.wsgi_file = __file__   # See comments in views/cgiinfo.py.
 if not os.environ.get('JMDICTDB_CFGFILE'):
     p = os.path
     our_directory = p.dirname (__file__)
@@ -577,7 +578,7 @@ investigated.
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-12-28 20:15:25 MST
+Last updated 2022-08-25 10:46:11 MDT
 </div>
 </div>
 </body>

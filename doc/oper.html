@@ -18,7 +18,7 @@
 <li><a href="#_document_conventions_and_placeholders">1. Document conventions and placeholders</a></li>
 <li><a href="#users">2. User management</a></li>
 <li><a href="#_temporary_downtime">3. Temporary downtime</a></li>
-<li><a href="#_upgrading_jmdictdb">4. Upgrading JMdictDB</a>
+<li><a href="#upgrading">4. Upgrading JMdictDB</a>
 <ul class="sectlevel2">
 <li><a href="#code-upgrade">4.1. Code upgrades</a></li>
 <li><a href="#_database_upgrades">4.2. Database upgrades</a></li>
@@ -28,15 +28,14 @@
 <li><a href="#tests">5. Tests</a></li>
 <li><a href="#_general_troubleshooting">6. General troubleshooting</a>
 <ul class="sectlevel2">
-<li><a href="#_shentr_py">6.1. shentr.py</a></li>
-<li><a href="#_cgiinfo_py_web_page">6.2. cgiinfo.py web page</a></li>
-<li><a href="#_log_files">6.3. Log files</a></li>
+<li><a href="#_cgiinfo_py_web_page">6.1. cgiinfo.py web page</a></li>
+<li><a href="#_log_files">6.2. Log files</a></li>
+<li><a href="#_command_line_programs">6.3. Command line programs</a></li>
 </ul>
 </li>
-<li><a href="#_wsgi_debugging">7. WSGI debugging</a></li>
-<li><a href="#_cgi_debugging">8. CGI debugging</a></li>
-<li><a href="#devdb">9. Creating a database for development</a></li>
-<li><a href="#_preparing_a_release">10. Preparing a "release"</a></li>
+<li><a href="#wsgi_debug">7. WSGI debugging</a></li>
+<li><a href="#devdb">8. Creating a database for development</a></li>
+<li><a href="#_preparing_a_release">9. Preparing a "release"</a></li>
 <li><a href="#appx-A">Appendix A: Additional software requirements for development</a></li>
 <li><a href="#_appendix_b_operational_tools">Appendix B: Operational tools</a></li>
 <li><a href="#_appendix_c_build_and_development_tools">Appendix C: Build and development tools</a>
@@ -46,6 +45,7 @@
 <li><a href="#_one_time_or_obsolete_tools">One-time or obsolete tools</a></li>
 </ul>
 </li>
+<li><a href="#_appendix_d_cgi_debugging">Appendix D: CGI debugging</a></li>
 </ul>
 </div>
 </div>
@@ -173,8 +173,8 @@ STATUS_DIR setting.  By default it is the
 <div class="paragraph">
 <p>The control files are named "status_maint", "status_load" or
 "status_blocked".  If either of the first two exist (contents
-are ignored), any web access to a CGI script will result in a
-redirect to the pages "status_maint.html" or "status_load.html"
+are ignored), any web access to a JMdictDB web page will result
+in a redirect to the pages "status_maint.html" or "status_load.html"
 which present the user with a message that the system is
 unavailable due to maintenance or excessive load, respectively.</p>
 </div>
@@ -198,7 +198,7 @@ as appropriate.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_upgrading_jmdictdb">4. Upgrading JMdictDB</h2>
+<h2 id="upgrading">4. Upgrading JMdictDB</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Development of JMdictDB is ongoing and updates to the code are
@@ -232,9 +232,10 @@ a copy with:</p>
 </td>
 <td class="content">
 If both a software and database upgrade are required, the
-JMdictDB web service may not be available (users will get a
-"database version error" page) from the time the software is
-updated until the database update completes successfully.
+JMdictDB web service may not be available from the time the software
+is updated until the database update completes successfully.  During
+this period users may get a "database version error" page because
+the software and database will temporarily be at incompatible versions.
 </td>
 </tr>
 </table>
@@ -246,38 +247,47 @@ updated until the database update completes successfully.
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>$ cd {{devdir}}
-$ git status</pre>
+<pre>$ cd {{devdir}}</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Verify you have the desired branch ("master" or "edrdg") checked
-out, although for most announced upgrades, they will be the same.</p>
+<p>Checkout the desired branch ("master" or "edrdg").  The "master"
+branch is generally the latest code.  The "edrdg" branch is usually
+the code running at, or intended to for upgrading at, edrdg.org and
+is more stable.  However for most announced upgrades they will be
+the same.</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>$ git show -s --oneline</pre>
+<pre>$ git checkout edrdg
+$ git pull</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Note the 7-digit hex revision number in case there are problems
-with the update and you want to revert to the former (at this
-point in time, the still current) version.</p>
+<p>If you want to evaluate the upgraded code, you can so so at this
+point by starting the Flask local server as described in the section
+<a href="#wsgi_debug">7. WSGI Debugging</a>.  However, if a database upgrade is
+also required you will also need to make a copy of the production
+database (to database "jmtest" for example), apply the database
+update(s) to it, then use an appropriate URL to access the Flask
+server with the upgraded database
+(eg, http://localhost:5000/srchform.py?svc=jmtest).</p>
+</div>
+<div class="paragraph">
+<p>To install the upgraded code system-wide:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>$ git checkout master   # or edrdg.
-$ git pull
-$ sudo make WEBROOT={{WEBROOT}} install-sys</pre>
+<pre>$ sudo make WEBROOT={{WEBROOT}} install-sys</pre>
 </div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_database_upgrades">4.2. Database upgrades</h3>
 <div class="paragraph">
-<p>Many upgrades will involve updating only the JMdictDB software as
-described above, but sometimes upgrading the database schema is
-necessary to support new features.</p>
+<p>In addition to updating the JMdictDB software as described
+above, sometimes upgrading the database schema is necessary
+to support new features.</p>
 </div>
 <div class="paragraph">
 <p>Upgrading the database is done by executing one or more SQL
@@ -318,18 +328,34 @@ named and located whatever and anywhere you want.</p>
 </td>
 <td class="content">
 <strong>This is usually not necessary since the update documentation
-will provide this information.</strong>
+will usually provide this information.</strong>
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
 <p>The full set of historical database updates are maintained in the
-db/updates/ directory.  Generally the update documentation will
-indicate which of the update files there need to be applied.
-If not, run the following command to show the current database
-version and whether or nor it is compatible with the current
-JMdictDB code.</p>
+db/updates/ directory.  The update files are named using the
+convention:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>nnn-xxxxxx.sql</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where "nnn" is a 3-digit decimal number and "xxxxxx" is a
+6-digit hexadecimal number.  The former are usually sequential
+(but there may be gaps sometimes) and indicate the order in
+which the updates should be applied.  The latter are random,
+are the actual update identifiers proper, and are what are
+referenced in the documentation.</p>
+</div>
+<div class="paragraph">
+<p>Generally the update documentation will indicate which of the
+update files there need to be applied.  If not, run the following
+command to show the current database version and whether or not
+it is compatible with the current JMdictDB code.</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -338,7 +364,7 @@ JMdictDB code.</p>
 </div>
 <div class="paragraph">
 <p>If the api and database version are compatible, you&#8217;re all set.
-If it will report something like:</p>
+If not it will report something like:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -356,17 +382,12 @@ of writing, there are two that follow 036-e4aa1c.sql:</p>
 <pre>036-e4aa1c.sql  037-46354d.sql  038-d30cfd.sql</pre>
 </div>
 </div>
-<div class="paragraph">
-<p>Some updates may have an "s" following the initial three-digit
-sequence number; ignore these, they are updates for the "jmsess"
-database.</p>
-</div>
 </div>
 <div class="sect3">
 <h4 id="_apply_the_database_updates">4.2.3. Apply the database updates</h4>
 <div class="paragraph">
 <p>Run the db/updates/update.sh script to apply all the required
-updates.  Assuming the the updates:</p>
+updates.  Assuming the updates:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -389,22 +410,26 @@ are conveniently applied by the update.sh script<sup class="footnote">[<a id="_f
 <p>The first argument is the database to update; the remaining
 arguments are the update files to apply.</p>
 </div>
+<div class="paragraph">
+<p>The update scripts are generally written to work as a single
+transaction: if there is a failure, all changes made by the
+script will be undone and, after the problem is resolved, the
+script can rerun.</p>
+</div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_if_something_goes_wrong">4.3. If something goes wrong</h3>
 <div class="paragraph">
 <p>If no database update was involved, a software update can
-be reversed by checking out the Git revision that was in'
+be reversed by checking out the Git revision that was in
 use prior to the upgrade and reinstalling it with the
 'sudo make &#8230;&#8203; install-sys' command used in section
-<a href="#code-upgrade">Code upgrades</a>.  If you don&#8217;t have the previous Git
-revision number it will, under usual circumstances, be
-the one tagged "edrdg" in the Git repository.</p>
+<a href="#code-upgrade">Code upgrades</a>.</p>
 </div>
 <div class="paragraph">
-<p>The Makefile does not use the traditional 'file modification
-time' to decide whether to reinstall the target files; rather
+<p>The Makefile does not use the traditional "file modification
+time" to decide whether to reinstall the target files; rather
 it runs an install script that will reinstall a target file
 if it is different (determined by checksum) than the source
 file.  Thus the earlier versions of the source files should
@@ -437,32 +462,27 @@ version number).</p>
 <h2 id="_general_troubleshooting">6. General troubleshooting</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_shentr_py">6.1. shentr.py</h3>
-<div class="paragraph">
-<p>Entries in the database can be examined directly, with
-no involvement from the web server, by the command line
-program, <code>bin/shentrpy</code>.  Run the program with the
-<code>--help</code> option for full details.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_cgiinfo_py_web_page">6.2. cgiinfo.py web page</h3>
+<h3 id="_cgiinfo_py_web_page">6.1. cgiinfo.py web page</h3>
 <div class="paragraph">
 <p>If the JMdictDB web server is more-or-less operational, the
 cgiinfo.py web page can provide useful information on the
-server environment.  Of particular interest is often the
-"pkg location" and "pkg_version" in the Execution Info section;
-the server code using the wrong or outdated version of the
-software is a common cause of unexpected behavior.</p>
+server environment.  Despite its name, it is not limited
+to the CGI backend and runs under the WSGI server as well.</p>
+</div>
+<div class="paragraph">
+<p>Of particular interest is often the "pkg location" and
+"pkg_version" in the Execution Info section; the server
+code using the wrong or outdated version of the software
+is a common cause of unexpected behavior.</p>
 </div>
 <div class="paragraph">
 <p>The cgiinfo.py page can also show if the correct .ini files
 are being used, the location of the log file and the available
-database service names.</p>
+database service names and databases.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_log_files">6.3. Log files</h3>
+<h3 id="_log_files">6.2. Log files</h3>
 <div class="paragraph">
 <p>There are several sources that may provide diagnostic
 information in the case of problems:</p>
@@ -495,10 +515,32 @@ be written to the web server&#8217;s error log.</p>
 you must arrange for that.</p>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_command_line_programs">6.3. Command line programs</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">tools/dbversions.py</dt>
+<dd>
+<p>Scans acessible Postgresql databases and for those that
+are JMdictDB databases, reports the database version and
+whether or not it is compatible with the JMdictDB software.
+(Similar information is available from the cgiinfo.py web
+page if the web server is in a usable state.)</p>
+</dd>
+<dt class="hdlist1">bin/shentr.py</dt>
+<dd>
+<p>Entries in the database can be examined directly, with
+no involvement from the web server, by the command line
+program, <code>bin/shentrpy</code>.  Run the program with the
+<code>--help</code> option for full details.</p>
+</dd>
+</dl>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_wsgi_debugging">7. WSGI debugging</h2>
+<h2 id="wsgi_debug">7. WSGI debugging</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>The primary debugging tool is the local web server built into
@@ -555,7 +597,7 @@ The flask server will by default access the same
 changes made to entries will affect the same entries used
 to produce the JMdict and JMnedict XML files.   To access
 a different "throw-away" database, see section
-<strong>9. Creating a database for development</strong>
+<strong>8. Creating a database for development</strong>
 and use a "svc" URL parameter (e.g.,
 "&#8230;&#8203;/srchform.py?svc=jmtest" to direct the web  server to it.
 </td>
@@ -565,66 +607,7 @@ and use a "svc" URL parameter (e.g.,
 </div>
 </div>
 <div class="sect1">
-<h2 id="_cgi_debugging">8. CGI debugging</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>The CGI code is deprecated since the adoption of the
-more efficient and clean Flask/WSGI code so this section
-of mainly of historical interest.</p>
-</div>
-<div class="paragraph">
-<p>The CGI scripts can be run directly in a terminal window
-by giving them a URL (which can be copy-pasted from a web
-browser) command line argument:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>$ cd web/cgi/
-$ python3 -mpdb entr.py http://localhost/jmdictdbv/cgi/entr.py?svc=jmdict&amp;e=2171804</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>In the above example, the "-mpdb" runs the Python debugger
-which is usually useful but is optional.</p>
-</div>
-<div class="paragraph">
-<p>Pages that normally get their parameters by a POST request
-and thus do not show the parameters in the URL can be coerced
-to do so by adding the URL parameter, "dbg=1".
-To debug the edconf.py (confirmation) page for example, go to
-the preceding edform.py (edit form) page and add the dbg parameter:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>http://localhost/jmdictdbv/cgi/edform.py?e=14082&amp;dbg=1</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Click the Next button and the Edit Confirmation page will
-be displayed with URL parameters:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>http://localhost/jmdictdbv/cgi/edconf.py?kanj=%E5%93%80%E6%AD%8C&amp;rdng=%E3%81%82%E3%81%84%E3%81%8B&amp;sens=%5B1%5D%5Bn%2Cadj-no%5D%0D%0A++lament+%28song%29%3B+elegy%3B+dirge%3B+sad+song%0D%0A%5B2%5D%5Bn%2Cadj-no%5D%0D%0A++Lamentations+%28book+of+the+Bible%29&amp;reference=&amp;comment=&amp;name=&amp;email=&amp;svc=jmdict&amp;id=14082&amp;stat=2&amp;dbg=1&amp;src=1&amp;seq=1150170&amp;srcnote=&amp;notes=</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>You can now copy-paste that into the command line and
-debug the edconf.py script interactively.</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>$ python3 -mpdb edvconf.py 'http://localhost/jmdictdbv/cgi/edconf.py?kanj=%E5%93%80%E6%AD%8C&amp;rdng=%E3%81%82%E3%81%84%E3%81%8B&amp;sens=%5B1%5D%5Bn%2Cadj-no%5D%0D%0A++lament+%28song%29%3B+elegy%3B+dirge%3B+sad+song%0D%0A%5B2%5D%5Bn%2Cadj-no%5D%0D%0A++Lamentations+%28book+of+the+Bible%29&amp;reference=&amp;comment=&amp;name=&amp;email=&amp;svc=jmdict&amp;id=14082&amp;stat=2&amp;dbg=1&amp;src=1&amp;seq=1150170&amp;srcnote=&amp;notes='</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The "dbg" parameter, once added, is passed along to all
-subsequent pages.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="devdb">9. Creating a database for development</h2>
+<h2 id="devdb">8. Creating a database for development</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>When doing development work it is convenient to have a
@@ -715,7 +698,7 @@ parameter</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_preparing_a_release">10. Preparing a "release"</h2>
+<h2 id="_preparing_a_release">9. Preparing a "release"</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>The JMdictDB project does not produce formal releases per se;
@@ -793,6 +776,13 @@ upgrades, simply an email.</p>
 <p><strong>libreoffice writer</strong>:  doc/src/schema.odt &#8658; schema.pdf</p>
 </li>
 </ul>
+</div>
+<div class="paragraph">
+<p>For running tests:
+* <strong>pytest</strong> (optional): Tests are written to run with Python&#8217;s
+  "unittest" module but Pytest is compatible and offers additional
+  features that may be useful sometimes.
+* <strong>xmlstarlet</strong>: Used by some test scripts for comparing XML files.</p>
 </div>
 </div>
 </div>
@@ -932,9 +922,9 @@ Makefile or script; they seldom need to be manually run.</p>
 <dl>
 <dt class="hdlist1">install.sh</dt>
 <dd>
-<p>Run by Makefile to install command line programs and
-CGI scripts.  replaces the target file only id the source and
-target file contents differ determine by checksum).</p>
+<p>Run by Makefile to install command line programs
+and web server software.  Replaces the target file only if the
+source and target file contents differ determine by checksum).</p>
 </dd>
 <dt class="hdlist1">gen_parsetab.py</dt>
 <dt class="hdlist1">yply.py</dt>
@@ -959,8 +949,72 @@ identifier.</p>
 <dt class="hdlist1">mkiso639maps.py</dt>
 <dt class="hdlist1">mkkwmod.py</dt>
 <dt class="hdlist1">mklang.py</dt>
+<dd>
+<p>A one-time use tool to generate the
+jmdictdb/data/kwlang.csv file.</p>
+</dd>
 </dl>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_appendix_d_cgi_debugging">Appendix D: CGI debugging</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The CGI code has been deprecated since the adoption of the
+more efficient and lower-maintenance Flask/WSGI code in
+November 2021 so this section is preserved for historical
+interest.</p>
+</div>
+<div class="paragraph">
+<p>The CGI scripts can be run directly in a terminal window
+by giving them a URL (which can be copy-pasted from a web
+browser) command line argument:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ cd web/cgi/
+$ python3 -mpdb entr.py http://localhost/jmdictdbv/cgi/entr.py?svc=jmdict&amp;e=2171804</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In the above example, the "-mpdb" runs the Python debugger
+which is usually useful but is optional.</p>
+</div>
+<div class="paragraph">
+<p>Pages that normally get their parameters by a POST request
+and thus do not show the parameters in the URL can be coerced
+to do so by adding the URL parameter, "dbg=1".
+To debug the edconf.py (confirmation) page for example, go to
+the preceding edform.py (edit form) page and add the dbg parameter:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>http://localhost/jmdictdbv/cgi/edform.py?e=14082&amp;dbg=1</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Click the Next button and the Edit Confirmation page will
+be displayed with URL parameters:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>http://localhost/jmdictdbv/cgi/edconf.py?kanj=%E5%93%80%E6%AD%8C&amp;rdng=%E3%81%82%E3%81%84%E3%81%8B&amp;sens=%5B1%5D%5Bn%2Cadj-no%5D%0D%0A++lament+%28song%29%3B+elegy%3B+dirge%3B+sad+song%0D%0A%5B2%5D%5Bn%2Cadj-no%5D%0D%0A++Lamentations+%28book+of+the+Bible%29&amp;reference=&amp;comment=&amp;name=&amp;email=&amp;svc=jmdict&amp;id=14082&amp;stat=2&amp;dbg=1&amp;src=1&amp;seq=1150170&amp;srcnote=&amp;notes=</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can now copy-paste that into the command line and
+debug the edconf.py script interactively.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ python3 -mpdb edvconf.py 'http://localhost/jmdictdbv/cgi/edconf.py?kanj=%E5%93%80%E6%AD%8C&amp;rdng=%E3%81%82%E3%81%84%E3%81%8B&amp;sens=%5B1%5D%5Bn%2Cadj-no%5D%0D%0A++lament+%28song%29%3B+elegy%3B+dirge%3B+sad+song%0D%0A%5B2%5D%5Bn%2Cadj-no%5D%0D%0A++Lamentations+%28book+of+the+Bible%29&amp;reference=&amp;comment=&amp;name=&amp;email=&amp;svc=jmdict&amp;id=14082&amp;stat=2&amp;dbg=1&amp;src=1&amp;seq=1150170&amp;srcnote=&amp;notes='</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The "dbg" parameter, once added, is passed along to all
+subsequent pages.</p>
 </div>
 </div>
 </div>
@@ -976,7 +1030,7 @@ identifier.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-01-03 19:08:56 MST
+Last updated 2022-08-27 10:19:12 MDT
 </div>
 </div>
 </body>

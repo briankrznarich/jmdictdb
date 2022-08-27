@@ -33,7 +33,7 @@
 <li><a href="#inst-dev">5. Install For Development</a>
 <ul class="sectlevel2">
 <li><a href="#_configuration_files">5.1. Configuration files</a></li>
-<li><a href="#_start_the_flask_development_server">5.2. Start the Flask development server</a></li>
+<li><a href="#_run_the_flask_development_server">5.2. Run the Flask development server</a></li>
 </ul>
 </li>
 <li><a href="#inst-prod">6. Install For Production</a>
@@ -44,6 +44,7 @@
 </ul>
 </li>
 <li><a href="#users">7. Add JMdictDB editors and admins</a></li>
+<li><a href="#_upgrading_the_jmdictdb_software">8. Upgrading the JMdictDB software</a></li>
 <li><a href="#errors">Appendix A: Common problems</a></li>
 <li><a href="#appx-B">Appendix B: Postgresql authentication documentation</a></li>
 </ul>
@@ -686,9 +687,9 @@ above.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_start_the_flask_development_server">5.2. Start the Flask development server</h3>
+<h3 id="_run_the_flask_development_server">5.2. Run the Flask development server</h3>
 <div class="paragraph">
-<p>The Flask web framework JMdictDB uses comes with a builtin
+<p>The Flask web framework JMdictDB comes with a builtin
 development server.  At this point you can:</p>
 </div>
 <div class="literalblock">
@@ -974,6 +975,7 @@ or you can create a new directory, for example: {{WEBROOT}}/wsgi/.</p>
 <div class="content">
 <pre>import sys, os
 import jmdictdb
+sys.wsgi_file = __file__   # See comments in views/cgiinfo.py.
 if not os.environ.get('JMDICTDB_CFGFILE'):
     p = os.path
     our_directory = p.dirname (__file__)
@@ -1102,6 +1104,17 @@ continue to manage users directly with the users.py program.</p>
 </div>
 </div>
 <div class="sect1">
+<h2 id="_upgrading_the_jmdictdb_software">8. Upgrading the JMdictDB software</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The process for upgrading JMdictDB is covered in the
+<a href="oper.html#upgrading">Upgrading JMdictDB</a>
+section of the
+<a href="oper.html#header">Operation and Debugging Guide</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="errors">Appendix A: Common problems</h2>
 <div class="sectionbody">
 <div class="qlist qanda">
@@ -1127,6 +1140,13 @@ ImportError: cannot import name '__version__' from partially initialized module 
 <p><em>"500 - Server Error" web page returned</em></p>
 <p>Check the web server&#8217;s error log.  There will often be a Python
 stack dump from the JMdictDB code that will identify the problem.</p>
+</li>
+<li>
+<p><em>JMdictDB error page: "Unavailable service (xxxx)"</em></p>
+<p>Either the service name given in the "svc=&#8230;&#8203;" URL parameter
+("xxxx" in the example) is not defined in config-pvt.ini (or
+the equivalent file) or the database in the service definition
+does not exist in the Postgresql server.</p>
 </li>
 <li>
 <p><em>file not found: &#8230;&#8203;/config.ini</em></p>
@@ -1220,7 +1240,7 @@ these are for Postgresql version 10.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-01-03 19:09:18 MST
+Last updated 2022-08-27 08:01:26 MDT
 </div>
 </div>
 </body>

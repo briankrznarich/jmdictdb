@@ -344,7 +344,7 @@ particular site and that affects only that site.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>the kw*.csv file(s) that define the tags values (section <a href="#sec2_3">2.3. Edit the appropriate csv file(s)</a>),</p>
+<p>the kw*.csv file(s) that define the tags values (section <a href="#sec2_3">2.3. Update the appropriate csv file(s)</a>),</p>
 </li>
 <li>
 <p>a SQL database update script to propagate the changes to any
@@ -427,7 +427,15 @@ resulting from your tag changes.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="sec2_3">2.3. Edit the appropriate csv file(s)</h3>
+<h3 id="sec2_3">2.3. Update the appropriate csv file(s)</h3>
+<div class="paragraph">
+<p>The tag changes need to be incorporated in the jmdictdb/data/kw*.csv
+file.  This can be done manually by editing the file and making
+the necessary changes, or extracting csv files from a database
+that has had its kw* tables updated locally.</p>
+</div>
+<div class="sect3">
+<h4 id="_2_3_1_manually_edit_the_kw_csv_files">2.3.1 Manually edit the kw*.csv files</h4>
 <div class="paragraph">
 <p>The kw*.csv files in jmdictdb/data/ are the canonical source
 of static tag information in JMdictDB.</p>
@@ -474,21 +482,39 @@ See <a href="#appendix_a">Appendix A</a> for a list of those tags.
 <p>Be careful that your editor is set to preserve tabs (including
 trailing ones) when saving rather than replacing them with spaces.</p>
 </div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-If a database already exists in which the tag changes have
-been applied as local changes (see <a href="#sec1">section 1</a>), you can
-use the kwcmp.py tool to extract those changes in the form of
-a Unix "diff" file that can be used to update the CSV files using
-the Unix "patch" utility.  See <a href="#appendix_d">Appendix D</a>.
-</td>
-</tr>
-</table>
+</div>
+<div class="sect3">
+<h4 id="_2_3_2_update_the_kw_csv_files_from_a_database">2.3.2 Update the kw*.csv files from a database</h4>
+<div class="paragraph">
+<p>If a database already exists in which the tag changes have
+been applied as local changes to the kw* tables
+(see <a href="#sec1">section 1</a>), you can use the kwcmp.py tool to
+extract those tables directly to csv files in the
+jmdictdb/data/ directory.  This is often the case when tag
+changes are made at edrdg.org and it is desired to incorporate
+them in the JMdictDB distribution:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>tools/kwcmp.py -f csv</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>By default it will read the "jmdict" database and output the
+csv files to jmdictdb/data/.  The defaults can be overridden
+with options, use --help for details.
+Since jmdictdb/data/ is controlled by Git, 'git diff' will
+show the changes:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ cd jmdictdb/data/
+$ git diff *.csv</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>There is more information about kwcmp.py in <a href="#appendix_d">Appendix D</a>.</p>
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -676,6 +702,21 @@ $ ./load-testdb.sh data/jmtest01.sql</pre>
 </div>
 </div>
 <div class="paragraph">
+<p>If there were errors applying the update, fix them and repeat
+the above steps including reloading the test database from the
+jmtest01.sql file.</p>
+</div>
+<div class="paragraph">
+<p>After the update applies cleanly, save a temporary copy of the
+updated jmtest01 database.  It is important to do this before
+running any tests as some tests may modify the database.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$ pg_dump jmtest01 &gt;data/jmtest01.sql-new</pre>
+</div>
+</div>
+<div class="paragraph">
 <p>Run the tests again:</p>
 </div>
 <div class="literalblock">
@@ -684,30 +725,17 @@ $ ./load-testdb.sh data/jmtest01.sql</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Errors here from test_kwds like indicate that the changes made by
-database update are not consistent with the .csv files.  If there
-were any errors, restore the original test database file:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>$ git checkout -- data/jmtest01.sql</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Repeat the above steps until the update applies cleanly and all
-the tests pass.</p>
+<p>If any errors occur in the tests the problem may be due to
+a problem in the database update script (in which case correct
+it and continue from the start of this section), or some tests
+themselves may need updating to work with the updated database.
+In the latter case, fix the tests until all pass.</p>
 </div>
 </div>
 <div class="sect3">
 <h4 id="_2_6_2_test_on_a_production_database_copy">2.6.2 Test on a production database copy</h4>
 <div class="paragraph">
-<p>Make a copy of the production database and test the database
-update script on it.  To make a copy of your production database
-see section 2.1 of the
-<a href="https://www.edrdg.org/~smg/doc/dev.html#_2_1_make_a_copy_of_the_current_jmdict_database">Dev Guide</a>.</p>
-</div>
-<div class="paragraph">
-<p>Apply the update script:</p>
+<p>Apply the update script to a full JMdictDB database:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -723,26 +751,29 @@ files, etc, to confirm the changes are as intended.</p>
 <div class="sect2">
 <h3 id="sec2_7">2.7. Update and save the test database</h3>
 <div class="paragraph">
-<p>Since it is possible running the tests made changes to the test
-database which we don&#8217;t want preserve in the repository, reload
-it again and reapply the database update again:</p>
+<p>Replace the previous jmtest01 database file with the updated
+one saved above:</p>
 </div>
 <div class="literalblock">
 <div class="content">
 <pre>$ cd tests
-$ git status
-[confirm that file data/jmtest01.sql has not been modified]
-$ ./load-testdb.sh data/jmtest01.sql
-$ psql -d jmtest01 -Ujmdictdb -f ../db/updates/nnn-xxxxxx.sql</pre>
+$ mv data/jmtest01.sql-new data/jmtest01.sql</pre>
 </div>
 </div>
-<div class="paragraph">
-<p>And save it to the load file:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>$ pg_dump jmtest01 &gt;data/jmtest01.sql</pre>
-</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+Be sure that jmtest01.sql-new represents the previous
+version of the database as it exists in Git, with only the currently
+due to be committed update script applied to it, with no other changes
+including having been saved after running tests on it.
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect2">
@@ -753,9 +784,10 @@ $ psql -d jmtest01 -Ujmdictdb -f ../db/updates/nnn-xxxxxx.sql</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>should list as modified any of the kw*.csv files
-that were modified and the jmtest01.sql file.  It should also list
-the new nnn-xxxxxx.sql file as "untracked".
+<p>should list as modified any of the kw*.csv files that were
+updated by the database update script and any test files
+that needed modification to fix failing tests.  It should
+also list the new nnn-xxxxxx.sql file as "untracked".
 Assuming there are no unexpected files listed:</p>
 </div>
 <div class="literalblock">
@@ -767,7 +799,8 @@ $ git commit
 </div>
 </div>
 <div class="paragraph">
-<p>At this point you may want to send a pull request to the JMdictDB maintainer or, if you are the maintainer, merge the development
+<p>At this point you may want to send a pull request to the JMdictDB
+maintainer or, if you are the maintainer, merge the development
 branch into the master branch.</p>
 </div>
 </div>
@@ -798,7 +831,7 @@ $ git branch -d newtags   # You can delete your branch since your
 <div class="sectionbody">
 <div class="paragraph">
 <p>The following table lists the tag tables and specific tags that you
-should avoid changes to because the existing values of those tags
+should avoid changing because the existing values of those tags
 are referenced from within the JMdictDB code and those references
 will need to also need to be updated.  The recommendation against
 changes applies only to row deletion and the 'id' and 'kw' fields;
@@ -1185,7 +1218,7 @@ kw-changes.sql as the body of the script.]</pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-06-07 12:52:32 MDT
+Last updated 2022-08-25 06:20:20 MDT
 </div>
 </div>
 </body>
