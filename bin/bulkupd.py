@@ -323,7 +323,6 @@ def doedit (entr, hist, cmd):
             else:  # we expect a kanji/kana str, find matching list item.
                 use = jdb.first (krlist, lambda kr: kr.txt==cmd.sens, [])
                 if not use: raise NoKRError (krtype, cmd.sens)
-              #FIXME: what if 'use' is empty?  error? warning? ignore?
             tlist = getattr (use, '_inf')
             new, old = kw2id (cmd.operand, cmd.new, cmd.old)
             edit (tlist, 'kw', old, new, cmd.operand, cmd.old, cmd.new)
