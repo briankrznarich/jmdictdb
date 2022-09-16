@@ -406,28 +406,36 @@ class Compat (unittest.TestCase):
 class Tags (unittest.TestCase):
     def test001000(_):
           # Check that if there is a JMdict-exclusive tag (such as
-          # 'abbr' (Misc(kw=2)) in a JMnedict entry that it, 1) will
-          # not be output in the XML, 2) will produce an appropriate
-          # warning message to stderr, and 3) won't interfere with
-          # or suppress a valid JMnedict tag (e.g. "place").
-
+          # 'abbr' (Misc(kw=2)) or 'ateji (Kinf(kw=5)) in a JMnedict
+          # entry that fmtxmt.entr():
+          #   1) will not be output in the XML,
+          #   2) will not produce a warning message to stderr (prior
+          #      to 2022-09-15 it did),
+          #   3) will record the invalid tag(s) in xtags and
+          #   4) won't interfere with or suppress a valid JMnedict
+          #      tag (e.g. "place").
           # Create a minimal entry with two MISC tags: "abbr" (kw=2) and
-          # "place" (kw=182).
+          # "place" (kw=182) and a KINF tag "ateji".  Only the "place"
+          # tag is valid for a jmnedict entry.
         e = Entr(id=33, seq=1023450, src=99, stat=2, unap=False,
+                 _kanj=[Kanj(txt="中味",_inf=[Kinf(kw=5)])],
                  _sens=[Sens(sens=1,_misc=[Misc(kw=2),Misc(kw=182)])])
-        test_stderr = io.StringIO()
+        xtags = [];  test_stderr = io.StringIO()
         with contextlib.redirect_stderr (test_stderr):
-            got = fmtxml.entr(e, compat='jmnedict')
+            got = fmtxml.entr(e, compat='jmnedict', xtags=xtags)
         expect = '''\
             <entry>
             <ent_seq>1023450</ent_seq>
+            <k_ele>
+            <keb>中味</keb>
+            </k_ele>
             <trans>
             <name_type>&place;</name_type>
             </trans>
             </entry>'''.replace (' '*12,'')
         _.assertEqual (expect, got)
-        _.assertRegex (test_stderr.getvalue(),
-                       r'Illegal tag for DTD.*jmnedict.*abbr')
+        _.assertEqual (test_stderr.getvalue(), '')
+        _.assertEqual (xtags, [('KINF','ateji'),('MISC','abbr')])
 
 def setUpModule():
     jdb.KW = jdb.Kwds('')   # Load JMdictDB tags from csv files.

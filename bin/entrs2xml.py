@@ -32,16 +32,15 @@ def main():
         if opts.seqnums: seqlist = opts.seqnums
         if opts.seqfile: seqlist = read_seqfile (opts.seqfile)
 
+        if not opts.corpus and not opts.xml:
+            sys.exit ("Need at least one of --corpus/-s or --xml/-x")
         corps, ctypes = parse_corpopt (opts.corpus, opts.xml)
         details = compat_details (opts.xml, ctypes)
         compat, dtd, root, datestamp, appr, _, warn = details
         if warn and not opts.force: sys.exit (
-            "The --xmlt option you requested:\n"
-            "  %s\n"
-            "is incompatible with the types of the copora you requested:\n"
-            "  %s\n"
+            "Option --xml \"%s\" is incompatible with corpora %s.\n"
             "To continue anyway, please rerun with the --force option."\
-            % (opts.compat, ctypes))
+            % (opts.xml, ctypes))
         L().info("Writing '%s' compatible XML" % compat)
 
           # 'dtd' was set above to the default dtd name.
@@ -233,7 +232,11 @@ def write_entrs (cur, outf, entrs, raw, compat, counters=None):
                         gob.written = True
                         txt = '\n'.join (fmtxml.grpdef (gob))
                         outf.write (txt + "\n")
-            txt = fmtxml.entr (e, compat=compat, genhists=True)
+            xtags = []
+            txt = fmtxml.entr (e, compat=compat, genhists=True, xtags=xtags)
+            if xtags: L().warn("Entry %s: Invalid tag(s) ignored: %s"
+                               % (e.seq,
+                               ','.join([("%s.%s"%(d,v)) for d,v in xtags])))
             outf.write (txt + "\n")
             if counters is not None: counters[jdb.KW.SRC[e.src].srct] += 1
         L().debug ("write_entries: time: %s (fmt)" % (time.time()-start))

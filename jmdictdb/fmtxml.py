@@ -13,7 +13,7 @@ global KW
 class TagError (KeyError): pass
 
 def entr (entr, compat='jmex', geninfo=True, genhists=True,
-                genxrefs=True, wantlist=False, mail=True):
+                genxrefs=True, wantlist=False, mail=True, xtags=[]):
         '''
         Generate an XML description of entry 'entr'.
         Parameters:
@@ -54,6 +54,13 @@ def entr (entr, compat='jmex', geninfo=True, genhists=True,
                 in the output xml.  If false, these elements will be
                 suppressed; this is appropriate in cases where the xml
                 will be made publically available.
+          xtags -- A list to which will be appended tags that were
+                ignored because they are incomptible with DTD requested
+                by the 'compat' option.  (E.g., a KINF "ateji" tag in an
+                entry being formatted with compat="jmnedict"; there is
+                no "&ateji;" entity in the jmnedict DTD.  Each appended
+                tag is a 2-tuple of the tag domain and tag keyword, eg:
+                ('KINF','ateji').
         '''
 
         global KW; KW = jdb.KW
@@ -61,17 +68,19 @@ def entr (entr, compat='jmex', geninfo=True, genhists=True,
         fmt = entrhdr (entr, compat)
 
         kanjs = getattr (entr, '_kanj', [])
-        for k in kanjs: fmt.extend (kanj (k, compat))
+        for k in kanjs: fmt.extend (kanj (k, compat, xtags))
 
         rdngs = getattr (entr, '_rdng', [])
-        for r in rdngs: fmt.extend (rdng (r, kanjs, compat))
+        for r in rdngs: fmt.extend (rdng (r, kanjs, compat, xtags))
 
         senss = getattr (entr, '_sens', [])
         if compat in ('jmnedict',):
-            for x in senss: fmt.extend (trans (x, compat, entr.src, genxrefs))
+            for x in senss: fmt.extend (trans (x, compat, entr.src,
+                                        genxrefs, xtags))
         else:
             for x in senss:
-                fmt.extend (sens (x, kanjs, rdngs, compat, entr.src, genxrefs))
+                fmt.extend (sens (x, kanjs, rdngs, compat, entr.src,
+                                  genxrefs, xtags))
 
         if not compat: fmt.extend (info (entr, compat,geninfo,genhists,mail))
         if not compat: fmt.extend (audio (entr))
@@ -80,22 +89,24 @@ def entr (entr, compat='jmex', geninfo=True, genhists=True,
         if wantlist: return fmt
         return '\n'.join (fmt)
 
-def kanj (k, compat):
+def kanj (k, compat, xtags=[]):
         fmt = []
         fmt.append ('<k_ele>')
         fmt.append ('<keb>%s</keb>' % esc(k.txt))
-        fmt.extend (ents (k, '_inf', 'KINF', 'ke_inf', sort=True, dtd=compat))
+        fmt.extend (ents (k, '_inf', 'KINF', 'ke_inf', sort=True,
+                          dtd=compat, xtags=xtags))
         fmt.extend (['<ke_pri>%s</ke_pri>' %s
                      for s in jdb.freq2txts (getattr (k,'_freq',[]))])
         fmt.append ('</k_ele>')
         return fmt
 
-def rdng (r, k, compat):
+def rdng (r, k, compat, xtags=[]):
         fmt = []
         fmt.append ('<r_ele>')
         fmt.append ('<reb>%s</reb>' % esc(r.txt))
         fmt.extend (restrs (r, k))
-        fmt.extend (ents (r, '_inf', 'RINF', 're_inf', sort=True, dtd=compat))
+        fmt.extend (ents (r, '_inf', 'RINF', 're_inf', sort=True,
+                          dtd=compat, xtags=xtags))
         fmt.extend (['<re_pri>%s</re_pri>' %s
                      for s in jdb.freq2txts (getattr (r,'_freq',[]))])
         if not compat: fmt.extend (audio (r))
@@ -126,7 +137,7 @@ def restrs (rdng, kanjs, attr='_restr'):
             fmt.extend (['<%s>%s</%s>' % (tag, x.txt, tag) for x in invdkanjs])
         return fmt
 
-def sens (s, kanj, rdng, compat, src, genxrefs=True):
+def sens (s, kanj, rdng, compat, src, genxrefs=True, xtags=[]):
         """
         Format a sense.
         fmt -- A list to which formatted text lines will be appended.
@@ -144,6 +155,13 @@ def sens (s, kanj, rdng, compat, src, genxrefs=True):
         genxrefs -- If false, do not attempt to format xrefs.  This
             will prevent an exception if the entry has only ordinary
             xrefs rather than augmented xrefs.
+        xtags -- A list to which will be appended tags that were
+            ignored because they are incomptible with DTD requested
+            by the 'compat' option.  (E.g., a KINF "ateji" tag in an
+            entry being formatted with compat="jmnedict"; there is
+            no "&ateji;" entity in the jmnedict DTD.  Each appended
+            tag is a 2-tuple of the tag domain and tag keyword, eg:
+            ('KINF','ateji').
         """
         fmt = []
         fmt.append ('<sense>')
@@ -151,13 +169,13 @@ def sens (s, kanj, rdng, compat, src, genxrefs=True):
         fmt.extend (restrs (s, kanj, '_stagk'))
         fmt.extend (restrs (s, rdng, '_stagr'))
 
-        fmt.extend (ents (s, '_pos', 'POS', 'pos', dtd=compat))
+        fmt.extend (ents (s, '_pos', 'POS', 'pos', dtd=compat, xtags=xtags))
 
         xr = sens_xrefs (s, src, compat)
         fmt.extend (xr)
 
-        fmt.extend (ents (s, '_fld', 'FLD', 'field', dtd=compat))
-        fmt.extend (ents (s, '_misc', 'MISC', 'misc', dtd=compat))
+        fmt.extend (ents (s, '_fld', 'FLD', 'field', dtd=compat, xtags=xtags))
+        fmt.extend (ents (s, '_misc', 'MISC', 'misc', dtd=compat, xtags=xtags))
 
         notes = getattr (s, 'notes', None)
         if notes: fmt.append ('<s_inf>%s</s_inf>' % esc(notes))
@@ -166,17 +184,17 @@ def sens (s, kanj, rdng, compat, src, genxrefs=True):
         if lsource:
             for x in lsource: fmt.extend (lsrc (x))
 
-        fmt.extend (ents (s, '_dial', 'DIAL', 'dial', dtd=compat))
+        fmt.extend (ents (s, '_dial', 'DIAL', 'dial', dtd=compat, xtags=xtags))
 
         for x in s._gloss: fmt.extend (gloss (x, compat))
 
         fmt.append ('</sense>')
         return fmt
 
-def trans (sens, compat, src, genxrefs):
+def trans (sens, compat, src, genxrefs, xtags=[]):
         "Format a jmnedict trans element."
 
-        fmt = (ents (sens, '_misc', 'MISC', 'name_type', dtd=compat))
+        fmt = (ents (sens, '_misc','MISC','name_type',dtd=compat,xtags=xtags))
         if genxrefs:
             xr = sens_xrefs (sens, src, compat)
             fmt.extend (xr)
@@ -517,7 +535,8 @@ def corpus (corpora):
             fmt.append ('</corpus>')
         return fmt
 
-def ents (parent, attr, domain, elem_name, sort=False, dtd="jmdict"):
+def ents (parent, attr, domain, elem_name, sort=False,
+          dtd="jmdict", xtags=[]):
         '''
     Given a list of tag items (in the form ('parent','attr')) we return
     a list of XML elements containing the entities representing those
@@ -534,7 +553,12 @@ def ents (parent, attr, domain, elem_name, sort=False, dtd="jmdict"):
           tag -> entity mappings in the Kwds data.  Typically will
           be "jmdict" or "jmnedict" but other alternatives may be
           available depending on the data in the kw* tables and
-          xsv files.  None is equivalent to "jmdict".'''
+          xsv files.  None is equivalent to "jmdict".
+      xtags -- A list to which will be appended tags that were
+            ignored because they are incomptible with DTD requested
+            by the 'compat' option.  (E.g., a KINF "ateji" tag in an
+            entry being formatted with compat="jmnedict"; there is no
+            "&ateji;" entity in the jmnedict DTD.'''
 
         nlist = getattr (parent, attr, [])
         if not nlist: return nlist
@@ -546,12 +570,15 @@ def ents (parent, attr, domain, elem_name, sort=False, dtd="jmdict"):
               # Note that x.kw below is the tag id number.
               # ent_name(), a wrapper around entity(), might raise a
               # TagError if the tag is known but not valid for the
-              # given DTD.  We want to print a warning message in this
-              # case but otherwise ignore it and contiue processing any
-              # valid tags in 'nlist'.
+              # given DTD.  In this case we save the tag in 'xtags' so
+              # the caller can decide what to do about it but otherwise
+              # ignore it and continue processing the rest of the tags
+              # in 'nlist'.  The item(s) saved in 'xtags' are 2-tuples
+              # of (domain,kw), eg: ('KINF','ateji').
             try: xmlent = '<%s>&%s;</%s>' \
                           %(elem_name, ent_name(x.kw), elem_name)
-            except TagError as e: warn ("\nEntry %s: %s" % (parent.entr,str(e)))
+            except TagError as e:
+                xtags.append ((domain, getattr(KW,domain)[x.kw].kw))
             else: kwlist.append (xmlent)
         if sort: kwlist.sort()
         return kwlist
@@ -723,8 +750,6 @@ def entr_diff (eold, enew, n=2):
         if len(diffs) >= 2: diffs = diffs[2:]
         diffstr = '\n'.join (diffs)
         return diffstr
-
-def warn (msg): print (msg, file=sys.stderr)
 
 def _main():
         import sys
