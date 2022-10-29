@@ -69,7 +69,7 @@ class General (unittest.TestCase):
     def test1000040(_):  # Parent entry disappears before commit of child
                          #  as can happen when someone else approves a
                          #  different edit of the same entry.
-        e1 = addentr ('\fパン\f[1]bread', c=99, s=2)  # Add and entry...
+        e1 = addentr ('\fパン\f[1]bread', c=99, s=2)  # Add an entry...
         e2 = edentr (e1)                             # ...and edit it.
           # But before it's submitted, remove the parent entry as would
           # happen if someone else had approved a different edit of it.
@@ -79,6 +79,18 @@ class General (unittest.TestCase):
         errs = submitE (_, e2, disp='')
         _.assertIn ('[noroot] The entry you are editing no longer exists',
                     errs[0])
+
+    def test1000110(_):  # Non-editor can't edit rejected entry.
+        e1 = addentr ('\fパン\f[1]bread', c=99, s=6)  # Add a rejected entry...
+        e2 = edentr (e1, s=2)                        # ...and edit it.
+        errs = submitE (_, e2, disp='')
+        _.assertIn ("Rejected entries can not be edited", errs[0])
+
+    def test1000120(_):  # Editor can't edit rejected entry.
+        e1 = addentr ('\fパン\f[1]bread', c=99, s=6)  # Add a rejected entry...
+        e2 = edentr (e1, s=2)                        # ...and edit it.
+        errs = submitE (_, e2, disp='', is_editor=True)
+        _.assertIn ("Rejected entries can not be edited", errs[0])
 
 
 class Approval (unittest.TestCase):

@@ -107,6 +107,10 @@
 # will fail with an error.  (However, this situation in not
 # yet handled gracefully in the code -- so the result will
 # be an unhandled exception and traceback.)
+#
+#FIXME: several error messages say, "Bad URL parameter..." but
+# these functions may not always be called via a web page.  Should
+# use more neutral wording and let caller change it if need be.
 
 import sys, pdb
 from jmdictdb import logger; from jmdictdb.logger import L
@@ -259,6 +263,15 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
                 errs.append ("[noparent] "+noentr_msg)
                 return None3
             pentr = pentr[0]
+            if pentr.stat == KW.STAT['R'].id:
+                  # Disallow editing rejected entries since there is seldom
+                  # a need to and when previously allowed it led to abuse.
+                  # The web interface does not provide an Edit button for
+                  # rejected entries but a submission could be constructed
+                  # to do so.
+                  #FIXME? allow editors to edit?
+                errs.append ("Rejected entries can not be edited.")
+                return None3
             jdb.augment_xrefs (dbh, raw['xref'])
 
             if entr.stat == KW.STAT['D'].id:
@@ -292,7 +305,7 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
 
         if disp == 'a' and has_xrslv (entr) and entr.stat==KW.STAT['A'].id:
             L('submit.submission').debug("unresolved xrefs error")
-            errs.append ("Can't approve because entry has unresolved xrefs")
+            errs.append ("Can't approve because entry has unresolved xrefs.")
 
         if not errs:
               # If this is a submission by a non-editor, restore the
