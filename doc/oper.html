@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 1.5.5">
+<meta name="generator" content="Asciidoctor 2.0.16">
 <title>Operation and Debugging Guide</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <link rel="stylesheet" href="./asciidoctor.css">
@@ -310,7 +310,7 @@ that runs psql such as db/updates/update.sh.  In addition to
 the actual schema changes made by the script, it also stores
 a database version (aka update) number, usually shown as a
 6-digit hexadecimal number, in the database.
-<sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="#_footnote_1" title="View footnote.">1</a>]</sup></p>
+<sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="#_footnotedef_1" title="View footnote.">1</a>]</sup></p>
 </div>
 <div class="paragraph">
 <p>When the JMdictDB software opens a connection to a JMdictDB
@@ -412,7 +412,7 @@ updates.  Assuming the updates:</p>
 <div class="paragraph">
 <p>are required, as determined from the update documentation
 or by means of the dbversion.py tool described above, they
-are conveniently applied by the update.sh script<sup class="footnote">[<a id="_footnoteref_2" class="footnote" href="#_footnote_2" title="View footnote.">2</a>]</sup>:</p>
+are conveniently applied by the update.sh script<sup class="footnote">[<a id="_footnoteref_2" class="footnote" href="#_footnotedef_2" title="View footnote.">2</a>]</sup>:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -439,7 +439,7 @@ script can rerun.</p>
 be reversed by checking out the Git revision that was in
 use prior to the upgrade and reinstalling it with the
 'sudo make &#8230;&#8203; install-sys' command used in section
-<a href="#code-upgrade">Code upgrades</a>.</p>
+<a href="#code-upgrade"> 4.1</a>.</p>
 </div>
 <div class="paragraph">
 <p>The Makefile does not use the traditional "file modification
@@ -648,7 +648,7 @@ $ pg_dump jmdict | psql -d jmtest</pre>
 </div>
 <div class="paragraph">
 <p>Alternatively you can follow the procedure in the
-<a href="install.html#load-db">Section 4.3</a> of the Installation
+<a href="install.asc#load-db">Section 4.3</a> of the Installation
 Guide for creating a new database but after loading it
 from the XML files instead of running
 "make -f Makefile-db activate", rename the "jmew" database
@@ -740,11 +740,11 @@ source file, jmdictdb/jelparse.y:</p>
 </div>
 </li>
 <li>
-<p>Confirm all the tests pass (see section <a href="#tests">Tests</a>)</p>
+<p>Confirm all the tests pass (see section <a href="#tests"> 5</a>)</p>
 </li>
 <li>
 <p>If possible, do a full install from XML files per the
-<a href="#install.asc">Installation Guide</a></p>
+<a href="install.asc">Installation Guide</a></p>
 </li>
 <li>
 <p>Make sure the documentation is up-to-date:</p>
@@ -1035,16 +1035,16 @@ subsequent pages.</p>
 </div>
 <div id="footnotes">
 <hr>
-<div class="footnote" id="_footnote_1">
+<div class="footnote" id="_footnotedef_1">
 <a href="#_footnoteref_1">1</a>. The database version number is stored as an integer in table "db" but generally accessed as a hexadecimal string via the view "dbx".
 </div>
-<div class="footnote" id="_footnote_2">
+<div class="footnote" id="_footnotedef_2">
 <a href="#_footnoteref_2">2</a>. The update.sh script simply runs the command `psql -Ujmdictdb -d&lt;first-arg&gt; -f&lt;next-arg&gt;`, for each of the second and subsequent arguments (denoted &lt;next-arg&gt;).
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-08-28 12:25:21 MDT
+Last updated 2022-10-30 17:31:05 -0600
 </div>
 </div>
 </body>

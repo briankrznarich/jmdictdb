@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 1.5.5">
+<meta name="generator" content="Asciidoctor 2.0.16">
 <title>JMdictDB Installation Guide</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <link rel="stylesheet" href="./asciidoctor.css">
@@ -23,7 +23,7 @@
 </ul>
 </li>
 <li><a href="#_document_conventions_and_placeholders">3. Document conventions and placeholders</a></li>
-<li><a href="#_common_development_production_installation_steps">4. Common Development/Production Installation Steps</a>
+<li><a href="#_common_developmentproduction_installation_steps">4. Common Development/Production Installation Steps</a>
 <ul class="sectlevel2">
 <li><a href="#get-code">4.1. Get the code</a></li>
 <li><a href="#_configure_the_postgresql_database_server">4.2. Configure the Postgresql database server</a></li>
@@ -218,8 +218,8 @@ If not available, you can download the needed files manually.</p>
 <div class="paragraph">
 <p>If you plan on doing development of JMdictDB some additional
 software, used in various build chains, is also required.
-Please see <a href="oper.html#appx-A">Appendix A</a> of the
-<a href="#oper.asc">Operation and Debugging Guide</a>.</p>
+Please see <a href="oper.asc#appx-A">Appendix A</a> of the
+<a href="oper.asc">Operation and Debugging Guide</a>.</p>
 </div>
 </div>
 </div>
@@ -299,7 +299,7 @@ A user logged in as Admin can additionally manage other users.</p>
 separate database named "jmsess".  This database need only be
 setup once.  Management of the user accounts in "jmsess" may be
 done by the program bin/users.py (see <a href="#users">section 7</a> in this
-document and <a href="oper.html#users">section 2</a> in the Operation Guide),
+document and <a href="oper.asc#users">section 2</a> in the Operation Guide),
 or, after the install is completed, by the users.py web page.</p>
 </div>
 </div>
@@ -338,14 +338,14 @@ The default value is /var/www/jmdictdb/.</p>
 <dt class="hdlist1">{{WCGI}}</dt>
 <dd>
 <p>Path and filename of the .wsgi file (see section 6.2.3
-(<a href="#prod-wsgifile">Create the jmdictdb-pvt.ini file</a>).</p>
+(<a href="#prod-wsgifile"> 6.2.3</a>).</p>
 </dd>
 </dl>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_common_development_production_installation_steps">4. Common Development/Production Installation Steps</h2>
+<h2 id="_common_developmentproduction_installation_steps">4. Common Development/Production Installation Steps</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Setting up a JMdictDB instance involves:</p>
@@ -386,11 +386,11 @@ section.</p>
 </div>
 <div class="paragraph">
 <p>Step 4 is required for running JMdictDB with the builtin Flask
-development server and is detailed in section 5 (<a href="#inst-dev">Install For Development</a>) below.</p>
+development server and is detailed in section 5 (<a href="#inst-dev"> 5</a>) below.</p>
 </div>
 <div class="paragraph">
 <p>Steps 5-7 are required for running JMdictDB under a production
-web server like Apache and are detailed in section 6 (<a href="#inst-prod">Install For Production</a>)
+web server like Apache and are detailed in section 6 (<a href="#inst-prod"> 6</a>)
 below.</p>
 </div>
 <div class="paragraph">
@@ -768,7 +768,7 @@ locations:</p>
 <ul class="none">
 <li>
 <p></p>
-<table class="tableblock frame-all grid-all">
+<table class="tableblock frame-all grid-all fit-content">
 <colgroup>
 <col>
 <col>
@@ -806,7 +806,7 @@ locations:</p>
 <ul class="none">
 <li>
 <p></p>
-<table class="tableblock frame-all grid-all">
+<table class="tableblock frame-all grid-all fit-content">
 <colgroup>
 <col>
 <col>
@@ -1057,7 +1057,7 @@ load.  For more information see:</p>
 in your web browser.</p>
 </div>
 <div class="paragraph">
-<p>If you did a system install in section 6.1 (<a href="#inst-sw">Install the JMdictDB software</a>) the URL will be:</p>
+<p>If you did a system install in section 6.1 (<a href="#inst-sw"> 6.1</a>) the URL will be:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -1065,7 +1065,7 @@ in your web browser.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>If you did a user install in section 6.1 (<a href="#inst-sw">Install the JMdictDB software</a>) the URL will be:</p>
+<p>If you did a user install in section 6.1 (<a href="#inst-sw"> 6.1</a>) the URL will be:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -1123,9 +1123,9 @@ continue to manage users directly with the users.py program.</p>
 <div class="sectionbody">
 <div class="paragraph">
 <p>The process for upgrading JMdictDB is covered in the
-<a href="oper.html#upgrading">Upgrading JMdictDB</a>
+<a href="oper.asc#upgrading">Upgrading JMdictDB</a>
 section of the
-<a href="oper.html#header">Operation and Debugging Guide</a>.</p>
+<a href="oper.asc#header">Operation and Debugging Guide</a>.</p>
 </div>
 </div>
 </div>
@@ -1137,7 +1137,7 @@ section of the
 <li>
 <p><em>Flask server fails with traceback</em></p>
 <p>This will happen when tools/upd-version.py hasn&#8217;t been run
-(see section 4.1, <a href="#get-code">Get the code</a> )</p>
+(see section 4.1, <a href="#get-code"> 4.1</a> )</p>
 <div class="literalblock">
 <div class="content">
 <pre>Traceback (most recent call last):
@@ -1255,7 +1255,7 @@ these are for Postgresql version 10.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-08-28 16:19:53 MDT
+Last updated 2022-10-30 17:31:05 -0600
 </div>
 </div>
 </body>
