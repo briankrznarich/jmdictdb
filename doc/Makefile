@@ -20,14 +20,14 @@ all: basic schema updates
 
 .DELETE_ON_ERROR:
 
-%.html : src/%.asc
+%.html : src/%.adoc
 	asciidoctor -a linkcss -D . $?
 
 basic: index.html install.html oper.html tags.html
-index.html: src/index.asc
-install.html: src/install.asc
-oper.html: src/oper.asc
-tags.html: src/tags.asc
+index.html: src/index.adoc
+install.html: src/install.adoc
+oper.html: src/oper.adoc
+tags.html: src/tags.adoc
 
 schema: schema.png schema.pdf
 schema.png: src/schema.dia
@@ -40,9 +40,9 @@ schema.pdf: src/schema.odt
 #	/usr/bin/libreoffice --headless --convert-to html $?
 
 updates: 2021-11-update.html 2020-06-changes.html 2020-06-update.html
-2021-11-update.html: src/2021-11-update.asc
-2020-06-changes.html: src/2020-06-changes.asc
-2020-06-update.html: src/2020-06-update.asc
+2021-11-update.html: src/2021-11-update.adoc
+2020-06-changes.html: src/2020-06-changes.adoc
+2020-06-update.html: src/2020-06-update.adoc
 
 
 install:
