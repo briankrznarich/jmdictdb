@@ -1,5 +1,6 @@
 :sectnums:
-:xrefstyle: short
+:icons: font
+:xrefstyle: full
 :section-refsig:
 = Operation and Debugging Guide
 :toc:
@@ -132,7 +133,7 @@ the software and database will temporarily be at incompatible versions.
 === Code upgrades
 To upgrade the code:
 
-  $ cd {{devdir}}
+  $ cd {{DEVDIR}}
 
 Checkout the desired branch ("master" or "edrdg").  The "master"
 branch is generally the latest code.  The "edrdg" branch is usually
@@ -166,6 +167,10 @@ install is done with,
 
   # git config --global --unset safe.directory {{DEVDIR}}
 
+If you are using a WSGI server don't forget to reload the WSGI
+application per section <<wsgi-reload>> below, even if you have
+no database updates.
+
 === Database upgrades
 In addition to updating the JMdictDB software as described
 above, sometimes upgrading the database schema is necessary
@@ -188,6 +193,7 @@ stored in the file jmdictdb/dbver.py).  This is to reduce the
 chances of the code trying to access a database schema it
 does not fully understand.
 
+[#db-bkup]
 ==== Backup the current jmdict database
 
   $ pg_dump -Fc jmdict > <FILENAME>
@@ -209,14 +215,14 @@ convention:
 where "nnn" is a 3-digit decimal number and "xxxxxx" is a
 6-digit hexadecimal number.  The former are usually sequential
 (but there may be gaps sometimes) and indicate the order in
-which the updates should be applied.  The latter are random,
-are the actual update identifiers proper, and are what are
-referenced in the documentation.
+which the updates should be applied.  The latter have randomly
+chosen values, actually identify a specific update, and are what
+are referenced in the documentation.
 
 Generally the update documentation will indicate which of the
-update files there need to be applied.  If not, run the following
-command to show the current database version and whether or not
-it is compatible with the current JMdictDB code.
+update files need to be applied.  If not, run the following
+command to show the current database version and whether or
+not it is compatible with the current JMdictDB code.
 
   $ tools/dbversion.py jmdict
 
@@ -255,6 +261,16 @@ The update scripts are generally written to work as a single
 transaction: if there is a failure, all changes made by the
 script will be undone and, after the problem is resolved, the
 script can rerun.
+
+[#wsgi-reload]
+=== Reload the WSGI application
+If you are serving the JMdictDB application via WSGI, you will
+probably need to tell the WSGI server to reload the updated
+application.  For Apache with mod_wsgi you can do this using
+the 'touch' command applied to the .wsgi file created during
+installation (see section 6.2.4.
+xref:install.adoc#prod-wsgifile[Create a .wsgi file]
+of the xref:install.adoc[Installation Guide].)
 
 === If something goes wrong
 If no database update was involved, a software update can
@@ -313,7 +329,7 @@ information in the case of problems:
 
 Note that the JMdictDB log file must be pre-created; the
 JMdictDB code will not create it automatically  (see
-the xref:install.asc).  If it
+the xref:install.adoc#prod-logf).  If it
 is not not accessible or writable by the web server at
 web server startup, an error message to that effect will
 be written to the web server's error log.
@@ -403,7 +419,7 @@ To create a copy of the current "jmdict" production database:
   $ pg_dump jmdict | psql -d jmtest
 
 Alternatively you can follow the procedure in the
-xref:install.asc#load-db[Section 4.3] of the Installation
+xref:install.adoc#load-db[Section 4.3] of the Installation
 Guide for creating a new database but after loading it
 from the XML files instead of running
 "make -f Makefile-db activate", rename the "jmew" database
@@ -466,8 +482,9 @@ Before pushing to GitLab, the following should be checked:
 
 2. Confirm all the tests pass (see section <<tests>>)
 
-3. If possible, do a full install from XML files per the
-  xref:install.asc[Installation Guide]
+3. If possible, do a full install from XML files per
+   xref:install.adoc#load-db[section 4.3] in the
+   xref:install.adoc[Installation Guide]
 
 4. Make sure the documentation is up-to-date:
 
@@ -492,7 +509,7 @@ Before pushing to GitLab, the following should be checked:
 For building documentation:
 
 [none]
-* **asciidoctor**: doc/src/*.asc => *.html
+* **asciidoctor**: doc/src/*.adoc => *.html
 * **dia**: doc/src/schema.dia => schema.png diagram.
 * **libreoffice writer**:  doc/src/schema.odt => schema.pdf
 

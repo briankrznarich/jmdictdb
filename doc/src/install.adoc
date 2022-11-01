@@ -1,7 +1,8 @@
-= JMdictDB Installation Guide
+= Installation Guide
 :toc:
 :sectnums:
-:xrefstyle: short
+:icons: font
+:xrefstyle: full
 :section-refsig:
 
 Installing and Configuring JMdictDB
@@ -97,8 +98,8 @@ earlier or later versions, but this has not been verified.
 
 If you plan on doing development of JMdictDB some additional
 software, used in various build chains, is also required.
-Please see xref:oper.asc#appx-A[Appendix A] of the
-xref:oper.asc[Operation and Debugging Guide].
+Please see xref:oper.adoc#appx-A[Appendix A] of the
+xref:oper.adoc[Operation and Debugging Guide].
 
 == Authentication
 The Postgresql database requires applications connecting to it to
@@ -156,8 +157,9 @@ A user logged in as Admin can additionally manage other users.
 JMdictDB users and their access levels are stored in a separate
 separate database named "jmsess".  This database need only be
 setup once.  Management of the user accounts in "jmsess" may be
-done by the program bin/users.py (see <<users,section 7>> in this
-document and xref:oper.asc#users[section 2] in the Operation Guide),
+done by the program bin/users.py (see section <<users>> in this
+document and xref:oper.adoc#users[section 2] in the
+xref:oper.adoc[Operation Guide]),
 or, after the install is completed, by the users.py web page.
 
 == Document conventions and placeholders
@@ -176,8 +178,8 @@ be replaced with actual values:
     and where the web server will be configured to look for them at.
     Example value: /usr/local/jmdictdb/.
     The default value is /var/www/jmdictdb/.
-  {{WCGI}}:: Path and filename of the .wsgi file (see section 6.2.3
-   (<<prod-wsgifile>>).
+  {{WCGI}}:: Path and filename of the .wsgi file
+    (see section <<prod-wsgifile>>).
 
 //FIXME: is {{WSGI}} the full path and filename, or is it
 // relative to {{WEBROOT}}?  Check usages.
@@ -209,10 +211,10 @@ development or production or both and are described in this
 section.
 
 Step 4 is required for running JMdictDB with the builtin Flask
-development server and is detailed in section 5 (<<inst-dev>>) below.
+development server and is detailed in section <<inst-dev>> below.
 
 Steps 5-7 are required for running JMdictDB under a production
-web server like Apache and are detailed in section 6 (<<inst-prod>>)
+web server like Apache and are detailed in section <<inst-prod>>
 below.
 
 Makefiles are provided that automate loading the database
@@ -249,8 +251,8 @@ the current directory is the {{DEVDIR}} directory.
 
 === Configure the Postgresql database server
 
+[#pg-access]
 ==== Provide access to the Postgresql server
-[#pg_access]
 JMdictDB accesses the Postgresql database using two dedicated
 Postgresql database user accounts, by default named 'jmdictdb'
 (for read-write access) and 'jmdictdbv' (for read-only access)
@@ -369,8 +371,7 @@ Copy jmdictdb-pvt.ini-sample to jmdictdb-pvt.ini and edit it.
     a string of random characters.
   - Uncomment the ;pw and ;sel_pw lines and replace the
     "xxxxxx" with the passwords for the jmdictdb and
-    jmdictdbv  users set in section 4.2.1 (<<pg_access>>)
-    above.
+    jmdictdbv  users set in section <<pg-access>> above.
 
 Make sure that jmdictdb-pvt.ini is not world-readable:
 
@@ -525,6 +526,7 @@ find the web components and at what URL to serve them.
 === Configuration files.
 The JMdictDB configuration and log files are located in {{WEBROOT}}/lib/.
 
+[#prod-logf]
 ==== Create the log file.
 The name, "jmdictdb.log" may be changed to whatever name is
 preferred.  If changed, the value of LOGFILE in the configuration
@@ -570,7 +572,6 @@ the previous section.  For example:
 
   LOG_FILENAME = jmdictdb.log
 
-[#prod-wsgifile]
 ==== Create the jmdictdb-pvt.ini file
 Copy jmdictdb-pvt-sample.ini to jmdictdb-pvt.ini and edit it.
 
@@ -584,7 +585,7 @@ with any of the online password generator websites.
 
 Uncomment the ;pw and ;sel_pw lines and replace the
 "xxxxxx" values with the passwords for the jmdictdb and
-jmdictdbv  users set in section 4.2.1 (<<pg_access>>) above.
+jmdictdbv  users set in section <<pg-access>> above.
 
 Make sure that jmdictdb-pvt.ini is not world-readable but is
 readable by the Apache webserver process:
@@ -595,6 +596,7 @@ readable by the Apache webserver process:
 where "www-data" is the web server process user (typical for
 Debian-derived systems, may be different in other distributions.)
 
+[#prod-wsgifile]
 ==== Create a .wsgi file
 This file is a shim between Apache and the JMdictDB software.
 Its name is specified in the Apache configuration directives
@@ -663,11 +665,11 @@ Restart the web server.
 You should now be able to view any of the JMdictDB web pages
 in your web browser.
 
-If you did a system install in section 6.1 (<<inst-sw>>) the URL will be:
+If you did a system install in section <<inst-sw>> the URL will be:
 
   https://localhost/{{URLROOT}}/srchform.py
 
-If you did a user install in section 6.1 (<<inst-sw>>) the URL will be:
+If you did a user install in section <<inst-sw>> the URL will be:
 
   https://localhost/~<USERNAME>/srchform.py
 
@@ -703,9 +705,9 @@ For full details on using users.py, view its help:
 // This is a section so that it will appear prominently
 // in the table of contents.
 The process for upgrading JMdictDB is covered in the
-xref:oper.asc#upgrading[Upgrading JMdictDB]
+xref:oper.adoc#upgrading[Upgrading JMdictDB]
 section of the
-xref:oper.asc#header[Operation and Debugging Guide].
+xref:oper.adoc#header[Operation and Debugging Guide].
 
 :sectnums!:
 [#errors]
@@ -714,7 +716,7 @@ xref:oper.asc#header[Operation and Debugging Guide].
 [qanda]
 Flask server fails with traceback::
   This will happen when tools/upd-version.py hasn't been run
-  (see section 4.1, <<get-code>> )
+  (see section 4.1, <<get-code>>)
 
   Traceback (most recent call last):
     File "tools/run-flask.py", line 45, in <module>

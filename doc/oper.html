@@ -8,6 +8,7 @@
 <title>Operation and Debugging Guide</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 <body class="article">
 <div id="header">
@@ -22,7 +23,8 @@
 <ul class="sectlevel2">
 <li><a href="#code-upgrade">4.1. Code upgrades</a></li>
 <li><a href="#_database_upgrades">4.2. Database upgrades</a></li>
-<li><a href="#_if_something_goes_wrong">4.3. If something goes wrong</a></li>
+<li><a href="#wsgi-reload">4.3. Reload the WSGI application</a></li>
+<li><a href="#_if_something_goes_wrong">4.4. If something goes wrong</a></li>
 </ul>
 </li>
 <li><a href="#tests">5. Tests</a></li>
@@ -228,7 +230,7 @@ a copy with:</p>
 <table>
 <tr>
 <td class="icon">
-<div class="title">Note</div>
+<i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
 If both a software and database upgrade are required, the
@@ -247,7 +249,7 @@ the software and database will temporarily be at incompatible versions.
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>$ cd {{devdir}}</pre>
+<pre>$ cd {{DEVDIR}}</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -295,6 +297,11 @@ install is done with,</p>
 <pre># git config --global --unset safe.directory {{DEVDIR}}</pre>
 </div>
 </div>
+<div class="paragraph">
+<p>If you are using a WSGI server don&#8217;t forget to reload the WSGI
+application per section <a href="#wsgi-reload"> 4.3, &#8220;Reload the WSGI application&#8221;</a> below, even if you have
+no database updates.</p>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_database_upgrades">4.2. Database upgrades</h3>
@@ -321,7 +328,7 @@ chances of the code trying to access a database schema it
 does not fully understand.</p>
 </div>
 <div class="sect3">
-<h4 id="_backup_the_current_jmdict_database">4.2.1. Backup the current jmdict database</h4>
+<h4 id="db-bkup">4.2.1. Backup the current jmdict database</h4>
 <div class="literalblock">
 <div class="content">
 <pre>$ pg_dump -Fc jmdict &gt; &lt;FILENAME&gt;</pre>
@@ -338,7 +345,7 @@ named and located whatever and anywhere you want.</p>
 <table>
 <tr>
 <td class="icon">
-<div class="title">Note</div>
+<i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
 <strong>This is usually not necessary since the update documentation
@@ -361,15 +368,15 @@ convention:</p>
 <p>where "nnn" is a 3-digit decimal number and "xxxxxx" is a
 6-digit hexadecimal number.  The former are usually sequential
 (but there may be gaps sometimes) and indicate the order in
-which the updates should be applied.  The latter are random,
-are the actual update identifiers proper, and are what are
-referenced in the documentation.</p>
+which the updates should be applied.  The latter have randomly
+chosen values, actually identify a specific update, and are what
+are referenced in the documentation.</p>
 </div>
 <div class="paragraph">
 <p>Generally the update documentation will indicate which of the
-update files there need to be applied.  If not, run the following
-command to show the current database version and whether or not
-it is compatible with the current JMdictDB code.</p>
+update files need to be applied.  If not, run the following
+command to show the current database version and whether or
+not it is compatible with the current JMdictDB code.</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -433,13 +440,25 @@ script can rerun.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_if_something_goes_wrong">4.3. If something goes wrong</h3>
+<h3 id="wsgi-reload">4.3. Reload the WSGI application</h3>
+<div class="paragraph">
+<p>If you are serving the JMdictDB application via WSGI, you will
+probably need to tell the WSGI server to reload the updated
+application.  For Apache with mod_wsgi you can do this using
+the 'touch' command applied to the .wsgi file created during
+installation (see section 6.2.4.
+<a href="install.html#prod-wsgifile">Create a .wsgi file</a>
+of the <a href="install.html">Installation Guide</a>.)</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_if_something_goes_wrong">4.4. If something goes wrong</h3>
 <div class="paragraph">
 <p>If no database update was involved, a software update can
 be reversed by checking out the Git revision that was in
 use prior to the upgrade and reinstalling it with the
 'sudo make &#8230;&#8203; install-sys' command used in section
-<a href="#code-upgrade"> 4.1</a>.</p>
+<a href="#code-upgrade"> 4.1, &#8220;Code upgrades&#8221;</a>.</p>
 </div>
 <div class="paragraph">
 <p>The Makefile does not use the traditional "file modification
@@ -519,7 +538,7 @@ in the cgiinfo.py web page.)</p>
 <div class="paragraph">
 <p>Note that the JMdictDB log file must be pre-created; the
 JMdictDB code will not create it automatically  (see
-the xref:install.asc).  If it
+the xref:install.adoc#prod-logf).  If it
 is not not accessible or writable by the web server at
 web server startup, an error message to that effect will
 be written to the web server&#8217;s error log.</p>
@@ -603,7 +622,7 @@ effects, insert pdb breakpoints for debugging etc.</p>
 <table>
 <tr>
 <td class="icon">
-<div class="title">Caution</div>
+<i class="fa icon-caution" title="Caution"></i>
 </td>
 <td class="content">
 The flask server will by default access the same
@@ -648,7 +667,7 @@ $ pg_dump jmdict | psql -d jmtest</pre>
 </div>
 <div class="paragraph">
 <p>Alternatively you can follow the procedure in the
-<a href="install.asc#load-db">Section 4.3</a> of the Installation
+<a href="install.html#load-db">Section 4.3</a> of the Installation
 Guide for creating a new database but after loading it
 from the XML files instead of running
 "make -f Makefile-db activate", rename the "jmew" database
@@ -740,11 +759,12 @@ source file, jmdictdb/jelparse.y:</p>
 </div>
 </li>
 <li>
-<p>Confirm all the tests pass (see section <a href="#tests"> 5</a>)</p>
+<p>Confirm all the tests pass (see section <a href="#tests"> 5, &#8220;Tests&#8221;</a>)</p>
 </li>
 <li>
-<p>If possible, do a full install from XML files per the
-<a href="install.asc">Installation Guide</a></p>
+<p>If possible, do a full install from XML files per
+<a href="install.html#load-db">section 4.3</a> in the
+<a href="install.html">Installation Guide</a></p>
 </li>
 <li>
 <p>Make sure the documentation is up-to-date:</p>
@@ -781,7 +801,7 @@ upgrades, simply an email.</p>
 <div class="ulist none">
 <ul class="none">
 <li>
-<p><strong>asciidoctor</strong>: doc/src/*.asc &#8658; *.html</p>
+<p><strong>asciidoctor</strong>: doc/src/*.adoc &#8658; *.html</p>
 </li>
 <li>
 <p><strong>dia</strong>: doc/src/schema.dia &#8658; schema.png diagram.</p>
@@ -1044,7 +1064,7 @@ subsequent pages.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-10-30 17:31:05 -0600
+Last updated 2022-10-31 22:21:25 -0600
 </div>
 </div>
 </body>

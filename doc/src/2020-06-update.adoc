@@ -2,18 +2,19 @@
 June 2020
 
 This procedure describes how to apply the 20.06.01 changes to an existing
-JMdictDB server instance.  If you are installing JMdictDB for the first
-time please see link:INSTALL.html[INSTALL.html].
+JMdictDB server instance.  If you are installing JMdictDB for the
+first time please see the xref:install.adoc[Installation Guide].
 
-See link:2020-06-changes.html[2020-06-changes.html] for summary of major
-changes.
+See the xref:2020-06-changes.adoc[2020-06-changes] document for
+a summary of major changes.
 
 ==== 1. Get the current version of the JMdictDB code
 
 The updates applied by this procedure are present in both the edrdg
 and master branches.  However the master branch may have additional
-newer changes.  See link:NSTALL.html[INSTALL.html] for information
-on the differences between the two branches.
+newer changes.  See xref:install.adoc#get-code[section 4.1] of
+the xref:install.adoc[Installation Guide]
+for information on the differences between the two branches.
 
 If you have an a checkout of JMdictDB already, you can cd to that
 directory and do a `git pull`.
@@ -143,7 +144,7 @@ entrs2xml.py) to use the versions in /usr/local/bin/.
 If you have any scripts that run bulkupd.py, in addition to
 changing them to use the /usr/local/bin/ version you may also
 wish to change them to take advantage of enhancements described
-in link:2020-06-changes.html[2020-06-changes.html]
+in xref:2020-06-changes.adoc[2020-06-changes]
 although they should continue to work with no changes.
 
 If you have a script that rotates the jmdictdb.log file it

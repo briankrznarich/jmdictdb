@@ -5,13 +5,14 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.16">
-<title>JMdictDB Installation Guide</title>
+<title>Installation Guide</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <link rel="stylesheet" href="./asciidoctor.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 <body class="article">
 <div id="header">
-<h1>JMdictDB Installation Guide</h1>
+<h1>Installation Guide</h1>
 <div id="toc" class="toc">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
@@ -116,7 +117,7 @@ only been tested with Apache.</p>
 <table>
 <tr>
 <td class="icon">
-<div class="title">Note</div>
+<i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
 Earlier versions of this software generated web pages using
@@ -133,7 +134,7 @@ repository).
 <table>
 <tr>
 <td class="icon">
-<div class="title">Note</div>
+<i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
 Regarding Microsoft Windows:
@@ -218,8 +219,8 @@ If not available, you can download the needed files manually.</p>
 <div class="paragraph">
 <p>If you plan on doing development of JMdictDB some additional
 software, used in various build chains, is also required.
-Please see <a href="oper.asc#appx-A">Appendix A</a> of the
-<a href="oper.asc">Operation and Debugging Guide</a>.</p>
+Please see <a href="oper.html#appx-A">Appendix A</a> of the
+<a href="oper.html">Operation and Debugging Guide</a>.</p>
 </div>
 </div>
 </div>
@@ -298,8 +299,9 @@ A user logged in as Admin can additionally manage other users.</p>
 <p>JMdictDB users and their access levels are stored in a separate
 separate database named "jmsess".  This database need only be
 setup once.  Management of the user accounts in "jmsess" may be
-done by the program bin/users.py (see <a href="#users">section 7</a> in this
-document and <a href="oper.asc#users">section 2</a> in the Operation Guide),
+done by the program bin/users.py (see section <a href="#users"> 7, &#8220;Add JMdictDB editors and admins&#8221;</a> in this
+document and <a href="oper.html#users">section 2</a> in the
+<a href="oper.html">Operation Guide</a>),
 or, after the install is completed, by the users.py web page.</p>
 </div>
 </div>
@@ -337,8 +339,8 @@ The default value is /var/www/jmdictdb/.</p>
 </dd>
 <dt class="hdlist1">{{WCGI}}</dt>
 <dd>
-<p>Path and filename of the .wsgi file (see section 6.2.3
-(<a href="#prod-wsgifile"> 6.2.3</a>).</p>
+<p>Path and filename of the .wsgi file
+(see section <a href="#prod-wsgifile"> 6.2.4, &#8220;Create a .wsgi file&#8221;</a>).</p>
 </dd>
 </dl>
 </div>
@@ -386,11 +388,11 @@ section.</p>
 </div>
 <div class="paragraph">
 <p>Step 4 is required for running JMdictDB with the builtin Flask
-development server and is detailed in section 5 (<a href="#inst-dev"> 5</a>) below.</p>
+development server and is detailed in section <a href="#inst-dev"> 5, &#8220;Install For Development&#8221;</a> below.</p>
 </div>
 <div class="paragraph">
 <p>Steps 5-7 are required for running JMdictDB under a production
-web server like Apache and are detailed in section 6 (<a href="#inst-prod"> 6</a>)
+web server like Apache and are detailed in section <a href="#inst-prod"> 6, &#8220;Install For Production&#8221;</a>
 below.</p>
 </div>
 <div class="paragraph">
@@ -429,7 +431,7 @@ should generally be based on.</p>
 <table>
 <tr>
 <td class="icon">
-<div class="title">Important</div>
+<i class="fa icon-important" title="Important"></i>
 </td>
 <td class="content">
 The JMdictDB install process involves building a
@@ -454,7 +456,7 @@ $ tools/upd-version.py</pre>
 <table>
 <tr>
 <td class="icon">
-<div class="title">Important</div>
+<i class="fa icon-important" title="Important"></i>
 </td>
 <td class="content">
 From here on, unless indicated otherwise, we assume
@@ -467,8 +469,8 @@ the current directory is the {{DEVDIR}} directory.
 <div class="sect2">
 <h3 id="_configure_the_postgresql_database_server">4.2. Configure the Postgresql database server</h3>
 <div class="sect3">
-<h4 id="_provide_access_to_the_postgresql_server">4.2.1. Provide access to the Postgresql server</h4>
-<div id="pg_access" class="paragraph">
+<h4 id="pg-access">4.2.1. Provide access to the Postgresql server</h4>
+<div class="paragraph">
 <p>JMdictDB accesses the Postgresql database using two dedicated
 Postgresql database user accounts, by default named 'jmdictdb'
 (for read-write access) and 'jmdictdbv' (for read-only access)
@@ -523,7 +525,7 @@ creating the personal account and "xxxxxx", "yyyyyy" and
 <table>
 <tr>
 <td class="icon">
-<div class="title">Important</div>
+<i class="fa icon-important" title="Important"></i>
 </td>
 <td class="content">
 Set the permissions on the .pgpass file to 600;
@@ -567,7 +569,7 @@ Enter it again: yyyyyy</pre>
 <table>
 <tr>
 <td class="icon">
-<div class="title">Important</div>
+<i class="fa icon-important" title="Important"></i>
 </td>
 <td class="content">
 You need (and should) only do the
@@ -627,7 +629,7 @@ four of the dictionaries.</p>
 <table>
 <tr>
 <td class="icon">
-<div class="title">Caution</div>
+<i class="fa icon-caution" title="Caution"></i>
 </td>
 <td class="content">
 No provision is made for concurrent access while loading
@@ -672,8 +674,7 @@ a string of random characters.</p>
 <li>
 <p>Uncomment the ;pw and ;sel_pw lines and replace the
 "xxxxxx" with the passwords for the jmdictdb and
-jmdictdbv  users set in section 4.2.1 (<a href="#pg_access">[pg_access]</a>)
-above.</p>
+jmdictdbv  users set in section <a href="#pg-access"> 4.2.1, &#8220;Provide access to the Postgresql server&#8221;</a> above.</p>
 </li>
 </ul>
 </div>
@@ -856,7 +857,7 @@ find the web components and at what URL to serve them.</p>
 <p>The JMdictDB configuration and log files are located in {{WEBROOT}}/lib/.</p>
 </div>
 <div class="sect3">
-<h4 id="_create_the_log_file">6.2.1. Create the log file.</h4>
+<h4 id="prod-logf">6.2.1. Create the log file.</h4>
 <div class="paragraph">
 <p>The name, "jmdictdb.log" may be changed to whatever name is
 preferred.  If changed, the value of LOGFILE in the configuration
@@ -928,7 +929,7 @@ the previous section.  For example:</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="prod-wsgifile">6.2.3. Create the jmdictdb-pvt.ini file</h4>
+<h4 id="_create_the_jmdictdb_pvt_ini_file">6.2.3. Create the jmdictdb-pvt.ini file</h4>
 <div class="paragraph">
 <p>Copy jmdictdb-pvt-sample.ini to jmdictdb-pvt.ini and edit it.</p>
 </div>
@@ -948,7 +949,7 @@ with any of the online password generator websites.</p>
 <div class="paragraph">
 <p>Uncomment the ;pw and ;sel_pw lines and replace the
 "xxxxxx" values with the passwords for the jmdictdb and
-jmdictdbv  users set in section 4.2.1 (<a href="#pg_access">[pg_access]</a>) above.</p>
+jmdictdbv  users set in section <a href="#pg-access"> 4.2.1, &#8220;Provide access to the Postgresql server&#8221;</a> above.</p>
 </div>
 <div class="paragraph">
 <p>Make sure that jmdictdb-pvt.ini is not world-readable but is
@@ -966,7 +967,7 @@ Debian-derived systems, may be different in other distributions.)</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_create_a_wsgi_file">6.2.4. Create a .wsgi file</h4>
+<h4 id="prod-wsgifile">6.2.4. Create a .wsgi file</h4>
 <div class="paragraph">
 <p>This file is a shim between Apache and the JMdictDB software.
 Its name is specified in the Apache configuration directives
@@ -1057,7 +1058,7 @@ load.  For more information see:</p>
 in your web browser.</p>
 </div>
 <div class="paragraph">
-<p>If you did a system install in section 6.1 (<a href="#inst-sw"> 6.1</a>) the URL will be:</p>
+<p>If you did a system install in section <a href="#inst-sw"> 6.1, &#8220;Install the JMdictDB software&#8221;</a> the URL will be:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -1065,7 +1066,7 @@ in your web browser.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>If you did a user install in section 6.1 (<a href="#inst-sw"> 6.1</a>) the URL will be:</p>
+<p>If you did a user install in section <a href="#inst-sw"> 6.1, &#8220;Install the JMdictDB software&#8221;</a> the URL will be:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -1123,9 +1124,9 @@ continue to manage users directly with the users.py program.</p>
 <div class="sectionbody">
 <div class="paragraph">
 <p>The process for upgrading JMdictDB is covered in the
-<a href="oper.asc#upgrading">Upgrading JMdictDB</a>
+<a href="oper.html#upgrading">Upgrading JMdictDB</a>
 section of the
-<a href="oper.asc#header">Operation and Debugging Guide</a>.</p>
+<a href="oper.html#header">Operation and Debugging Guide</a>.</p>
 </div>
 </div>
 </div>
@@ -1137,7 +1138,7 @@ section of the
 <li>
 <p><em>Flask server fails with traceback</em></p>
 <p>This will happen when tools/upd-version.py hasn&#8217;t been run
-(see section 4.1, <a href="#get-code"> 4.1</a> )</p>
+(see section 4.1, <a href="#get-code"> 4.1, &#8220;Get the code&#8221;</a>)</p>
 <div class="literalblock">
 <div class="content">
 <pre>Traceback (most recent call last):
@@ -1255,7 +1256,7 @@ these are for Postgresql version 10.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-10-30 17:31:05 -0600
+Last updated 2022-10-31 21:29:12 -0600
 </div>
 </div>
 </body>

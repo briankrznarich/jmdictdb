@@ -6,7 +6,7 @@
 This document provides instructions to configure an existing JMdictDB
 site to utilize the new WSGI/Flask framework backend.  If you are
 installing JMdictDB for the first time please see
-the link:install.html[installation] documentation instead.
+the xref:install.adoc[Installation Guide] instead.
 Please note that the CGI backend remains fully functional for now
 but is deprecated and will be removed in a future update.
 
@@ -140,7 +140,7 @@ character.
 === Install prerequisite software packages
 The new WSGI/Flask web backend adds two additional software
 packages to the requirements for JMdictDB (see
-link:install.html#_requirements[Install: Requirements]):
+xref:install.adoc#_requirements[Install: Requirements]):
 
 * mod_wsgi module for Apache
   (https://modwsgi.readthedocs.io/en/master/)
