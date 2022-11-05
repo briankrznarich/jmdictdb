@@ -18,15 +18,17 @@
 #    data from the the serialized Entr object.
 #
 # To edit a new object, provide:
-#  * No 'e', 'q' or 'entr' parameters.  A blank edit form will
-#    be presented.
+#  * No 'e', 'q', 'entr' or 'j' parameters.  A blank edit form
+#    will be presented.
 #  FIXME: should we have an explict parameter for a blank new
 #   new entry form to allow a page with multiple new entry forms?
 #  * An 'entr' parameter with a serialized Entr object with a
 #    'dfrm' value of None.  The form will be initialized from the
 #    Entr object.
+#  * A 'j' parameter that will be parsed and used to initialize
+#    the form.
 #
-# Multiple 'e', 'q' and 'entr' parameters may be given and will
+# Multiple 'e', 'q', 'entr' and 'j' parameters may be given and will
 # result in a page with multiple edit forms.  No attempt is made to
 # "de-duplicate" entries... if the same entry is specified more than
 # once, it will appear in multiple forms.  If any entries given by
@@ -67,6 +69,9 @@
 #       number.  Note that this option may result in user suprise
 #       in that the latest entry may be on a different branch than
 #       an earlier entry and will show no sign of the earlier entry.
+#   j=<str> -- A string describing an entry in Edict2 format.
+#       If this parameter is given, the "e", "q", and "a"
+#       parameters are ignored.
 #   entr=<...> -- A serialized Entr object that will be used to
 #       initialize the form edit fields.  If it's 'id' attribute
 #       is None, it will be treated as a new entry, otherwise as
@@ -88,7 +93,7 @@ import sys, cgi
 try: import pkgpath.py  # Make jmdictdb package available on sys.path.
 except ImportError: pass
 from jmdictdb import logger; from jmdictdb.logger import L
-from jmdictdb import jdb, jmcgi, fmtjel, serialize
+from jmdictdb import jdb, jmcgi, fmtjel, serialize, edparse
 
 def main (args, opts):
         logger.enable()
@@ -120,13 +125,22 @@ def main (args, opts):
             else:
                 entrs.append (entr)
 
+        jentrs = fl ('j')
+        for jentr in jentrs:
+            try: entr = edparse.entr (jentr)
+            except Exception as e:
+                errs.append ("Bad 'j' value, unable to parse: %s" % str(e))
+            else:
+                entr.src = None
+                entrs.append (entr)
+
         elist, qlist, active = fl('e'), fl('q'), fv('a')
         if elist or qlist:
             entrs.extend (jmcgi.get_entrs (cur, elist or [], qlist or [], errs,
                                            active=active, corpus=def_corp) or [])
         cur.close()
 
-        if (elist or qlist or sentrs) and not entrs:
+        if (elist or qlist or jentrs or sentrs) and not entrs:
               # The caller explictly specified and entry to edit but we
               # didn't find it (or them).  Rather than treating this as
               # though no entries were given and displaying a blank edit
