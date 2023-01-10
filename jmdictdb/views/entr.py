@@ -41,7 +41,6 @@ def view (svc, cfg, user, cur, params):
                 if hasattr (s, '_xrer'): jdb.augment_xrefs (cur, s._xrer, 1)
             if hasattr (e, '_snd'): jdb.augment_snds (cur, e._snd)
         cur.close()
-        pdb.set_trace()
         if disp == 'xml':
               # Use 'mail=False' to supress email addresses in the xml since
               # it will be publically available.  Not needed in disp==jm or
