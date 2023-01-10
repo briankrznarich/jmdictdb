@@ -41,8 +41,13 @@ def view (svc, cfg, user, cur, params):
                 if hasattr (s, '_xrer'): jdb.augment_xrefs (cur, s._xrer, 1)
             if hasattr (e, '_snd'): jdb.augment_snds (cur, e._snd)
         cur.close()
+        pdb.set_trace()
         if disp == 'xml':
-            etxts = [fmtxml.entr (e) for e in entries]
+              # Use 'mail=False' to supress email addresses in the xml since
+              # it will be publically available.  Not needed in disp==jm or
+              # disp==jmne below because those formats don't include email
+              # info.
+            etxts = [fmtxml.entr (e, mail=False) for e in entries]
         elif disp == 'jm':
             etxts = [fmtxml.entr (e, compat='jmdict') for e in entries]
         elif disp == 'jmne':
