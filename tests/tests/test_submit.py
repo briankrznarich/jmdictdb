@@ -47,7 +47,7 @@ class General (unittest.TestCase):
     def test1000010(_):  # Minimal new entry: no sense, reading or kanji.
         errs = []
         e = Entr (src=99, stat=2)
-        submit.submission (DBcursor, e, '', errs)
+        submit.submission (DBcursor, e, '', True, errs)
         _.assertEqual (0, len(errs))
 
     def test1000020(_):  # A more realistic submission.
@@ -495,7 +495,7 @@ class Clean (unittest.TestCase):
     def test_0330(_):  # In context of a submission, bad characters
         errs = []      #  abort it.
         e = Entr (src=99, stat=2, _hist=[Hist(notes='a\r\nb')])
-        eid,seq,src = submit.submission (DBcursor, e, '', errs)
+        eid,seq,src = submit.submission (DBcursor, e, '', True, errs)
         _.assertEqual ((None,None,None), (eid,seq,src))
         _.assertEqual (1, len(errs))
         _.assertEqual ("Illegal characters in 'comments'", errs[0])
@@ -628,6 +628,7 @@ def delentr (id):
 def submit_ (entr, **kwds):   # Trailing "_" in function name to avoid
         errs = []             #  conflict with submit module.
         kwds['errs'] = errs
+        kwds['allowforks'] = True
         id,seq,src = submit.submission (DBcursor, entr, **kwds)
         if errs or id is None: raise RuntimeError (errs)
           # Don't commit, transaction will be rolled back automatically.
@@ -640,6 +641,7 @@ def submit_ (entr, **kwds):   # Trailing "_" in function name to avoid
 def submitE (_, entr, **kwds):
         errs = []
         kwds['errs'] = errs
+        kwds['allowforks'] = True
         id,seq,src = submit.submission (DBcursor, entr, **kwds)
           # Don't commit, transaction will be rolled back automatically.
         _.assertEqual ((id,seq,src), (None,None,None))

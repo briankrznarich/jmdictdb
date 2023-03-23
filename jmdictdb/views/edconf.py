@@ -5,30 +5,94 @@ import sys, cgi, re, datetime, copy
 import markupsafe
 from jmdictdb import logger; from jmdictdb.logger import L
 from jmdictdb import jdb, jmcgi, jelparse, jellex, serialize, submit, fmt
+from jmdictdb.submit import get_tail_and_leafs, url
 from jmdictdb.srvlib import fv, fvn as fl
 
 def view (svc, cfg, user, cur, form):
+        submit.Svc = svc #For submit.url()
         errs = []; chklist = {}
         KW = jdb.KW
 
           # 'eid' will be an integer if we are editing an existing
           # entry, or undefined if this is a new entry.
         pentr = None
-        eid = url_int ('id', form, errs)
+        oeid = eid = url_int ('id', form, errs)
+
+          # Desired disposition: 'a':approve, 'r':reject, undef:submit.
+        disp = url_str ('disp', form)
+        if disp!='a' and disp!='r' and disp !='' and disp is not None:
+            errs.append ("Invalid 'disp' parameter: '%s'" % disp)
+
+          # An admin can check a box to enable the old forking behavior, and
+          # fork an entry if they so desire. Should probably be done in limited
+          # circumstances.  Approvals and Rejections by definition cannot create
+          # forks.
+        allowforks = False
+        if jmcgi.is_editor (user) and disp == '':
+            allowforks = fv ('allowforks')
+        tail = []
         if eid:
+            tail, my_leafs, all_leafs = get_tail_and_leafs (cur, eid)
+              # tail is set only if the entry has a unique tail with no open
+              # forks on the sequence.  Fast-forward to the end. (Warnings will
+              # be added before final submit)
+            if tail and not allowforks:
+                  # Plain sumbissions fast-forward to the end of the tail.
+                  # Approval and Reject fast-forward only if there are
+                  # no forks. Otherwise the error messages get too misleading.
+                if disp == '' or len(all_leafs) == 1:
+                    eid = tail[-1]
+            errmsg = ''
+            othermsg = "Available forks are:"
+            if all_leafs and eid not in all_leafs:
+                if disp == 'r':
+                    errmsg = "Cannot reject this entry because it has been"\
+                        " edited and forked, and you are not currently on"\
+                        " the most recent revision of any fork."
+                elif disp == 'a':
+                    errmsg = "Cannot approve this entry because it has forks."\
+                        " You are not currently on"\
+                        " the most recent revision of any fork."
+                  # couldn't fast-forward (branching descendants)
+                  # This should be the only ordinary-user-visible message
+                  # (hence the "this is rare" comment)
+                elif disp == '' and not allowforks:
+                    errmsg = "The entry you are editing"\
+                        " has been edited and forked (this is rare)."\
+                        " You can use your browser's back button to recover"\
+                        " your work."
+            elif all_leafs:
+                all_leafs.remove(eid)
+                if disp == 'a':
+                    if len(all_leafs) > 1:
+                        errmsg ="Cannot approve this entry because it has open"\
+                        " forks which must first be rejected."
+                        othermsg = "The other open forks are:"
+                    elif all_leafs:
+                        errmsg ="Cannot approve this entry because it has"\
+                        " another open fork which must first be rejected."
+                        othermsg = "The other open fork is:"
+                # You can reject, or add a submission, as long as you are on a leaf
+
+            if errmsg:
+                if tail:
+                    if tail[-1] in all_leafs:
+                        all_leafs.remove (tail[-1])
+                        errmsg += " The latest entry for the current fork is id="
+                        errmsg += url(tail[-1]) + "."
+                        othermsg = "Other forks are:"
+
+                leafhtml = ', '.join ("id="+url(x) for x in all_leafs)
+                errs.append (jmcgi.Markup (errmsg + " " + othermsg +" "+ leafhtml))
+
              # Get the parent entry of the edited entry.  This is what the
-             # edited entry will be diff'd against for the history record. 
+             # edited entry will be diff'd against for the history record.
              # It is also the entry that will be pointed to by the edited
              # entry's 'dfrm' field.
             pentr = jdb.entrList (cur, None, [eid])
               #FIXME: Need a better message with more explanation.
             if not pentr: errs.append ("The entry you are editing has been deleted.")
             else: pentr = pentr[0]
-
-          # Desired disposition: 'a':approve, 'r':reject, undef:submit.
-        disp = url_str ('disp', form)
-        if disp!='a' and disp!='r' and disp !='' and disp is not None:
-            errs.append ("Invalid 'disp' parameter: '%s'" % disp)
 
           # New status is A for edit of existing or new entry, D for
           # deletion of existing entry.
@@ -186,11 +250,21 @@ def view (svc, cfg, user, cur, form):
                              name, email, comment, refs,
                              entr.stat==KW.STAT['D'].id)
         if errs: return {}, {'errs':errs}
+
+          #Flag history records that were created since the user started editing
+        if tail:
+            for h in entr._hist:
+                  # The jinja template that renders clobbered history in red is
+                  # shared. To avoid adding "clobbered" to all instances of hist{},
+                  # the jinja template checks "is defined"
+                if h.eid in tail:
+                    h.clobbered = True
+
         if not delete:
             check_for_errors (entr, errs)
             if errs: return {}, {'errs':errs}
             pseq = pentr.seq if pentr else None
-            check_for_warnings (cur, entr, pseq, chklist)
+            check_for_warnings (cur, entr, pseq, chklist, tail)
 
           # The following all expect a list of entries.
         jmcgi.add_filtered_xrefs ([entr], rem_unap=False)
@@ -199,7 +273,7 @@ def view (svc, cfg, user, cur, form):
 
         entrs = [[entr, None]]  # Package 'entr' as expected by entr.jinja.
         return dict (entries=entrs, serialized=serialized, chklist=chklist,
-                     disp=disp), []
+                     disp=disp, allowforks=allowforks), []
 
 def realign_xrers (entr, pentr):
         # This function mutates 'entr' to remove invalid reverse
@@ -341,7 +415,7 @@ def check_for_errors (e, errs):
                               "  Please remove the extra gloss: %s"
                               % (n+1, ", ".join (x.txt for x in dups)))
 
-def check_for_warnings (cur, entr, parent_seq, chklist):
+def check_for_warnings (cur, entr, parent_seq, chklist, tail):
           # Look for other entries that have the same kanji or reading.
           # These will be shown as cautions at the top of the confirmation
           # form in hopes of reducing submissions of words already in
@@ -352,6 +426,8 @@ def check_for_warnings (cur, entr, parent_seq, chklist):
         dups = find_similar (cur, getattr (entr,'_kanj',[]),
                                   getattr (entr,'_rdng',[]), entr.src, parent_seq)
         if dups: chklist['dups'] = dups
+
+        chklist['clobber'] = bool (tail)
 
         if not getattr (entr, '_rdng', None) \
                 and src_type (entr.src) == 'jmdict':

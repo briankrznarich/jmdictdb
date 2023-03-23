@@ -723,6 +723,7 @@ CREATE VIEW public.esum AS
     e.srcnote,
     h.rtxt AS rdng,
     h.ktxt AS kanj,
+    (NOT EXISTS ( SELECT NULL FROM entr child WHERE child.dfrm = e.id ) ) AS leaf,
     ( SELECT array_to_string(array_agg(ss.gtxt), ' / '::text) AS array_to_string
            FROM ( SELECT ( SELECT array_to_string(array_agg(sg.txt), '; '::text) AS array_to_string
                            FROM ( SELECT g.txt

@@ -133,7 +133,7 @@ Svc, Sid = None, None
   # needs to be returned since that is inevitably what the caller expects.
 None3 = None, None, None
 
-def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
+def submission (dbh, entr, disp, allowforks, errs, is_editor=False, userid=None):
         # Add a changed entry, 'entr', to the jmdictdb database accessed
         # by the open DBAPI cursor, 'dbh'.
         #
@@ -145,6 +145,8 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
         #   '' -- Submit as normal user.
         #   'a' -- Approve this submission.
         #   'r' -- Reject this submission.
+        # allowforks -- bool. If False, a submission that would create
+        #   a new fork will return an error instead.
         # errs -- A list to which an error messages will be appended.
         #   Note that if the error message contains html it should be
         #   wrapped in jmcgi.Markup() to prevent it from being escaped
@@ -243,6 +245,21 @@ def submission (dbh, entr, disp, errs, is_editor=False, userid=None):
               # are generated, they will show xref details.
             L('submit.submission').debug("reading parent entry %d"
                                                % entr.dfrm)
+
+            leafs = get_leafs (edpaths, entr.dfrm)
+            if leafs and not allowforks and entr.dfrm not in leafs:
+                # Note: there is now fully-duplicated error checking at the
+                # initial form submission ([Next]) to make sure that Approvals
+                # and Rejections only occur when the entry has a valid fork
+                # history. We should only hit this error if something changed
+                # between [Next] and [Submit]. This new check does make some
+                # error checking farther down in this function unreachable.
+                L('submit.submission').debug("dfrm %d is not a leaf" % entr.dfrm)
+                errs.append ("Edits have been made to this entry between "\
+                             "[Next] and [Submit]. Please user your browser's "\
+                             "back button to return to the 'Edit Entry' "\
+                             "form, then resubmit to see the latest changes.")
+                return None3
             pentr, raw = jdb.entrList (dbh, None, [entr.dfrm], ret_tuple=True)
             if len (pentr) != 1:
                   #FIXME: this should be treated as an assertion error:
@@ -729,6 +746,31 @@ def get_leafs (edpaths, eid):
         for p in edpaths:
             if eid in p: leafs.append(p[-1])
         return leafs
+
+def get_tail_and_leafs (dbh, eid):
+        # Return:
+        #     1. List of entries between eid and the latest edit, if there is
+        #        a single, unique path. (no forks past eid)
+        #     2. List of all leafs for paths which contain eid
+        #     3. List of all leafs for all entries associated with this sequence
+        # This function exists to edit a submission on-the-fly, and append
+        # a submission to the end of an edit list instead of creating a fork.
+        edpaths, root_unap = get_edpaths (dbh, eid)
+        if not edpaths:
+            return None3
+        tail = None
+        for p in edpaths:
+            try:
+                idx = p.index( eid )
+                  # Entry already forked. Handle traditionally.
+                if tail:
+                    tail = None
+                    break
+                tail = p[idx+1:] or None
+            except ValueError:
+                pass
+        leafs = get_leafs( edpaths, eid )
+        return tail, leafs, [p[-1] for p in edpaths]
 
 def logseq (cur, seq, src):
         """===================================================================

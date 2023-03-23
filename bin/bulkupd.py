@@ -449,7 +449,7 @@ def submit (cur, entr, appr, userid, noaction):
         errs = []
         cur.execute ("BEGIN")
         entrid = "(none)"    # In case submission fails.
-        try: entrid,_,_ = submission (cur, entr, disp, errs,
+        try: entrid,_,_ = submission (cur, entr, disp, True, errs,
                                       is_editor=bool(userid), userid=userid)
         except psycopg2.DatabaseError as e: errs.append (str(e))
         if entrid: D("Added entry id=%s" % entrid)

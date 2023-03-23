@@ -222,6 +222,7 @@
                 <option name="disp" value="r">Reject</option>
                 </select>
               <a class="helplink" target="edhelp" href="edhelp.py?svc={{svc}}&amp;sid={{sid}}#action" tabindex="1283">help</a>
+              &nbsp;&nbsp;Allow 'Submit' to fork:<input type="checkbox" name="allowforks" {{allowforks|d|a('checked')}}>
                 {%- endif %}{# is editor #}
               {%+ if svc %}<input type="hidden" name="svc" value="{{svc}}">{% endif %}
               {%+ if sid %}<input type="hidden" name="sid" value="{{sid}}">{% endif %}

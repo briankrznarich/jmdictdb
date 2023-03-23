@@ -121,6 +121,13 @@
         {%+ for x in chklist.jpgloss %}  {{x}} {%- endfor %}
         {%- endif %}
         <hr/>
+        {% endif %}
+      {%- if chklist.clobber|d %}
+        <p class="warnings">
+          <span class="caution">Warning: This entry has conflicting edits!</span>
+          Other users have made changes since you began this edit.  Please review
+          history items in red below. Your submission will overwrite these changes.
+          </p>
       {%- endif %}{# chklist #}
   {% endblock %}
 
@@ -131,6 +138,7 @@
         {%+ if sid|d %}<input type="hidden" name="sid" value="{{sid}}">{% endif %}
         <input type="hidden" name="entr" value="{{serialized}}">
         {%+ if dbg|d %}<input type="hidden" name="dbg" value="1">{% endif %}
+        {%+ if allowforks|d %}<input type="hidden" name="allowforks" value="1">{% endif %}
         <input type="Submit" value="Submit">
         {%- if disp %}
         <span class="caution">

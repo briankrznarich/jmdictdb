@@ -11,6 +11,14 @@ def view (svc, cfg, user, dbh, form):
         L('cgi.edsubmit').debug("started: userid=%s" % (user and user.userid))
           # disp values: '': User submission, 'a': Approve. 'r': Reject;
         disp = fv ('disp') or ''
+
+          # An admin can check a box to enable the old forking behavior, and
+          # fork an entry if they so desire. Should probably be done in limited
+          # circumstances.
+        allowforks = False
+        if jmcgi.is_editor (user):
+            allowforks = fv ('allowforks')
+
         if not jmcgi.is_editor(user) and disp:
             errs.append ("Only logged in editors can approve or reject entries")
             return {}, errs
@@ -36,7 +44,7 @@ def view (svc, cfg, user, dbh, form):
         for entr in entrs:
               #FIXME: temporary (I hope) hack...
             submit.Svc = svc
-            e = submit.submission (dbh, entr, disp, errs,
+            e = submit.submission (dbh, entr, disp, allowforks, errs,
                                    jmcgi.is_editor (user),
                                    user.userid if user else None)
               # The value returned by submission() is a 3-tuple consisting

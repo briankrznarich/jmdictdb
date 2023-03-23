@@ -56,7 +56,7 @@
             <td><input type="checkbox" name="e" value="{{r.id}}"></td>
             <td class="seq">{{r.src|TALabbr('SRC')|safe}}{{' '}}{#--#}
               <a href="entr.py?svc={{svc}}&amp;e={{r.id}}">{{r.seq}}</a></td>
-            <td><span{% if r.unap %} class="pend"{% endif %}>{{r.stat|TALabbrtxt('STAT')}}{{'*' if r.unap else ''}}</span></td>
+            <td><span{% if r.unap %} class="pend"{% endif %}>{{r.stat|TALabbrtxt('STAT')}}{{'*' if r.unap and r.leaf else ''}}{{'-' if r.unap and not r.leaf else ''}}</span></td>
             <td>{{'P' if r.p else ''}}&nbsp;</td>
             <td class="kanj">{{r.kanj}}</td>
             <td class="rdng">{{r.rdng}}</td>
@@ -85,8 +85,9 @@
           of the same base entry.
         </li><li>The "S" column shows the status of the entry:
           A: active, D: deleted, R: rejected.
-          If followed by an asterisk (*), the entry is unapproved and is
-          waiting for approval by an editor.
+          If followed by an asterisk (*) or hyphen (-), the entry is unapproved and is
+          waiting for approval by an editor. Entries with a hyphen represent
+          intermediate changes, and should usually be ignored.
         </li><li>
           The "P" column indicates an entry that is marked as P (priority)
           in EDICT.

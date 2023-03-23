@@ -333,6 +333,7 @@
                  in the statements below to the number desired.  Zero is a
                  valid value. #}
               {%- set cls = "hist_"+(e.id|string) if loop.index>5 else "" %}
+              {%- set clb = " caution" if h.clobbered|d else "" %}
               {%- set dsp = (loop.index>5) %}
               {%- if loop.index0 == 5 %}
             <tr><td colspan="3">
@@ -342,7 +343,7 @@
               </td></tr>
               {%endif%}
                                                                         {#-#}
-            <tr class="{{cls}}" {{dsp|a('style="display:none"')|safe}}>
+            <tr class="{{cls}}{{clb}}" {{dsp|a('style="display:none"')|safe}}>
               <td>{{h.hist|d}}.</td>  {#- h.hist may not exist on a new entry. #}
               <td class="hhdr" colspan="2">
                 {{h.stat|TALabbrtxt('STAT')|safe}}{{'*' if h.unap else ''}} {# -#}
